@@ -94,7 +94,6 @@ object MenuCalls {
 
     private val chat = GsonComponentSerializer.gson()
 
-    /** Chat messages as JSON texts. */
     fun encodeLines(lines: List<Component>): List<String> = lines.map(chat::serialize)
 
     /** The chat messages in [texts]; one that cannot be read is skipped. */

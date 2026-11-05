@@ -80,7 +80,6 @@ class LibraryMenu(
 
     // --- screens -------------------------------------------------------------------------------------------------
 
-    /** The home page: counters and the way to every other screen. */
     fun home(player: MenuViewer) {
         val snapshots = snapshots()
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
@@ -335,7 +334,6 @@ class LibraryMenu(
         show(player, builder.build())
     }
 
-    /** Grey lines under the pause choices: how many plugins the pause reaches and how many have no update registration. */
     private fun pauseFootnote(registered: Int, unregistered: Int): List<String> = buildList {
         add("")
         add(Style.description("Пауза касается плагинов с обновлениями: $registered."))
@@ -655,7 +653,6 @@ class LibraryMenu(
         list(player, "Когда случалось", rows, page, PAGE_SIZE, { who, to -> journalTimes(who, id, to, back) }, { journalEvent(it, id, back) }, "Времени нет")
     }
 
-    /** One entry of the update history with the whole message and a button for every plugin it touched. */
     private fun historyEntry(player: MenuViewer, entry: UpdateHistoryEntry, back: (MenuViewer) -> Unit) {
         val builder = frame(Menus.chest(title("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, historyItem(entry, full = true))
@@ -867,7 +864,6 @@ class LibraryMenu(
 
     private fun versioned(owner: OwnerInfo): String = listOfNotNull(owner.name, owner.version).joinToString(" ")
 
-    /** The lines that say which plugin owns something: its name, version and authors. */
     private fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = owner?.let {
         buildList {
             add("Плагин" to it.name)
@@ -905,7 +901,6 @@ class LibraryMenu(
 
     private val comparer = ServerGroups { null }
 
-    /** The proxy as a member of groups, then the servers. */
     private fun members(map: NetworkReport): List<NetworkServer> = listOf(NetworkServer(ServerGroups.PROXY, true, map.proxy)) + map.servers
 
     /** The groups live on the proxy; this asks it from a menu that is not its own. */
@@ -928,7 +923,6 @@ class LibraryMenu(
         }
     }
 
-    /** Asks the proxy for one change of the groups when [player] may, then runs [then]. */
     private fun editGroup(player: MenuViewer, edit: GroupEdit, then: () -> Unit) {
         allowed(player, GROUPS_PERMISSION) {
             host.async {
@@ -942,7 +936,6 @@ class LibraryMenu(
         }
     }
 
-    /** The groups of servers the proxy keeps; a click opens one group. */
     private fun groups(player: MenuViewer, page: Int): Unit = withGroups(player) { all, map ->
         val rows = all.map { group ->
             val bad = comparer.compare(group, members(map)).count { !it.ok }
@@ -981,7 +974,6 @@ class LibraryMenu(
         player.send(listOf(line))
     }
 
-    /** One group: each server with what it lacks, and the buttons that change the group or ask all of its servers at once. */
     private fun group(player: MenuViewer, name: String): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null) {
@@ -1055,7 +1047,6 @@ class LibraryMenu(
         )
     }
 
-    /** Servers of the network that are not in the group yet; a click puts one in. */
     private fun pickServer(player: MenuViewer, name: String, page: Int): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null) {
@@ -1072,7 +1063,6 @@ class LibraryMenu(
         list(player, "Добавить в $name", rows, page, PAGE_SIZE, { who, to -> pickServer(who, name, to) }, { group(it, name) }, "Все серверы уже в группе")
     }
 
-    /** The plugins every server of the group has; a click takes one away from all. */
     private fun groupPlugins(player: MenuViewer, name: String, page: Int): Unit = withGroups(player) { all, _ ->
         val group = all.firstOrNull { it.name == name }
         if (group == null) {
@@ -1095,7 +1085,6 @@ class LibraryMenu(
         )
     }
 
-    /** The plugins the servers report, which the group or [server] does not ask for yet; a click asks for one. */
     private fun pickPlugin(player: MenuViewer, name: String, server: String?, page: Int): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null) {
@@ -1214,7 +1203,6 @@ class LibraryMenu(
         if (!host.openRemote(player, target)) tell(player, ChatTone.FAILURE, "Некому передать запрос: на ${server.name} нет игроков онлайн.")
     }
 
-    /** The start page of the plugin events: what they are, the counters and the way to every view. */
     private fun busHome(player: MenuViewer) {
         val events = data.events()
         val listeners = data.listeners()
@@ -1328,7 +1316,6 @@ class LibraryMenu(
         return icon(null, material, shortName(info.eventType), lore, alternative = "REDSTONE_TORCH_ON".takeIf { info.listeners > 0 }, warn = info.denied > 0)
     }
 
-    /** One event: its counters, the recording switch and the ways to its listeners, days and recorded calls. */
     private fun busEvent(player: MenuViewer, name: String, back: (MenuViewer) -> Unit) {
         val info = data.events().firstOrNull { it.eventType == name }
         if (info == null) {
@@ -1383,7 +1370,6 @@ class LibraryMenu(
         data.setTracing(name, name !in data.tracedEvents())
     }
 
-    /** What a list of listeners shows: its [title], which listeners to keep, their order and where to go back. */
     private class ListenerQuery(
         val title: String,
         val back: (MenuViewer) -> Unit,
@@ -1482,7 +1468,6 @@ class LibraryMenu(
         )
     }
 
-    /** Recorded calls, newest first, each with the answer of every listener; clearing sits in the footer. */
     private fun busTraces(player: MenuViewer, event: String?, page: Int) {
         val all = data.traces().filter { event == null || it.eventName == event }.reversed()
         val rows = all.map { trace -> Row(traceItem(trace), go { who -> busTrace(who, trace, 0) { busTraces(it, event, page) } }) }
@@ -1522,7 +1507,6 @@ class LibraryMenu(
         return icon(null, "PAPER", "${shortName(trace.eventName)}: $verdict", lore, danger = !trace.allowed)
     }
 
-    /** One recorded call with every listener that answered, in the order they were asked. */
     private fun busTrace(player: MenuViewer, trace: EventTrace, page: Int, back: (MenuViewer) -> Unit) {
         val rows = trace.steps.mapIndexed { index, step ->
             val owner = step.module?.let { "${step.plugin}/$it" } ?: step.plugin.toString()
@@ -1719,7 +1703,6 @@ class LibraryMenu(
     /** Sends [lines] to [player] in chat; for a viewer from another server they travel back to that server. */
     private fun deliver(player: MenuViewer, lines: List<net.kyori.adventure.text.Component>) = player.send(lines)
 
-    /** Sends one notice in the style of the chat commands. */
     private fun tell(player: MenuViewer, tone: ChatTone, text: String, detail: String? = null) {
         val lines = UpdateCatalogView.notice(ChatNotice(tone, text, detail), ROUTES)
         deliver(player, lines)
@@ -1778,7 +1761,6 @@ class LibraryMenu(
 
     private fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player) } }
 
-    /** A handler that also learns which click was used: left, right or shift-left. */
     private fun goClick(action: (MenuViewer, ClickType) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player, click.click) } }
 
     /** Runs [action] where it may wait for the data: here at once, for another server away from the server thread. */
@@ -1793,7 +1775,6 @@ class LibraryMenu(
         }
     }
 
-    /** Opens the home page of the server of this menu for [player]. */
     fun open(player: MenuViewer) = away(player) { home(player) }
 
     /** Runs [action] on the thread of the screen: the server thread here; for another server the waiting thread keeps going. */
@@ -1933,14 +1914,12 @@ class LibraryMenu(
 
     private fun title(text: String): String = MenuColors.legacy('0') + "pnLibrary " + MenuColors.legacy('5') + "» " + MenuColors.legacy('0') + text
 
-    /** Violet corner brackets on the four corners of a [rows]-row menu, then the dark glass between them. */
     private fun frame(builder: MenuBuilder, rows: Int): MenuBuilder {
         val last = (rows - 1) * 9
         listOf(0, 1, 9, 7, 8, 17, last, last + 1, last - 9, last + 7, last + 8, last - 1).forEach { builder.slot(it, accent()) }
         return builder.fill(pane())
     }
 
-    /** The two bottom corners of a list, leaving the rows above for the entries. */
     private fun footerCorners(builder: MenuBuilder) {
         listOf(FOOTER_START, FOOTER_START + 1, FOOTER_END - 2, FOOTER_END - 1).forEach { builder.slot(it, accent()) }
     }
@@ -1976,7 +1955,6 @@ class LibraryMenu(
         return ItemSpec(texture, material, alternative, Style.name(label, tone), lore)
     }
 
-    /** Colours and lines of the menu: the library's violet and pink, a gradient on every name and click hint. */
     private object Style {
         private val DIM = MenuColors.color("&#64546E")
         private val PLAIN = MenuColors.color("&#F7F2F7")
@@ -1997,7 +1975,6 @@ class LibraryMenu(
 
         fun description(text: String): String = DESCRIPTION + text
 
-        /** Every choice of a switch on its own line; the chosen one has a coloured mark and a gradient, the others are dim. */
         fun choices(options: List<String>, selected: Int): List<String> = options.mapIndexed { index, label ->
             if (index == selected) {
                 MenuColors.color("   &#6EE7A0➤ ") + MenuColors.gradient(label, "D19BFF", "FF9BD2")

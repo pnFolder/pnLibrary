@@ -16,7 +16,6 @@ object ProxyMenuCommands {
 
 /** The permissions the library checks in its menu; the viewer's server tells the server it asks which of them the viewer holds. */
 object MenuPermissions {
-    /** Every permission the menu uses. */
     val ALL = listOf(
         "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",
         "pnlibrary.updates.settings", "pnlibrary.updates.restart", "pnlibrary.events.view", "pnlibrary.events.bus", "pnlibrary.tasks",

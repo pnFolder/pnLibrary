@@ -35,16 +35,12 @@ data class ViewerInfo(val name: String, val permissions: Set<String>)
 
 /** What a change to a group of servers does; the server and the plugin are those the operation needs. */
 enum class GroupOp {
-    /** Makes the group. */
     CREATE,
 
-    /** Deletes the group. */
     DELETE,
 
-    /** Puts a server in the group. */
     ADD_SERVER,
 
-    /** Takes a server out of the group. */
     REMOVE_SERVER,
 
     /** Asks every server of the group for a plugin. */
@@ -77,7 +73,6 @@ data class GroupEdit(val op: GroupOp, val group: String, val server: String? = n
  * on another one, so the menu calls them away from the server thread.
  */
 interface MenuData {
-    /** The library version. */
     fun version(): String
 
     /** The update state of every plugin that registered for updates, by name. */
@@ -101,16 +96,13 @@ interface MenuData {
     /** One page of the update history, from page 1. */
     fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>>
 
-    /** The saved backups. */
     fun backups(): CompletionStage<List<UpdateBackup>>
 
-    /** Asks every catalog for new versions. */
     fun checkAll(actor: UpdateActor): CompletionStage<Boolean>
 
     /** Asks the catalog of one plugin for a new version; it does not wait for the answer. */
     fun checkOne(product: String, actor: UpdateActor)
 
-    /** Switches the automatic download of [product]. */
     fun setAutomatic(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<Boolean>
 
     /** Sets the update channel of [product]; null returns it to the default. */
@@ -119,7 +111,6 @@ interface MenuData {
     /** Pauses updates of [product] for [duration]; null lifts the pause. */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean>
 
-    /** Prepares the rollback to a backup. */
     fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean>
 
     /** The journal groups of the last [hours] hours; [level] is `info`, `warning`, `error` or null. */
@@ -128,19 +119,15 @@ interface MenuData {
     /** The whole journal event behind a group, or null when it is no longer there. */
     fun journalDetail(id: String): JournalDetail?
 
-    /** Every task of every plugin. */
     fun tasks(): List<TaskSnapshot>
 
     /** Starts the waiting task at once. */
     fun runTask(id: String): TaskControl
 
-    /** Stops the task. */
     fun cancelTask(id: String): TaskControl
 
-    /** The events of the event bus. */
     fun events(): List<EventInfo>
 
-    /** The listeners of the event bus. */
     fun listeners(): List<ListenerInfo>
 
     /** The calls per day, for one event or for all. */
@@ -152,13 +139,10 @@ interface MenuData {
     /** The events whose calls are being recorded. */
     fun tracedEvents(): List<String>
 
-    /** The recorded calls. */
     fun traces(): List<EventTrace>
 
-    /** Forgets the recorded calls. */
     fun clearTraces()
 
-    /** Starts or stops recording the calls of an event. */
     fun setTracing(eventType: String, enabled: Boolean)
 
     /** Writes the call history to a file and returns where, or null. */
@@ -167,7 +151,6 @@ interface MenuData {
     /** The purpose and the owner of an event, or null when it is unknown. */
     fun eventAbout(eventType: String): EventAbout?
 
-    /** The plugin called [name], or null. */
     fun ownerNamed(name: String): OwnerInfo?
 
     /** The groups of servers a proxy keeps; empty on a game server. */
