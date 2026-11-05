@@ -55,7 +55,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         message: String,
         error: Throwable?,
     ): CaptureResult? {
-        if (level != LogLevel.WARNING && level != LogLevel.ERROR) return null
+        if (level < LogLevel.WARNING) return null
 
         val nowMs = System.currentTimeMillis()
         val now = Instant.ofEpochMilli(nowMs).toString()

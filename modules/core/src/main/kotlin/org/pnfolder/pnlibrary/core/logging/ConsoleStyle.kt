@@ -8,7 +8,12 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
  */
 object ConsoleStyle {
     const val SUCCESS_MARK = "[OK] "
+    const val CRITICAL_MARK = "[CRITICAL] "
 
     fun decorate(level: LogLevel, message: String): String =
-        if (level == LogLevel.SUCCESS) SUCCESS_MARK + message else message
+        when (level) {
+            LogLevel.SUCCESS -> SUCCESS_MARK + message
+            LogLevel.CRITICAL -> CRITICAL_MARK + message
+            else -> message
+        }
 }

@@ -8,6 +8,7 @@ class ConsoleStyleTest {
     @Test
     fun successIsMarkedAndOtherLevelsAreUntouched() {
         assertEquals("[OK] ready", ConsoleStyle.decorate(LogLevel.SUCCESS, "ready"))
+        assertEquals("[CRITICAL] down", ConsoleStyle.decorate(LogLevel.CRITICAL, "down"))
         listOf(LogLevel.INFO, LogLevel.WARNING, LogLevel.ERROR).forEach {
             assertEquals("text", ConsoleStyle.decorate(it, "text"))
         }

@@ -27,7 +27,7 @@ DiagnosticRegistration reg = PnLibraryProvider.get().getDiagnostics().register("
 ## Логгер модуля и чёрный ящик
 
 `ModuleContext.logger` (`PnLogger`) пишет в консоль и в «чёрный ящик»: буфер диагностики, журнал `journal/` и, для ошибки
-с исключением, отчёт об ошибках. Короткие формы (`info`, `success`, `warning`, `error`) пишут везде.
+с исключением, отчёт об ошибках. Короткие формы (`info`, `success`, `warning`, `error`, `critical`) пишут везде. `critical` — сбой, после которого плагин не работает; в консоли строка идёт с пометкой `[CRITICAL]`, успех — с `[OK]`.
 
 | Вызов | Консоль | Чёрный ящик |
 |---|---|---|

@@ -77,7 +77,7 @@ internal class VelocityPlatformAdapter(
             logObserver.runOwn {
                 when (level) {
                     LogLevel.WARNING -> logger.warn(message, error)
-                    LogLevel.ERROR -> logger.error(message, error)
+                    LogLevel.ERROR, LogLevel.CRITICAL -> logger.error(message, error)
                     else -> logger.info(message, error)
                 }
             }

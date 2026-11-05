@@ -67,7 +67,7 @@ internal class DiagnosticCapture(
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
         if (includeJournal) runCatchingNonFatal { journal?.invoke(owner, level, message, error) }
-        if (error != null && level == LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
+        if (error != null && level >= LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
         return runCatchingNonFatal { incidents?.record(ownership, owner, level, message, error) }.getOrNull()
     }
 

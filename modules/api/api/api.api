@@ -2252,6 +2252,7 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/internal/I
 }
 
 public final class org/pnfolder/pnlibrary/api/logging/LogLevel : java/lang/Enum {
+	public static final field CRITICAL Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field DEBUG Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field INFO Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
@@ -2281,6 +2282,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/logging/MessageBox {
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/logging/PnLogger {
+	public fun critical (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun critical$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 	public fun debug (Ljava/lang/String;)V
 	public fun debug (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun error (Ljava/lang/String;)V

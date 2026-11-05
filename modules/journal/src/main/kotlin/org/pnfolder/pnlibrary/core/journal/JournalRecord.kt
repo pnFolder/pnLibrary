@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
 /** Maps a library log level to its journal file set. SUCCESS is routine information. */
 fun LogLevel.toJournalLevel(): JournalLevel = when (this) {
     LogLevel.WARNING -> JournalLevel.WARNING
-    LogLevel.ERROR -> JournalLevel.ERROR
+    LogLevel.ERROR, LogLevel.CRITICAL -> JournalLevel.ERROR
     else -> JournalLevel.INFO
 }
 

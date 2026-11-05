@@ -15,6 +15,9 @@ enum class LogLevel {
     WARNING,
     /** Failed operation or unexpected exception. */
     ERROR,
+
+    /** Failure that leaves the plugin or the server unable to do its job; always reaches the black box. */
+    CRITICAL,
 }
 
 interface LoggingService {
@@ -80,6 +83,9 @@ interface PnLogger {
 
     /** Writes a failure with its [error]; with [record] `false` it stays out of the black box. */
     fun error(message: String, error: Throwable?, record: Boolean) = log(LogLevel.ERROR, message, error, record)
+
+    /** Writes a failure that stops the plugin from working, with the [error] behind it, to the console and the black box. */
+    fun critical(message: String, error: Throwable? = null) = log(LogLevel.CRITICAL, message, error, true)
 
     /**
      * Writes a detail for a support report only: the black box keeps it and the console stays quiet. Use it where the
