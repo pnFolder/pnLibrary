@@ -46,6 +46,8 @@
 Обновляй эту секцию в конце каждой сессии: одна запись, что сделано и что осталось.
 
 
+### 2026-11-05 (документы)
+- `from<R>(...)` в корне группы плейсхолдеров без второго типа. Переписаны `docs/placeholders.md` и `placeholders-example.md` под дерево, обновлены README (команды) и CHANGELOG (раздел `next`). `check` зелёный. Не сделано: расширить `tasks.md`, `diagnostics.md`, `metrics.md`; проверка на живом сервере; API 2 и релиз `0.0.1-dev.7` ждут решения.
 ### 2026-11-04 (платформы)
 - Переименованы `MenuServiceImpl` в `BukkitMenus`, `ItemServiceImpl` в `BukkitItems`, `*PlatformImpl` в `*PlatformServices`. Разбиты длинные методы: запуск Velocity/Bungee (связь вынесена), клик по меню Bukkit, `CommandTreeRouter`, `FileCurrencyStorage.importSnapshot`, `MojangAssetResolver`, `DiagnosticLogBuffer.record`, `MultipartFileClient.post`, `GroupScreens.groupServer`. Не трогал `OfflineUpdateInstaller.apply` и `ModuleResourceFactory.create` (откат при сбое). Добавлены тесты: `JournalQueries`, `ItemSpec`/`ItemFormat`, Bungee (аудитория, игрок, контекст политик), Velocity (контекст политик), `CurrencyTransactionJson`. Из `FileCurrencyStorage` вынесен `CurrencyTransactionJson` (файл 264 строки), разбиты `JournalDigest.strip` и `GroupScreens.groupServer`. Циклов между пакетами `core` нет (проверено скриптом по импортам). Длиннее 300 строк остаётся только `PnLibraryImpl` (320, корень сборки). Совместимость со старым API: `git diff main...next --numstat -- "*.api"` показывает только добавления (126 строк в `modules/api`, удалений и правок 0), значит плагин на `0.0.1-dev.6` по бинарному API работает; полноценный запуск такого плагина на новой версии ещё не автоматизирован.
 ### 2026-11-04 (папки команд)
