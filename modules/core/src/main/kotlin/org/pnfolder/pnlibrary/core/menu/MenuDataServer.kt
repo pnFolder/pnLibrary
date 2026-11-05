@@ -10,6 +10,7 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
 
 /**
  * Answers the questions another server asks about this one's library.
@@ -23,7 +24,12 @@ import java.util.concurrent.Executor
 class MenuDataServer(
     private val data: MenuData,
     private val executor: Executor,
-) : DataHandler {
+) : DataHandler, AutoCloseable {
+    /** Stops the thread pool, when [executor] is one; call it when the library shuts down. */
+    override fun close() {
+        (executor as? ExecutorService)?.shutdown()
+    }
+
     override fun handle(call: DataCall, reply: (Boolean, String) -> Unit) {
         executor.execute {
             try {
