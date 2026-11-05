@@ -10,10 +10,9 @@ import org.pnfolder.pnlibrary.api.config.ManagedConfig
 import org.pnfolder.pnlibrary.api.config.MissingFilePolicy
 import org.pnfolder.pnlibrary.api.config.MissingValuePolicy
 import org.pnfolder.pnlibrary.api.config.UnknownValuePolicy
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import java.io.File
 import java.util.function.UnaryOperator
-import java.util.logging.Level
-import java.util.logging.Logger
 
 /**
  * Loads typed YAML and synchronizes it with code-defined defaults.
@@ -31,7 +30,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     private val file: File,
     private val defaults: T,
     private val codec: ConfigCodec<T>,
-    private val logger: Logger,
+    private val logger: PnLogger,
     private val validator: ConfigValueValidator<T> = ConfigValueValidator { emptyList() },
     private val options: ConfigOptions = ConfigOptions.DEFAULT,
 ) : ManagedConfig<T> {
@@ -190,7 +189,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val value = try {
             codec.decode(content)
         } catch (error: Exception) {
-            logger.log(Level.SEVERE, "Не удалось прочитать ${file.name}: ${error.message}", error)
+            logger.error("Не удалось прочитать ${file.name}: ${error.message}", error)
             throw error
         }
         val problems = validator.validate(value)

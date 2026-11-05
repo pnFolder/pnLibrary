@@ -7,24 +7,26 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
 import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
+import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
+import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
-import java.util.logging.Level
-import java.util.logging.Logger
 
 /** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
 class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
+    private val logging: PlatformLogging = object : PlatformLogging {},
 ) : ConfigurationRuntime {
     private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
@@ -51,7 +53,7 @@ class ConfigurationServiceImpl(
                 owner = owner,
                 pluginId = pluginId,
                 directory = ownerDirectory(owner).toAbsolutePath().normalize(),
-                logger = ownerLogger(owner),
+                logger = PlatformPnLogger(logging, owner, pluginId.value),
             )
         }
     }
@@ -72,14 +74,11 @@ class ConfigurationServiceImpl(
     private fun ownerDirectory(owner: Any): Path =
         platform.ownerDataFolder(owner) ?: Paths.get("plugins", platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
 
-    private fun ownerLogger(owner: Any): Logger =
-        platform.ownerLogger(owner) ?: Logger.getLogger(platform.ownerDetails(owner)["id"] ?: owner.javaClass.name)
-
     private inner class Scope(
         private val owner: Any,
         private val pluginId: PluginId,
         private val directory: Path,
-        private val logger: Logger,
+        private val logger: PnLogger,
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val announcements = mutableListOf<AutoCloseable>()
@@ -142,7 +141,7 @@ class ConfigurationServiceImpl(
             val announced = try {
                 fileListener?.invoke(file) ?: return
             } catch (error: Exception) {
-                logger.log(Level.WARNING, "Диагностика не получила файл ${file.path}: ${error.message}", error)
+                logger.warning("Диагностика не получила файл ${file.path}: ${error.message}", error)
                 return
             }
             val keep = synchronized(handles) { !scopeClosed.get() && announcements.add(announced) }

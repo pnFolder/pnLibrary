@@ -26,7 +26,7 @@ internal class CurrencyIntegration(
         if (registration != null || !context.plugin.server.pluginManager.isPluginEnabled(pluginName)) return
         val provider = createProvider(context.plugin) ?: return
         registration = context.runtime.library.currencyProviders.register(PluginId.of(providerId), currencyName, provider)
-        context.plugin.logger.info("$pluginName currency connected as $providerId:$currencyName")
+        context.runtime.library.logging.logger(context.plugin, "pnLibrary").info("$pluginName currency connected as $providerId:$currencyName")
     }
 
     override fun close() {

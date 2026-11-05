@@ -25,7 +25,7 @@ internal class RuntimeFeatureSet(
     logging: PlatformLogging,
 ) {
     val services = ServiceRegistry()
-    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership)
+    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership, logging)
     val updates = UpdateServiceImpl(
         logging, platform.ownership, platform.ownership, platform.identity, platform.readiness, dataFolder,
         ConsoleStyle.THEME,

@@ -4,8 +4,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.config.*
+import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
+import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger
 import java.nio.file.Path
-import java.util.logging.Logger
 
 class CodeFirstYamlTest {
     @TempDir lateinit var directory: Path
@@ -69,7 +70,7 @@ class CodeFirstYamlTest {
             override fun decode(yaml: String) = Value(Regex("port: (\\d+)").find(yaml)?.groupValues?.get(1)?.toInt()
                 ?: error("port is missing"))
         }
-        val managed = CodeFirstYaml(file, Value(3306), codec, Logger.getAnonymousLogger(),
+        val managed = CodeFirstYaml(file, Value(3306), codec, PlatformPnLogger(object : PlatformLogging {}, "test", "test"),
             ConfigValidatorBuilder<Value>().require("port", "invalid") { it.port in 1..65535 }.build())
 
         assertEquals(3306, managed.loadValue().port)

@@ -204,6 +204,11 @@ public final class org/pnfolder/pnlibrary/spi/platform/PlatformPlugins {
 	public final fun versions ()Ljava/util/Map;
 }
 
+public final class org/pnfolder/pnlibrary/spi/platform/PlatformPnLogger : org/pnfolder/pnlibrary/api/logging/PnLogger {
+	public fun <init> (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Ljava/lang/String;)V
+	public fun log (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;Z)V
+}
+
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformReadiness {
 	public fun whenServerReady (Ljava/lang/Runnable;)V
 }
