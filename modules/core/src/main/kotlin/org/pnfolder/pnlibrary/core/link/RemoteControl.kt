@@ -43,24 +43,23 @@ class RemoteReplies {
 }
 
 /** Sends update controls to another server, from a game server through the proxy or from the proxy itself. */
-object RemoteControl {
+class RemoteControl(private val link: Link) {
     /**
      * Asks [target] to do [action]. [onResult] gets the answer, or a failure after a timeout.
      *
      * @return null when the request was sent, otherwise why it could not be
      */
     fun send(target: String, action: RemoteAction, product: String?, actor: String, onResult: (RemoteResult) -> Unit): String? {
-        val key = LinkHub.key ?: return "Связь выключена: нет файла link.key."
+        val key = link.key ?: return "Связь выключена: нет файла link.key."
         if (action.needsProduct && product.isNullOrBlank()) return "Нужно указать плагин."
-        val fromProxy = LinkHub.transport != null
+        val fromProxy = link.onProxy
         val request = RemoteRequest(
             UUID.randomUUID(), target, if (fromProxy) LinkNames.PROXY_ORIGIN else "", actor, action, product?.takeIf { it.isNotBlank() }, Instant.now(),
         )
         val bytes = LinkCodec.encodeRequest(request, key)
-        LinkHub.replies.expect(request.id, onResult)
-        val sent = LinkHub.transport?.send(target, bytes) ?: LinkHub.uplink?.invoke(bytes) ?: false
-        if (!sent) {
-            LinkHub.replies.cancel(request.id)
+        link.replies.expect(request.id, onResult)
+        if (!link.send(target, bytes)) {
+            link.replies.cancel(request.id)
             return if (fromProxy) "Сервер $target недоступен." else "Некому передать запрос: на сервере нет игроков онлайн."
         }
         return null

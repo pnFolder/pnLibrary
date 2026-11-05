@@ -7,8 +7,17 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-/** The questions this server asked and has no answer to yet. */
-class DataClient(private val timeoutSeconds: Long = TIMEOUT_SECONDS) {
+/**
+ * The questions this server asked and has no answer to yet.
+ *
+ * @param key the shared key, or null when the link is off
+ * @param uplink sends a question to the proxy; false when nobody can carry it
+ */
+class DataClient(
+    private val key: ByteArray?,
+    private val timeoutSeconds: Long = TIMEOUT_SECONDS,
+    private val uplink: (ByteArray) -> Boolean,
+) {
     private class Pending(val future: CompletableFuture<String>) {
         val pieces = ConcurrentHashMap<Int, ByteArray>()
     }
@@ -22,7 +31,6 @@ class DataClient(private val timeoutSeconds: Long = TIMEOUT_SECONDS) {
      */
     fun call(target: String, viewer: String, method: String, args: String): CompletableFuture<String> {
         val future = CompletableFuture<String>()
-        val key = LinkHub.key
         if (key == null) {
             future.completeExceptionally(DataException("Связь выключена: нет файла link.key."))
             return future
@@ -34,8 +42,7 @@ class DataClient(private val timeoutSeconds: Long = TIMEOUT_SECONDS) {
             return future
         }
         waiting[call.id] = Pending(future)
-        val sent = LinkHub.uplink?.invoke(bytes) ?: false
-        if (!sent) {
+        if (!uplink(bytes)) {
             waiting.remove(call.id)
             future.completeExceptionally(DataException("Некому передать запрос: на этом сервере нет игроков онлайн."))
             return future

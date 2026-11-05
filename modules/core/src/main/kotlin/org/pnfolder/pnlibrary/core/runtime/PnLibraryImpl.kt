@@ -243,8 +243,7 @@ internal class PnLibraryImpl(
 
     override fun mountableCommand(name: String): CommandDefinition? = mountable[name]
 
-    /** Runs a command for a viewer on another server, or returns `null` when this platform cannot dispatch it. */
-    internal fun dispatchCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>? =
+    override fun dispatchCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>? =
         (commands as? PlatformCommandDispatcher)?.execute(command, context)
 
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =

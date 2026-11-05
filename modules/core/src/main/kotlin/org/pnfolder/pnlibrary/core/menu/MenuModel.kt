@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.menu
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.core.link.Link
 import java.util.UUID
 
 /**
@@ -144,4 +145,7 @@ interface MenuHost : PluginDirectory {
 
     /** Opens the menu of the server called [target] for [viewer]; false when that is not possible from here. */
     fun openRemote(viewer: MenuViewer, target: String): Boolean
+
+    /** This server's link to the rest of the network; off where the platform has none. */
+    val link: Link get() = Link.OFF
 }

@@ -12,19 +12,18 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
-import org.pnfolder.pnlibrary.core.commands.events.resolve
 import org.pnfolder.pnlibrary.core.commands.groups.GroupsCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
+import org.pnfolder.pnlibrary.core.lifecycle.dispatchRuntimeCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
-import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 import java.util.Collections
 import java.util.UUID
-import java.util.concurrent.CompletionStage
 import java.util.concurrent.TimeUnit
 
 /**
@@ -46,10 +45,7 @@ import java.util.concurrent.TimeUnit
  * The proxy answers to `/pnproxy` and `/pnp`, not `/pn`, so it never hides the `/pn` of a game server; the text and
  * buttons are written with `/pn` and the platform adapters show them as `/pnproxy` (see [ProxyCommandNames]).
  */
-class ProxyControlCommand(
-    private val library: PnLibrary,
-    private val dispatch: (CommandDefinition, CommandContext) -> CompletionStage<Void>? = { _, _ -> null },
-) {
+class ProxyControlCommand(private val library: PnLibrary, private val link: Link) {
     private val built: CommandDefinition by lazy { build() }
 
     /** Registers the command for this library runtime. */
@@ -73,7 +69,8 @@ class ProxyControlCommand(
             }
         }
         val context = CommandContext(sender, words.drop(1), ProxyCommandNames.NAME, words.last())
-        val stage = dispatch(built, context) ?: return ChatKit(ChatReader.PLAYER).notice(ChatNotice(ChatTone.FAILURE, "Команды прокси сейчас недоступны."))
+        val stage = library.dispatchRuntimeCommand(built, context)
+            ?: return ChatKit(ChatReader.PLAYER).notice(ChatNotice(ChatTone.FAILURE, "Команды прокси сейчас недоступны."))
         stage.toCompletableFuture().get(RUN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         return printed.toList()
     }
@@ -93,14 +90,14 @@ class ProxyControlCommand(
             library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
-            mount("servers", ServersCommand(ServersCommand.fromReports()).definition())
-            mount("groups", GroupsCommand(ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }, withProxy()).definition())
+            mount("servers", ServersCommand(link, ServersCommand.fromReports(link)).definition())
+            mount("groups", GroupsCommand(link, withProxy()).definition())
         }
     }
 
     /** The servers that reported and the proxy itself, which groups know as [ServerGroups.PROXY]. */
     private fun withProxy(): () -> List<NetworkServer> {
-        val servers = ServersCommand.fromReports()
+        val servers = ServersCommand.fromReports(link)
         return { listOf(NetworkServer(ServerGroups.PROXY, true, LinkReports.build(library, "proxy", 0))) + servers() }
     }
 

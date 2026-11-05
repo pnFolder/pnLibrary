@@ -59,7 +59,8 @@
 
 ### 2026-11-05 (стиль по образцу Elytrium)
 - Изучены LimboAPI, LimboAuth, LimboFilter и LirTitles, правила записаны в «Как должен читаться код». Меню Bukkit разделено по ролям (`MenuSessions`, `BukkitMenuSession`, `MenuListener`, `MenuInventories`), флаги заменены методами. `PnLibraryImpl` переписан как сценарий запуска без псевдонимов (320 → 284). Убраны 124 однострочных KDoc над `override` вне публичного API. Проверено: `catch (Throwable)` почти везде прибирает и пробрасывает, это оставлено; `lateinit` в основном коде нет.
-- Дальше: убрать глобальные `object` с изменяемым состоянием: `LinkHub` (16 файлов), `ProxyMenuCommands.runner`, `RemoteMenus.data`, `DisplayZone.zone`. Для `LinkHub` сначала перенести регистрацию прокси-команд из `PnLibraryLauncher` в рантаймы Velocity/Bungee, потом передавать связь через конструкторы. После этого — комментарии-пересказы над `private`/`internal` (около 600, только вручную).
+- Глобальный `LinkHub` заменён классом `Link`: его создаёт рантайм платформы (`openLink` на Bukkit, `connectLink` на Velocity/Bungee) и передаёт через конструкторы командам, меню (`MenuHost.link`) и слушателям. `/pnproxy` теперь регистрирует рантайм прокси, а не `PnLibraryLauncher`; команда запускается через `PnLibrary.dispatchRuntimeCommand`. Убраны `ProxyMenuCommands.runner` и `RemoteMenus.data`. На живой сети (прокси + сервер) не проверялось.
+- Дальше: `DisplayZone.zone` (часовой пояс, 16 файлов, задаётся один раз при старте); комментарии-пересказы над `private`/`internal` (около 600, только вручную).
 
 ### 2026-11-05 (документы)
 - `from<R>(...)` в корне группы плейсхолдеров без второго типа. Переписаны `docs/placeholders.md` и `placeholders-example.md` под дерево, обновлены README (команды) и CHANGELOG (раздел `next`). `check` зелёный. Не сделано: расширить `tasks.md`, `diagnostics.md`, `metrics.md`; проверка на живом сервере; API 2 и релиз `0.0.1-dev.7` ждут решения.

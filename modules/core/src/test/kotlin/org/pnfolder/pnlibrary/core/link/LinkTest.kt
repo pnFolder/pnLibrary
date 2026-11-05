@@ -39,8 +39,9 @@ class LinkTest {
 
     @Test
     fun `only a valid report from a server is remembered`() {
-        val registry = LinkRegistry()
-        val receiver = LinkReceiver(key, registry)
+        val link = Link(key)
+        val registry = link.registry
+        val receiver = LinkReceiver(link)
         val message = LinkCodec.encode(report, key)
 
         assertFalse(receiver.receive("lobby", fromServer = false, message = message))
@@ -48,7 +49,7 @@ class LinkTest {
         assertTrue(registry.all().isEmpty())
         assertTrue(receiver.receive("lobby", fromServer = true, message = message))
         assertNotNull(registry.get("LOBBY"))
-        assertFalse(LinkReceiver(null, registry).receive("lobby", true, message))
+        assertFalse(LinkReceiver(Link(null)).receive("lobby", true, message))
     }
 
     @Test
@@ -99,12 +100,11 @@ class LinkTest {
     @Test
     fun `the proxy passes a request to its target and the answer back to who asked`() {
         val sent = mutableListOf<Pair<String, ByteArray>>()
-        val replies = RemoteReplies()
         val transport = LinkTransport { server, bytes ->
             sent += server to bytes
             server != "gone"
         }
-        val receiver = LinkReceiver(key, LinkRegistry(), transport = transport, replies = replies)
+        val receiver = LinkReceiver(Link(key, transport = transport))
 
         assertTrue(receiver.receive("lobby", true, LinkCodec.encodeRequest(request, key)))
         val forwarded = LinkCodec.decodeRequest(sent.single().second, key)!!
@@ -125,10 +125,10 @@ class LinkTest {
 
     @Test
     fun `an answer to the proxy itself reaches whoever waits for it`() {
-        val replies = RemoteReplies()
+        val link = Link(key)
         var got: RemoteResult? = null
-        replies.expect(request.id) { got = it }
-        val receiver = LinkReceiver(key, LinkRegistry(), replies = replies)
+        link.replies.expect(request.id) { got = it }
+        val receiver = LinkReceiver(link)
 
         receiver.receive("games", true, LinkCodec.encodeResult(RemoteResult(request.id, LinkNames.PROXY_ORIGIN, true, "ok", Instant.now()), key))
 
@@ -162,10 +162,8 @@ class LinkTest {
     @Test
     fun `the asker gets the answer when the last piece arrives and an error when the server refuses`() {
         val asked = mutableListOf<DataCall>()
-        LinkHub.key = key
-        LinkHub.uplink = { bytes -> asked.add(LinkCodec.decodeCall(bytes, key)!!); true }
-        try {
-            val client = DataClient()
+        run {
+            val client = DataClient(key) { bytes -> asked.add(LinkCodec.decodeCall(bytes, key)!!); true }
             val good = client.call("games", "Admin", "version", "{}")
             val bad = client.call("games", "Admin", "plan", "{}")
             assertFalse(good.isDone)
@@ -180,16 +178,13 @@ class LinkTest {
             DataChunks.split(asked[1].id, "lobby", false, "нет доступа", key)!!.forEach { client.accept(LinkCodec.decodeChunk(it, key)!!) }
             assertTrue(bad.isCompletedExceptionally)
             assertEquals("нет доступа", assertThrows(java.util.concurrent.ExecutionException::class.java) { bad.get() }.cause?.message)
-        } finally {
-            LinkHub.uplink = null
-            LinkHub.key = null
         }
     }
 
     @Test
     fun `the proxy passes a question on, takes the answer back and tells the asker when the server is gone`() {
         val sent = mutableListOf<Pair<String, ByteArray>>()
-        val receiver = LinkReceiver(key, LinkRegistry(), transport = LinkTransport { server, bytes -> sent.add(server to bytes); server != "gone" })
+        val receiver = LinkReceiver(Link(key, transport = LinkTransport { server, bytes -> sent.add(server to bytes); server != "gone" }))
 
         assertTrue(receiver.receive("lobby", true, LinkCodec.encodeCall(call, key)))
         assertEquals("games", sent.single().first)
@@ -212,7 +207,7 @@ class LinkTest {
     fun `the proxy answers a question for itself through its handler`() {
         val sent = mutableListOf<Pair<String, ByteArray>>()
         val receiver = LinkReceiver(
-            key, LinkRegistry(), transport = LinkTransport { server, bytes -> sent.add(server to bytes); true },
+            Link(key, transport = LinkTransport { server, bytes -> sent.add(server to bytes); true }),
             data = DataHandler { question, reply -> reply(true, "answer to ${question.method}") },
         )
 

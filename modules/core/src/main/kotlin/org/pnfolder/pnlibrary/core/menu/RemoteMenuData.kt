@@ -24,7 +24,6 @@ import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.DataException
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
@@ -121,7 +120,7 @@ object MenuCalls {
  */
 class RemoteMenuData(
     private val target: String,
-    private val client: DataClient = LinkHub.data,
+    private val client: DataClient,
 ) : MenuData {
     private class Remembered(val at: Long, val json: String)
 

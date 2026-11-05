@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.lifecycle
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
@@ -13,6 +14,7 @@ import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
+import java.util.concurrent.CompletionStage
 
 /** Private runtime capabilities, deliberately absent from the consumer API facade. */
 internal interface RuntimeResources {
@@ -21,6 +23,9 @@ internal interface RuntimeResources {
 
     /** A shared command the platform puts under its own control command (`events`, `debug`), or `null`. */
     fun mountableCommand(name: String): CommandDefinition?
+
+    /** Runs a registered command for a viewer who is not on this server, or `null` when this platform cannot. */
+    fun dispatchCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>?
 
     /** The notice for an administrator who has just joined: recent problems from the journal, or nothing. */
     fun journalJoinNotice(): List<Component>
@@ -87,6 +92,10 @@ fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistr
  * command instead (`events` and `debug` under Bukkit `/pn`). `null` where the command is registered separately.
  */
 fun PnLibrary.mountableCommand(name: String): CommandDefinition? = (this as? RuntimeResources)?.mountableCommand(name)
+
+/** Runs a registered command for a viewer on another server; `null` when the platform cannot dispatch it. */
+fun PnLibrary.dispatchRuntimeCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>? =
+    (this as? RuntimeResources)?.dispatchCommand(command, context)
 
 /** Builds a pnLibrary-owned command; consumer plugins use ModuleContext.registerCommand. */
 fun PnLibrary.registerRuntimeCommand(

@@ -4,18 +4,16 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkNames
 import org.pnfolder.pnlibrary.core.link.NetworkReport
 import org.pnfolder.pnlibrary.core.link.RemoteAction
-import org.pnfolder.pnlibrary.core.link.RemoteControl
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 
 internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     private val comparer = ServerGroups { null }
 
     /** The groups live on the proxy; this asks it from a menu that is not its own. */
-    private val proxyData by lazy { RemoteMenuData(LinkNames.PROXY) }
+    private val proxyData by lazy { RemoteMenuData(LinkNames.PROXY, host.link.data) }
 
     /** The groups of servers the proxy keeps; a click opens one group. */
     fun groups(player: MenuViewer, page: Int): Unit = withGroups(player) { all, map ->
@@ -47,7 +45,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
 
     /** Reads the groups from the proxy away from the server thread, then runs [then] on it with them and the last network map. */
     private fun withGroups(player: MenuViewer, then: (List<ServerGroups.Group>, NetworkReport) -> Unit) {
-        val map = LinkHub.network?.report
+        val map = host.link.network?.report
         if (map == null) {
             routes.home(player)
             return
@@ -286,7 +284,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
             val products = if (action == RemoteAction.UPDATE) state.outdated else listOf(null)
             products.forEach { product ->
                 val label = product?.let { "${ServerGroups.label(state.server)} · $it" } ?: ServerGroups.label(state.server)
-                val error = RemoteControl.send(state.server, action, product, player.name) { result ->
+                val error = host.link.control.send(state.server, action, product, player.name) { result ->
                     sync {
                         if (player.online) tell(player, if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, "$label: ${result.text}")
                     }

@@ -11,9 +11,10 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.CommandTreeRouter
+import org.pnfolder.pnlibrary.core.link.Link
 
 class ProxyControlCommandTest {
-    private val definition = ProxyControlCommand(mock(PnLibrary::class.java)).definition()
+    private val definition = ProxyControlCommand(mock(PnLibrary::class.java), Link.OFF).definition()
 
     @Test
     fun `the proxy has one pn command with other labels for the case that pn is taken`() {

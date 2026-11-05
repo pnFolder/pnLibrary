@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
 internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -106,8 +105,8 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
     }
 
     private fun network(builder: MenuBuilder) {
-        if (!remote && (LinkHub.network != null || LinkHub.key != null)) {
-            val received = LinkHub.network
+        val received = host.link.network
+        if (!remote && (received != null || host.link.enabled)) {
             val about = "Прокси и другие серверы сети: их плагины и обновления."
             val item = if (received == null) {
                 section(Icons.OVERVIEW, "ENDER_EYE", "Сеть", about, "Данные" to "ещё не пришли")

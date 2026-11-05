@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu
 import org.pnfolder.pnlibrary.core.menu.MenuHost
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
@@ -16,6 +16,7 @@ internal class BukkitMenuHost(
     private val library: PnLibrary,
     private val replies: BukkitCommandReplies,
     private val adapter: BukkitMenuAdapter,
+    override val link: Link,
 ) : MenuHost {
     override fun sync(action: () -> Unit) = replies.onServerThread(action)
 
@@ -41,8 +42,8 @@ internal class BukkitMenuHost(
     }
 
     override fun openRemote(viewer: MenuViewer, target: String): Boolean {
-        if (LinkHub.key == null) return false
-        remotes.computeIfAbsent(target.lowercase()) { LibraryMenu(RemoteMenuData(target), this, target) }.open(viewer)
+        if (!link.enabled) return false
+        remotes.computeIfAbsent(target.lowercase()) { LibraryMenu(RemoteMenuData(target, link.data), this, target) }.open(viewer)
         return true
     }
 

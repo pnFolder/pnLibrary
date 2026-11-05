@@ -13,12 +13,10 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskLabels
-import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.LinkNames
-import org.pnfolder.pnlibrary.core.link.LinkRegistry
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.RemoteAction
-import org.pnfolder.pnlibrary.core.link.RemoteControl
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import java.time.Duration
 import java.time.Instant
@@ -40,7 +38,7 @@ import java.time.Instant
  *
  * @param servers the servers to show now
  */
-class ServersCommand(private val servers: () -> List<NetworkServer>) {
+class ServersCommand(private val link: Link, private val servers: () -> List<NetworkServer>) {
     /** Builds the command; it is mounted under `/pn` as `servers`. */
     fun definition(): CommandDefinition = command("servers") {
         permission(PERMISSION, "pnlibrary.admin")
@@ -86,7 +84,7 @@ class ServersCommand(private val servers: () -> List<NetworkServer>) {
         val name = context.get<String>("server")
         val target = servers().firstOrNull { it.name.equals(name, ignoreCase = true) }?.name ?: name
         val sender = context.sender
-        val error = RemoteControl.send(target, action, product, sender.name) { result ->
+        val error = link.control.send(target, action, product, sender.name) { result ->
             sender.send(kit.text("$target: ${result.text}", if (result.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
         }
         sender.send(kit.text(error ?: "Запрос отправлен на $target…", if (error == null) ChatPalette.LABEL else ChatPalette.DANGER))
@@ -100,7 +98,7 @@ class ServersCommand(private val servers: () -> List<NetworkServer>) {
         if (all.isEmpty()) {
             lines += kit.note("Пока ни один сервер не прислал отчёт.", ChatPalette.FAINT)
             lines += kit.note(
-                if (LinkHub.key != null) {
+                if (link.enabled) {
                     "Скопируйте файл link.key из папки pnLibrary прокси в такую же папку игровых серверов и перезапустите их."
                 } else {
                     "Связь выключена: нет файла link.key."
@@ -172,13 +170,13 @@ class ServersCommand(private val servers: () -> List<NetworkServer>) {
         private val STALE: Duration = Duration.ofMinutes(2)
 
         /** The servers a proxy heard from, as they are listed there. */
-        fun fromReports(registry: LinkRegistry = LinkHub.registry): () -> List<NetworkServer> = {
-            registry.all().map { NetworkServer(it.name, Duration.between(it.receivedAt, Instant.now()) < STALE, it.report) }
+        fun fromReports(link: Link): () -> List<NetworkServer> = {
+            link.registry.all().map { NetworkServer(it.name, Duration.between(it.receivedAt, Instant.now()) < STALE, it.report) }
         }
 
         /** The proxy and the servers of the network map a game server received, with the proxy first. */
-        fun fromNetworkMap(): () -> List<NetworkServer> = {
-            LinkHub.network?.report?.let { listOf(NetworkServer(LinkNames.PROXY, true, it.proxy)) + it.servers }.orEmpty()
+        fun fromNetworkMap(link: Link): () -> List<NetworkServer> = {
+            link.network?.report?.let { listOf(NetworkServer(LinkNames.PROXY, true, it.proxy)) + it.servers }.orEmpty()
         }
     }
 }

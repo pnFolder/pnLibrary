@@ -31,7 +31,6 @@ import org.pnfolder.pnlibrary.core.link.DataCall
 import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.lang.reflect.Proxy
@@ -124,9 +123,8 @@ class MenuDataTest {
             }
         } as MenuData
         val server = MenuDataServer(data) { it.run() }
-        val client = DataClient()
-        LinkHub.key = key
-        LinkHub.uplink = { bytes ->
+        lateinit var client: DataClient
+        client = DataClient(key) { bytes ->
             val call: DataCall = LinkCodec.decodeCall(bytes, key)!!
             server.handle(call) { ok, text ->
                 DataChunks.split(call.id, "lobby", ok, text, key)!!.forEach { client.accept(LinkCodec.decodeChunk(it, key)!!) }
@@ -137,13 +135,7 @@ class MenuDataTest {
     }
 
     private fun <T> over(vararg answers: Pair<String, Any?>, check: (RemoteMenuData) -> T): T {
-        val remote = connected(*answers)
-        try {
-            return check(remote)
-        } finally {
-            LinkHub.uplink = null
-            LinkHub.key = null
-        }
+        return check(connected(*answers))
     }
 
     @Test

@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 
@@ -47,6 +48,7 @@ internal class BukkitControlCommand(
     private val plugin: Plugin,
     private val library: PnLibrary,
     private val currencies: CurrencyProviderRegistry,
+    private val link: Link = Link.OFF,
 ) {
     private val feedback = BukkitSettingFeedback(plugin)
     private val replies = BukkitCommandReplies(plugin, library)
@@ -61,7 +63,7 @@ internal class BukkitControlCommand(
     )
     private val updates = BukkitUpdateFlow(plugin, library, catalog, replies)
     private val support = BukkitSupportCommands(plugin, library, replies)
-    private val menu = PluginsMenu(plugin, library, replies)
+    private val menu = PluginsMenu(plugin, library, replies, link)
 
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
@@ -76,7 +78,7 @@ internal class BukkitControlCommand(
         library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
         mount("bus", EventBusCommand(library).definition())
         mount("tasks", TaskCommand(library).definition())
-        mount("servers", ServersCommand(ServersCommand.fromNetworkMap()).definition())
+        mount("servers", ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition())
         mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
         literal("support") {
             permission(ADMIN, VIEW)

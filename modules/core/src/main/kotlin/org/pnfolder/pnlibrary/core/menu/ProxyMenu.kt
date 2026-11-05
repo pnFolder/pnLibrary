@@ -1,18 +1,11 @@
 package org.pnfolder.pnlibrary.core.menu
 
-import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
-import org.pnfolder.pnlibrary.core.link.LinkHub
-import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
+import org.pnfolder.pnlibrary.core.link.Link
+import java.util.UUID
 import java.util.concurrent.Executors
-
-/** The way a proxy runs a chat command for a viewer on another server, kept apart so the command package does not depend on the menu. */
-object ProxyMenuCommands {
-    /** Runs a chat command for a viewer and returns what it printed; set by the runtime on a proxy. */
-    @Volatile
-    var runner: ((ViewerInfo, String) -> List<Component>)? = null
-}
 
 /** The permissions the library checks in its menu; the viewer's server tells the server it asks which of them the viewer holds. */
 object MenuPermissions {
@@ -35,9 +28,11 @@ object ProxyMenu {
      * Makes the handler that answers game servers.
      *
      * @param library the proxy's library
+     * @param link the proxy's link, which keeps the server groups
+     * @param control the proxy's `/pn`, which runs the chat commands behind the buttons
      * @param describe the plugin behind a registration owner, or null
      */
-    fun server(library: PnLibrary, describe: (Any?) -> OwnerInfo?): MenuDataServer {
+    fun server(library: PnLibrary, link: Link, control: ProxyControlCommand, describe: (Any?) -> OwnerInfo?): MenuDataServer {
         val directory = object : PluginDirectory {
             override fun owner(owner: Any?): OwnerInfo? = describe(owner)
 
@@ -47,10 +42,10 @@ object ProxyMenu {
             override fun ownerOf(type: Class<*>?): OwnerInfo? = null
         }
         val run = { viewer: ViewerInfo, line: String ->
-            ProxyMenuCommands.runner?.invoke(viewer, line).orEmpty().map(ProxyCommandNames::rewrite)
+            val viewerId = UUID.nameUUIDFromBytes(viewer.name.toByteArray())
+            control.run(viewerId, viewer.name, viewer.permissions::contains, line).map(ProxyCommandNames::rewrite)
         }
         val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
-        val groups = ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }
-        return MenuDataServer(LocalMenuData(library, directory, run, groups), executor)
+        return MenuDataServer(LocalMenuData(library, directory, run, link.groups()), executor)
     }
 }

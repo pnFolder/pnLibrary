@@ -6,15 +6,13 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.plugin.messaging.PluginMessageListener
 import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.bukkit.commands.RemoteMenus
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.DataChunks
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import java.time.Instant
 
 /**
  * Sends this server's report to the proxy over the link channel, every half minute while a player is online.
@@ -22,28 +20,22 @@ import java.time.Instant
  * A plugin message needs a player connection to travel on, so a server with nobody online stays silent and the
  * proxy marks it as out of touch. Without the shared `link.key` the reporter does nothing.
  */
-internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val library: PnLibrary) : PluginMessageListener {
+internal class BukkitLinkReporter(
+    private val plugin: JavaPlugin,
+    private val library: PnLibrary,
+    private val link: Link,
+) : PluginMessageListener {
     private var task: BukkitTask? = null
-    private var key: ByteArray? = null
     private val executor = RemoteExecutor(library)
 
     fun start() {
-        val key = LinkSecret.read(plugin.dataFolder.toPath()) ?: return
-        this.key = key
-        LinkHub.key = key
-        LinkHub.uplink = { bytes ->
-            val carrier = Bukkit.getOnlinePlayers().firstOrNull()
-            carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
-            carrier != null
-        }
+        val key = link.key ?: return
         plugin.server.messenger.registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL)
         task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { report(key) }, FIRST_DELAY_TICKS, PERIOD_TICKS)
     }
 
     fun stop() {
-        LinkHub.uplink = null
-        LinkHub.key = null
         task?.cancel()
         task = null
         runCatchingNonFatal { plugin.server.messenger.unregisterIncomingPluginChannel(plugin, LinkCodec.CHANNEL) }
@@ -53,9 +45,9 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
     /** Keeps the network map that the proxy sent; a map without the right signature is dropped. */
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         if (channel != LinkCodec.CHANNEL) return
-        val key = key ?: return
+        val key = link.key ?: return
         LinkCodec.decodeNetwork(message, key)?.let {
-            LinkHub.network = LinkHub.ReceivedNetwork(it, Instant.now())
+            link.remember(it)
             return
         }
         LinkCodec.decodeRequest(message, key)?.let { request ->
@@ -65,16 +57,16 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
             return
         }
         LinkCodec.decodeCall(message, key)?.let { call ->
-            val data = RemoteMenus.data
+            val data = link.calls
             if (data == null) answer(player, call.id, call.origin, false, "Меню этого сервера не готово.", key)
             else data.handle(call) { ok, text -> answer(player, call.id, call.origin, ok, text, key) }
             return
         }
         LinkCodec.decodeChunk(message, key)?.let { chunk ->
-            LinkHub.data.accept(chunk)
+            link.data.accept(chunk)
             return
         }
-        LinkCodec.decodeResult(message, key)?.let { LinkHub.replies.complete(it) }
+        LinkCodec.decodeResult(message, key)?.let { link.replies.complete(it) }
     }
 
     /** Sends the answer to a question back through the proxy; it can be called from any thread. */
@@ -100,4 +92,14 @@ internal class BukkitLinkReporter(private val plugin: JavaPlugin, private val li
         const val FIRST_DELAY_TICKS = 100L
         const val PERIOD_TICKS = 600L
     }
+}
+
+/** The link of a game server: it talks to the proxy through any player online, so nothing leaves while the server is empty. */
+internal fun openLink(plugin: JavaPlugin): Link {
+    val key = LinkSecret.read(plugin.dataFolder.toPath()) ?: return Link.OFF
+    return Link(key, uplink = { bytes ->
+        val carrier = Bukkit.getOnlinePlayers().firstOrNull()
+        carrier?.sendPluginMessage(plugin, LinkCodec.CHANNEL, bytes)
+        carrier != null
+    })
 }

@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.LinkNames
 import org.pnfolder.pnlibrary.core.link.NetworkReport
 import org.pnfolder.pnlibrary.core.link.NetworkServer
@@ -12,7 +11,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** The servers of the network as the proxy last described them; a click opens one server. */
     fun network(player: MenuViewer, page: Int) {
-        val received = LinkHub.network
+        val received = host.link.network
         if (received == null) {
             routes.home(player)
             tell(player, ChatTone.INFO, "Прокси ещё не прислал карту сети.", "Она приходит, когда на сервере есть игрок. Попробуйте через минуту.")

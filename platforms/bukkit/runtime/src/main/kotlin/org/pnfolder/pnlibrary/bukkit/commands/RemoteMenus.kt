@@ -5,23 +5,16 @@ import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.ViewerInfo
 import java.lang.reflect.Proxy
 import java.util.concurrent.TimeUnit
 
 /**
- * What a Bukkit server answers when another server asks about its library.
+ * Runs a chat command for a viewer from another server: the buttons of a remote menu end up here.
  *
- * The menu of another server is built here, by the server the player stands on, from the answers of that server. This
- * object holds the part that answers: the handler of the incoming questions and the way a chat command runs for a
- * viewer from another server.
+ * The command runs as a console that holds only the viewer's permissions and collects what it prints.
  */
 internal object RemoteMenus {
-    /** Answers the questions other servers ask of this one, or null while the link is off. */
-    @Volatile
-    var data: MenuDataServer? = null
-
     /** Runs [command] for [viewer] on this server, on the server thread, and returns what it printed. */
     fun run(plugin: Plugin, viewer: ViewerInfo, command: String): List<Component> =
         if (Bukkit.isPrimaryThread()) execute(viewer, command)

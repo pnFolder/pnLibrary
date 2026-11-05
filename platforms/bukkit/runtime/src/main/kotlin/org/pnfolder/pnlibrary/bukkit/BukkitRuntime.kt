@@ -26,7 +26,8 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     fun start() {
         val audienceService = BukkitAudienceService(plugin)
         audiences = audienceService
-        val adapter = BukkitPlatformAdapter(plugin, audienceService)
+        val network = openLink(plugin)
+        val adapter = BukkitPlatformAdapter(plugin, audienceService, network)
         try {
             val runtime = PnLibraryRuntimeHost.start(plugin, adapter)
             host = runtime
@@ -35,7 +36,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
             integrations = optional
             plugin.server.pluginManager.registerEvents(optional, plugin)
             optional.start(runtime)
-            link = BukkitLinkReporter(plugin, runtime.library).also { it.start() }
+            link = BukkitLinkReporter(plugin, runtime.library, network).also { it.start() }
         } catch (error: Throwable) {
             stop()
             throw error

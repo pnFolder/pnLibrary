@@ -5,13 +5,13 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.link.LinkHub
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.LinkTransport
 import org.pnfolder.pnlibrary.core.link.NetworkPublisher
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
@@ -67,27 +67,25 @@ internal class VelocityRuntime(
         connectLink(started)
     }
 
-    /** Opens the plugin-message link to the backend servers and, when it is secured, starts announcing this proxy. */
+    /** Opens the link to the game servers, registers `/pnproxy` on it and, when it is secured, starts announcing this proxy. */
     private fun connectLink(started: PnLibraryRuntimeHost) {
-        val key = LinkSecret.readOrCreate(dataDirectory)
         val transport = LinkTransport { name, bytes ->
             server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
         }
-        LinkHub.key = key
-        LinkHub.folder = dataDirectory
-        LinkHub.transport = transport
-        val data = ProxyMenu.server(started.library) { instance ->
+        val network = Link(LinkSecret.readOrCreate(dataDirectory), dataDirectory, transport)
+        val control = ProxyControlCommand(started.library, network)
+        control.register()
+        val data = ProxyMenu.server(started.library, network, control) { instance ->
             instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
                 OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
             }
         }
-        val link = VelocityLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, data = data))
+        val link = VelocityLinkListener(LinkReceiver(network, RemoteExecutor(started.library), data))
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
         server.eventManager.register(owner, link)
         linkListener = link
-        if (key != null) {
-            val publisher = NetworkPublisher(started.library, key, { "Velocity ${server.version.version}" }, { server.playerCount },
-                groups = { ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }.all() })
+        if (network.enabled) {
+            val publisher = NetworkPublisher(started.library, network, { "Velocity ${server.version.version}" }, { server.playerCount })
             networkTask = server.scheduler.buildTask(owner, Runnable {
                 val message = publisher.message()
                 server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } }
@@ -110,8 +108,6 @@ internal class VelocityRuntime(
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
-        LinkHub.transport = null
-        LinkHub.key = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null

@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeUnit
 internal class BukkitPlatformAdapter(
     val plugin: Plugin,
     audienceService: BukkitAudienceService,
+    private val link: Link = Link.OFF,
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
@@ -151,7 +153,7 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders).definition()))
+            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders, link).definition()))
         }
     }
 

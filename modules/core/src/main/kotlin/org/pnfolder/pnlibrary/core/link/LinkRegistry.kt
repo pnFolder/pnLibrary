@@ -24,38 +24,3 @@ class LinkRegistry {
     /** Forgets every server. */
     fun clear() = entries.clear()
 }
-
-/** The one registry of this process: the platform listeners fill it and `/pn servers` reads it. */
-object LinkHub {
-    /** Servers heard from since the proxy started. */
-    val registry = LinkRegistry()
-
-    /** The pnLibrary folder of this proxy or server, where `link.key` and `groups.tsv` live. */
-    @Volatile
-    var folder: java.nio.file.Path? = null
-
-    /** The shared key, or null when the link is off. */
-    @Volatile
-    var key: ByteArray? = null
-
-    /** On a game server: sends bytes to the proxy through any player online; returns false when there is none. */
-    @Volatile
-    var uplink: ((ByteArray) -> Boolean)? = null
-
-    /** On the proxy: sends bytes to a game server by name. */
-    @Volatile
-    var transport: LinkTransport? = null
-
-    /** The questions asked of other servers from here and not yet answered. */
-    val data = DataClient()
-
-    /** The answers awaited for the requests made from here. */
-    val replies = RemoteReplies()
-
-    /** The latest network map this game server received from its proxy, or null when none has arrived. */
-    @Volatile
-    var network: ReceivedNetwork? = null
-
-    /** A network map and when it arrived. */
-    data class ReceivedNetwork(val report: NetworkReport, val receivedAt: Instant)
-}

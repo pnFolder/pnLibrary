@@ -8,9 +8,9 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.RemoteAction
-import org.pnfolder.pnlibrary.core.link.RemoteControl
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 
 /**
@@ -37,7 +37,8 @@ import org.pnfolder.pnlibrary.core.link.ServerGroups
  * @param groups the stored groups
  * @param servers the servers to compare with
  */
-class GroupsCommand(private val groups: ServerGroups, private val servers: () -> List<NetworkServer>) {
+class GroupsCommand(private val link: Link, private val servers: () -> List<NetworkServer>) {
+    private val groups = link.groups()
     private val pages = GroupsPages(groups, servers)
 
     /** Builds the command; it is mounted under `/pn` as `groups`. */
@@ -183,7 +184,7 @@ class GroupsCommand(private val groups: ServerGroups, private val servers: () ->
             products.forEach { product ->
                 val name = ServerGroups.label(state.server)
                 val label = product?.let { "$name · $it" } ?: name
-                val error = RemoteControl.send(state.server, action, product, sender.name) { result ->
+                val error = link.control.send(state.server, action, product, sender.name) { result ->
                     kit.notice(ChatNotice(if (result.ok) ChatTone.SUCCESS else ChatTone.FAILURE, label, result.text)).forEach(sender::send)
                 }
                 if (error == null) sent++ else notice(context, ChatTone.FAILURE, label, error)

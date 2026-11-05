@@ -7,25 +7,25 @@ import java.time.Instant
 /**
  * The proxy end that builds the signed network map sent to every game server.
  *
- * @param key the shared key
+ * @param link the proxy's link; it must have a key
  * @param platform names the proxy software and version
  * @param players counts the players on the proxy
  */
 class NetworkPublisher(
     private val library: PnLibrary,
-    private val key: ByteArray,
+    private val link: Link,
     private val platform: () -> String,
     private val players: () -> Int,
-    private val registry: LinkRegistry = LinkHub.registry,
-    private val groups: () -> List<ServerGroups.Group> = { emptyList() },
 ) {
+    private val key = requireNotNull(link.key) { "The network map is signed with the link key" }
+
     /** The message to send now; the same bytes go to every server. */
     fun message(now: Instant = Instant.now()): ByteArray {
-        val servers = registry.all().map {
+        val servers = link.registry.all().map {
             NetworkServer(it.name, Duration.between(it.receivedAt, now) < ONLINE, it.report)
         }
         val proxy = LinkReports.build(library, platform(), players(), now)
-        return LinkCodec.encodeNetwork(NetworkReport(proxy, servers, now, groups()), key)
+        return LinkCodec.encodeNetwork(NetworkReport(proxy, servers, now, link.groups().all()), key)
     }
 
     private companion object {
