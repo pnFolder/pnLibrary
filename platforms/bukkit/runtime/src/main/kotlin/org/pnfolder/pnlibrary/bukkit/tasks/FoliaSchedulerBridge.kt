@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.compat.Folia
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
+import org.pnfolder.pnlibrary.spi.tasks.RetirableCallback
 import java.time.Duration
 
 /**
@@ -47,10 +48,11 @@ internal class FoliaSchedulerBridge(private val plugin: Plugin) {
 
     private fun scheduleOnPlayer(player: Player, request: PlatformTaskRequest): Any? {
         val interval = request.interval
+        val retired = Runnable { (request.callback as? RetirableCallback)?.retire() }
         return when {
-            interval != null -> Folia.runOnRepeating(player, plugin, ticks(request.delay), ticks(interval), request.callback)
-            request.delay.isZero -> Folia.runOn(player, plugin, request.callback)
-            else -> Folia.runOnLater(player, plugin, ticks(request.delay), request.callback)
+            interval != null -> Folia.runOnRepeating(player, plugin, ticks(request.delay), ticks(interval), request.callback, retired)
+            request.delay.isZero -> Folia.runOn(player, plugin, request.callback, retired)
+            else -> Folia.runOnLater(player, plugin, ticks(request.delay), request.callback, retired)
         }
     }
 

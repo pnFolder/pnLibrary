@@ -317,6 +317,10 @@ public final class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class org/pnfolder/pnlibrary/spi/tasks/RetirableCallback {
+	public abstract fun retire ()V
+}
+
 public abstract class org/pnfolder/pnlibrary/spi/tasks/TrackingPlatformTaskAdapter : org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter {
 	public fun <init> ()V
 	public final fun close ()V

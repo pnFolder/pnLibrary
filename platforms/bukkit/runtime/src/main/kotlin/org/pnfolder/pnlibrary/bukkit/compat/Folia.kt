@@ -63,15 +63,15 @@ internal object Folia {
     fun runGlobalRepeating(plugin: Plugin, delayTicks: Long, periodTicks: Long, task: Runnable): Any? =
         globalRepeating.call(globalScheduler, plugin, consumer(task), delayTicks, periodTicks)
 
-    /** Runs [task] on the region of [entity]; returns `null` when the entity is already gone. */
-    fun runOn(entity: Entity, plugin: Plugin, task: Runnable): Any? =
-        entityNow.call(scheduler(entity), plugin, consumer(task), null)
+    /** Runs [task] on the region of [entity]; [retired] runs if the entity goes away first. Returns `null` when it is already gone. */
+    fun runOn(entity: Entity, plugin: Plugin, task: Runnable, retired: Runnable? = null): Any? =
+        entityNow.call(scheduler(entity), plugin, consumer(task), retired)
 
-    fun runOnLater(entity: Entity, plugin: Plugin, delayTicks: Long, task: Runnable): Any? =
-        entityDelayed.call(scheduler(entity), plugin, consumer(task), null, delayTicks)
+    fun runOnLater(entity: Entity, plugin: Plugin, delayTicks: Long, task: Runnable, retired: Runnable? = null): Any? =
+        entityDelayed.call(scheduler(entity), plugin, consumer(task), retired, delayTicks)
 
-    fun runOnRepeating(entity: Entity, plugin: Plugin, delayTicks: Long, periodTicks: Long, task: Runnable): Any? =
-        entityRepeating.call(scheduler(entity), plugin, consumer(task), null, delayTicks, periodTicks)
+    fun runOnRepeating(entity: Entity, plugin: Plugin, delayTicks: Long, periodTicks: Long, task: Runnable, retired: Runnable? = null): Any? =
+        entityRepeating.call(scheduler(entity), plugin, consumer(task), retired, delayTicks, periodTicks)
 
     /** Cancels a task returned by one of the `run` functions. */
     fun cancel(task: Any) {
