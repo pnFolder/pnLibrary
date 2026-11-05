@@ -19,19 +19,16 @@ import javax.crypto.spec.SecretKeySpec
  * sends bytes on the channel by hand cannot pose as a server.
  */
 object LinkCodec {
-    /** Plugin message channel of the link. */
     const val CHANNEL = "pnlibrary:link"
 
-    /** Most plugins one report carries; the rest are cut so the message stays under the plugin message limit. */
+    /** Longer lists are cut so the message stays under the plugin message limit. */
     const val MAX_PLUGINS = 150
 
-    /** Most plugins listed per server inside the network map. */
     const val MAX_NETWORK_PLUGINS = 40
 
-    /** Most bytes one page of a remote menu may take; a plugin message may not be larger than this. */
+    /** A plugin message may not be larger than this. */
     const val MAX_FRAME_BYTES = 32_000
 
-    /** Most servers the network map carries. */
     const val MAX_SERVERS = 30
 
     private const val MAX_GROUPS = 30
@@ -49,7 +46,6 @@ object LinkCodec {
     private const val MAX_TEXT = 200
     private val TOLERANCE: Duration = Duration.ofMinutes(2)
 
-    /** Encodes [report] and signs it with [key]. */
     fun encode(report: LinkReport, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(VERSION)
         writeReport(out, report, MAX_PLUGINS)
@@ -62,7 +58,7 @@ object LinkCodec {
             readReport(input).takeIf { fresh(it.sentAt, now) }
         }
 
-    /** Encodes the network map and signs it with [key]; the plugin lists are cut shorter so the whole map fits. */
+    /** Plugin lists are cut shorter than in a single report so the whole map fits in one message. */
     fun encodeNetwork(network: NetworkReport, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(NETWORK_VERSION)
         writeReport(out, network.proxy, MAX_NETWORK_PLUGINS)
@@ -112,7 +108,6 @@ object LinkCodec {
             NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 
-    /** Encodes a remote request and signs it with [key]. */
     fun encodeRequest(request: RemoteRequest, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(REQUEST_VERSION)
         out.writeLong(request.id.mostSignificantBits)
@@ -140,7 +135,6 @@ object LinkCodec {
             RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
         }
 
-    /** Encodes the answer to a remote request and signs it with [key]. */
     fun encodeResult(result: RemoteResult, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(RESULT_VERSION)
         out.writeLong(result.id.mostSignificantBits)
@@ -161,7 +155,6 @@ object LinkCodec {
             RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
         }
 
-    /** Encodes a question for another server and signs it with [key]. */
     fun encodeCall(call: DataCall, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CALL_VERSION)
         out.writeLong(call.id.mostSignificantBits)
@@ -191,7 +184,6 @@ object LinkCodec {
             DataCall(id, target, origin, viewer, method, args, sentAt)
         }
 
-    /** Encodes one piece of an answer and signs it with [key]. */
     fun encodeChunk(chunk: DataChunk, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CHUNK_VERSION)
         out.writeLong(chunk.id.mostSignificantBits)

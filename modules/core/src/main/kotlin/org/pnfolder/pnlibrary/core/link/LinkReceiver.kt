@@ -22,7 +22,6 @@ class LinkReceiver(
     private val replies: RemoteReplies = LinkHub.replies,
     private val data: DataHandler? = null,
 ) {
-    /** Whether the link can accept anything at all. */
     val enabled: Boolean get() = key != null
 
     /** Handles [message] from [server]; returns true when it was a valid message. */

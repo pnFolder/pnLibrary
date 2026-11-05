@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit
 
 /** Sends bytes to the game server called [server]; returns false when it cannot be reached. */
 fun interface LinkTransport {
-    /** Sends [message] to [server]. */
     fun send(server: String, message: ByteArray): Boolean
 }
 
@@ -25,7 +24,6 @@ class RemoteReplies {
         }, TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
-    /** Stops waiting for [id]. */
     fun cancel(id: UUID) {
         waiting.remove(id)
     }

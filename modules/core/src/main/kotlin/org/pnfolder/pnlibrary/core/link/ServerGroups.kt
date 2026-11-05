@@ -19,8 +19,6 @@ class ServerGroups(private val file: () -> Path?) {
     /**
      * One group: the servers in it and the plugins each of them should have.
      *
-     * @property name the name of the group
-     * @property servers the servers of the group
      * @property plugins the plugins every server of the group should have
      * @property extra for a server, the plugins it should have besides [plugins]
      * @property skip for a server, the plugins of [plugins] it does not need
@@ -38,7 +36,6 @@ class ServerGroups(private val file: () -> Path?) {
             return (plugins.filterNot { name -> skipped.any { it.equals(name, true) } } + extra.named(server)).toSet()
         }
 
-        /** Whether [server] differs from the rest of the group. */
         fun customized(server: String): Boolean = extra.named(server).isNotEmpty() || skip.named(server).isNotEmpty()
 
         /** The same group with the plugin set the way [server] should have it: [wanted] is true to ask for it, false to drop it. */
@@ -51,13 +48,11 @@ class ServerGroups(private val file: () -> Path?) {
             return copy(extra = extra.replaced(server, nextExtra), skip = skip.replaced(server, nextSkip))
         }
 
-        /** The same group with [server] in it. */
         fun addServer(server: String): Group = copy(servers = servers + server)
 
         /** The same group without [server] and without what made it differ. */
         fun removeServer(server: String): Group = copy(servers = servers.filterNot { it.equals(server, true) }.toSet()).reset(server)
 
-        /** The same group where every server has [plugin]. */
         fun addPlugin(plugin: String): Group = copy(plugins = plugins + plugin)
 
         /** The same group where no server has [plugin], as a common one or as a difference. */
@@ -81,7 +76,6 @@ class ServerGroups(private val file: () -> Path?) {
 
     /** How one server of a group compares with what the group asks for. */
     data class ServerState(
-        /** The server name as the group lists it. */
         val server: String,
         /** The server's report, or null if it never reported. */
         val known: NetworkServer?,
@@ -89,14 +83,12 @@ class ServerGroups(private val file: () -> Path?) {
         val missing: List<String>,
         /** Plugins of the group that have a newer version available on the server. */
         val outdated: List<String>,
-        /** Whether this server differs from the rest of the group. */
         val customized: Boolean = false,
     ) {
         /** Whether the server is reachable and has everything, up to date. */
         val ok: Boolean get() = known != null && known.online && missing.isEmpty() && outdated.isEmpty()
     }
 
-    /** Every group, by name. */
     fun all(): List<Group> {
         val servers = linkedMapOf<String, MutableSet<String>>()
         val plugins = linkedMapOf<String, MutableSet<String>>()
@@ -123,7 +115,6 @@ class ServerGroups(private val file: () -> Path?) {
     /** The group called [name], ignoring case, or null. */
     fun get(name: String): Group? = all().firstOrNull { it.name.equals(name, ignoreCase = true) }
 
-    /** The groups [server] belongs to. */
     fun of(server: String): List<Group> = all().filter { group -> group.servers.any { it.equals(server, true) } }
 
     /** Makes an empty group; returns false when the name is taken, reserved or unfit. */
@@ -176,7 +167,6 @@ class ServerGroups(private val file: () -> Path?) {
 
     /** Names and kinds used in the file and in commands. */
     companion object {
-        /** Name of the groups file. */
         const val FILE = "groups.tsv"
         private const val HEADER = "#pnlibrary-groups 2"
         private const val GROUP = "group"

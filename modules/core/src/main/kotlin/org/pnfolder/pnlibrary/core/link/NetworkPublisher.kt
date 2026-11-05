@@ -7,9 +7,7 @@ import java.time.Instant
 /**
  * The proxy end that builds the signed network map sent to every game server.
  *
- * @param key the shared key
  * @param platform names the proxy software and version
- * @param players counts the players on the proxy
  */
 class NetworkPublisher(
     private val library: PnLibrary,
