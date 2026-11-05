@@ -36,7 +36,7 @@ internal class DiagnosticCapture(
             else -> return
         }
         rememberEcho(level, output)
-        emit { native.log(owner, level, output, if (output == message) error else null) }
+        emit { native.log(owner, level, ConsoleStyle.decorate(level, output), if (output == message) error else null) }
     }
 
     override fun console(owner: Any, message: String) = emit { native.console(owner, message) }
