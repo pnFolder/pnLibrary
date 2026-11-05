@@ -62,6 +62,7 @@
 - Перезапуск без `restart-script`: сервер останавливается, дальше его поднимает панель или start.sh, это не ошибка.
 - FastStats оставлен как был (`ErrorTracker.contextAware()`), правку откатили по просьбе.
 - Тесты: миграция конфигов, кадры связи и `LinkSecret`, откат обновления после сбоя публикации, задачи, скрытие секретов в отчёте. Ошибок не нашли.
+- Рантайм локализации (`minecraft-localization-api/internal`) не выносим: публичный `MinecraftLocalization.builder().build()` создаёт `DefaultMinecraftLocalization`, а API заморожен. Пакеты `core/lifecycle` и `core/platform` в `runtime` не переносим: получатся циклы. Добавлен уровень `CRITICAL`.
 - Осталось: пакеты `core/runtime/details|lifecycle|platform`, `core/lifecycle`, `core/platform`; вынос рантайма локализации; флаги в параметрах; длинные методы; около 600 комментариев в `updates` и 1 500 в `features`; перенос исправления Paper-remapped в `main`.
 
 ### 2026-11-05 (модули)
