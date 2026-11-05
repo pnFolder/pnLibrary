@@ -71,7 +71,6 @@ internal class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
         return encrypt(report.toByteArray(StandardCharsets.UTF_8), "json")
     }
 
-    /** Encrypts arbitrary diagnostic bytes, including a ZIP archive. */
     @Throws(IOException::class)
     fun encrypt(payload: ByteArray, payloadFormat: String): String {
         try {
@@ -97,7 +96,6 @@ internal class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
         }
     }
 
-    /** Produces the opaque PN Support Archive binary container used for reports and history files. */
     @Throws(IOException::class)
     fun encryptBinary(payload: ByteArray, payloadFormat: String): ByteArray {
         try {
@@ -153,8 +151,6 @@ internal class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
         val ciphertext: ByteArray,
     )
 
-    // ── Companion ─────────────────────────────────────────────────────────────
-
     companion object {
         const val FORMAT  = "pnlibrary-diagnostics"
         const val VERSION = 1
@@ -165,7 +161,6 @@ internal class EncryptedEnvelopeCodec(publicKeyPem: String, keyId: String) {
         private val RANDOM = SecureRandom()
 
         /**
-         * Builds the Additional Authenticated Data string.
          * **Must match the Python decoder exactly.**
          */
         @JvmStatic

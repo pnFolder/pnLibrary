@@ -27,7 +27,6 @@ internal class RuntimeShutdownPlan(
     private val closePlatform: () -> Unit,
     private val onClose: () -> Unit,
 ) {
-    /** Runs every shutdown step in order. */
     fun run() = RuntimeShutdown().apply {
         add { plugins.close() }
         add { commands.close() }

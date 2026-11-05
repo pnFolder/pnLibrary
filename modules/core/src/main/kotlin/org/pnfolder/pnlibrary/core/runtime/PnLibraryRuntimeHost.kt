@@ -45,7 +45,6 @@ class PnLibraryRuntimeHost private constructor(
     ) =
         library.services.register(type, service, priority)
 
-    /** Registers the type-safe public API for the active native platform. */
     fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         (library as PlatformRegistration).registerPlatform(type, implementation)
 
@@ -67,7 +66,6 @@ class PnLibraryRuntimeHost private constructor(
         throw first
     }
 
-    /** Complete runtime bootstrap entry point used by platform plugins. */
     companion object {
         /**
          * The policy of pnLibrary itself on Bukkit, Velocity and BungeeCord, published in the `pnlibrary-policy`
@@ -132,7 +130,6 @@ class PnLibraryRuntimeHost private constructor(
             }
         }
 
-        /** Starts the runtime and registers the native platform API transactionally. */
         @JvmStatic
         @JvmOverloads
         fun <T : Any> startAndRegisterPlatform(

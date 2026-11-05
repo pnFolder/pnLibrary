@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Checks that all required managed and native plugin dependencies can be satisfied. */
 internal class ModuleDependencyValidator(
     private val platform: PlatformOwnership,
     private val downloadsAvailable: () -> Boolean,

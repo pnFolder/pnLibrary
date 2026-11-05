@@ -27,7 +27,6 @@ internal class ModuleExpansions(
         }
     }
 
-    /** The view of [type] for this module, bound on first use. */
     fun <V : Any, E : ModuleBoundExpansion<V>> view(type: Class<E>): V = synchronized(lock) {
         check(!closed) { "Module is closed" }
         @Suppress("UNCHECKED_CAST")

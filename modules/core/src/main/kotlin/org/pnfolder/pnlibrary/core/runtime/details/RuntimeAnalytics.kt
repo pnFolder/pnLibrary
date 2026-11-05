@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-/** Builds the derived health view of one runtime diagnostic snapshot. */
 internal object RuntimeAnalytics {
     fun of(
         taskCount: Int,

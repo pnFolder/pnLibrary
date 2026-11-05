@@ -88,7 +88,6 @@ internal class DiagnosticsSettings {
     )
     var noPermissionMessage: String = "Недостаточно прав для этой команды."
 
-    /** Converts the file model to the immutable runtime policy, which validates the remaining rules. */
     fun toConfig(): PnLibraryConfig = PnLibraryConfig(
         historyRetentionDays = historyRetentionDays,
         excludedPaths = excludedPaths.toList(),

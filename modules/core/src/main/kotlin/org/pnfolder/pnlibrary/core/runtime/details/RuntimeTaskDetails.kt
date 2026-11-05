@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 
-/** Stable diagnostic representation for the runtime task registry. */
 internal object RuntimeTaskDetails {
     fun entries(snapshots: List<TaskSnapshot>): List<Map<String, Any?>> =
         snapshots.map { task ->

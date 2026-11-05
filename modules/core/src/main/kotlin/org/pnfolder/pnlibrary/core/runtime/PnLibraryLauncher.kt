@@ -66,7 +66,6 @@ internal object PnLibraryLauncher {
         }
     }
 
-    /** Shared diagnostics registry of the active process. */
     @JvmStatic
     fun globalRegistry(): DiagnosticsRegistry = globalRegistry
 }

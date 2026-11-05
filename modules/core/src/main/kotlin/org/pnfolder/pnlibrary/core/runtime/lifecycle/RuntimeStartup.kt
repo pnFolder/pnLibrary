@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeUpdateMonitor
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Attaches the mandatory self-update monitor to an already bootstrapped runtime. */
 internal object RuntimeStartup {
     data class Started(
         val library: PnLibrary,

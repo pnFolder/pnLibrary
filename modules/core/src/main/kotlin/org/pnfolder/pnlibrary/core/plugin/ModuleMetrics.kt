@@ -38,7 +38,6 @@ internal class ModuleMetrics(
     override fun errorReporterOrNull(): ErrorReporter? =
         session?.errorReporter?.let { errorReporter ?: it }
 
-    /** Returns the reporter owned by the live provider session. */
     internal fun sessionErrorReporter(): ErrorReporter? = session?.errorReporter
 
     override fun enable() = synchronized(lock) {

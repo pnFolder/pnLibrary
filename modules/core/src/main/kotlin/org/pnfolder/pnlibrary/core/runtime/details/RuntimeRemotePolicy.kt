@@ -15,7 +15,6 @@ import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Connects the existing policy engine to the library owner, without creating a synthetic module. */
 internal object RuntimeRemotePolicy {
     fun validated(policy: RemotePolicySettings): RemotePolicySettings {
         require(policy.onDeny == DenyAction.DISABLE_PLUGIN) {
