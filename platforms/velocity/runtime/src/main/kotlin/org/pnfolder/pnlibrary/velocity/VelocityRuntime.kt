@@ -72,7 +72,7 @@ internal class VelocityRuntime(
         val transport = LinkTransport { name, bytes ->
             server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
         }
-        val network = Link(LinkSecret.readOrCreate(dataDirectory), dataDirectory, transport)
+        val network = Link(LinkSecret.readOrCreate(dataDirectory, logger::warn), dataDirectory, transport)
         val control = ProxyControlCommand(started.library, network)
         control.register()
         val data = ProxyMenu.server(started.library, network, control) { instance ->

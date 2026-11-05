@@ -18,17 +18,28 @@ object LinkSecret {
 
     /** Reads the key from [folder], or returns null when there is no valid key file. */
     fun read(folder: Path): ByteArray? = runCatching {
-        Base64.getDecoder().decode(String(Files.readAllBytes(folder.resolve(FILE)), Charsets.UTF_8).trim()).takeIf { it.size >= KEY_BYTES }
+        val text = String(Files.readAllBytes(folder.resolve(FILE)), Charsets.UTF_8).removePrefix(BOM).trim()
+        Base64.getDecoder().decode(text).takeIf { it.size >= KEY_BYTES }
     }.getOrNull()
 
-    /** Reads the key from [folder] and makes a new one if there is none. */
-    fun readOrCreate(folder: Path): ByteArray? {
-        read(folder)?.let { return it }
+    /**
+     * Reads the key from [folder] and makes a new one only when the file does not exist.
+     *
+     * A file that exists but cannot be read is left alone and the link stays off: a new key would silently cut
+     * this proxy off from every server that already has the old one.
+     */
+    fun readOrCreate(folder: Path, warn: (String) -> Unit = {}): ByteArray? {
+        val path = folder.resolve(FILE)
+        if (Files.exists(path)) {
+            return read(folder) ?: null.also { warn("$FILE exists but holds no valid key; the link stays off until it is fixed or deleted") }
+        }
         val key = ByteArray(KEY_BYTES).also(SecureRandom()::nextBytes)
         return runCatching {
             Files.createDirectories(folder)
-            Files.write(folder.resolve(FILE), (Base64.getEncoder().encodeToString(key) + "\n").toByteArray(Charsets.UTF_8))
+            Files.write(path, (Base64.getEncoder().encodeToString(key) + '\n').toByteArray(Charsets.UTF_8))
             key
         }.getOrNull()
     }
+
+    private const val BOM = "\uFEFF"
 }
