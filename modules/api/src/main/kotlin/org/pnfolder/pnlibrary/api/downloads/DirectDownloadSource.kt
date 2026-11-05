@@ -37,7 +37,6 @@ class DirectDownloadSource private constructor(builder: Builder) {
         internal var size: Long? = null
         internal var sha256: String? = null
 
-        /** Sets the required HTTPS download URL. */
         fun url(value: String): Builder = apply {
             uri = requireHttpsUri(value, "Download URL must use HTTPS")
         }
@@ -53,7 +52,6 @@ class DirectDownloadSource private constructor(builder: Builder) {
             maximumJava = maximum
         }
 
-        /** Sets the expected [size] and SHA-256 digest used after download. */
         fun integrity(size: Long, sha256: String): Builder = apply {
             require(size > 0) { "Download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
@@ -65,9 +63,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
         fun build(): DirectDownloadSource = DirectDownloadSource(this)
     }
 
-    /** Creates source builders. */
     companion object {
-        /** Returns an empty source builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

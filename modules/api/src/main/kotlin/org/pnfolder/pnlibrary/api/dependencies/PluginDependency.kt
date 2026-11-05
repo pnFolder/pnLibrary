@@ -62,7 +62,6 @@ interface PluginDependency {
 
 /** Short factories for the unified dependency DSL. */
 object Dependencies {
-    /** Creates a dependency on a catalog-managed pnLibrary product. */
     @JvmStatic
     @JvmOverloads
     fun managed(
@@ -82,7 +81,6 @@ object Dependencies {
         downloadPolicy(automaticDownload, forceAutomaticDownload),
     )
 
-    /** Creates a manual third-party plugin dependency with a download page. */
     @JvmStatic
     @JvmOverloads
     fun plugin(
@@ -98,7 +96,6 @@ object Dependencies {
         .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
         .build()
 
-    /** Creates a verifiable third-party plugin dependency with an exact artifact. */
     @JvmStatic
     @JvmOverloads
     fun plugin(

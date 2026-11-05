@@ -56,7 +56,6 @@ data class RemotePolicySettings(
         private var startupTimeout: Duration = DEFAULT_STARTUP_TIMEOUT
         private val values = linkedMapOf<String, String>()
 
-        /** Sets and validates the `.java` policy source URI. */
         fun source(value: String): Builder = apply {
             val uri = URI.create(value)
             val https = uri.isHttps()
@@ -82,7 +81,6 @@ data class RemotePolicySettings(
             startupTimeout = value
         }
 
-        /** Sets the action applied to a denied result. */
         fun onDeny(value: DenyAction): Builder = apply { onDeny = value }
 
         /** Sets what a policy that cannot be checked means; [PolicyErrorAction.DENY] by default. */
@@ -100,13 +98,11 @@ data class RemotePolicySettings(
             supportUrl = url
         }
 
-        /** Adds or replaces one application-defined policy value. */
         fun value(key: String, value: String): Builder = apply {
             val normalized = key.trim()
             require(normalized.isNotEmpty()) { "Remote policy value key must not be blank" }
             values[normalized] = value
         }
-        /** Adds all application-defined policy [values]. */
         fun values(values: Map<String, String>): Builder = apply { values.forEach(::value) }
 
         /** Validates required fields and creates the immutable policy. */
@@ -121,12 +117,10 @@ data class RemotePolicySettings(
         )
     }
 
-    /** Creates remote-policy declarations. */
     companion object {
         private val MINIMUM_CHECK_EVERY: Duration = Duration.ofMinutes(1)
         private val DEFAULT_STARTUP_TIMEOUT: Duration = Duration.ofSeconds(20)
 
-        /** Creates a Java-friendly fluent remote-policy builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

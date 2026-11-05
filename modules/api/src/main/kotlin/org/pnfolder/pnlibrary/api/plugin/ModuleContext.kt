@@ -122,7 +122,6 @@ class ModuleId private constructor(
     /** Returns [value] without additional formatting. */
     override fun toString(): String = value
 
-    /** Creates validated module identities. */
     companion object {
         private val FORMAT = Regex("[a-z0-9][a-z0-9_.-]{0,63}")
 

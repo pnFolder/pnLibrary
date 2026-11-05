@@ -11,13 +11,10 @@ interface PlaceholderBuilder<T : Any> {
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
 
-    /** Adds an owner-defined update operation, making this placeholder writable. */
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
 
-    /** Sets the access policy used only for update operations. */
     fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
 
-    /** Sets the complete consumer access policy. */
     fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
 
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
@@ -26,7 +23,6 @@ interface PlaceholderBuilder<T : Any> {
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
 
-    /** Sets the value returned for null resolver results and while disabled. */
     fun fallback(value: T): PlaceholderBuilder<T>
 
     /**

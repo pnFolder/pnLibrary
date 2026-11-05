@@ -18,22 +18,17 @@ class RemotePolicyExplanation private constructor(builder: Builder) {
     class Builder internal constructor(internal val text: String) {
         internal val children = mutableListOf<RemotePolicyExplanation>()
 
-        /** Adds a leaf child containing [text]. */
         fun child(text: String): Builder = apply { children += builder(text).build() }
 
-        /** Adds a nested branch configured by [configure]. */
         fun branch(text: String, configure: Consumer<Builder>): Builder = apply {
             children += builder(text).also(configure::accept).build()
         }
 
-        /** Adds an existing explanation as a child. */
         fun child(value: RemotePolicyExplanation): Builder = apply { children += value }
 
-        /** Creates the immutable explanation tree. */
         fun build(): RemotePolicyExplanation = RemotePolicyExplanation(this)
     }
 
-    /** Creates validated explanation builders. */
     companion object {
         /** Starts an explanation whose root contains non-blank [text]. */
         @JvmStatic

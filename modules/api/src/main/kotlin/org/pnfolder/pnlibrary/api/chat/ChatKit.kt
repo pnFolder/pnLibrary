@@ -113,7 +113,7 @@ open class ChatKit(val reader: ChatReader) {
         return visible.drop(1).fold(text("  ").append(visible.first())) { line, button -> line.append(text(" ")).append(button) }
     }
 
-    /** A section heading inside a page in Russian quotes, such as `«Сегодня»` or `«Команды»`, all in the accent. */
+    /** A section heading wrapped in guillemets, such as `«Сегодня»`, in the accent color. */
     fun section(title: String): Component =
         text("  ${glyph('«')}$title${glyph('»')}", ChatPalette.ACCENT)
 
@@ -137,7 +137,7 @@ open class ChatKit(val reader: ChatReader) {
             .hoverEvent(tooltip(text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), text(typed.trim(), ChatPalette.LABEL)))
     }
 
-    /** A counter such as `3 плагина`: the number in [color], the agreeing word in sky blue. */
+    /** A counter such as `3 плагина` (the Russian word is sample text): the number in [color], the word in sky blue. */
     fun chip(count: Int, word: String, color: TextColor): Component =
         text("$count", color).append(text(" $word", ChatPalette.LABEL))
 
@@ -233,7 +233,7 @@ open class ChatKit(val reader: ChatReader) {
 
         private const val MAX_LINK = 4096
 
-        /** `<игрок>`, `[сумма]` and the like inside a command. */
+        /** Placeholders such as `<player>` or `[amount]` inside a command. */
         private val PLACEHOLDER = Regex("""<[^>]+>|\[[^]]+]""")
 
         private val ASCII: Map<Char, String> = mapOf(

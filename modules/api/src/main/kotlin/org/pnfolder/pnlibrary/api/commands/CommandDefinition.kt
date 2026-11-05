@@ -45,9 +45,7 @@ class CommandDefinition internal constructor(
 ) {
     val aliases: Set<String> = Collections.unmodifiableSet(LinkedHashSet(aliases))
 
-    /** Creates command-definition builders. */
     companion object {
-        /** Creates a builder for Java callers. */
         @JvmStatic
         fun builder(name: String): CommandBuilder = CommandBuilder(name)
     }
@@ -71,7 +69,6 @@ class CommandBuilder internal constructor(name: String) {
     private val children = mutableListOf<CommandNodeBuilder>()
     private val mounted = mutableListOf<CommandNode>()
 
-    /** Adds normalized command aliases. */
     fun aliases(vararg values: String): CommandBuilder = apply {
         values.forEach { value ->
             val alias = normalizeCommandName(value, "command alias", ALIAS_NAME)
@@ -175,17 +172,14 @@ class CommandBuilder internal constructor(name: String) {
     /** Restricts root availability using [rule]. */
     fun availableIf(rule: CommandAvailability): CommandBuilder = apply { availability = rule }
 
-    /** Adds a literal child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder =
         literal(name, Consumer { builder -> builder.configure() })
 
-    /** Adds a literal child configured by Java-friendly [configure]. */
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
-    /** Adds a typed argument child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun <T : Any> argument(
         name: String,
@@ -193,7 +187,6 @@ class CommandBuilder internal constructor(name: String) {
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
-    /** Adds a typed argument child configured by Java-friendly [configure]. */
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
@@ -246,7 +239,6 @@ class CommandBuilder internal constructor(name: String) {
     }
 }
 
-/** Builds one immutable portable command. */
 @JvmSynthetic
 fun command(name: String, configure: CommandBuilder.() -> Unit): CommandDefinition =
     CommandDefinition.builder(name).apply(configure).build()

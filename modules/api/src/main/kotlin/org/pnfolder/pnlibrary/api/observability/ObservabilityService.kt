@@ -33,6 +33,5 @@ interface ObservabilityService : AutoCloseable {
     /** Stores and returns the latest state for one plugin component. */
     fun status(status: ComponentStatus): ComponentStatus
 
-    /** Creates a local support report from one consistent runtime snapshot. */
     fun createReport(request: ObservabilityReportRequest = ObservabilityReportRequest()): ObservabilityReport
 }

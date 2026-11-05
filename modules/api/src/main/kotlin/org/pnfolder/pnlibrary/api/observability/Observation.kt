@@ -72,9 +72,7 @@ data class Observation(
     val errorType: String?,
     val errorMessage: String?,
 ) {
-    /** Factory methods for converting mutable requests into immutable records. */
     companion object {
-        /** Creates a new observation with a generated identifier. */
         @JvmStatic
         @JvmOverloads
         fun from(request: ObservationRequest, timestamp: Long = System.currentTimeMillis()): Observation = Observation(
