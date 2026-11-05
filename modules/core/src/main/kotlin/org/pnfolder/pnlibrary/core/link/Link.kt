@@ -47,7 +47,10 @@ class Link(
         calls = handler
     }
 
-    fun groups(): ServerGroups = ServerGroups { folder?.resolve(ServerGroups.FILE) }
+    private val groups = ServerGroups { folder?.resolve(ServerGroups.FILE) }
+
+    /** The groups of the proxy; one instance, so its changes do not overwrite each other. */
+    fun groups(): ServerGroups = groups
 
     /** Sends [message] to [target] from the proxy, or to the proxy from a game server. */
     fun send(target: String, message: ByteArray): Boolean =
