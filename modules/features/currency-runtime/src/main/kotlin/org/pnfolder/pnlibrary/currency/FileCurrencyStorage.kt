@@ -5,8 +5,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
-import org.pnfolder.pnlibrary.api.currency.CurrencyActor
-import org.pnfolder.pnlibrary.api.currency.CurrencyActorType
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyHistoryPage
 import org.pnfolder.pnlibrary.api.currency.CurrencyHistoryQuery
@@ -17,9 +15,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageSnapshot
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
-import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
-import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
-import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import java.math.BigDecimal
@@ -30,7 +25,7 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 
-/** Single-writer JSON storage with in-memory indexes and rollback on persistence failure. */
+/** Single-writer JSON storage: every change is kept in memory only after the whole file has been saved. */
 internal class FileCurrencyStorage(
     private val file: Path,
     private val maximumTransactions: Int,
@@ -58,30 +53,12 @@ internal class FileCurrencyStorage(
     ): CompletionStage<CurrencyTransaction> = async {
         synchronized(lock) {
             request.idempotencyKey?.let { idempotency[idempotencyKey(currency, it)] }?.let { return@synchronized it }
-            val affectedKeys = listOfNotNull(
-                request.source?.let { accountKey(currency, it) },
-                request.target?.let { accountKey(currency, it) },
-            ).distinct()
-            val balancesBefore = affectedKeys.associateWith { balances[it] }
-            val transaction = apply(currency, descriptor, request)
-            transactions += transaction
-            request.idempotencyKey?.let { idempotency[idempotencyKey(currency, it)] = transaction }
-            val evicted = mutableListOf<CurrencyTransaction>()
-            while (transactions.size > maximumTransactions) {
-                val removed = transactions.removeAt(0).also(evicted::add)
-                removed.idempotencyKey?.let { idempotency.remove(idempotencyKey(removed.currency, it), removed) }
+            atomically {
+                apply(currency, descriptor, request).also { transaction ->
+                    record(transaction)
+                    trimHistory()
+                }
             }
-            try {
-                save()
-            } catch (error: Throwable) {
-                balancesBefore.forEach { (key, value) -> if (value == null) balances.remove(key) else balances[key] = value }
-                transactions.remove(transaction)
-                transactions.addAll(0, evicted)
-                request.idempotencyKey?.let { idempotency.remove(idempotencyKey(currency, it), transaction) }
-                evicted.forEach { old -> old.idempotencyKey?.let { idempotency[idempotencyKey(old.currency, it)] = old } }
-                throw error
-            }
-            transaction
         }
     }
 
@@ -114,51 +91,55 @@ internal class FileCurrencyStorage(
     override fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult> = async {
         synchronized(lock) {
             require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
-            val backup = snapshotState()
-            try {
+            atomically {
                 if (mode == CurrencyImportMode.REPLACE) removeCurrency(snapshot.currency)
-                var importedAccounts = 0
-                var skippedAccounts = 0
-                var importedTransactions = 0
-                var skippedTransactions = 0
-                snapshot.balances.forEach { (accountId, balance) ->
-                    val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
-                    if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) {
-                        skippedAccounts++
-                    } else {
-                        balances[key] = balance
-                        importedAccounts++
-                    }
-                }
-                val ids = transactions.mapTo(hashSetOf()) { it.id }
-                snapshot.transactions.forEach { transaction ->
-                    val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
-                    if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
-                        skippedTransactions++
-                    } else {
-                        transactions += transaction
-                        ids += transaction.id
-                        duplicateKey?.let { idempotency[it] = transaction }
-                        importedTransactions++
-                    }
-                }
-                while (transactions.size > maximumTransactions) transactions.removeAt(0).also { removed ->
-                    removed.idempotencyKey?.let { idempotency.remove(idempotencyKey(removed.currency, it), removed) }
-                }
-                save()
+                val accounts = importBalances(snapshot, mode)
+                val moved = importTransactions(snapshot)
+                trimHistory()
                 CurrencyImportResult(
                     currency = snapshot.currency,
                     mode = mode,
-                    importedAccounts = importedAccounts,
-                    skippedAccounts = skippedAccounts,
-                    importedTransactions = importedTransactions,
-                    skippedTransactions = skippedTransactions,
+                    importedAccounts = accounts.first,
+                    skippedAccounts = accounts.second,
+                    importedTransactions = moved.first,
+                    skippedTransactions = moved.second,
                 )
-            } catch (error: Throwable) {
-                restore(backup)
-                throw error
             }
         }
+    }
+
+    /** Returns how many accounts were imported and how many were skipped because the target already had them. */
+    private fun importBalances(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): Pair<Int, Int> {
+        var imported = 0
+        var skipped = 0
+        snapshot.balances.forEach { (accountId, balance) ->
+            val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
+            if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) {
+                skipped++
+            } else {
+                balances[key] = balance
+                imported++
+            }
+        }
+        return imported to skipped
+    }
+
+    /** Returns how many transactions were imported and how many were skipped as duplicates. */
+    private fun importTransactions(snapshot: CurrencyStorageSnapshot): Pair<Int, Int> {
+        var imported = 0
+        var skipped = 0
+        val ids = transactions.mapTo(hashSetOf()) { it.id }
+        snapshot.transactions.forEach { transaction ->
+            val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
+            if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
+                skipped++
+            } else {
+                record(transaction)
+                ids += transaction.id
+                imported++
+            }
+        }
+        return imported to skipped
     }
 
     override fun close() {
@@ -171,17 +152,11 @@ internal class FileCurrencyStorage(
         val sourceBefore = sourceKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
         val targetBefore = targetKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
         val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
-        if (mutation.status == CurrencyTransactionStatus.COMMITTED) {
+        if (mutation.committed) {
             sourceKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.sourceAfter)) }
             targetKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.targetAfter)) }
         }
-        return CurrencyTransaction(
-            UUID.randomUUID(), currency, request.type, mutation.status,
-            if (mutation.status == CurrencyTransactionStatus.COMMITTED) descriptor.normalize(request.amount) else request.amount,
-            request.source, request.target, request.actor, request.service, request.reason, request.metadata,
-            mutation.sourceBefore, mutation.sourceAfter, mutation.targetBefore, mutation.targetAfter,
-            Instant.now(), mutation.failure, request.idempotencyKey,
-        )
+        return mutation.transaction(currency, descriptor, request)
     }
 
     private fun load() {
@@ -190,65 +165,44 @@ internal class FileCurrencyStorage(
         val root = Files.newBufferedReader(file, StandardCharsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
         root.getAsJsonObject("balances")?.entrySet()?.forEach { balances[it.key] = it.value.asString.toBigDecimal() }
         root.getAsJsonArray("transactions")?.forEach { element ->
-            decode(element.asJsonObject).also { transaction ->
-                transactions += transaction
-                transaction.idempotencyKey?.let { idempotency[idempotencyKey(transaction.currency, it)] = transaction }
-            }
+            record(CurrencyTransactionJson.decode(element.asJsonObject))
         }
     }
 
+    /** Applies [change] and saves; on any failure memory goes back to what the file still holds. */
+    private fun <T> atomically(change: () -> T): T {
+        val before = snapshotState()
+        try {
+            return change().also { save() }
+        } catch (error: Throwable) {
+            restore(before)
+            throw error
+        }
+    }
+
+    private fun record(transaction: CurrencyTransaction) {
+        transactions += transaction
+        transaction.idempotencyKey?.let { idempotency[idempotencyKey(transaction.currency, it)] = transaction }
+    }
+
+    private fun trimHistory() {
+        val excess = transactions.size - maximumTransactions
+        if (excess <= 0) return
+        val evicted = transactions.subList(0, excess)
+        evicted.forEach { old -> old.idempotencyKey?.let { idempotency.remove(idempotencyKey(old.currency, it), old) } }
+        evicted.clear()
+    }
+
+    // Balances are money: the file must reach the disk before it replaces the previous one, or a power loss
+    // after the rename can leave an empty file.
     private fun save() {
-        file.parent?.let(Files::createDirectories)
-        require(!Files.exists(file) || !Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
+        require(!Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
         val root = JsonObject()
         root.add("balances", JsonObject().also { values -> balances.forEach { (key, value) -> values.addProperty(key, value.toPlainString()) } })
-        root.add("transactions", JsonArray().also { values -> transactions.forEach { values.add(encode(it)) } })
-        val parent = file.toAbsolutePath().parent
-        val temporary = Files.createTempFile(parent, file.fileName.toString(), ".tmp")
-        try {
+        root.add("transactions", JsonArray().also { values -> transactions.forEach { values.add(CurrencyTransactionJson.encode(it)) } })
+        AtomicFiles.write(file, durable = true) { temporary ->
             Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(root, it) }
-            AtomicFiles.move(temporary, file)
-        } finally { Files.deleteIfExists(temporary) }
-    }
-
-    private fun encode(value: CurrencyTransaction) = JsonObject().apply {
-        addProperty("id", value.id.toString())
-        addProperty("currency", value.currency.toString())
-        addProperty("type", value.type.name)
-        addProperty("status", value.status.name)
-        addProperty("amount", value.amount.toPlainString())
-        value.source?.let { addProperty("source", it.playerId.toString()) }
-        value.target?.let { addProperty("target", it.playerId.toString()) }
-        addProperty("actorType", value.actor.type.name)
-        addProperty("actorId", value.actor.id)
-        addProperty("service", value.service)
-        value.reason?.let { addProperty("reason", it) }
-        value.failure?.let { addProperty("failure", it) }
-        value.idempotencyKey?.let { addProperty("idempotencyKey", it) }
-        addProperty("createdAt", value.createdAt.toString())
-        value.sourceBalanceBefore?.let { addProperty("sourceBalanceBefore", it.toPlainString()) }
-        value.sourceBalanceAfter?.let { addProperty("sourceBalanceAfter", it.toPlainString()) }
-        value.targetBalanceBefore?.let { addProperty("targetBalanceBefore", it.toPlainString()) }
-        value.targetBalanceAfter?.let { addProperty("targetBalanceAfter", it.toPlainString()) }
-        add("metadata", JsonObject().apply {
-            value.metadata.forEach { (key, entry) -> addProperty(key, entry) }
-        })
-    }
-
-    private fun decode(value: JsonObject): CurrencyTransaction {
-        val currencyParts = value["currency"].asString.split(':', limit = 2)
-        fun decimal(name: String) = value.get(name)?.takeUnless { it.isJsonNull }?.asString?.toBigDecimal()
-        fun account(name: String) = value.get(name)?.takeUnless { it.isJsonNull }?.asString?.let(UUID::fromString)?.let(::CurrencyAccount)
-        val metadata = value.getAsJsonObject("metadata")?.entrySet()?.associate { it.key to it.value.asString }.orEmpty()
-        return CurrencyTransaction(
-            UUID.fromString(value["id"].asString), CurrencyKey(PluginId.of(currencyParts[0]), currencyParts[1]),
-            CurrencyTransactionType.valueOf(value["type"].asString), CurrencyTransactionStatus.valueOf(value["status"].asString),
-            value["amount"].asString.toBigDecimal(), account("source"), account("target"),
-            CurrencyActor(CurrencyActorType.valueOf(value["actorType"].asString), value["actorId"].asString),
-            value["service"].asString, value.get("reason")?.asString, metadata,
-            decimal("sourceBalanceBefore"), decimal("sourceBalanceAfter"), decimal("targetBalanceBefore"), decimal("targetBalanceAfter"),
-            Instant.parse(value["createdAt"].asString), value.get("failure")?.asString, value.get("idempotencyKey")?.asString,
-        )
+        }
     }
 
     private fun matches(
@@ -279,13 +233,16 @@ internal class FileCurrencyStorage(
     }
 
     private fun accountKey(currency: CurrencyKey, account: CurrencyAccount) = "$currency|${account.playerId}"
+
     private fun idempotencyKey(currency: CurrencyKey, key: String) = "$currency|$key"
+
     private fun removeCurrency(currency: CurrencyKey) {
         val prefix = "$currency|"
         balances.keys.removeIf { it.startsWith(prefix) }
         transactions.removeIf { it.currency == currency }
         idempotency.keys.removeIf { it.startsWith(prefix) }
     }
+
     private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
 
     private data class StorageState(

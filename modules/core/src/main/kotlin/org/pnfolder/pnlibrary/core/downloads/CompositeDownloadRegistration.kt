@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.downloads
 
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import java.util.concurrent.CompletionStage
 
 /** Presents two download registrations, such as declared files and dependencies, as one. */

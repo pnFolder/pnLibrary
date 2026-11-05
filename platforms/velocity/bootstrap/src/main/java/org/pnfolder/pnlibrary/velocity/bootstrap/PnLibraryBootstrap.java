@@ -40,8 +40,6 @@ public final class PnLibraryBootstrap {
      * Installs the newest stable pnLibrary when it is missing, for a plugin that works with any version. When there
      * is no stable release the newest release of any kind is used.
      *
-     * @param proxy the Velocity server
-     * @param plugin instance of the plugin that needs pnLibrary
      * @return {@code true} when a suitable pnLibrary is loaded; {@code false} after a download that needs a restart
      */
     public static boolean ensureInstalled(ProxyServer proxy, Object plugin) {
@@ -51,9 +49,6 @@ public final class PnLibraryBootstrap {
     /**
      * Downloads pnLibrary from the default repository when it is missing, or checks the installed version.
      *
-     * @param proxy the Velocity server
-     * @param plugin instance of the plugin that needs pnLibrary
-     * @param minimumVersion lowest pnLibrary version the plugin works with
      * @return {@code true} when a suitable pnLibrary is loaded; {@code false} after a download that needs a restart
      */
     public static boolean ensureInstalled(ProxyServer proxy, Object plugin, String minimumVersion) {
@@ -63,9 +58,6 @@ public final class PnLibraryBootstrap {
     /**
      * Downloads pnLibrary according to {@code options} when it is missing, or checks the installed version.
      *
-     * @param proxy the Velocity server
-     * @param plugin instance of the plugin that needs pnLibrary
-     * @param options minimum version, repository and size limit
      * @return {@code true} when a suitable pnLibrary is loaded; {@code false} after a download that needs a restart
      */
     public static boolean ensureInstalled(ProxyServer proxy, Object plugin, BootstrapOptions options) {
@@ -86,9 +78,6 @@ public final class PnLibraryBootstrap {
     /**
      * Checks that pnLibrary is loaded and is at least {@code minimumVersion}, without downloading anything.
      *
-     * @param proxy the Velocity server
-     * @param plugin instance of the plugin that needs pnLibrary
-     * @param minimumVersion lowest pnLibrary version the plugin works with
      * @return {@code true} when a suitable pnLibrary is loaded
      */
     public static boolean ensureCompatible(ProxyServer proxy, Object plugin, String minimumVersion) {

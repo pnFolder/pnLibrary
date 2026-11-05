@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
 
-/** Complete metrics declaration owned by one registered module. */
 internal data class ModuleMetricsDefinition(
     val providers: List<MetricsProviderConfiguration> = emptyList(),
     val enabled: Boolean = false,

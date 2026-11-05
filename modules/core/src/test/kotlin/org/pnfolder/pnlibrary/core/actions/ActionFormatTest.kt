@@ -160,9 +160,15 @@ class ActionFormatTest {
         var gate: Requirement = Requirement(),
     )
 
-    class Owner(private val folder: File) {
-        fun getDataFolder(): File = folder
-        fun getLogger(): Logger = Logger.getLogger("action-format-test")
+    class Owner(val folder: File) {
+        val logger: Logger = Logger.getLogger("action-format-test")
+    }
+
+    /** Gives each [Owner] its folder and logger, as a real platform does for its plugins. */
+    object OwnerPlatform : PlatformOwnership {
+        override fun ownerDataFolder(owner: Any): java.nio.file.Path? = (owner as? Owner)?.folder?.toPath()
+
+        override fun ownerLogger(owner: Any): Logger? = (owner as? Owner)?.logger
     }
 
     @Test
@@ -173,7 +179,7 @@ class ActionFormatTest {
                 .joinToString("\n") + "\n",
         )
 
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform)
         service.use {
             val scope = it.scope(Owner(directory.toFile()), PluginId.of("tester"))
             val error = assertThrows(IllegalArgumentException::class.java) {
@@ -203,7 +209,7 @@ class ActionFormatTest {
             ).joinToString("\n") + "\n",
         )
 
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform)
         service.use {
             val scope = it.scope(Owner(directory.toFile()), PluginId.of("tester"))
             val error = assertThrows(IllegalArgumentException::class.java) {
@@ -233,7 +239,7 @@ class ActionFormatTest {
                 "      text: no",
             ).joinToString(System.lineSeparator()) + System.lineSeparator(),
         )
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform)
         service.use {
             val scope = it.scope(Owner(directory.toFile()), PluginId.of("tester"))
             val gate = scope.yaml<ShopConfig>("shop.yml", ConfigOptions.DEFAULT) { ShopConfig() }.load().value.gate
@@ -277,7 +283,7 @@ class ActionFormatTest {
             ).joinToString("\n") + "\n",
         )
 
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform)
         service.use {
             val scope = it.scope(Owner(directory.toFile()), PluginId.of("tester"))
             val loaded = scope.yaml<ShopConfig>("shop.yml", ConfigOptions.DEFAULT) { ShopConfig() }.load().value
@@ -346,7 +352,7 @@ class ActionFormatTest {
             """.trimIndent() + "\n",
         )
 
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform)
         service.use {
             val scope = it.scope(Owner(directory.toFile()), PluginId.of("tester"))
             val loaded = scope.yaml<ShopConfig>("shop.yml", ConfigOptions.DEFAULT) { ShopConfig() }.load().value

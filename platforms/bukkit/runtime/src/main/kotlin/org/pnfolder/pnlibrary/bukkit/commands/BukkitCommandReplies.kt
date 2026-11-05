@@ -3,13 +3,13 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
@@ -20,8 +20,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply
  * Every reply is rendered by [UpdateCatalogView], so notices and confirmations look like the catalog.
  */
 internal class BukkitCommandReplies(
-    private val plugin: Plugin,
     private val library: PnLibrary,
+    private val scheduler: ServerScheduler,
 ) {
     /** Routes for this reader: buttons only when it can click, ASCII for the console. */
     fun routes(reply: Reply): UpdateCatalogRoutes =
@@ -41,7 +41,6 @@ internal class BukkitCommandReplies(
     fun confirmChoices(reply: Reply, title: String, lines: List<String>, choices: List<ConfirmChoice>) =
         UpdateCatalogView.confirmationChoices(title, lines + "Подтверждение действует 30 секунд.", choices, routes(reply)).forEach(reply::send)
 
-    /** Returns a callback that reports [reply]-bound successes. */
     fun reported(reply: Reply): (String) -> Unit = { text -> say(reply, ChatTone.SUCCESS, text) }
 
     fun notRegistered(reply: Reply, product: String) =
@@ -76,10 +75,9 @@ internal class BukkitCommandReplies(
     /** Delivers asynchronous results on the server thread while the runtime is open. */
     fun onServerThread(action: () -> Unit) {
         if (library.isClosed) return
-        plugin.server.scheduler.runTask(plugin, Runnable { if (!library.isClosed) action() })
+        scheduler.nextTick { if (!library.isClosed) action() }
     }
 
-    /** Identifies [sender] in update audit records. */
     fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
         is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
         is ConsoleCommandSender -> UpdateActor(UpdateActor.Kind.CONSOLE, "console", sender.name)

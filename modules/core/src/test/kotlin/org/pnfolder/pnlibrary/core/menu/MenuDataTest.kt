@@ -26,14 +26,13 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.DataCall
 import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.lang.reflect.Proxy
 import java.time.Duration
 import java.time.Instant
@@ -124,9 +123,8 @@ class MenuDataTest {
             }
         } as MenuData
         val server = MenuDataServer(data) { it.run() }
-        val client = DataClient()
-        LinkHub.key = key
-        LinkHub.uplink = { bytes ->
+        lateinit var client: DataClient
+        client = DataClient(key) { bytes ->
             val call: DataCall = LinkCodec.decodeCall(bytes, key)!!
             server.handle(call) { ok, text ->
                 DataChunks.split(call.id, "lobby", ok, text, key)!!.forEach { client.accept(LinkCodec.decodeChunk(it, key)!!) }
@@ -137,13 +135,7 @@ class MenuDataTest {
     }
 
     private fun <T> over(vararg answers: Pair<String, Any?>, check: (RemoteMenuData) -> T): T {
-        val remote = connected(*answers)
-        try {
-            return check(remote)
-        } finally {
-            LinkHub.uplink = null
-            LinkHub.key = null
-        }
+        return check(connected(*answers))
     }
 
     @Test
@@ -163,6 +155,14 @@ class MenuDataTest {
             assertEquals(7, remote.historyCount(null).toCompletableFuture().get())
             assertTrue(remote.checkAll(UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin")).toCompletableFuture().get())
             assertNull(remote.snapshot("none"))
+        }
+    }
+
+    @Test
+    fun `the placeholders of a server travel through the link`() {
+        val info = org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo("pnclans/war:score", "Integer", "number", listOf("cl_war~score"), true)
+        over("placeholders" to listOf(info)) { remote ->
+            assertEquals(listOf(info), remote.placeholders())
         }
     }
 

@@ -27,7 +27,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -45,7 +44,7 @@ class CheckSystemTest {
 
     private fun load(vararg lines: String): ShopFile {
         Files.writeString(directory.resolve("shop.yml"), lines.joinToString("\n") + "\n")
-        ConfigurationServiceImpl(object : PlatformOwnership {}).use {
+        ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform).use {
             val scope = it.scope(ActionFormatTest.Owner(directory.toFile()), PluginId.of("tester"))
             return scope.yaml<ShopFile>("shop.yml", ConfigOptions.DEFAULT) { ShopFile() }.load().value
         }
@@ -241,7 +240,7 @@ class CheckSystemTest {
                 ),
             ),
         )
-        ConfigurationServiceImpl(object : PlatformOwnership {}).use {
+        ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform).use {
             val scope = it.scope(ActionFormatTest.Owner(directory.toFile()), PluginId.of("tester"))
             scope.yaml<ShopFile>("written.yml", ConfigOptions.DEFAULT) { defaults }.load()
         }

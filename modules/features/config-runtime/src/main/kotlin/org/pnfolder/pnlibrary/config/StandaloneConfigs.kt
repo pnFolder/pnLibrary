@@ -3,11 +3,11 @@ package org.pnfolder.pnlibrary.config
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
 import java.nio.file.Path
 import java.util.function.Supplier
-import java.util.logging.Logger
 
 /**
  * Opens typed YAML files that belong to the library itself rather than to a plugin.
@@ -33,7 +33,7 @@ object StandaloneConfigs {
         defaults: Supplier<T>,
         options: ConfigOptions,
         validator: ConfigValueValidator<T>,
-        logger: Logger,
+        logger: PnLogger,
     ): ManagedConfig<T> {
         val codec = AnnotatedYamlCodec(
             type = type,

@@ -27,6 +27,12 @@ permissions:
   pnlibrary.tasks:
     description: 'Смотреть задачи плагинов (/pn tasks) и отменять их'
     default: op
+  pnlibrary.placeholders:
+    description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
+    default: op
+  pnlibrary.stats:
+    description: 'Смотреть сводную статистику библиотеки (/pn stats)'
+    default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений
     default: op

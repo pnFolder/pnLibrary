@@ -18,10 +18,8 @@ import java.util.function.Consumer
  * callback returns and rolls back partial resources if any integration fails to initialize.
  */
 interface PluginBuilder {
-    /** Adds one managed pnLibrary component or external plugin dependency. */
     fun depends(dependency: PluginDependency): PluginBuilder
 
-    /** Adds several dependencies using the same unified DSL. */
     fun depends(vararg dependencies: PluginDependency): PluginBuilder {
         dependencies.forEach(::depends)
         return this
@@ -61,7 +59,6 @@ interface PluginBuilder {
         return updates(builder.build())
     }
 
-    /** Adds dependencies through the unified product/native-plugin DSL. */
     fun dependencies(configure: Consumer<DependencyBuilder>): PluginBuilder {
         val builder = DependencyBuilder()
         configure.accept(builder)

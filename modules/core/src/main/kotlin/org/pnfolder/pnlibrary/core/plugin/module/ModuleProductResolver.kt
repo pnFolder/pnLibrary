@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Resolves and binds the update identity represented by one registered module. */
 internal class ModuleProductResolver(
     private val platform: PlatformOwnership,
 ) {

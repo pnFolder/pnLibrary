@@ -18,12 +18,9 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
-/** Outcome of routing one invocation: a node that can run, or an error to answer. */
 internal sealed class CommandRoute {
-    /** [path] runs from the command's root down to [node]. */
     data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
 
-    /** Something went wrong; [nodes] runs from the deepest node involved up to the command's root. */
     data class Problem(val error: CommandError, val nodes: List<CommandNode>) : CommandRoute()
 }
 
@@ -40,10 +37,7 @@ internal class CommandTreeRouter {
         var index = 0
         while (index < context.arguments.size) {
             val token = context.arguments[index]
-            val literal = node.children.firstOrNull {
-                it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
-            }
-            val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+            val child = childFor(node, token)
             if (child == null) {
                 if (node.acceptsExtraArguments && node.isExecutable) return CommandRoute.Executable(node, routed, nodes)
                 return problem(UnknownArgument(usage(path, node, routed), token), nodes)
@@ -96,10 +90,7 @@ internal class CommandTreeRouter {
         consumed.forEach { token ->
             // Everything typed after a greedy argument still belongs to that argument.
             if (node.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY) return@forEach
-            val literal = node.children.firstOrNull {
-                it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true)
-            }
-            val child = literal ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+            val child = childFor(node, token)
                 ?: return if (node.acceptsExtraArguments) node.suggestions.suggest(routed.copy(currentInput = partial))
                 else completedSuggestions(emptyList())
             if (!allowed(child, routed)) return completedSuggestions(emptyList())
@@ -111,7 +102,14 @@ internal class CommandTreeRouter {
             routed = context.copy(parsedValues = values.toMap(), currentInput = partial)
         }
 
-        val suggestionContext = routed.copy(currentInput = partial)
+        return lastSuggestions(node, routed.copy(currentInput = partial), partial)
+    }
+
+    private fun childFor(node: CommandNode, token: String): CommandNode? =
+        node.children.firstOrNull { it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true) }
+            ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+
+    private fun lastSuggestions(node: CommandNode, suggestionContext: CommandContext, partial: String): CompletionStage<List<String>> {
         val literals = node.children.asSequence()
             .filter { it.kind == CommandNodeKind.LITERAL }
             .filter { allowed(it, suggestionContext) }
@@ -130,7 +128,6 @@ internal class CommandTreeRouter {
         }
     }
 
-    /** The accepted values of a choice or boolean argument, offered even when the command suggests nothing itself. */
     private fun builtInSuggestions(argument: CommandNode): List<String> {
         val spec = argument.argumentType?.spec ?: return emptyList()
         return when (spec.kind) {

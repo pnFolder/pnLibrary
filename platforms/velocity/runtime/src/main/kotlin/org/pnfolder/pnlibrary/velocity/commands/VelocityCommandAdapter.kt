@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -23,7 +23,6 @@ internal class VelocityCommandAdapter internal constructor(
     private val audience: (CommandSource) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    /** Creates an adapter backed by Velocity's command manager. */
     constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->
@@ -33,7 +32,6 @@ internal class VelocityCommandAdapter internal constructor(
         },
     )
 
-    /** Converts a native invocation into the portable command context. */
     override fun context(
         source: CommandSource,
         alias: String,
@@ -52,7 +50,6 @@ private class VelocityCommandSender(
     private val audience: AudienceSender,
     private val proxyControl: Boolean,
 ) : CommandSender, AudienceSender by audience {
-    /** Sends the command response through the wrapped audience. */
     override fun send(message: Component) = audience.sendMessage(shown(message))
 
     // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
@@ -68,7 +65,6 @@ private class DefaultVelocityNativeCommandRegistrar(
     private val server: ProxyServer,
 ) : NativeCommandRegistrar<CommandSource> {
 
-    /** Registers execution and asynchronous suggestions with Velocity. */
     override fun register(
         owner: Any,
         command: CommandDefinition,

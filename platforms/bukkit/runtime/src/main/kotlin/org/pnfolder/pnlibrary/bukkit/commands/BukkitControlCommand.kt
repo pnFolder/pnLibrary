@@ -4,16 +4,20 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
-import org.pnfolder.pnlibrary.core.commands.EventBusCommand
-import org.pnfolder.pnlibrary.core.commands.ServersCommand
-import org.pnfolder.pnlibrary.core.commands.TaskCommand
+import org.pnfolder.pnlibrary.bukkit.menu.PluginsMenu
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
+import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
+import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
+import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 
@@ -46,27 +50,48 @@ internal class BukkitControlCommand(
     private val plugin: Plugin,
     private val library: PnLibrary,
     private val currencies: CurrencyProviderRegistry,
-) {
-    private val feedback = BukkitSettingFeedback(plugin)
-    private val replies = BukkitCommandReplies(plugin, library)
+    private val link: Link = Link.OFF,
+    private val scheduler: ServerScheduler = ServerScheduler(plugin),
+) : AutoCloseable {
+    private val feedback = BukkitSettingFeedback(scheduler)
+    private val replies = BukkitCommandReplies(library, scheduler)
     private val catalog = UpdateCatalogCommands(
         library = library,
         routes = ROUTES,
         viewPermission = "pnlibrary.updates.view",
         backupsPermission = "pnlibrary.updates.rollback",
         managePermission = "pnlibrary.updates.settings",
-        deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
+        deliver = { task -> if (!library.isClosed) scheduler.nextTick(task) },
         onSaved = { context, saved -> (context.sender as? BukkitCommandSender)?.native?.let { it as? Player }?.let { feedback.show(it, saved) } },
     )
-    private val updates = BukkitUpdateFlow(plugin, library, catalog, replies)
+    private val updates = BukkitUpdateFlow(plugin, library, catalog, replies, scheduler)
     private val support = BukkitSupportCommands(plugin, library, replies)
-    private val menu = PluginsMenu(plugin, library, replies)
+    private val menu = PluginsMenu(plugin, library, replies, link, scheduler)
 
-    /** Builds the permission-aware control command tree. */
+    override fun close() = menu.close()
+
     fun definition(): CommandDefinition = command("pn") {
         // Other labels for the same command: they keep it reachable when another plugin already owns `/pn`.
         aliases("pnlib", "pnlibrary")
         executes(::overview)
+        statusViews()
+        updateViews()
+        library.mountableCommand("events")?.let { mount("events", it) }
+        library.mountableCommand("debug")?.let { mount("debug", it) }
+        library.mountableCommand("stats")?.let { mount("stats", it) }
+        library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
+        mount("bus", EventBusCommand(library).definition())
+        mount("tasks", TaskCommand(library).definition())
+        mount("servers", ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition())
+        mount("money", CurrencyCommandExecutor(currencies, scheduler).definition())
+        literal("support") {
+            permission(ADMIN, VIEW)
+            executes { replies.native(it) { _, reply -> support.support(reply) } }
+        }
+    }
+
+    /** Status, check, the menu and the update catalog. */
+    private fun CommandBuilder.statusViews() {
         literal("status") {
             permission(ADMIN, VIEW)
             executes { replies.native(it) { sender, reply -> updates.sendStatus(sender, reply, null) } }
@@ -95,6 +120,10 @@ internal class BukkitControlCommand(
                 }
             }
         }
+    }
+
+    /** Staging, confirming, rolling back and restarting an update. */
+    private fun CommandBuilder.updateViews() {
         // Words after `update` are subcommands first and a plugin name second, so no plugin may be named like one.
         literal("update") {
             permission(ADMIN, DOWNLOAD)
@@ -117,16 +146,6 @@ internal class BukkitControlCommand(
                 }
             }
         }
-        library.mountableCommand("events")?.let { mount("events", it) }
-        library.mountableCommand("debug")?.let { mount("debug", it) }
-        mount("bus", EventBusCommand(library).definition())
-        mount("tasks", TaskCommand(library).definition())
-        mount("servers", ServersCommand(ServersCommand.fromNetworkMap()).definition())
-        mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
-        literal("support") {
-            permission(ADMIN, VIEW)
-            executes { replies.native(it) { _, reply -> support.support(reply) } }
-        }
     }
 
     /** `/pn` alone: the list of plugins for an administrator, otherwise the commands the sender may use. */
@@ -137,6 +156,8 @@ internal class BukkitControlCommand(
             if (sender.hasPermission("pnlibrary.events.view")) add("/pn events")
             if (sender.hasPermission("pnlibrary.events.bus")) add("/pn bus")
             if (sender.hasPermission("pnlibrary.tasks")) add("/pn tasks")
+            if (sender.hasPermission("pnlibrary.stats")) add("/pn stats")
+            if (sender.hasPermission("pnlibrary.placeholders")) add("/pn placeholders")
             if (sender.hasPermission(ServersCommand.PERMISSION)) add("/pn servers")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")

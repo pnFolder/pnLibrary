@@ -15,8 +15,10 @@ import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
@@ -28,8 +30,10 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
 import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
@@ -40,6 +44,7 @@ import java.util.concurrent.TimeUnit
 internal class BukkitPlatformAdapter(
     val plugin: Plugin,
     audienceService: BukkitAudienceService,
+    private val link: Link = Link.OFF,
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
@@ -62,7 +67,9 @@ internal class BukkitPlatformAdapter(
         JulLogObserver.matchPlugin(loggerName, Bukkit.getPluginManager().plugins.asList()) { it.name }
     }
     private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
-    private val schedulerBridge = BukkitSchedulerBridge(plugin, ::log)
+
+    /** Where pnLibrary's own work runs: the main thread, or on Folia the global region or a player's region. */
+    val scheduler = ServerScheduler(plugin)
     private var lifecycleListener: BukkitLifecycleListener? = null
 
     override val type: PlatformType = PlatformType.BUKKIT
@@ -96,7 +103,6 @@ internal class BukkitPlatformAdapter(
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
-    /** Sends legacy-formatted output to the server console. */
     override fun console(owner: Any, message: String) {
         Bukkit.getConsoleSender().sendMessage(message)
     }
@@ -104,7 +110,10 @@ internal class BukkitPlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed plugin versions for compatibility checks. */
+    override fun ownerDataFolder(owner: Any): Path? = plugins.find(owner)?.dataFolder?.toPath()
+
+    override fun ownerLogger(owner: Any): Logger? = plugins.find(owner)?.logger
+
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed platform metadata without individual player identities. */
@@ -116,14 +125,12 @@ internal class BukkitPlatformAdapter(
             plugins = plugins.snapshots(),
         )
 
-    /** Creates a policy context for an installed native Bukkit plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
     ): RemotePolicyContext =
         BukkitRemotePolicyContextFactory.create(plugins.requireInstalled(owner, "Remote policy owner"), values)
 
-    /** Disables an installed native plugin through Bukkit's plugin manager. */
     override fun disableOwner(owner: Any): Boolean {
         val installed = plugins.requireInstalled(owner, "Disabled owner")
         BukkitDependentGuard.disableDependentsOf(installed) { plugin.logger.warning(it) }
@@ -134,11 +141,7 @@ internal class BukkitPlatformAdapter(
     /** Disables dependents as they enable and switches [owner] off once the server has started. */
     override fun disableDependents(owner: Any): Boolean {
         if (owner !== plugin) return false
-        val later: (Runnable) -> Unit = { task ->
-            if (ServerCapabilities.isFolia) schedulerBridge.executeGlobal(task)
-            else Bukkit.getScheduler().runTask(plugin, task)
-        }
-        return runCatchingNonFatal { BukkitDependentGuard(plugin, later) { plugin.logger.warning(it) }.arm() }.isSuccess
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }.isSuccess
     }
 
     /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */
@@ -155,11 +158,11 @@ internal class BukkitPlatformAdapter(
     override fun bind(library: PnLibrary) {
         lifecycle.bind {
             lifecycleListener = lifecycle.track(BukkitLifecycleListener(plugin, library).start())
-            lifecycle.track(library.registerRuntimeCommand(BukkitControlCommand(plugin, library, library.currencyProviders).definition()))
+            val control = lifecycle.track(BukkitControlCommand(plugin, library, library.currencyProviders, link, scheduler))
+            lifecycle.track(library.registerRuntimeCommand(control.definition()))
         }
     }
 
-    /** Collects details on the appropriate server scheduler with a bounded wait. */
     override fun diagnosticDetails(
         includeSensitive: Boolean,
     ): Map<String, Any?> {
@@ -180,20 +183,9 @@ internal class BukkitPlatformAdapter(
         return result.get(DIAGNOSTIC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
-    /** Runs work on the primary thread or Folia global-region scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) return
-
-        if (ServerCapabilities.isFolia) {
-            schedulerBridge.executeGlobal(task)
-            return
-        }
-
-        if (Bukkit.isPrimaryThread()) {
-            task.run()
-        } else {
-            Bukkit.getScheduler().runTask(plugin, task)
-        }
+        dispatch { scheduler.execute(task) }
     }
 
     /** Runs work after server readiness, falling back to global dispatch. */
@@ -201,17 +193,16 @@ internal class BukkitPlatformAdapter(
         lifecycleListener?.whenServerReady(task) ?: executeGlobal(task)
     }
 
-    /** Routes player replies to their Folia region, otherwise to global dispatch. */
+    /** Routes player replies to the player's thread, everything else to global dispatch. */
     override fun executeReply(recipient: Any, task: Runnable) {
         if (lifecycle.isClosed) return
+        val player = ((recipient as? BukkitCommandSender)?.native ?: recipient) as? Player
+        if (player == null) dispatch { scheduler.execute(task) } else dispatch { scheduler.onPlayer(player, task) }
+    }
 
-        val nativeRecipient = (recipient as? BukkitCommandSender)?.native ?: recipient
-        if (nativeRecipient is Player && ServerCapabilities.isFolia) {
-            schedulerBridge.executeEntity(nativeRecipient, task)
-            return
-        }
-
-        executeGlobal(task)
+    // A reply that cannot be scheduled (the plugin is being disabled) must not fail the code that sent it.
+    private fun dispatch(schedule: () -> Unit) {
+        runCatchingNonFatal(schedule).onFailure { log(plugin, LogLevel.ERROR, "Не удалось передать задачу планировщику сервера", it) }
     }
 
     /** Releases registrations, cancels native tasks and stops native log observation once. */

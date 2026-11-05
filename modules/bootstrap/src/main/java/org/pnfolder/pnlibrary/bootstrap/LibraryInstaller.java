@@ -177,7 +177,7 @@ public final class LibraryInstaller {
      * One line of the restart countdown, for the console and online players.
      *
      * @param secondsLeft seconds until the proxy stops
-     * @return for example {@code [pnLibrary] Перезапуск прокси через 3 с: установлена pnLibrary для pnCases}
+     * @return for example {@code [pnLibrary] Restarting proxy in 3 s: pnLibrary installed for pnCases}
      */
     public String countdownLine(int secondsLeft) {
         return "[" + BootstrapDefaults.PRODUCT_NAME + "] Перезапуск прокси через " + secondsLeft + " с: установлена " + BootstrapDefaults.PRODUCT_NAME + " для " + pluginName;

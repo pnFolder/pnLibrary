@@ -42,13 +42,10 @@ class PlaceholderAccess private constructor(
     }
     /** Common policies and the Java-friendly custom-policy entry point. */
     companion object {
-        /** Creates a policy visible only to the plugin that owns the placeholder. */
         @JvmStatic
         fun ownerOnly(): PlaceholderAccess = Builder().owner().build()
-        /** Creates a policy visible to the owner and every pnLibrary plugin. */
         @JvmStatic
         fun shared(): PlaceholderAccess = Builder().owner().allowAllLibraryPlugins().build()
-        /** Creates an initially empty policy that denies access until rules are added. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }
@@ -64,7 +61,6 @@ class PlaceholderAccess private constructor(
         fun owner(): Builder = apply { owner = true }
         /** Allows every plugin registered with pnLibrary. */
         fun allowAllLibraryPlugins(): Builder = apply { all = true }
-        /** Adds exact plugin IDs to the allow set. */
         fun allow(vararg ids: String): Builder = apply { ids.map(PluginId::of).forEach(allow::add) }
         /** Adds case-insensitive plugin-ID patterns; `*` is the wildcard token. */
         fun allowMatching(vararg values: String): Builder = apply {
@@ -73,7 +69,6 @@ class PlaceholderAccess private constructor(
         }
         /** Explicitly denies plugin IDs, overriding every allow rule. */
         fun deny(vararg ids: String): Builder = apply { ids.map(PluginId::of).forEach(deny::add) }
-        /** Creates an immutable access policy from the configured rules. */
         fun build(): PlaceholderAccess = PlaceholderAccess(
             owner,
             all,

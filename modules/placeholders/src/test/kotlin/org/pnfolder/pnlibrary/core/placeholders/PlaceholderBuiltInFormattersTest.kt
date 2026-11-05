@@ -1,0 +1,58 @@
+package org.pnfolder.pnlibrary.core.placeholders
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import java.time.Duration
+
+class PlaceholderBuiltInFormattersTest {
+    private val forms = listOf("item", "items", "items-many")
+
+    @Test
+    fun `plural formatter handles conventional edge cases`() {
+        assertEquals("item", PlaceholderBuiltInFormatters.plural(1, forms))
+        assertEquals("items", PlaceholderBuiltInFormatters.plural(24, forms))
+        assertEquals("items-many", PlaceholderBuiltInFormatters.plural(11, forms))
+        assertEquals("items-many", PlaceholderBuiltInFormatters.plural(-12, forms))
+    }
+
+    @Test
+    fun `duration formatter preserves sign and omits empty units`() {
+        assertEquals("1d 1h 1m 1s", PlaceholderBuiltInFormatters.duration(Duration.ofSeconds(90_061)))
+        assertEquals("-1m 1s", PlaceholderBuiltInFormatters.duration(-61))
+        assertEquals("0s", PlaceholderBuiltInFormatters.duration(0))
+    }
+
+    @Test
+    fun `number group and short format numbers and keep other text`() {
+        assertEquals("3.14", PlaceholderBuiltInFormatters.number(3.14159, listOf("2")))
+        assertEquals("3", PlaceholderBuiltInFormatters.number("2.5", emptyList()))
+        assertEquals("abc", PlaceholderBuiltInFormatters.number("abc", listOf("2")))
+        assertEquals("1 234 567.5", PlaceholderBuiltInFormatters.group(1234567.5))
+        assertEquals("-1 000", PlaceholderBuiltInFormatters.group(-1000))
+        assertEquals("999", PlaceholderBuiltInFormatters.short(999))
+        assertEquals("1.5k", PlaceholderBuiltInFormatters.short(1500))
+        assertEquals("2.3M", PlaceholderBuiltInFormatters.short(2_300_000))
+        assertEquals("Hello", PlaceholderBuiltInFormatters.capitalize("hello"))
+    }
+
+    @Test
+    fun `round and percent`() {
+        assertEquals("3.1", PlaceholderBuiltInFormatters.round("3.10", listOf("2")))
+        assertEquals("25.6%", PlaceholderBuiltInFormatters.percent(0.256, listOf("1")))
+        assertEquals("50%", PlaceholderBuiltInFormatters.percent(0.5, emptyList()))
+    }
+
+    @Test
+    fun `money groups thousands and fixes cents`() {
+        assertEquals("1 234.50", PlaceholderBuiltInFormatters.money(1234.5, emptyList()))
+        assertEquals("-1 000", PlaceholderBuiltInFormatters.money(-1000, listOf("0")))
+    }
+
+    @Test
+    fun `pad title and date`() {
+        assertEquals("00042", PlaceholderBuiltInFormatters.pad(42, listOf("5", "0")))
+        assertEquals("Hello World", PlaceholderBuiltInFormatters.title("hELLO world"))
+        assertEquals("1970", PlaceholderBuiltInFormatters.date(0L, listOf("yyyy")))
+        assertEquals("soon", PlaceholderBuiltInFormatters.date("soon", emptyList()))
+    }
+}

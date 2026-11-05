@@ -13,19 +13,15 @@ import org.bukkit.inventory.ItemStack
  */
 interface VisualEntity {
 
-    /** The backing entity, for lifecycle tracking. */
     val entity: Entity
 
-    /** Whether the backing entity still exists. */
     val isValid: Boolean
 
-    /** A copy of the visible location. */
     val location: Location
 
     /** Moves the visual; if the server rejects the teleport, [location] stays as it was. */
     fun teleport(location: Location)
 
-    /** Turns the visual without moving it. */
     fun setRotation(yaw: Float, pitch: Float)
 
     /** Uses the small model for scales between 0 and 0.72, the normal one otherwise. */
@@ -56,6 +52,5 @@ interface VisualService {
     /** Spawns a floating block seen at [location]; `null` or air shows a chest. */
     fun block(location: Location, material: Material?): VisualEntity
 
-    /** Spawns a floating text label at [location]. */
     fun text(location: Location, text: String?): VisualEntity
 }

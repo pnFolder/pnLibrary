@@ -15,24 +15,21 @@ enum class LogLevel {
     WARNING,
     /** Failed operation or unexpected exception. */
     ERROR,
+
+    /** Failure that leaves the plugin or the server unable to do its job; always reaches the black box. */
+    CRITICAL,
 }
 
-/** Creates native loggers and formatted lifecycle summaries for one plugin. */
 interface LoggingService {
 
-    /** Creates a logger that prefixes messages with [name] and attributes them to [owner]. */
     fun logger(owner: Any, name: String): PnLogger
 
-    /** Creates a generic one-shot message box with [title]. */
     fun box(owner: Any, title: String): MessageBox
 
-    /** Creates a one-shot shutdown summary with [title]. */
     fun shutdownBox(owner: Any, title: String): MessageBox
 
-    /** Creates an enabled box with explicit display metadata. */
     fun box(owner: Any, name: String, version: String): MessageBox = box(owner, "$name $version")
 
-    /** Creates a disabled box with explicit display metadata. */
     fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
         shutdownBox(owner, "$name $version")
 }
@@ -56,6 +53,9 @@ interface PnLogger {
 
     /** Writes normal operational information; with [record] `false` it stays out of the black box. */
     fun info(message: String, record: Boolean) = log(LogLevel.INFO, message, null, record)
+
+    /** Writes normal operational information together with the [error] that explains it, kept with its stack trace. */
+    fun info(message: String, error: Throwable?) = log(LogLevel.INFO, message, error, true)
 
     /** Writes positive completion or readiness information to the console and the black box. */
     fun success(message: String) = log(LogLevel.SUCCESS, message, null, true)
@@ -84,11 +84,17 @@ interface PnLogger {
     /** Writes a failure with its [error]; with [record] `false` it stays out of the black box. */
     fun error(message: String, error: Throwable?, record: Boolean) = log(LogLevel.ERROR, message, error, record)
 
+    /** Writes a failure that stops the plugin from working, with the [error] behind it, to the console and the black box. */
+    fun critical(message: String, error: Throwable? = null) = log(LogLevel.CRITICAL, message, error, true)
+
     /**
      * Writes a detail for a support report only: the black box keeps it and the console stays quiet. Use it where the
      * old code logged at `FINE`.
      */
     fun debug(message: String) = log(LogLevel.DEBUG, message, null, true)
+
+    /** Writes a detail for a support report together with its [error]; the console stays quiet. */
+    fun debug(message: String, error: Throwable?) = log(LogLevel.DEBUG, message, error, true)
 }
 
 /**
@@ -100,16 +106,12 @@ interface PnLogger {
  */
 interface MessageBox {
 
-    /** Adds a successful subsystem row. */
     fun ok(label: String, detail: String): MessageBox
 
-    /** Adds a recoverable-warning row. */
     fun warn(label: String, detail: String): MessageBox
 
-    /** Adds a deliberately skipped subsystem row. */
     fun skip(label: String, detail: String): MessageBox
 
-    /** Adds a failed row and optional original [error]. */
     fun fail(label: String, detail: String, error: Throwable? = null): MessageBox
 
     /**

@@ -4,8 +4,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.config.*
+import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
+import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger
 import java.nio.file.Path
-import java.util.logging.Logger
 
 class CodeFirstYamlTest {
     @TempDir lateinit var directory: Path
@@ -49,6 +50,18 @@ class CodeFirstYamlTest {
     }
 
     @Test
+    fun `a section indented with four spaces is matched instead of duplicated`() {
+        val current = "root:\n    existing: 5\n"
+        val defaults = "root:\n  existing: 1\n  added: 2\n"
+
+        val result = YamlDefaultsMerger.merge(current, defaults)
+
+        assertEquals(listOf("root.added"), result.addedPaths)
+        assertEquals("root:\n    existing: 5\n\n    added: 2\n", result.content)
+        assertEquals(listOf("root", "root.existing", "root.added"), YamlDefaultsMerger.paths(result.content))
+    }
+
+    @Test
     fun `managed lifecycle keeps last value after failed reload`() {
         data class Value(val port: Int)
         val file = directory.resolve("config.yml").toFile()
@@ -57,7 +70,7 @@ class CodeFirstYamlTest {
             override fun decode(yaml: String) = Value(Regex("port: (\\d+)").find(yaml)?.groupValues?.get(1)?.toInt()
                 ?: error("port is missing"))
         }
-        val managed = CodeFirstYaml(file, Value(3306), codec, Logger.getAnonymousLogger(),
+        val managed = CodeFirstYaml(file, Value(3306), codec, PlatformPnLogger(object : PlatformLogging {}, "test", "test"),
             ConfigValidatorBuilder<Value>().require("port", "invalid") { it.port in 1..65535 }.build())
 
         assertEquals(3306, managed.loadValue().port)

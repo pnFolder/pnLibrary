@@ -13,7 +13,6 @@ internal class HidingLifecycleBox(
     private val delegate: MessageBox,
     private val autoRows: List<AutoRow>,
 ) : MessageBox {
-    /** One automatic row: its [tag], whether it is a "not configured" row, and how it is written. */
     class AutoRow(val tag: LifecycleRow, val notConfigured: Boolean, val write: (MessageBox) -> Unit)
 
     private val hidden = linkedSetOf<LifecycleRow>()

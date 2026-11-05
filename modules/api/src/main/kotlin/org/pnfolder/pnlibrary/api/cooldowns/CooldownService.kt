@@ -16,11 +16,9 @@ class CooldownResult private constructor(
     /** Renders as `allowed` or `denied: <remaining>`. */
     override fun toString(): String = if (allowed) "allowed" else "denied: $remaining"
 
-    /** Factory methods for [CooldownResult]. */
     companion object {
         private val ALLOWED = CooldownResult(true, Duration.ZERO)
 
-        /** Returns the shared result for a newly acquired cooldown. */
         @JvmStatic
         fun allowed(): CooldownResult = ALLOWED
 

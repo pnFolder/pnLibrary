@@ -189,6 +189,56 @@ class UpdateTransactionTest {
     }
 
     @Test
+    fun `set that failed before publication is never offered for rollback`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val newTarget = plugins.resolve("market.jar")
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024), plugins)
+        val invalid = artifact("market-new.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        assertThrows(ArtifactVerificationException::class.java) {
+            transaction.prepareForRestart(listOf(TransactionArtifact(
+                specification(invalid, "market", "2.0.0", 4).copy(sha256 = "00".repeat(32)), invalid, newTarget,
+            )))
+        }
+        val failed = transaction.readJournal(directory.resolve("transactions").toFile().listFiles()!!.single().toPath().resolve("journal.json"))
+        assertEquals(TransactionState.FAILED, failed.state)
+        Files.write(newTarget, byteArrayOf(5))
+
+        assertTrue(transaction.rollbackCandidates().isEmpty())
+        assertThrows(IllegalArgumentException::class.java) { transaction.rollbackCandidate(UUID.fromString(failed.id)) }
+        assertArrayEquals(byteArrayOf(5), Files.readAllBytes(newTarget))
+    }
+
+    @Test
+    fun `rollback of a new component removes it and a leftover publishing copy`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val target = plugins.resolve("market.jar")
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024), plugins)
+        val source = artifact("market-new.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val applied = transaction.apply(listOf(TransactionArtifact(specification(source, "market", "2.0.0", 4), source, target))) { true }
+        val leftover = plugins.resolve("market.jar.publishing").also { Files.write(it, byteArrayOf(3)) }
+
+        transaction.rollback(applied.journal)
+
+        assertEquals(false, Files.exists(target))
+        assertEquals(false, Files.exists(leftover))
+    }
+
+    @Test
+    fun `rollback replaces the target through a sibling copy`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val target = plugins.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
+        val transaction = UpdateTransaction(directory.resolve("transactions"), ArtifactVerifier(1024 * 1024), plugins)
+        val source = artifact("market-new.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val applied = transaction.apply(listOf(TransactionArtifact(specification(source, "market", "2.0.0", 4), source, target))) { true }
+        Files.write(plugins.resolve("market.jar.publishing"), byteArrayOf(3))
+
+        transaction.rollback(applied.journal)
+
+        assertArrayEquals(byteArrayOf(9), Files.readAllBytes(target))
+        assertEquals(false, Files.exists(plugins.resolve("market.jar.publishing")))
+    }
+
+    @Test
     fun `selected rollback restores that saved set rather than the latest one`() {
         val plugins = directory.resolve("plugins").also(Files::createDirectories)
         val target = plugins.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }

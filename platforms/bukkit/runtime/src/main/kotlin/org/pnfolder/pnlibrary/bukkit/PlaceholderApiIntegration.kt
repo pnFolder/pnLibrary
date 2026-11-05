@@ -10,7 +10,7 @@ internal class PlaceholderApiIntegration(private val context: IntegrationContext
     override fun connect() {
         if (registration != null || !context.plugin.server.pluginManager.isPluginEnabled(pluginName)) return
         registration = context.runtime.library.placeholderAdapters.register(PlaceholderApiAdapter(context.plugin))
-        context.plugin.logger.info("PlaceholderAPI integration connected")
+        context.runtime.library.logging.logger(context.plugin, "pnLibrary").info("PlaceholderAPI integration connected")
     }
 
     override fun close() {

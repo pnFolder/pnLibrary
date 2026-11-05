@@ -24,7 +24,6 @@ internal object ServerCapabilities {
      */
     val rawMinecraftVersion: String by lazy { BukkitMinecraftVersion.rawCurrent() }
 
-    /** Whether Paper configuration classes are present. */
     val isPaper: Boolean by lazy {
         hasClass("io.papermc.paper.configuration.Configuration") ||
         hasClass("com.destroystokyo.paper.PaperConfig")
@@ -35,32 +34,25 @@ internal object ServerCapabilities {
         hasClass("io.papermc.paper.threadedregions.RegionizedServer")
     }
 
-    /** Whether the Purpur configuration class is present. */
     val isPurpur: Boolean by lazy {
         hasClass("org.purpurmc.purpur.PurpurConfig")
     }
 
-    /** Whether either known Leaf configuration class is present. */
     val isLeaf: Boolean by lazy {
         hasClass("org.leaf.LeafConfig") || hasClass("cn.dreeam.leaf.LeafConfig")
     }
 
-    /** Whether the native server exposes a public zero-argument `getTPS` method. */
-    val hasTPS: Boolean by lazy {
-        hasMethod(Bukkit.getServer().javaClass, "getTPS")
+    // Paper and its forks add getTPS; Spigot has no such method.
+    private val tpsMethod by lazy {
+        runCatching { Bukkit.getServer().javaClass.getMethod("getTPS") }.getOrNull()
     }
 
-    /** Returns the native TPS windows, or `null` when unavailable or incompatible. */
-    fun getTPS(): DoubleArray? {
-        if (!hasTPS) return null
-        return try {
-            val method = Bukkit.getServer().javaClass.getMethod("getTPS")
-            method.invoke(Bukkit.getServer()) as DoubleArray
-        } catch (_: ReflectiveOperationException) {
-            null
-        } catch (_: ClassCastException) {
-            null
-        }
+    /** Whether the server reports its TPS (Paper and its forks). */
+    val hasTPS: Boolean get() = tpsMethod != null
+
+    /** The TPS over the last 1, 5 and 15 minutes, or `null` when the server does not report it. */
+    fun getTPS(): DoubleArray? = tpsMethod?.let { method ->
+        runCatching { method.invoke(Bukkit.getServer()) as? DoubleArray }.getOrNull()
     }
 
     /** Returns whether [className] can be linked without initializing the class. */

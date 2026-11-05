@@ -87,7 +87,6 @@ internal class VelocityTaskAdapter internal constructor(
         return handle
     }
 
-    /** Cancels all tasks still owned by this adapter. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) {
             return
@@ -127,7 +126,6 @@ internal class VelocityTaskAdapter internal constructor(
     ) : PlatformTaskHandle {
         private val cancelled = AtomicBoolean(false)
 
-        /** Cancels future invocations once and removes the task from tracking. */
         override fun cancel(): Boolean {
             if (!cancelled.compareAndSet(false, true)) {
                 return false

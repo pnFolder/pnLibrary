@@ -8,7 +8,7 @@ interface PlatformLogging {
     val logHandler: (Any, LogLevel, String, Throwable?) -> Unit
         get() = { _, level, message, error ->
             val line = "[pnLibrary/${level.name}] $message"
-            if (level == LogLevel.ERROR) System.err.println(line) else System.out.println(line)
+            if (level >= LogLevel.ERROR) System.err.println(line) else System.out.println(line)
             error?.printStackTrace(System.err)
         }
 

@@ -36,15 +36,12 @@ internal class BukkitLibraryPlayer(
     override val uniqueId: UUID get() = player.uniqueId
     override val name: String get() = player.name
 
-    /** Checks the native player permission. */
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
 
-    /** Delivers chat through the version-safe audience transport. */
     override fun sendMessage(text: Component) {
         audiences.sendMessage(player, text)
     }
 
-    /** Delivers an action bar through the version-safe audience transport. */
     override fun actionBar(text: Component) {
         audiences.sendActionBar(player, text)
     }
@@ -52,11 +49,9 @@ internal class BukkitLibraryPlayer(
     /** Plays a sound, falling back to the native Bukkit API where needed. */
     override fun playSound(sound: Sound): Delivery = audiences.playSound(player, sound)
 
-    /** Shows a title through the version-safe audience transport. */
     override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Delivery =
         audiences.showTitle(player, Title.title(title, subtitle, Title.Times.times(fadeIn, stay, fadeOut)))
 
-    /** Applies a potion effect using the best constructor supported by this server. */
     override fun applyEffect(effect: PlayerEffect): Delivery {
         val type = PotionEffectType.getByName(effect.key.uppercase()) ?: return Delivery.Unsupported
         val ticks = (effect.duration.toMillis() / MILLIS_PER_TICK)
@@ -75,7 +70,6 @@ internal class BukkitLibraryPlayer(
         return Delivery.of(player.addPotionEffect(configured, true))
     }
 
-    /** Dispatches a command as the player or as the console. */
     override fun runCommand(command: String, asConsole: Boolean): Delivery {
         val sender = if (asConsole) player.server.consoleSender else player
         return Delivery.of(player.server.dispatchCommand(sender, command))
@@ -89,7 +83,6 @@ internal class BukkitLibraryPlayer(
             .sumOf { stack -> stack.amount }
     }
 
-    /** Returns experience levels or total points of the native player. */
     override fun experience(asLevels: Boolean): Double? =
         if (asLevels) player.level.toDouble() else player.totalExperience.toDouble()
 

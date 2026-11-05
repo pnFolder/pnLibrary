@@ -36,11 +36,11 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
@@ -53,7 +53,7 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
@@ -78,7 +78,7 @@ internal class PluginRegistryImpl(
     private val remotePolicies: RemotePolicyMonitor,
     private val events: EventService,
     private val tasks: TaskService,
-    private val services: ServiceManagerImpl,
+    private val services: ServiceRegistry,
     private val logging: LoggingService,
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
@@ -86,7 +86,7 @@ internal class PluginRegistryImpl(
     private val shared: SharedFeatures,
     private val configurations: ConfigurationRuntime,
     private val commands: CommandService? = null,
-    private val directDownloads: DirectDownloadManager? = null,
+    private val directDownloads: DirectDownloads? = null,
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
@@ -244,20 +244,9 @@ internal class PluginRegistryImpl(
     ) : ModuleContext {
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
-        private val moduleCommands = mutableListOf<CommandRegistration>()
         private val commandFeedback = CommandFeedbackScope(parent.commandFeedback)
-        override fun registerCommand(command: CommandDefinition): CommandRegistration =
-            synchronized(moduleCommands) {
-                check(!isClosed) { "Module is closed" }
-                val registration = checkNotNull(commands) { "Commands are unavailable" }.register(owner, command, commandFeedback)
-                if (isClosed) {
-                    registration.close()
-                    error("Module is closed")
-                }
-                moduleCommands.removeAll { it.isClosed }
-                moduleCommands.add(registration)
-                registration
-            }
+        private val moduleCommands = ModuleCommands(owner, commands, commandFeedback) { isClosed }
+        override fun registerCommand(command: CommandDefinition): CommandRegistration = moduleCommands.register(command)
         override fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
             commandFeedback.handlers[type] = handler
         }
@@ -278,19 +267,7 @@ internal class PluginRegistryImpl(
         override val updates: UpdateRegistration? get() = resources.updates
         override val downloads: DownloadRegistration? get() = resources.downloads
 
-        fun startRemotePolicy(policy: RemotePolicySettings) {
-            remotePolicies.start(
-                owner = owner,
-                metadata = metadata,
-                policy = policy,
-                tasks = tasks,
-                isClosed = { isClosed },
-                logger = logger,
-                closeModule = ::close,
-                closePlugin = parent::close,
-            )
-        }
-
+        fun startRemotePolicy(policy: RemotePolicySettings) = remotePolicies.start(owner, this, policy, parent::close)
         override val lifecycle: PluginLifecycle = ModuleLifecycleReporter(
             owner = owner,
             moduleId = id,
@@ -311,9 +288,7 @@ internal class PluginRegistryImpl(
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
             productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
-            val registrations = synchronized(moduleCommands) {
-                moduleCommands.toList().also { moduleCommands.clear() }
-            }
+            val registrations = moduleCommands.drain()
             ResourceCleanup.closeAll(
                 { ResourceCleanup.closeAll(*registrations.asReversed().map { registration -> { registration.close() } }.toTypedArray()) },
                 { expansions.close() },

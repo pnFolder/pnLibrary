@@ -5,15 +5,8 @@ import net.md_5.bungee.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkHub
-import org.pnfolder.pnlibrary.core.link.LinkReceiver
-import org.pnfolder.pnlibrary.core.link.LinkSecret
-import org.pnfolder.pnlibrary.core.link.LinkTransport
-import org.pnfolder.pnlibrary.core.link.NetworkPublisher
-import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
-import org.pnfolder.pnlibrary.core.menu.ProxyMenu
+import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import java.util.concurrent.TimeUnit
 
@@ -28,55 +21,73 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var host: PnLibraryRuntimeHost? = null
     private var playerEvents: BungeePlayerEvents? = null
     private var linkListener: BungeeLinkListener? = null
+    private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
 
     fun start() {
+        try {
+            open()
+        } catch (error: Throwable) {
+            // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
+            runCatchingNonFatal(::stop)
+            throw error
+        }
+    }
+
+    private fun open() {
         val adapter = BungeePlatformAdapter(plugin)
         val started = PnLibraryRuntimeHost.launchPlatform(
             plugin,
             adapter,
             BungeePlatform::class.java,
-            BungeePlatformImpl(plugin.proxy),
+            BungeePlatformServices(plugin.proxy),
             adapter::markReady,
         )
         host = started
         val listener = BungeePlayerEvents(started.library)
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
-        val key = LinkSecret.readOrCreate(plugin.dataFolder.toPath())
-        val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
-        LinkHub.key = key
-        LinkHub.folder = plugin.dataFolder.toPath()
-        LinkHub.transport = transport
-        val data = ProxyMenu.server(started.library) { owner ->
-            (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) }
-        }
-        val link = BungeeLinkListener(LinkReceiver(key, executor = RemoteExecutor(started.library), transport = transport, data = data))
-        plugin.proxy.registerChannel(LinkCodec.CHANNEL)
-        plugin.proxy.pluginManager.registerListener(plugin, link)
-        linkListener = link
-        if (key != null) {
-            val publisher = NetworkPublisher(started.library, key, { "${plugin.proxy.name} ${plugin.proxy.version}" }, { plugin.proxy.onlineCount },
-                groups = { ServerGroups { LinkHub.folder?.resolve(ServerGroups.FILE) }.all() })
-            networkTask = plugin.proxy.scheduler.schedule(plugin, {
-                val message = publisher.message()
-                plugin.proxy.servers.values.forEach { runCatchingNonFatal { it.sendData(LinkCodec.CHANNEL, message, false) } }
-            }, NETWORK_DELAY_SECONDS, NETWORK_PERIOD_SECONDS, TimeUnit.SECONDS)
-        }
+        connectLink(started)
     }
 
-    private companion object {
-        const val NETWORK_DELAY_SECONDS = 10L
-        const val NETWORK_PERIOD_SECONDS = 30L
+    /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
+    private fun connectLink(started: PnLibraryRuntimeHost) {
+        val proxyLink = ProxyLink(
+            library = started.library,
+            folder = plugin.dataFolder.toPath(),
+            warn = plugin.logger::warning,
+            transport = { name, bytes ->
+                val server = plugin.proxy.servers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
+                server?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false
+            },
+            describe = { owner -> (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) } },
+            platformName = { "${plugin.proxy.name} ${plugin.proxy.version}" },
+            players = { plugin.proxy.onlineCount },
+            broadcast = { message -> plugin.proxy.servers.values.forEach { runCatchingNonFatal { it.sendData(LinkCodec.CHANNEL, message, false) } } },
+        )
+        link = proxyLink
+        val listener = BungeeLinkListener(proxyLink.receiver)
+        plugin.proxy.registerChannel(LinkCodec.CHANNEL)
+        plugin.proxy.pluginManager.registerListener(plugin, listener)
+        linkListener = listener
+        if (proxyLink.announces) {
+            networkTask = plugin.proxy.scheduler.schedule(
+                plugin,
+                proxyLink::announce,
+                ProxyLink.NETWORK_DELAY_SECONDS,
+                ProxyLink.NETWORK_PERIOD_SECONDS,
+                TimeUnit.SECONDS,
+            )
+        }
     }
 
     fun stop() {
         networkTask?.cancel()
-        LinkHub.transport = null
-        LinkHub.key = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null
+        link?.let { runCatchingNonFatal(it::close) }
+        link = null
         runCatchingNonFatal { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
         playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null

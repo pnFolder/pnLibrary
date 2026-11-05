@@ -24,9 +24,6 @@ import java.util.zip.GZIPOutputStream;
 
 public class MetricsBase {
 
-    /**
-     * The version of the Metrics class.
-     */
     public static final String METRICS_VERSION = "3.1.0";
 
     private static final String REPORT_URL = "https://bStats.org/api/v2/data/%s";
@@ -51,38 +48,6 @@ public class MetricsBase {
     private final Set<CustomChart> customCharts = new HashSet<>();
     private final boolean enabled;
 
-    /**
-     * Creates a new MetricsBase class instance.
-     *
-     * @param platform                    The platform of the service.
-     * @param serviceId                   The id of the service.
-     * @param serverUuid                  The server uuid.
-     * @param enabled                     Whether or not data sending is enabled.
-     * @param appendPlatformDataConsumer  A consumer that receives a
-     *                                    {@code JsonObjectBuilder} and appends all
-     *                                    platform-specific data.
-     * @param appendServiceDataConsumer   A consumer that receives a
-     *                                    {@code JsonObjectBuilder} and appends all
-     *                                    service-specific data.
-     * @param submitTaskConsumer          A consumer that takes a runnable with the
-     *                                    submit task.
-     *                                    This can be used to delegate the data
-     *                                    collection to a another thread to prevent
-     *                                    errors caused by concurrency. Can be
-     *                                    {@code null}.
-     * @param checkServiceEnabledSupplier A supplier to check if the service is
-     *                                    still enabled.
-     * @param errorLogger                 A consumer that accepts log message and an
-     *                                    error.
-     * @param infoLogger                  A consumer that accepts info log messages.
-     * @param logErrors                   Whether or not errors should be logged.
-     * @param logSentData                 Whether or not the sent data should be
-     *                                    logged.
-     * @param logResponseStatusText       Whether or not the response status text
-     *                                    should be logged.
-     * @param skipRelocateCheck           Whether or not the relocate check should be
-     *                                    skipped.
-     */
     public MetricsBase(
             String platform,
             String serverUuid,
@@ -192,10 +157,8 @@ public class MetricsBase {
 
         scheduler.execute(() -> {
             try {
-                // Send the data
                 sendData(data);
             } catch (Exception e) {
-                // Something went wrong! :(
                 if (logErrors) {
                     errorLogger.accept("Could not submit bStats metrics data", e);
                 }
@@ -240,9 +203,6 @@ public class MetricsBase {
         }
     }
 
-    /**
-     * Checks that the class was properly relocated.
-     */
     private void checkRelocation() {
         // You can use the property to disable the check in your test environment
         if (System.getProperty("bstats.relocatecheck") == null
@@ -262,12 +222,6 @@ public class MetricsBase {
         }
     }
 
-    /**
-     * Gzips the given string.
-     *
-     * @param str The string to gzip.
-     * @return The gzipped string.
-     */
     private static byte[] compress(final String str) throws IOException {
         if (str == null) {
             return null;

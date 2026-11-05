@@ -76,7 +76,7 @@ class JulLogObserver(
         @JvmStatic
         fun julLevel(level: LogLevel): Level = when (level) {
             LogLevel.WARNING -> Level.WARNING
-            LogLevel.ERROR -> Level.SEVERE
+            LogLevel.ERROR, LogLevel.CRITICAL -> Level.SEVERE
             else -> Level.INFO
         }
 

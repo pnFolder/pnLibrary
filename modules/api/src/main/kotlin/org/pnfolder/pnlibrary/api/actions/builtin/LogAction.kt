@@ -23,5 +23,6 @@ data class LogAction(
         LogLevel.SUCCESS -> context.logger.success(text)
         LogLevel.WARNING -> context.logger.warning(text)
         LogLevel.ERROR -> context.logger.error(text)
+        LogLevel.CRITICAL -> context.logger.critical(text)
     }
 }

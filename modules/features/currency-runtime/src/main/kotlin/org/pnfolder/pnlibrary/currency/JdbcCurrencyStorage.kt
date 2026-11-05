@@ -12,30 +12,27 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageSnapshot
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
-import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
 
 /**
- * JDBC-backed currency storage with serializable balance mutations and ledger writes.
- *
- * Owns the connection, transaction, schema-initialization, and async plumbing; row SQL lives in
- * [JdbcCurrencyLedger], history paging in [JdbcHistoryQuery], and snapshots in [JdbcCurrencySnapshots].
+ * JDBC currency storage: each balance change and its ledger row commit in one SERIALIZABLE transaction.
+ * Row SQL lives in [JdbcCurrencyLedger], history paging in [JdbcHistoryQuery], snapshots in [JdbcCurrencySnapshots].
  */
 internal class JdbcCurrencyStorage(
     private val dataSource: DataSource,
     tablePrefix: String,
 ) : CurrencyStorage {
     private val schema = JdbcCurrencySchema(tablePrefix)
-    private val initialized = AtomicBoolean(false)
+    private val schemaLock = Any()
+
+    @Volatile
+    private var initialized = false
     private val gson = Gson()
     private val decoder = JdbcTransactionDecoder(gson)
     private val ledger = JdbcCurrencyLedger(schema, gson, decoder)
@@ -44,7 +41,7 @@ internal class JdbcCurrencyStorage(
     private val worker = ManagedWorker("pnLibrary-currency-jdbc", parallelism = 2)
 
     override fun balance(currency: CurrencyKey, account: CurrencyAccount): CompletionStage<BigDecimal> = async {
-        connection { connection -> ledger.readBalance(connection, currency, account, false) }
+        connection { connection -> ledger.readBalance(connection, currency, account) }
     }
 
     override fun transact(
@@ -52,93 +49,57 @@ internal class JdbcCurrencyStorage(
         descriptor: CurrencyDescriptor,
         request: CurrencyTransactionRequest,
     ): CompletionStage<CurrencyTransaction> = async {
-        ensureSchema()
-        retryOnSerializationConflict { transactOnce(currency, descriptor, request) }
+        retryOnConflict {
+            connection { connection ->
+                committed(connection, Connection.TRANSACTION_SERIALIZABLE) {
+                    request.idempotencyKey?.let { ledger.findIdempotent(connection, currency, it) }
+                        ?: applyMutation(connection, currency, descriptor, request)
+                }
+            }
+        }
     }
 
-    /** Runs one SERIALIZABLE attempt; [transact] retries it when the database reports a conflict. */
-    private fun transactOnce(
+    private fun applyMutation(
+        connection: Connection,
         currency: CurrencyKey,
         descriptor: CurrencyDescriptor,
         request: CurrencyTransactionRequest,
-    ): CurrencyTransaction = dataSource.connection.use { connection ->
-        val previous = ConnectionSettings.capture(connection)
-        connection.autoCommit = false
-        connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
-        try {
-                request.idempotencyKey?.let { ledger.findIdempotent(connection, currency, it) }?.let {
-                    connection.rollback()
-                    return@use it
-                }
-                val accounts = listOfNotNull(request.source, request.target)
-                    .distinctBy { it.playerId }
-                    .sortedBy { it.playerId.toString() }
-                val balances = accounts
-                    .associateWith { ledger.readBalance(connection, currency, it, true) }
-                    .toMutableMap()
-                val sourceBefore = request.source?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
-                val targetBefore = request.target?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
-                val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
-                if (mutation.status == CurrencyTransactionStatus.COMMITTED) {
-                    request.source?.let {
-                        ledger.writeBalance(connection, currency, it, descriptor.normalize(requireNotNull(mutation.sourceAfter)))
-                    }
-                    request.target?.let {
-                        ledger.writeBalance(connection, currency, it, descriptor.normalize(requireNotNull(mutation.targetAfter)))
-                    }
-                }
-                val transaction = CurrencyTransaction(
-                    id = UUID.randomUUID(),
-                    currency = currency,
-                    type = request.type,
-                    status = mutation.status,
-                    amount = if (mutation.status == CurrencyTransactionStatus.COMMITTED) descriptor.normalize(request.amount) else request.amount,
-                    source = request.source,
-                    target = request.target,
-                    actor = request.actor,
-                    service = request.service,
-                    reason = request.reason,
-                    metadata = request.metadata,
-                    sourceBalanceBefore = mutation.sourceBefore,
-                    sourceBalanceAfter = mutation.sourceAfter,
-                    targetBalanceBefore = mutation.targetBefore,
-                    targetBalanceAfter = mutation.targetAfter,
-                    createdAt = Instant.now(),
-                    failure = mutation.failure,
-                    idempotencyKey = request.idempotencyKey,
-                )
-                ledger.insertTransaction(connection, transaction)
-                connection.commit()
-                transaction
-            } catch (error: Throwable) {
-                runCatchingNonFatal { connection.rollback() }
-                val idempotencyKey = request.idempotencyKey
-                if (error is SQLException && idempotencyKey != null && error.sqlState?.startsWith("23") == true) {
-                    ledger.findIdempotent(connection, currency, idempotencyKey)
-                        ?.also { runCatchingNonFatal { connection.rollback() } }
-                        ?: throw error
-                } else throw error
-            } finally {
-                previous.restore(connection)
-            }
+    ): CurrencyTransaction {
+        // Rows are locked in one fixed order so two opposite transfers cannot deadlock each other.
+        val balances = listOfNotNull(request.source, request.target)
+            .distinctBy { it.playerId }
+            .sortedBy { it.playerId.toString() }
+            .associateWith { ledger.lockBalance(connection, currency, it) }
+        val sourceBefore = request.source?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
+        val targetBefore = request.target?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
+        val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
+        if (mutation.committed) {
+            request.source?.let { ledger.writeBalance(connection, currency, it, descriptor.normalize(requireNotNull(mutation.sourceAfter))) }
+            request.target?.let { ledger.writeBalance(connection, currency, it, descriptor.normalize(requireNotNull(mutation.targetAfter))) }
         }
+        return mutation.transaction(currency, descriptor, request).also { ledger.insertTransaction(connection, it) }
+    }
 
     /**
-     * Retries [block] when PostgreSQL or MySQL reports a serialization failure or deadlock.
-     * Gives up after three attempts and rethrows the last error.
+     * Retries [block] on a serialization failure or deadlock (PostgreSQL, MySQL) and on a constraint violation:
+     * a concurrent request may have inserted the same new account row or idempotency key, and the next attempt
+     * sees that row instead of colliding with it.
      */
-    private fun <T> retryOnSerializationConflict(block: () -> T): T {
-        val maxAttempts = 3
+    private fun <T> retryOnConflict(block: () -> T): T {
         var attempt = 1
         while (true) {
             try {
                 return block()
             } catch (error: SQLException) {
-                val conflict = error.sqlState == "40001" || error.sqlState == "40P01"
-                if (!conflict || attempt >= maxAttempts) throw error
+                if (!isConflict(error) || attempt >= MAX_ATTEMPTS) throw error
                 attempt++
             }
         }
+    }
+
+    private fun isConflict(error: SQLException): Boolean {
+        val state = error.sqlState ?: return false
+        return state == "40001" || state == "40P01" || state.startsWith("23")
     }
 
     override fun history(currency: CurrencyKey, query: CurrencyHistoryQuery): CompletionStage<CurrencyHistoryPage> = async {
@@ -168,16 +129,16 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun ensureSchema() {
-        if (initialized.get()) return
-        synchronized(initialized) {
-            if (initialized.get()) return
+        if (initialized) return
+        synchronized(schemaLock) {
+            if (initialized) return
             dataSource.connection.use { connection ->
                 connection.createStatement().use { statement ->
                     statement.executeUpdate(schema.createAccountsTableSql())
                     statement.executeUpdate(schema.createTransactionsTableSql())
                 }
             }
-            initialized.set(true)
+            initialized = true
         }
     }
 
@@ -201,6 +162,10 @@ internal class JdbcCurrencyStorage(
     }
 
     private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
+
+    private companion object {
+        const val MAX_ATTEMPTS = 3
+    }
 }
 
 /** Transaction settings of a borrowed connection, put back before it returns to the caller's pool. */

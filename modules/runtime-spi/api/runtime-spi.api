@@ -178,7 +178,9 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwne
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwnerMetadata {
 	public fun acceptsOwner (Ljava/lang/Object;)Z
+	public fun ownerDataFolder (Ljava/lang/Object;)Ljava/nio/file/Path;
 	public fun ownerDetails (Ljava/lang/Object;)Ljava/util/Map;
+	public fun ownerLogger (Ljava/lang/Object;)Ljava/util/logging/Logger;
 	public fun ownerMetadata (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
 }
 
@@ -200,6 +202,11 @@ public final class org/pnfolder/pnlibrary/spi/platform/PlatformPlugins {
 	public final fun requireInstalled (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 	public final fun snapshots ()Ljava/util/List;
 	public final fun versions ()Ljava/util/Map;
+}
+
+public final class org/pnfolder/pnlibrary/spi/platform/PlatformPnLogger : org/pnfolder/pnlibrary/api/logging/PnLogger {
+	public fun <init> (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Ljava/lang/String;)V
+	public fun log (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;Z)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformReadiness {
@@ -313,6 +320,10 @@ public final class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest {
 	public final fun getTarget ()Ljava/lang/Object;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/spi/tasks/RetirableCallback {
+	public abstract fun retire ()V
 }
 
 public abstract class org/pnfolder/pnlibrary/spi/tasks/TrackingPlatformTaskAdapter : org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter {

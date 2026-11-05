@@ -42,15 +42,15 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
-import org.pnfolder.pnlibrary.core.events.EventServiceImpl
-import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
+import org.pnfolder.pnlibrary.core.events.EventDispatcher
+import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
+import org.pnfolder.pnlibrary.core.tasks.ScheduledTasks
 import org.pnfolder.pnlibrary.core.tasks.TaskService
-import org.pnfolder.pnlibrary.core.tasks.TaskServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
@@ -65,7 +65,7 @@ class PluginRegistryImplTest {
     @Test
     fun `failed file registration rolls back previously registered dependency downloads`() {
         val owner = Any()
-        val downloads = mock(DirectDownloadManager::class.java)
+        val downloads = mock(DirectDownloads::class.java)
         val dependencyRegistration = mock(DownloadRegistration::class.java)
         val failure = IllegalStateException("file registration failed")
         val request = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
@@ -88,7 +88,7 @@ class PluginRegistryImplTest {
         val firstOwner = Any()
         val secondOwner = Any()
         val commands = mock(CommandService::class.java)
-        val downloads = mock(DirectDownloadManager::class.java)
+        val downloads = mock(DirectDownloads::class.java)
         val failure = IllegalStateException("plugin cleanup failed")
         doThrow(failure).`when`(commands).unregisterOwner(firstOwner)
         val registry = registry(commands = commands, directDownloads = downloads)
@@ -250,7 +250,7 @@ class PluginRegistryImplTest {
         val owner = Any()
         val taskScope = RecordingTaskScope(owner)
         val tasks = RecordingTaskService(taskScope)
-        val events = EventServiceImpl { _, _, _ -> }
+        val events = EventDispatcher { _, _, _ -> }
         val metrics = RecordingMetricsService()
         val registry = registry(events = events, tasks = tasks, metrics = metrics)
         val listener = RecordingListener()
@@ -404,7 +404,7 @@ class PluginRegistryImplTest {
                 return PlatformTaskHandle { true }
             }
         }
-        val tasks = TaskServiceImpl(native)
+        val tasks = ScheduledTasks(native)
         val owner = Any()
         val plugin = registry(tasks = tasks).register(owner)
         val first = plugin.registerModule("first") { }
@@ -633,16 +633,16 @@ class PluginRegistryImplTest {
 
         fun registry(
             platform: PlatformAdapter = platform(),
-            events: EventServiceImpl = EventServiceImpl { _, _, _ -> },
+            events: EventDispatcher = EventDispatcher { _, _, _ -> },
             tasks: TaskService = RecordingTaskService(RecordingTaskScope(Any())),
             logging: LoggingService = loggingService(),
             metrics: MetricsService = RecordingMetricsService(),
             commands: CommandService? = null,
             libraryVersion: String? = null,
             updates: UpdateService = emptyProxy(UpdateService::class.java),
-            directDownloads: DirectDownloadManager? = null,
-            expansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
-            libraryExpansions: ExpansionManagerImpl = ExpansionManagerImpl { _, _ -> },
+            directDownloads: DirectDownloads? = null,
+            expansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
+            libraryExpansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
@@ -650,7 +650,7 @@ class PluginRegistryImplTest {
                 remotePolicies = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)),
                 events = events,
                 tasks = tasks,
-                services = ServiceManagerImpl(),
+                services = ServiceRegistry(),
                 logging = logging,
                 metrics = metrics,
                 diagnostics = emptyProxy(DiagnosticsService::class.java),

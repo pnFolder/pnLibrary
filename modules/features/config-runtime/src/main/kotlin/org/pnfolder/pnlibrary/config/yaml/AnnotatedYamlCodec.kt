@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-import org.pnfolder.pnlibrary.api.config.ConfigAlias
 import org.pnfolder.pnlibrary.api.config.ConfigCodec
 import org.pnfolder.pnlibrary.api.config.ConfigComment
 import org.pnfolder.pnlibrary.api.config.ConfigDefaultOnInvalid
@@ -21,25 +20,6 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.function.Supplier
 import java.lang.reflect.Array as ReflectArray
-
-/**
- * Runtime extension of a polymorphic configuration type registry.
- *
- * @property owner plugin namespace that registered the implementation
- * @property baseType annotated polymorphic contract
- * @property implementation concrete no-argument implementation
- * @property name canonical discriminator value
- * @property aliases additional accepted discriminator values
- * @property priority tie-breaker when compatible declarations overlap
- */
-internal data class RuntimeConfigType(
-    val owner: String,
-    val baseType: Class<*>,
-    val implementation: Class<*>,
-    val name: String,
-    val aliases: Set<String>,
-    val priority: Int,
-)
 
 /**
  * Reflection-based YAML codec for mutable Java/Kotlin configuration objects.
@@ -86,7 +66,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         width = 120
     }.let { options -> Yaml(SafeConstructor(LoaderOptions()), Representer(options), options) }
 
-    /** Serializes [value] and decorates generated YAML with schema comments. */
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
         val body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value))
@@ -289,29 +268,10 @@ internal class AnnotatedYamlCodec<T : Any>(
         throw LocatedConfigException(location, reason, error)
     }
 
-    private fun shown(raw: Any?): String {
-        val text = raw?.toString() ?: "null"
-        return if (text.length > MAX_SHOWN) text.take(MAX_SHOWN) + "..." else text
-    }
-
-    private fun reasonSuffix(error: Exception): String =
-        if (error is IllegalArgumentException && !error.message.isNullOrBlank()) " Reason: ${error.message}" else ""
-
-    private fun enumAlias(type: Class<*>, value: Any?, path: String): Any? {
-        if (!type.isEnum || value !is String) return value
-        val matches = type.enumConstants.map { it as Enum<*> }.filter { constant ->
-            type.getField(constant.name).getAnnotation(ConfigAlias::class.java)
-                ?.value.orEmpty().any { it.equals(value, ignoreCase = true) }
-        }
-        require(matches.size <= 1) { "Enum alias '$value' is ambiguous at $path in ${type.name}" }
-        return matches.singleOrNull()?.name ?: value
-    }
-
     private class LocatedConfigException(location: String, reason: String, cause: Throwable) :
         IllegalArgumentException("$INVALID_VALUE $location: $reason", cause)
 
     private companion object {
-        const val MAX_SHOWN = 120
         const val INVALID_VALUE = "Invalid configuration value at"
     }
 

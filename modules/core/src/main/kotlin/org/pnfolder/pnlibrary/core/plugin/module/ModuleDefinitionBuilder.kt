@@ -58,7 +58,6 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
         configure.accept(ModuleOptions(this))
     }
 
-    /** Accumulates provider declarations through the shared metrics DSL. */
     override fun metrics(configure: Consumer<MetricsBuilder>): PluginBuilder = apply {
         val builder = MetricsBuilder()
         configure.accept(builder)

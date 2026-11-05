@@ -16,12 +16,13 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bukkit.BukkitAudienceAdapter
 import org.pnfolder.pnlibrary.bukkit.BukkitAudienceService
+import org.pnfolder.pnlibrary.core.commands.MAIN_THREAD_SUGGESTION_MILLIS
+import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.lang.reflect.Constructor
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.TimeUnit
 import org.bukkit.command.CommandSender as NativeCommandSender
 
 /**
@@ -43,7 +44,6 @@ internal class BukkitCommandAdapter internal constructor(
         { audiences.nativeTransportAvailable },
     )
 
-    /** Converts native invocation arguments to the portable command context. */
     override fun context(
         source: NativeCommandSender,
         alias: String,
@@ -80,7 +80,6 @@ internal class BukkitCommandSender(
 /** Native registration boundary used by the runtime and command tests. */
 /** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
-    /** Registers portable execution and completion handlers with the native command manager. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
@@ -94,7 +93,7 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
             true
         }
         val completer = TabCompleter { sender, _, label, args ->
-            suggest(sender, label, args).toCompletableFuture().get(1, TimeUnit.SECONDS)
+            suggest(sender, label, args).suggestionsWithin(MAIN_THREAD_SUGGESTION_MILLIS)
         }
         val declared = (ownerPlugin as? JavaPlugin)?.getCommand(command.name)
         if (declared != null) {
@@ -118,7 +117,6 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         return PlatformCommandRegistration { native.unregister(commandMap) }
     }
 
-    /** Resolves the legacy command map used for undeclared commands. */
     private fun commandMap(): CommandMap {
         val field = Bukkit.getServer().javaClass.getDeclaredField("commandMap")
         field.isAccessible = true

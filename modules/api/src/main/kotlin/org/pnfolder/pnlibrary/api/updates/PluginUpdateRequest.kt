@@ -92,7 +92,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             configurationBackup = UpdateConfigurationBackup(dataDirectory, files.toList())
         }
 
-        /** Sets and validates the GitHub repository coordinates. */
         fun repository(owner: String, name: String): Builder = apply {
             require(owner.matches(REPOSITORY_PART) && name.matches(REPOSITORY_PART)) {
                 "Invalid GitHub repository: $owner/$name"
@@ -147,19 +146,16 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }
 
-        /** Sets the inclusive pnLibrary API-generation range supported by the plugin. */
         fun supportedApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
-        /** Adds an exact release asset name without exposing regular-expression escaping. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null): Builder = apply {
             require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
 
-        /** Adds and validates one Java-bounded release artifact rule. */
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -168,7 +164,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
 
-        /** Adds a release artifact restricted to one server platform. */
         @JvmOverloads
         fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -189,7 +184,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     companion object {
         private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
 
-        /** Creates an empty update-request builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

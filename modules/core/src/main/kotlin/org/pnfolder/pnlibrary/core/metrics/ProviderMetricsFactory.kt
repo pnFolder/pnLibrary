@@ -14,10 +14,8 @@ import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
  */
 abstract class ProviderMetricsFactory : PlatformMetricsFactory {
 
-    /** Opens a bStats session for the native plugin [owner]. */
     protected abstract fun openBStats(owner: Any, projectId: Int): PluginMetrics
 
-    /** Opens a FastStats session for the native plugin [owner]. */
     protected abstract fun openFastStats(owner: Any, token: String): PluginMetrics
 
     /** Opens every configured provider and returns one session that reports to all of them. */

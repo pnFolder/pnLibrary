@@ -2,12 +2,19 @@ package org.pnfolder.pnlibrary.core.lifecycle
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
+import java.util.concurrent.CompletionStage
 
 /** Private runtime capabilities, deliberately absent from the consumer API facade. */
 internal interface RuntimeResources {
@@ -17,6 +24,9 @@ internal interface RuntimeResources {
     /** A shared command the platform puts under its own control command (`events`, `debug`), or `null`. */
     fun mountableCommand(name: String): CommandDefinition?
 
+    /** Runs a registered command for a viewer who is not on this server, or `null` when this platform cannot. */
+    fun dispatchCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>?
+
     /** The notice for an administrator who has just joined: recent problems from the journal, or nothing. */
     fun journalJoinNotice(): List<Component>
 
@@ -25,6 +35,12 @@ internal interface RuntimeResources {
 
     /** Every live and retained task of every plugin. */
     fun taskSnapshots(): List<TaskSnapshot>
+
+    /** The numbers of the server right now: tasks, events, and the errors and warnings of the day. */
+    fun statsSnapshot(): StatsSnapshot
+
+    /** Every registered placeholder with its type, format and PlaceholderAPI names. */
+    fun placeholderInfos(): List<PlaceholderInfo> = emptyList()
 
     /** Stops the task with this id for an administrator; the task may forbid it. */
     fun cancelTask(id: String): TaskControl
@@ -36,41 +52,8 @@ internal interface RuntimeResources {
     fun journalDetail(id: String): JournalDetail?
 }
 
-/**
- * One journal event with everything the journal knows about it, for a menu.
- *
- * @property id the id that `/pn events view <id>` opens
- * @property level `info`, `warning` or `error`
- * @property source plugin or component that wrote the event
- * @property message the whole text of the newest repeat
- * @property stackTrace the stack trace with its causes, or `null` when the event has none
- * @property details other facts the event carries, such as a player or a version
- * @property times when it happened, newest first, in epoch milliseconds
- */
-data class JournalDetail(
-    val id: String,
-    val level: String,
-    val source: String,
-    val message: String,
-    val stackTrace: String?,
-    val details: Map<String, String>,
-    val times: List<Long>,
-)
-
 /** Every live and retained task of every plugin; empty when the runtime has no task service. */
 fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = (this as? RuntimeResources)?.taskSnapshots().orEmpty()
-
-/** What came of an administrator stopping or starting a task. */
-enum class TaskControl {
-    /** The task did what was asked. */
-    DONE,
-
-    /** The plugin that owns the task does not allow it. */
-    FORBIDDEN,
-
-    /** The task is not in a state where this is possible, or it is gone. */
-    UNAVAILABLE,
-}
 
 /** Stops the task with this id for an administrator; the task may forbid it. */
 fun PnLibrary.cancelTask(id: String): TaskControl = (this as? RuntimeResources)?.cancelTask(id) ?: TaskControl.UNAVAILABLE
@@ -80,25 +63,6 @@ fun PnLibrary.runTaskNow(id: String): TaskControl = (this as? RuntimeResources)?
 
 /** The whole journal event with the id [id]; `null` when there is none or the runtime has no journal. */
 fun PnLibrary.journalDetail(id: String): JournalDetail? = (this as? RuntimeResources)?.journalDetail(id)
-
-/**
- * Equal journal events merged into one line, for menus.
- *
- * @property id the id that `/pn events view <id>` opens
- * @property level `info`, `warning` or `error`
- * @property source plugin or component that wrote the event
- * @property message the first line of the event text
- * @property count how many times it happened in the window
- * @property lastMillis when it happened last, in epoch milliseconds
- */
-data class JournalGroup(
-    val id: String,
-    val level: String,
-    val source: String,
-    val message: String,
-    val count: Int,
-    val lastMillis: Long,
-)
 
 /** Journal events of the last [sinceHours] hours for a menu; empty when the runtime has no journal. */
 fun PnLibrary.journalGroups(level: String? = null, sinceHours: Int = 24, limit: Int = 200): List<JournalGroup> =
@@ -113,6 +77,12 @@ fun PnLibrary.runtimeTaskScope(): TaskScope = runtimeResources().runtimeTasks
 /** Lines to show an administrator on joining, empty when the journal has nothing to report or the notice is off. */
 fun PnLibrary.journalJoinNotice(): List<Component> = runtimeResources().journalJoinNotice()
 
+/** The numbers of the server right now. */
+fun PnLibrary.statsSnapshot(): StatsSnapshot = runtimeResources().statsSnapshot()
+
+/** Every registered placeholder; empty when the runtime has no placeholders. */
+fun PnLibrary.placeholderInfos(): List<PlaceholderInfo> = (this as? RuntimeResources)?.placeholderInfos().orEmpty()
+
 /** Registers a pnLibrary-owned command from core or a bundled native integration. */
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
     runtimeResources().registerRuntimeCommand(command)
@@ -122,6 +92,10 @@ fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistr
  * command instead (`events` and `debug` under Bukkit `/pn`). `null` where the command is registered separately.
  */
 fun PnLibrary.mountableCommand(name: String): CommandDefinition? = (this as? RuntimeResources)?.mountableCommand(name)
+
+/** Runs a registered command for a viewer on another server; `null` when the platform cannot dispatch it. */
+fun PnLibrary.dispatchRuntimeCommand(command: CommandDefinition, context: CommandContext): CompletionStage<Void>? =
+    (this as? RuntimeResources)?.dispatchCommand(command, context)
 
 /** Builds a pnLibrary-owned command; consumer plugins use ModuleContext.registerCommand. */
 fun PnLibrary.registerRuntimeCommand(

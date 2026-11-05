@@ -133,9 +133,15 @@ internal class ManagedCurrencyProvider(
             transaction.sourceBalanceBefore ?: transaction.targetBalanceBefore,
             transaction.sourceBalanceAfter ?: transaction.targetBalanceAfter,
         )
-        CurrencyTransactionStatus.REJECTED ->
-            CurrencyResult.rejected(CurrencyRejectReason.PROVIDER_REJECTED, transaction.failure)
+        CurrencyTransactionStatus.REJECTED -> CurrencyResult.rejected(rejectReason(transaction), transaction.failure)
         CurrencyTransactionStatus.FAILED ->
             CurrencyResult.failed(IllegalStateException(transaction.failure ?: "Currency transaction failed"))
     }
+
+    private fun rejectReason(transaction: CurrencyTransaction) =
+        if (transaction.failure == CurrencyMutationEngine.INSUFFICIENT_FUNDS) {
+            CurrencyRejectReason.INSUFFICIENT_FUNDS
+        } else {
+            CurrencyRejectReason.PROVIDER_REJECTED
+        }
 }

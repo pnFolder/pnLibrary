@@ -1,0 +1,34 @@
+package org.pnfolder.pnlibrary.core.commands.proxy
+
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextReplacementConfig
+import net.kyori.adventure.text.event.ClickEvent
+import java.util.regex.Pattern
+
+/**
+ * The names of the control command on a proxy.
+ *
+ * A player's `/pn` on a proxied network reaches the proxy first, so a proxy that owned `/pn` would hide the one on the
+ * game server. The proxy therefore answers to `/pnproxy` and `/pnp`, and [rewrite] turns the `/pn` that the shared
+ * command text and buttons mention into [NAME], so a click on the proxy runs the proxy command.
+ */
+object ProxyCommandNames {
+    const val NAME = "pnproxy"
+
+    val ALIASES = setOf("pnp")
+
+    private val ROOT = Pattern.compile("/pn(?=[ \t]|$)")
+    private val TEXT = TextReplacementConfig.builder().match(ROOT).replacement("/$NAME").build()
+
+    fun owns(alias: String): Boolean = alias.equals(NAME, ignoreCase = true) || ALIASES.any { it.equals(alias, ignoreCase = true) }
+
+    fun rewrite(message: Component): Component = clicks(message.replaceText(TEXT))
+
+    private fun clicks(component: Component): Component {
+        val click = component.clickEvent()
+        val result = component.children(component.children().map(::clicks))
+        val runs = click != null && (click.action() == ClickEvent.Action.RUN_COMMAND || click.action() == ClickEvent.Action.SUGGEST_COMMAND)
+        if (click == null || !runs || !click.value().startsWith("/pn")) return result
+        return result.clickEvent(ClickEvent.clickEvent(click.action(), ROOT.matcher(click.value()).replaceFirst("/$NAME")))
+    }
+}

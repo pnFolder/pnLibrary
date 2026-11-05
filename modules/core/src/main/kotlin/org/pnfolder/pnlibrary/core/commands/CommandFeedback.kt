@@ -24,10 +24,8 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 
-/** Shown when no level of the chain sets a usage line; `{usage}` is the generated usage text. */
 internal const val DEFAULT_USAGE = "Использование: {usage}"
 
-/** Handlers of one error class each. */
 internal typealias ErrorHandlers = Map<Class<out CommandError>, CommandErrorHandler<*>>
 
 /**
@@ -81,7 +79,6 @@ internal class StandardCommandFeedback(
         CommandFailed::class.java to failedMessage,
     )
 
-    /** Sends the standard text for [error], with its placeholders filled in. */
     fun answer(context: CommandContext, error: CommandError, help: List<String> = emptyList()) {
         var type: Class<*>? = error.javaClass
         var template = error.defaultMessage
@@ -96,7 +93,6 @@ internal class StandardCommandFeedback(
     }
 }
 
-/** Builds the standard answers from the library configuration; an unusable sound name simply means no sound. */
 internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFeedback = StandardCommandFeedback(
     deniedMessage = config.noPermissionMessage,
     deniedSound = config.noPermissionSound.takeIf { it.isNotBlank() }
@@ -108,23 +104,23 @@ internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFe
     consoleOnlyMessage = config.consoleOnlyMessage,
 )
 
-/** Sends [text] to this sender as a marked notice, the look of every other chat message of the library. */
 internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: String? = null) {
     ChatKit(ChatReader.of(this)).notice(ChatNotice(tone, text, detail)).forEach(::send)
 }
 
-/** A usage line: the mark, the text, and each `<placeholder>` in the accent; a click puts the command in the chat box. */
+private val USAGE_PLACEHOLDER = Regex("""<[^>]+>|\[[^]]+]""")
+private val USAGE_COMMAND = Regex("""/\S.*""")
+
 internal fun CommandSender.usageNotice(text: String, help: List<String> = emptyList()) {
     val kit = ChatKit(ChatReader.of(this))
-    val placeholder = Regex("""<[^>]+>|\[[^]]+]""")
     var line = kit.mark(ChatTone.WARNING)
     var from = 0
-    placeholder.findAll(text).forEach { found ->
+    USAGE_PLACEHOLDER.findAll(text).forEach { found ->
         line = line.append(kit.text(text.substring(from, found.range.first), ChatPalette.TEXT)).append(kit.text(found.value, ChatPalette.ACCENT))
         from = found.range.last + 1
     }
     line = line.append(kit.text(text.substring(from), ChatPalette.TEXT))
-    val command = Regex("""/\S.*""").find(text)?.value?.substringBefore('<')?.trimEnd()
+    val command = USAGE_COMMAND.find(text)?.value?.substringBefore('<')?.trimEnd()
     if (command != null && kit.reader.interactive) {
         line = line.clickEvent(ClickEvent.suggestCommand("$command "))
             .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))

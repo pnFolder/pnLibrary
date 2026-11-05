@@ -44,7 +44,12 @@ internal class PlaceholderApiAdapter(
         return resolved.takeUnless { it == token }
     }
 
-    /** Publishes a resolver under a namespace and owns its external registration. */
+    /** Lets PlaceholderAPI replace every `%...%` it knows in [text]; the rest stays. */
+    override fun render(playerId: UUID?, text: String): String {
+        if (state == PlaceholderAdapterState.UNAVAILABLE || state == PlaceholderAdapterState.CLOSED) return text
+        return PlaceholderAPI.setPlaceholders(playerId?.let(plugin.server::getOfflinePlayer), text)
+    }
+
     override fun publish(
         owner: PluginId,
         key: String,
@@ -55,6 +60,7 @@ internal class PlaceholderApiAdapter(
         check(plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI")) { "PlaceholderAPI is not installed" }
         val namespace = (publication.namespace ?: owner.value).lowercase(Locale.ROOT)
         val externalName = (publication.name ?: key.replace('.', '_')).lowercase(Locale.ROOT)
+        require('_' !in namespace) { "PlaceholderAPI prefix '$namespace' must not contain '_'" }
         val expansion = groups.computeIfAbsent(namespace) { Expansion(it) }
         if (!expansion.isRegistered) {
             check(expansion.register())
@@ -65,7 +71,6 @@ internal class PlaceholderApiAdapter(
         return object : ExternalPlaceholderRegistration {
             private val active = AtomicBoolean(true)
             override val state: PlaceholderAdapterState get() = if (active.get()) PlaceholderAdapterState.REGISTERED else PlaceholderAdapterState.CLOSED
-            /** Unregisters all published expansions once. */
     override fun close() {
                 if (!active.compareAndSet(true, false)) return
                 expansion.handlers.remove(externalName)
@@ -77,7 +82,6 @@ internal class PlaceholderApiAdapter(
         }
     }
 
-    /** Unregisters all published expansions once. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         groups.values.forEach(PlaceholderExpansion::unregister)
@@ -93,18 +97,16 @@ internal class PlaceholderApiAdapter(
         override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { PnLibraryIdentity.NAME }
         override fun getVersion() = this@PlaceholderApiAdapter.plugin.description.version
         override fun persist() = true
-        /** Matches the longest published key and forwards its optional parameter to the resolver. */
-    override fun onRequest(player: OfflinePlayer?, params: String): String? {
-            val match = handlers.entries.sortedByDescending { it.key.length }.firstOrNull {
-                params.equals(it.key, true) || params.startsWith(it.key + "_", true)
-            } ?: return null
-            val suffix = params.removePrefix(match.key).removePrefix("_")
-            val request = PlaceholderRequest(
-                match.value.owner, match.value.owner, player?.uniqueId,
-                if (suffix.isEmpty()) emptyMap() else mapOf("value" to suffix), emptyMap(),
-            )
-            return match.value.resolver.resolve(request)?.toString()
+        /** Finds the published name that fits [params] best and hands its parameters to the resolver. */
+        override fun onRequest(player: OfflinePlayer?, params: String): String? {
+            val wait = if (this@PlaceholderApiAdapter.plugin.server.isPrimaryThread) MAIN_THREAD_WAIT_MILLIS else OTHER_THREAD_WAIT_MILLIS
+            val values = mapOf<String, Any?>(PlaceholderAdapter.WAIT_MILLIS_KEY to wait)
+            val (handler, parameters) = PublishedNames.find(handlers, params) ?: return null
+            return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
         }
+
+        private fun answer(handler: Handler, request: PlaceholderRequest): String? =
+            handler.resolver.resolve(request)?.toString()
     }
 
     /** Associates a published resolver with its portable owner. */
@@ -113,3 +115,6 @@ internal class PlaceholderApiAdapter(
         val resolver: PlaceholderResolver<Any>,
     )
 }
+
+private const val MAIN_THREAD_WAIT_MILLIS = 50L
+private const val OTHER_THREAD_WAIT_MILLIS = 1000L

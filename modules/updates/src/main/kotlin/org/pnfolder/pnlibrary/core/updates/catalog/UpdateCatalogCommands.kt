@@ -1,25 +1,14 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.engine.FreezeDuration
-import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
 
 /**
  * The catalog commands `list`, `available`, `info`, `settings`, `set`, `history` and `backups`, shared by the
@@ -50,6 +39,8 @@ class UpdateCatalogCommands(
     private val deliver: (Runnable) -> Unit = Runnable::run,
     private val onSaved: (CommandContext, SettingSaved) -> Unit = { _, _ -> },
 ) {
+    private val settings = UpdateCatalogSettingsCommands(library, ::ready, ::routesFor, deliver, onSaved)
+
     /**
      * A setting that was just saved: [setting] names it, for example "Канал", [from] is what it was and [to] what it
      * is now, both as short words such as "stable" or "включена".
@@ -96,30 +87,38 @@ class UpdateCatalogCommands(
                 executes { showSettings(it, it.get<String>("plugin")) }
             }
         }
+        installSettings(addLiteral)
+        installHistory(addLiteral)
+    }
+
+    private fun installSettings(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {
         addLiteral("set") {
             managePermission?.let(::permission)
             argument("plugin", ArgumentType.string()) {
                 suggests { productNames() }
                 literal("channel") {
                     argument("value", ArgumentType.string()) {
-                        suggests { available().map { it.name.lowercase(Locale.ROOT) } + DEFAULT_CHANNEL }
-                        executes(::setChannel)
+                        suggests { settings.available().map { it.name.lowercase(Locale.ROOT) } + UpdateCatalogSettingsCommands.DEFAULT_CHANNEL }
+                        executes(settings::setChannel)
                     }
                 }
                 literal("auto") {
                     argument("value", ArgumentType.string()) {
-                        suggests { SWITCH_SUGGESTIONS }
-                        executes(::setAutomatic)
+                        suggests { UpdateCatalogSettingsCommands.SWITCH_SUGGESTIONS }
+                        executes(settings::setAutomatic)
                     }
                 }
                 literal("hold") {
                     argument("value", ArgumentType.string()) {
                         suggests { UpdateCatalogView.HOLD_PERIODS + "off" }
-                        executes(::setHeld)
+                        executes(settings::setHeld)
                     }
                 }
             }
         }
+    }
+
+    private fun installHistory(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {
         addLiteral("history") {
             viewPermission?.let(::permission)
             executes { showHistory(it, product = null) }
@@ -212,88 +211,6 @@ class UpdateCatalogCommands(
         return registration?.snapshot
     }
 
-    /** The channels an administrator may choose; only `dev` is published for now, so the others stay switched off. */
-    private fun available(): List<UpdateChannel> = if (ONLY_DEV) listOf(UpdateChannel.DEV) else UpdateCatalogView.CHANNELS
-
-    /** Sets the release channel, or removes the administrator's choice with `default` so the plugin decides again. */
-    private fun setChannel(context: CommandContext) {
-        val value = context.get<String>("value")
-        if (value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
-            change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, "как задал плагин") { product, actor ->
-                library.updates.setChannel(product, null, actor)
-            }
-            return
-        }
-        val channel = UpdateCatalogView.CHANNELS.firstOrNull { it.name.equals(value, ignoreCase = true) }
-        if (channel == null) {
-            context.sender.send(error("Неизвестный канал $value. Доступны: ${available().joinToString { it.name.lowercase(Locale.ROOT) }}."))
-            return
-        }
-        if (channel !in available()) {
-            context.sender.send(error("Сейчас работает только канал dev, остальные пока не выпускаются. Выберите dev или default."))
-            return
-        }
-        change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
-            actor -> library.updates.setChannel(product, channel, actor) }
-    }
-
-    private fun setAutomatic(context: CommandContext) {
-        val enabled = switch(context) ?: return
-        change(context, "Автозагрузка", { if (it.automaticDownload) "включена" else "выключена" }, if (enabled) "включена" else "выключена") { product, actor ->
-            library.updates.setAutomaticDownload(product, enabled, actor)
-        }
-    }
-
-    /** Pauses updates for a period such as `3d` (`on` means seven days), or lifts the pause with `off`. */
-    private fun setHeld(context: CommandContext) {
-        val value = context.get<String>("value").lowercase(Locale.ROOT)
-        val duration = when (value) {
-            in OFF -> null
-            in ON -> DEFAULT_HOLD
-            else -> runCatchingNonFatal { FreezeDuration.parse(value) }.getOrElse {
-                context.sender.send(error("Пауза — от 1m до 7d (например 3d) или off, получено: $value."))
-                return
-            }
-        }
-        change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" },
-            if (duration == null) "нет" else RussianText.period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
-    }
-
-    private fun switch(context: CommandContext): Boolean? {
-        val value = context.get<String>("value")
-        val parsed = when (value.lowercase(Locale.ROOT)) {
-            in ON -> true
-            in OFF -> false
-            else -> null
-        }
-        if (parsed == null) context.sender.send(error("Укажите on или off, получено: $value."))
-        return parsed
-    }
-
-    /** Applies a setting, then confirms it below the refreshed settings card, or shows why it was refused. */
-    private fun change(context: CommandContext, setting: String, current: (UpdateSnapshot) -> String, value: String, apply: (String,
-        UpdateActor) -> CompletionStage<UpdateSnapshot>) {
-        if (!ready(context)) return
-        val product = context.get<String>("plugin")
-        val sender = context.sender
-        val before = library.updates.get(product)?.snapshot?.let(current) ?: value
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
-        apply(product, actor).whenComplete { snapshot, failure ->
-            deliver(Runnable {
-                if (failure != null) {
-                    val cause = generateSequence(failure) { it.cause }.last()
-                    sender.send(error(cause.message ?: "Не удалось изменить настройку."))
-                } else {
-                    val routes = routesFor(context)
-                    val arrow = if (routes.ascii) "->" else "→"
-                    val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
-                    (card + UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Сохранено. $setting: $before $arrow $value."), routes)).forEach(sender::send)
-                    onSaved(context, SettingSaved(snapshot.product, setting, before, value))
-                }
-            })
-        }
-    }
-
     private fun showHistory(context: CommandContext, product: String?) {
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
@@ -360,16 +277,5 @@ class UpdateCatalogCommands(
         return false
     }
 
-    private fun error(text: String): Component = Component.text(text, ChatPalette.DANGER)
-
-    private companion object {
-        val SWITCH_SUGGESTIONS = listOf("on", "off")
-        val ON = setOf("on", "true", "yes", "1", "вкл")
-        val OFF = setOf("off", "false", "no", "0", "выкл")
-        val DEFAULT_HOLD: Duration = Duration.ofDays(7)
-        const val DEFAULT_CHANNEL = "default"
-
-        /** Whether only the `dev` channel can be chosen; set to `false` when more channels are published. */
-        const val ONLY_DEV = true
-    }
+    private fun error(text: String): Component = catalogError(text)
 }

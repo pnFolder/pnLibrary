@@ -11,7 +11,6 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-/** Persists temporary per-product update freezes with automatic expiry cleanup. */
 internal class FreezeStore(
     private val path: Path,
     private val clock: Clock = Clock.systemUTC(),
@@ -19,7 +18,6 @@ internal class FreezeStore(
     private val gson = Gson()
     private val expiries = load()
 
-    /** Freezes [component] for [duration] and returns its expiry. */
     @Synchronized
     fun freeze(component: ProductId, duration: Duration): Instant {
         FreezeDuration.validate(duration)
@@ -29,7 +27,6 @@ internal class FreezeStore(
         return expiry
     }
 
-    /** Clears [component]'s freeze and reports whether one existed. */
     @Synchronized
     fun clear(component: ProductId): Boolean {
         val removed = expiries.remove(component) != null
@@ -37,7 +34,6 @@ internal class FreezeStore(
         return removed
     }
 
-    /** Returns the remaining freeze duration, or `null` when unfrozen. */
     @Synchronized
     fun remaining(component: ProductId): Duration? {
         removeExpired()
@@ -45,11 +41,9 @@ internal class FreezeStore(
         return Duration.between(clock.instant(), expiry)
     }
 
-    /** Returns whether [component] currently has an active freeze. */
     @Synchronized
     fun isFrozen(component: ProductId): Boolean = remaining(component) != null
 
-    /** Returns a detached map of active products to expiry instants. */
     @Synchronized
     fun active(): Map<ProductId, Instant> {
         removeExpired()

@@ -11,12 +11,13 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bungee.BungeeAudienceAdapter
-import org.pnfolder.pnlibrary.core.commands.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.PROXY_SUGGESTION_MILLIS
+import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.TimeUnit
 import net.md_5.bungee.api.CommandSender as NativeCommandSender
 
 /**
@@ -31,13 +32,11 @@ internal class BungeeCommandAdapter internal constructor(
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
 
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    /** Creates the native command registrar and audience bridge. */
     constructor(plugin: Plugin) : this(
         nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
-    /** Converts native invocation arguments to the portable command context. */
     override fun context(
         source: NativeCommandSender,
         alias: String,
@@ -83,7 +82,7 @@ private class DefaultBungeeNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         val native = object : Command(command.name, null, *command.aliases.toTypedArray()), TabExecutor {
             override fun execute(sender: NativeCommandSender, args: Array<String>) = executeHandler(sender, command.name, args)
             override fun onTabComplete(sender: NativeCommandSender, args: Array<String>): Iterable<String> =
-                suggestionHandler(sender, command.name, args).toCompletableFuture().get(1, TimeUnit.SECONDS)
+                suggestionHandler(sender, command.name, args).suggestionsWithin(PROXY_SUGGESTION_MILLIS)
         }
         ownerPlugin.proxy.pluginManager.registerCommand(ownerPlugin, native)
         return PlatformCommandRegistration { ownerPlugin.proxy.pluginManager.unregisterCommand(native) }

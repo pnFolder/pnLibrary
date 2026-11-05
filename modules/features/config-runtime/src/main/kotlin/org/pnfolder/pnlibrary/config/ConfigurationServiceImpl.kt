@@ -7,24 +7,26 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
 import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
+import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
-import java.io.File
+import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
-import java.util.logging.Logger
 
 /** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
 class ConfigurationServiceImpl(
     private val platform: PlatformOwnership,
+    private val logging: PlatformLogging = object : PlatformLogging {},
 ) : ConfigurationRuntime {
     private val scopes = IdentityHashMap<Any, MutableMap<PluginId, Scope>>()
     private val runtimeTypes = linkedSetOf<TypeRegistration>()
@@ -51,12 +53,11 @@ class ConfigurationServiceImpl(
                 owner = owner,
                 pluginId = pluginId,
                 directory = ownerDirectory(owner).toAbsolutePath().normalize(),
-                logger = ownerLogger(owner),
+                logger = PlatformPnLogger(logging, owner, pluginId.value),
             )
         }
     }
 
-    /** Closes and forgets every scope that [owner] created. */
     override fun close(owner: Any) {
         synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }
@@ -69,27 +70,15 @@ class ConfigurationServiceImpl(
         }.forEach { it.close() }
     }
 
-    private fun ownerDirectory(owner: Any): Path = try {
-        val value = owner.javaClass.getMethod("getDataFolder").invoke(owner)
-        (value as File).toPath()
-    } catch (_: ReflectiveOperationException) {
-        // Owners without a Bukkit-style data folder use the conventional plugins/<id> directory.
-        val id = platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName
-        Paths.get("plugins", id)
-    }
-
-    private fun ownerLogger(owner: Any): Logger = try {
-        owner.javaClass.getMethod("getLogger").invoke(owner) as Logger
-    } catch (_: Exception) {
-        // Owners without their own logger get a JUL logger named after the owner.
-        Logger.getLogger(platform.ownerDetails(owner)["id"] ?: owner.javaClass.name)
-    }
+    // Platforms without per-plugin folders (Velocity) get the conventional plugins/<id> directory.
+    private fun ownerDirectory(owner: Any): Path =
+        platform.ownerDataFolder(owner) ?: Paths.get("plugins", platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
 
     private inner class Scope(
         private val owner: Any,
         private val pluginId: PluginId,
         private val directory: Path,
-        private val logger: Logger,
+        private val logger: PnLogger,
     ) : ConfigScope {
         private val handles = linkedSetOf<ManagedConfig<*>>()
         private val announcements = mutableListOf<AutoCloseable>()
@@ -136,18 +125,27 @@ class ConfigurationServiceImpl(
                 options = options,
             )
             val owned = OwnedConfig(target, handle)
-            val announced = runCatching {
-                fileListener?.invoke(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
-            }.getOrNull()
             synchronized(handles) {
                 check(!scopeClosed.get()) { "Configuration scope is closed" }
                 check(handles.none { (it as? OwnedConfig<*>)?.file == target }) {
                     "Configuration $path is already registered"
                 }
                 handles += owned
-                announced?.let { announcements += it }
             }
+            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
             return owned
+        }
+
+        // Announcing feeds diagnostics only, so a failing listener is logged and the file still works.
+        private fun announce(file: ManagedConfigFile) {
+            val announced = try {
+                fileListener?.invoke(file) ?: return
+            } catch (error: Exception) {
+                logger.warning("Диагностика не получила файл ${file.path}: ${error.message}", error)
+                return
+            }
+            val keep = synchronized(handles) { !scopeClosed.get() && announcements.add(announced) }
+            if (!keep) announced.close()
         }
 
         override fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope = apply {
@@ -187,9 +185,9 @@ class ConfigurationServiceImpl(
             }
         }
 
-        override fun loadAll() = eachHandle { it.load() }
-        override fun reloadAll() = eachHandle { it.reload() }
-        override fun saveAll() = eachHandle(onlyLoaded = true) { it.save() }
+        override fun loadAll() = forEach(snapshot()) { it.load() }
+        override fun reloadAll() = forEach(snapshot()) { it.reload() }
+        override fun saveAll() = forEach(snapshot().filter { it.isLoaded }) { it.save() }
 
         override fun close() {
             if (!scopeClosed.compareAndSet(false, true)) return
@@ -215,10 +213,8 @@ class ConfigurationServiceImpl(
             )
         }
 
-        /** Applies [action] to every handle even when one fails, then rethrows the first failure with the rest suppressed. */
-        private fun eachHandle(onlyLoaded: Boolean = false, action: (ManagedConfig<*>) -> Unit) = runAll(
-            snapshot().filter { !onlyLoaded || it.isLoaded }.map { handle -> { action(handle) } },
-        )
+        private fun forEach(handles: List<ManagedConfig<*>>, action: (ManagedConfig<*>) -> Unit) =
+            runAll(handles.map { handle -> { action(handle) } })
 
         private fun snapshot() = synchronized(handles) { handles.toList() }
     }

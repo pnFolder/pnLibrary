@@ -2252,6 +2252,7 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/internal/I
 }
 
 public final class org/pnfolder/pnlibrary/api/logging/LogLevel : java/lang/Enum {
+	public static final field CRITICAL Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field DEBUG Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
 	public static final field INFO Lorg/pnfolder/pnlibrary/api/logging/LogLevel;
@@ -2281,11 +2282,15 @@ public abstract interface class org/pnfolder/pnlibrary/api/logging/MessageBox {
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/logging/PnLogger {
+	public fun critical (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun critical$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 	public fun debug (Ljava/lang/String;)V
+	public fun debug (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun error (Ljava/lang/String;)V
 	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun error (Ljava/lang/String;Ljava/lang/Throwable;Z)V
 	public fun info (Ljava/lang/String;)V
+	public fun info (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun info (Ljava/lang/String;Z)V
 	public abstract fun log (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;Z)V
 	public static synthetic fun log$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ZILjava/lang/Object;)V
@@ -2637,11 +2642,18 @@ public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess$Com
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapter {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapter$Companion;
+	public static final field WAIT_MILLIS_KEY Ljava/lang/String;
 	public abstract fun getCapabilities ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapterCapabilities;
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getState ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapterState;
 	public abstract fun publish (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderResolver;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderPublication;)Lorg/pnfolder/pnlibrary/api/placeholders/ExternalPlaceholderRegistration;
+	public fun render (Ljava/util/UUID;Ljava/lang/String;)Ljava/lang/String;
 	public fun resolve (Ljava/util/UUID;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapter$Companion {
+	public static final field WAIT_MILLIS_KEY Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/placeholders/PlaceholderAdapterCapabilities {
@@ -2687,6 +2699,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/placeholders/Placehol
 	public abstract fun access (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun access (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun cache (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderCachePolicy;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
+	public fun defaultFormat (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun fallback (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun format (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderFormatter;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
 	public abstract fun publish (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderPublication;)Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderBuilder;
@@ -2866,6 +2879,124 @@ public abstract interface class org/pnfolder/pnlibrary/api/placeholders/Placehol
 	public static synthetic fun set$default (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderValueStore;Ljava/lang/String;Ljava/lang/String;Ljava/util/UUID;ILjava/lang/Object;)Ljava/lang/String;
 	public abstract fun update (Ljava/lang/String;Ljava/util/UUID;Ljava/util/function/UnaryOperator;)Ljava/lang/String;
 	public static synthetic fun update$default (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderValueStore;Ljava/lang/String;Ljava/util/UUID;Ljava/util/function/UnaryOperator;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract class org/pnfolder/pnlibrary/api/placeholders/tree/AccessRule {
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/AccessScope {
+	public final fun allowAll ()V
+	public final fun allowOnly ([Ljava/lang/String;)V
+	public final fun deny ([Ljava/lang/String;)V
+	public final fun denyAll ()V
+}
+
+public abstract class org/pnfolder/pnlibrary/api/placeholders/tree/ArgType {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getChoices ()Ljava/util/List;
+	public final fun getLabel ()Ljava/lang/String;
+	public abstract fun parse (Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/ArgTypes {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgTypes;
+	public final fun choice ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getBool ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getInt ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getNumber ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getPlayer ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getText ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun int (Lkotlin/ranges/IntRange;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+}
+
+public abstract class org/pnfolder/pnlibrary/api/placeholders/tree/BranchScope {
+	public final fun bool (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun bool$default (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun choice (Ljava/lang/String;[Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun getBool ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getInt ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getNumber ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun getText ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;
+	public final fun int (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun int$default (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun number (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun number$default (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun param (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;Lkotlin/jvm/functions/Function1;)V
+	public final fun param (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/placeholders/tree/ArgType;Lkotlin/ranges/IntRange;Lkotlin/jvm/functions/Function1;)V
+	public final fun player (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun text (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun text$default (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun value (Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun value$default (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/FormatScope {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;)V
+	public final fun getService ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderService;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/Generated {
+	public final fun exclude ([Lkotlin/reflect/KProperty1;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/Generated;
+	public final fun only ([Lkotlin/reflect/KProperty1;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/Generated;
+	public final fun rename (Lkotlin/reflect/KProperty1;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/Generated;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/GroupScope : org/pnfolder/pnlibrary/api/placeholders/tree/BranchScope {
+	public final fun access (Lkotlin/jvm/functions/Function1;)V
+	public final fun format (Ljava/lang/String;)V
+	public final fun format (Lorg/pnfolder/pnlibrary/api/placeholders/tree/none;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/GroupScopeKt {
+	public static final fun placeholders (Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun placeholders$default (Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/ModuleFormatsKt {
+	public static final fun formats (Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/NodeScope : org/pnfolder/pnlibrary/api/placeholders/tree/BranchScope {
+	public final fun access (Lkotlin/jvm/functions/Function1;)V
+	public final fun format (Ljava/lang/String;)V
+	public final fun format (Lorg/pnfolder/pnlibrary/api/placeholders/tree/none;)V
+	public final fun inside ()V
+	public final fun update (Lorg/pnfolder/pnlibrary/api/placeholders/tree/AccessRule;Lkotlin/jvm/functions/Function2;)V
+	public final fun value (Lkotlin/jvm/functions/Function1;)V
+	public final fun valueAsync (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/PlaceholderCall {
+	public final fun argOf (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun getArg ()Ljava/lang/Object;
+	public final fun getCaller ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getPlayer ()Ljava/util/UUID;
+	public final fun getRequest ()Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderRequest;
+	public final fun getValues ()Ljava/util/Map;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/PlaceholderGenerationKt {
+	public static final fun generateFrom (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Ljava/lang/Class;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/Generated;
+	public static final fun placesOf (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;)V
+	public static final fun tableOf (Lorg/pnfolder/pnlibrary/api/placeholders/tree/BranchScope;Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/PlaceholderRulesKt {
+	public static final fun allowAll ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/AccessRule;
+	public static final fun allowOnly ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/AccessRule;
+	public static final fun deny ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/placeholders/tree/AccessRule;
+	public static final fun denyAll ()Lorg/pnfolder/pnlibrary/api/placeholders/tree/AccessRule;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/PlayerArg {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getId ()Ljava/util/UUID;
+	public final fun getText ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/placeholders/tree/none {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/placeholders/tree/none;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/platform/PlatformProvider {

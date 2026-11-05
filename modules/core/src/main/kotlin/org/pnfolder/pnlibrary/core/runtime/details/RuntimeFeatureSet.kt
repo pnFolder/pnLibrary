@@ -4,14 +4,14 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloadManager
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
+import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
-import org.pnfolder.pnlibrary.core.services.ServiceManagerImpl
+import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
 import org.pnfolder.pnlibrary.core.updates.service.UpdateServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
@@ -19,14 +19,13 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Path
 
-/** Composes bundled features and their shared registrations independently of the runtime facade. */
 internal class RuntimeFeatureSet(
     platform: PlatformRuntimeContext,
     dataFolder: Path,
     logging: PlatformLogging,
 ) {
-    val services = ServiceManagerImpl()
-    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership)
+    val services = ServiceRegistry()
+    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership, logging)
     val updates = UpdateServiceImpl(
         logging, platform.ownership, platform.ownership, platform.identity, platform.readiness, dataFolder,
         ConsoleStyle.THEME,
@@ -34,22 +33,24 @@ internal class RuntimeFeatureSet(
     private val downloadConfiguration = DownloadConfiguration.load(dataFolder.resolve("downloads.yml")) {
         logging.log(this, LogLevel.WARNING, it)
     }
-    val downloads: DirectDownloadManager = DirectDownloadManager(
+    val downloads: DirectDownloads = DirectDownloads(
         platform.identity, platform.ownership, platform.ownership, platform.readiness,
         logging, dataFolder, downloadConfiguration,
     )
     val placeholderValues = GlobalPlaceholderValueStore()
-    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues)
+    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues) { problem ->
+        logging.log(this, LogLevel.WARNING, problem)
+    }
     val currency: CurrencyRuntime = CurrencyFeature()
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
         logging.log(this, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)
     }
 
     /** Expansions of plugins; the public `PnLibrary.expansions`. */
-    val expansions = ExpansionManagerImpl(onExpansionFailure)
+    val expansions = ExpansionRegistry(onExpansionFailure)
 
     /** The library's own expansions, which no plugin can see or control; modules reach them only through their context. */
-    val libraryExpansions = ExpansionManagerImpl(onExpansionFailure)
+    val libraryExpansions = ExpansionRegistry(onExpansionFailure)
 
     init {
         services.register(CurrencyProviderRegistry::class.java, currency.providers)

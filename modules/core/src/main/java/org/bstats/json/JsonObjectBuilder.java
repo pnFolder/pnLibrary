@@ -18,24 +18,11 @@ public class JsonObjectBuilder {
         builder.append("{");
     }
 
-    /**
-     * Appends a null field to the JSON.
-     *
-     * @param key The key of the field.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendNull(String key) {
         appendFieldUnescaped(key, "null");
         return this;
     }
 
-    /**
-     * Appends a string field to the JSON.
-     *
-     * @param key The key of the field.
-     * @param value The value of the field.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, String value) {
         if (value == null) {
             throw new IllegalArgumentException("JSON value must not be null");
@@ -44,25 +31,11 @@ public class JsonObjectBuilder {
         return this;
     }
 
-    /**
-     * Appends an integer field to the JSON.
-     *
-     * @param key The key of the field.
-     * @param value The value of the field.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, int value) {
         appendFieldUnescaped(key, String.valueOf(value));
         return this;
     }
 
-    /**
-     * Appends an object to the JSON.
-     *
-     * @param key The key of the field.
-     * @param object The object.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, JsonObject object) {
         if (object == null) {
             throw new IllegalArgumentException("JSON object must not be null");
@@ -71,13 +44,6 @@ public class JsonObjectBuilder {
         return this;
     }
 
-    /**
-     * Appends a string array to the JSON.
-     *
-     * @param key The key of the field.
-     * @param values The string array.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, String[] values) {
         if (values == null) {
             throw new IllegalArgumentException("JSON values must not be null");
@@ -89,13 +55,6 @@ public class JsonObjectBuilder {
         return this;
     }
 
-    /**
-     * Appends an integer array to the JSON.
-     *
-     * @param key The key of the field.
-     * @param values The integer array.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, int[] values) {
         if (values == null) {
             throw new IllegalArgumentException("JSON values must not be null");
@@ -107,13 +66,6 @@ public class JsonObjectBuilder {
         return this;
     }
 
-    /**
-     * Appends an object array to the JSON.
-     *
-     * @param key The key of the field.
-     * @param values The integer array.
-     * @return A reference to this object.
-     */
     public JsonObjectBuilder appendField(String key, JsonObject[] values) {
         if (values == null) {
             throw new IllegalArgumentException("JSON values must not be null");
@@ -125,12 +77,6 @@ public class JsonObjectBuilder {
         return this;
     }
 
-    /**
-     * Appends a field to the object.
-     *
-     * @param key The key of the field.
-     * @param escapedValue The escaped value of the field.
-     */
     private void appendFieldUnescaped(String key, String escapedValue) {
         if (builder == null) {
             throw new IllegalStateException("JSON has already been built");

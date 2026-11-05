@@ -4,13 +4,11 @@ import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.UnknownValuePolicy
+import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Supplier
-import java.util.logging.Handler
-import java.util.logging.Level
-import java.util.logging.LogRecord
-import java.util.logging.Logger
 
 /**
  * Loads the library's own YAML files (`config.yml`, `updates.yml`, `downloads.yml`) through the same
@@ -42,7 +40,7 @@ object LibraryConfigFiles {
         require(!Files.isSymbolicLink(file)) { "${file.fileName} must not be a symbolic link" }
         require(!Files.exists(file) || Files.size(file) <= MAX_BYTES) { "${file.fileName} exceeds 256 KiB" }
 
-        val result = StandaloneConfigs.yaml(file, type, defaults, OPTIONS, validator, forwarding(warning)).load()
+        val result = StandaloneConfigs.yaml(file, type, defaults, OPTIONS, validator, WarningLogger(warning)).load()
         if (result.removedPaths.isNotEmpty()) {
             val backup = result.backup?.name?.let { "; копия прежнего файла: $it" }.orEmpty()
             warning("${file.fileName}: удалены неизвестные параметры (${result.removedPaths.joinToString()})$backup")
@@ -50,18 +48,10 @@ object LibraryConfigFiles {
         return result.value
     }
 
-    private fun forwarding(warning: (String) -> Unit): Logger =
-        Logger.getAnonymousLogger().apply {
-            useParentHandlers = false
-            level = Level.WARNING
-            addHandler(object : Handler() {
-                override fun publish(record: LogRecord) {
-                    if (record.level.intValue() >= Level.WARNING.intValue()) warning(record.message)
-                }
-
-                override fun flush() = Unit
-
-                override fun close() = Unit
-            })
+    /** Hands warnings and errors to [warning]; the files are read before any logger exists. */
+    private class WarningLogger(private val onWarning: (String) -> Unit) : PnLogger {
+        override fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean) {
+            if (level >= LogLevel.WARNING) onWarning(message)
         }
+    }
 }

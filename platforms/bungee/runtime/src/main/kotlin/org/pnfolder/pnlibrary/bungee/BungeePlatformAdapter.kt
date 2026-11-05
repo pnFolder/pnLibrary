@@ -20,6 +20,8 @@ import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
 import org.pnfolder.pnlibrary.spi.platform.StartupGate
 import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import java.nio.file.Path
+import java.util.logging.Logger
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
@@ -67,7 +69,6 @@ internal class BungeePlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BungeeTaskAdapter(plugin)
 
-    /** Writes to the owning plugin's logger, falling back to pnLibrary's own. */
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
@@ -79,7 +80,6 @@ internal class BungeePlatformAdapter(
         uncaughtExceptionObserver.observe(observer)
     }
 
-    /** Sends legacy-formatted text to the proxy console. */
     @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
         plugin.proxy.console.sendMessage(
@@ -90,7 +90,10 @@ internal class BungeePlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed plugin names and versions for compatibility checks. */
+    override fun ownerDataFolder(owner: Any): Path? = plugins.find(owner)?.dataFolder?.toPath()
+
+    override fun ownerLogger(owner: Any): Logger? = plugins.find(owner)?.logger
+
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed proxy metadata without exposing individual player identities. */
@@ -106,11 +109,9 @@ internal class BungeePlatformAdapter(
         )
     }
 
-    /** Delegates diagnostic collection with the requested privacy policy. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
-    /** Builds the remote-policy context for a validated native plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
@@ -134,7 +135,6 @@ internal class BungeePlatformAdapter(
         startup.markReady()
     }
 
-    /** Dispatches recipient work through the same asynchronous proxy scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
     }

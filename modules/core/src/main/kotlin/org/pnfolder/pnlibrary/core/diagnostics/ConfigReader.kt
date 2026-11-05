@@ -2,24 +2,23 @@ package org.pnfolder.pnlibrary.core.diagnostics
 
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.regex.Pattern
 
 /**
- * Orchestrates secure configuration collection and layered secret redaction.
+ * Reads plugin configuration files for support reports, with the values each report must hide.
  *
- * File confinement is delegated to [SecureConfigurationFileReader] and document
- * syntax to [ConfigurationDocumentCodec]. This class applies the global and
- * contributor-specific exclusion policies to the resulting neutral data tree.
+ * File confinement is done by [SecureConfigurationFileReader], syntax by [ConfigurationDocumentCodec], and
+ * the hiding rules by [ConfigRedaction], built from the global settings and the file's own declaration.
  *
  * @param dataFolder default trusted root for relative configuration paths
- * @param globalConfig process-wide limits and redaction expressions
+ * @param globalConfig process-wide exclusions and patterns
  */
 internal class ConfigReader(
     private val dataFolder: Path,
     private val globalConfig: PnLibraryConfig = PnLibraryConfig(),
 ) {
-
     private val redactor = DiagnosticRedactor()
     private val secureFileReader = SecureConfigurationFileReader(MAX_FILE_SIZE_BYTES)
     private val documentCodec = ConfigurationDocumentCodec(redactor)
@@ -31,21 +30,35 @@ internal class ConfigReader(
         val error: String? = null,
     )
 
-    /** Original configuration bytes permitted only inside an encrypted report. */
+    /** Configuration bytes for an encrypted report. */
     data class ExactFile(
         val path: String,
         val content: ByteArray? = null,
         val error: String? = null,
     )
 
-    /** Reads the original bytes after the same path, symlink, type and size checks. */
-    fun readExactFile(
+    /**
+     * Reads a file for an encrypted report: the original bytes, comments included, unless the file holds a value
+     * that was asked to be hidden; then it is rendered again with those values hidden.
+     */
+    fun readProtectedFile(
         configSpec: DiagnosticConfiguration,
         rootDirectory: Path = dataFolder,
     ): ExactFile {
-        val relative = configSpec.path
-        val result = secureFileReader.read(rootDirectory, relative)
-        return ExactFile(relative, content = result.content, error = result.error)
+        val path = configSpec.path
+        val read = secureFileReader.read(rootDirectory, path)
+        val content = read.content ?: return ExactFile(path, error = read.error)
+        if (!documentCodec.isStructured(path)) return ExactFile(path, content)
+
+        val redaction = redaction(configSpec, rootDirectory)
+        val data = runCatchingNonFatal { documentCodec.parse(path, content) }.getOrNull()
+        if (data == null) {
+            // A file that cannot be parsed cannot have single values hidden, so it is only sent when nothing has to be.
+            return if (redaction.hasRequests) ExactFile(path, error = UNPARSABLE_WITH_RULES) else ExactFile(path, content)
+        }
+        val hidden = redaction.requested(data)
+        if (hidden == data) return ExactFile(path, content)
+        return ExactFile(path, documentCodec.render(path, hidden).toByteArray(StandardCharsets.UTF_8))
     }
 
     /** Reads, validates and redacts a configuration while preserving its original file format. */
@@ -71,175 +84,43 @@ internal class ConfigReader(
         configSpec: DiagnosticConfiguration,
         rootDirectory: Path = dataFolder,
     ): Map<String, Any?> {
-        val relPath = configSpec.path
-        val result = linkedMapOf<String, Any?>()
-        result["path"] = relPath
-
-        val read = secureFileReader.read(rootDirectory, relPath)
-        if (read.error != null) {
+        val path = configSpec.path
+        val result = linkedMapOf<String, Any?>("path" to path)
+        val read = secureFileReader.read(rootDirectory, path)
+        val content = read.content
+        if (content == null) {
             result["error"] = read.error
             return result
         }
-
-        val rawMap = try {
-            documentCodec.parse(relPath, requireNotNull(read.content))
+        val data = try {
+            documentCodec.parse(path, content)
         } catch (e: Exception) {
             result["error"] = "Parsing failed: ${e.javaClass.simpleName} - ${e.message}"
             return result
         }
-
-        // ── Multi-Layer Redaction ──────────────────────────────────────────────
-        val keyRegexes = compileRegexes(
-            globalConfig.secretKeyPatterns + configSpec.secretKeyPatterns
-        )
-        val valueRegexes = compileRegexes(
-            globalConfig.redactValuePatterns + configSpec.valuePatterns
-        )
-        // An entry is either a path for every file, or `plugin/file.yml:path` for that one file only.
-        val fileKey = "${rootDirectory.fileName}/$relPath"
-        val administratorPaths = globalConfig.excludedPaths.mapNotNull { entry ->
-            val colon = entry.indexOf(':')
-            when {
-                colon < 0 -> entry
-                entry.substring(0, colon).trim().equals(fileKey, ignoreCase = true) -> entry.substring(colon + 1).trim()
-                else -> null
-            }
-        }
-        val excludedSubtrees = (administratorPaths + configSpec.excludedPaths).toSet()
-
-        val redactedData = redactTree(
-            data = rawMap,
-            currentPath = "",
-            excludedSubtrees = excludedSubtrees,
-            keyRegexes = keyRegexes,
-            valueRegexes = valueRegexes,
-            depth = 0
-        )
-
-        result["data"] = redactedData
+        result["data"] = redaction(configSpec, rootDirectory).redact(data)
         return result
     }
 
-    private fun redactTree(
-        data: Map<String, Any?>,
-        currentPath: String,
-        excludedSubtrees: Set<String>,
-        keyRegexes: List<Pattern>,
-        valueRegexes: List<Pattern>,
-        depth: Int,
-    ): Map<String, Any?> {
-        val result = linkedMapOf<String, Any?>()
-        if (depth >= MAX_DEPTH) {
-            result["[limit]"] = "[depth limit reached]"
-            return result
+    private fun redaction(configSpec: DiagnosticConfiguration, rootDirectory: Path): ConfigRedaction = ConfigRedaction(
+        excludedPaths = (administratorPaths("${rootDirectory.fileName}/${configSpec.path}") + configSpec.excludedPaths).toSet(),
+        keyPatterns = ConfigRedaction.compile(globalConfig.secretKeyPatterns + configSpec.secretKeyPatterns),
+        valuePatterns = ConfigRedaction.compile(globalConfig.redactValuePatterns + configSpec.valuePatterns),
+        redactor = redactor,
+    )
+
+    /** An entry is either a path for every file, or `plugin/file.yml:path` for that one file only. */
+    private fun administratorPaths(fileKey: String): List<String> = globalConfig.excludedPaths.mapNotNull { entry ->
+        val colon = entry.indexOf(':')
+        when {
+            colon < 0 -> entry
+            entry.substring(0, colon).trim().equals(fileKey, ignoreCase = true) -> entry.substring(colon + 1).trim()
+            else -> null
         }
-
-        var entryCount = 0
-        for ((key, value) in data) {
-            if (entryCount++ >= MAX_ENTRIES_PER_MAP) break
-            val fullPath = if (currentPath.isEmpty()) key else "$currentPath.$key"
-
-            // Layer 1: Subtree exclusion
-            if (excludedSubtrees.contains(fullPath)) {
-                result[key] = "[EXCLUDED BY RULE]"
-                continue
-            }
-
-            // Layer 2: Built-in & Custom Secret Key regex matching
-            if (isSecretKey(key, fullPath, keyRegexes)) {
-                result[key] = "[REDACTED SECRET KEY]"
-                continue
-            }
-
-            // Layer 3: Nested object / map
-            if (value is Map<*, *>) {
-                @Suppress("UNCHECKED_CAST")
-                result[key] = redactTree(
-                    data = value as Map<String, Any?>,
-                    currentPath = fullPath,
-                    excludedSubtrees = excludedSubtrees,
-                    keyRegexes = keyRegexes,
-                    valueRegexes = valueRegexes,
-                    depth = depth + 1
-                )
-            } else if (value is List<*>) {
-                result[key] = value.take(MAX_ENTRIES_PER_LIST).map { item ->
-                    if (item is Map<*, *>) {
-                        @Suppress("UNCHECKED_CAST")
-                        redactTree(
-                            data = item as Map<String, Any?>,
-                            currentPath = fullPath,
-                            excludedSubtrees = excludedSubtrees,
-                            keyRegexes = keyRegexes,
-                            valueRegexes = valueRegexes,
-                            depth = depth + 1
-                        )
-                    } else when (item) {
-                        null, is Number, is Boolean -> item
-                        else -> redactStringValue(item.toString(), valueRegexes)
-                    }
-                }
-            } else {
-                result[key] = when (value) {
-                    null, is Number, is Boolean -> value
-                    else -> redactStringValue(value.toString(), valueRegexes)
-                }
-            }
-        }
-        return result
-    }
-
-    private fun redactStringValue(input: String, valueRegexes: List<Pattern>): String {
-        var str = redactor.redact(input)
-        for (pattern in valueRegexes) {
-            try {
-                str = pattern.matcher(str).replaceAll("[REDACTED VALUE]")
-            } catch (_: Exception) {
-                // Safeguard against expensive/broken regexes
-            }
-        }
-        return str
-    }
-
-    private fun isSecretKey(key: String, fullPath: String, keyRegexes: List<Pattern>): Boolean {
-        if (BUILTIN_SECRET_KEY.matcher(key).matches() || BUILTIN_SECRET_KEY.matcher(fullPath).matches()) {
-            return true
-        }
-        for (pattern in keyRegexes) {
-            try {
-                if (pattern.matcher(key).find() || pattern.matcher(fullPath).find()) {
-                    return true
-                }
-            } catch (_: Exception) {
-                // A failing contributor pattern counts as no match; the built-in secret key check still applied.
-            }
-        }
-        return false
-    }
-
-    private fun compileRegexes(patterns: List<String>): List<Pattern> {
-        val result = mutableListOf<Pattern>()
-        for (pat in patterns) {
-            if (pat.isNotBlank() && pat.length <= 256) {
-                try {
-                    result.add(Pattern.compile(pat, Pattern.CASE_INSENSITIVE))
-                } catch (_: Exception) {
-                    // Invalid operator patterns are skipped so one typo cannot block every support report.
-                }
-            }
-        }
-        return result
     }
 
     companion object {
-        const val MAX_FILE_SIZE_BYTES = 1_048_576L // 1 MiB
-        const val MAX_DEPTH = 10
-        const val MAX_ENTRIES_PER_MAP = 200
-        const val MAX_ENTRIES_PER_LIST = 100
-
-        private val BUILTIN_SECRET_KEY = Pattern.compile(
-            "(?i).*(?:password|passwd|pwd|secret|token|api[-_ ]?key|authorization|cookie|private[-_ ]?key|credential|webhook|mysql|auth|jdbc).*"
-        )
-
+        const val MAX_FILE_SIZE_BYTES = 1_048_576L
+        private const val UNPARSABLE_WITH_RULES = "[file cannot be parsed and has values that must stay hidden]"
     }
 }

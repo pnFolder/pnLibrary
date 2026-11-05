@@ -43,13 +43,11 @@ data class MenuClose(
  */
 data class Menu(
 
-    /** Native Bukkit inventory title. */
     val title: String,
 
     /** Chest row count; ignored by non-chest menu types. */
     val rows: Int,
 
-    /** Native inventory shape. */
     val type: MenuType,
 
     /** Static slot definitions keyed by raw top-inventory slot. */
@@ -71,6 +69,5 @@ data class Menu(
     val cancelPlayerInventory: Boolean,
 ) {
 
-    /** Effective top-inventory size in slots. */
     val size: Int get() = if (type == MenuType.CHEST) rows * 9 else type.defaultSize
 }

@@ -7,14 +7,12 @@ import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.UpdatePaths
-import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.AclFileAttributeView
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.UUID
@@ -103,7 +101,7 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
 
     private fun apply(id: UUID) {
         val snapshot = snapshots.read(id)
-        // Every record is validated above before the first target is modified.
+        // Check every target before touching the first, so one bad record cannot leave a half-restored set.
         snapshot.files.forEach { record ->
             val target = snapshots.target(record)
             require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
@@ -112,38 +110,36 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         }
         snapshot.files.forEach { record ->
             val target = snapshots.target(record)
-            if (!record.existed) {
-                require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS) || Files.isRegularFile(target,
-                    LinkOption.NOFOLLOW_LINKS)) { "Configuration target is not a regular file" }
-                Files.deleteIfExists(target)
-            } else {
-                Files.createDirectories(target.parent)
-                val attributes = if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
-                    arrayOf(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))) else emptyArray()
-                val temporary = Files.createTempFile(target.parent, ".pnlibrary-restore-", ".tmp", *attributes)
-                try {
-                    if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
-                        val sourceAcl = Files.getFileAttributeView(target, AclFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
-                        val destinationAcl = Files.getFileAttributeView(temporary, AclFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
-                        if (sourceAcl != null && destinationAcl != null) destinationAcl.acl = sourceAcl.acl
-                    }
-                    snapshots.copyForRestore(id, record, temporary)
-                    // Recheck confinement immediately before publication.
-                    snapshots.target(record)
-                    AtomicFiles.move(temporary, target)
-                } finally { Files.deleteIfExists(temporary) }
-            }
+            if (record.existed) restoreFile(id, record, target) else Files.deleteIfExists(target)
         }
+    }
+
+    private fun restoreFile(id: UUID, record: ConfigurationSnapshots.FileRecord, target: Path) {
+        Files.createDirectories(target.parent)
+        val attributes = if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
+            arrayOf(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))) else emptyArray()
+        val temporary = Files.createTempFile(target.parent, ".pnlibrary-restore-", ".tmp", *attributes)
+        try {
+            copyAcl(target, temporary)
+            snapshots.copyForRestore(id, record, temporary)
+            // A directory on the path could have been replaced by a link while the blob was being copied.
+            snapshots.target(record)
+            AtomicFiles.move(temporary, target)
+        } finally {
+            Files.deleteIfExists(temporary)
+        }
+    }
+
+    /** Keeps the access rights of the file being replaced; a temporary file gets the directory defaults instead. */
+    private fun copyAcl(from: Path, to: Path) {
+        if (!Files.exists(from, LinkOption.NOFOLLOW_LINKS)) return
+        val source = Files.getFileAttributeView(from, AclFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS) ?: return
+        val destination = Files.getFileAttributeView(to, AclFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS) ?: return
+        destination.acl = source.acl
     }
 
     private fun save(file: Path, journal: Journal) {
         UpdatePaths.inside(file, directory)
-        Files.createDirectories(file.parent)
-        val temporary = Files.createTempFile(file.parent, ".restore-", ".tmp")
-        try {
-            TextFiles.write(temporary, gson.toJson(journal), UTF_8)
-            FileChannel.open(temporary, StandardOpenOption.WRITE).use { it.force(true) }
-            AtomicFiles.move(temporary, file)
-        } finally { Files.deleteIfExists(temporary) }
+        AtomicFiles.write(file, gson.toJson(journal).toByteArray(UTF_8), durable = true)
     }
 }

@@ -13,15 +13,19 @@ import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
+import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
+import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
 import java.time.Duration
 import java.time.Instant
@@ -95,6 +99,10 @@ class LocalMenuData(
     override fun runTask(id: String): TaskControl = library.runTaskNow(id)
 
     override fun cancelTask(id: String): TaskControl = library.cancelTask(id)
+
+    override fun stats(): StatsSnapshot = library.statsSnapshot()
+
+    override fun placeholders(): List<PlaceholderInfo> = library.placeholderInfos()
 
     override fun events(): List<EventInfo> = bus.events()
 

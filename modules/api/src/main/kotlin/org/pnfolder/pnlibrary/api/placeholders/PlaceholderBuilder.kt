@@ -11,13 +11,10 @@ interface PlaceholderBuilder<T : Any> {
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
 
-    /** Adds an owner-defined update operation, making this placeholder writable. */
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
 
-    /** Sets the access policy used only for update operations. */
     fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
 
-    /** Sets the complete consumer access policy. */
     fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
 
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
@@ -26,7 +23,6 @@ interface PlaceholderBuilder<T : Any> {
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
 
-    /** Sets the value returned for null resolver results and while disabled. */
     fun fallback(value: T): PlaceholderBuilder<T>
 
     /**
@@ -37,6 +33,13 @@ interface PlaceholderBuilder<T : Any> {
      * a [T]; after an earlier format in the chain turned it into text, it is skipped.
      */
     fun format(name: String, formatter: PlaceholderFormatter<T>): PlaceholderBuilder<T>
+
+    /**
+     * Sets the format applied when the text names none, so `{key}` reads like `{key|name}`.
+     * A format in the text replaces it, and `{key|raw}` turns it off. The default does nothing for builders
+     * that do not support it.
+     */
+    fun defaultFormat(name: String): PlaceholderBuilder<T> = this
 
     /** Requests publication through an external placeholder adapter. */
     fun publish(publication: PlaceholderPublication): PlaceholderBuilder<T>

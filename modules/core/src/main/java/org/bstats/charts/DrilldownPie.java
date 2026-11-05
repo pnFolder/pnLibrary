@@ -9,12 +9,6 @@ public class DrilldownPie extends CustomChart {
 
     private final Callable<Map<String, Map<String, Integer>>> callable;
 
-    /**
-     * Class constructor.
-     *
-     * @param chartId The id of the chart.
-     * @param callable The callable which is used to request the chart data.
-     */
     public DrilldownPie(String chartId, Callable<Map<String, Map<String, Integer>>> callable) {
         super(chartId);
         this.callable = callable;

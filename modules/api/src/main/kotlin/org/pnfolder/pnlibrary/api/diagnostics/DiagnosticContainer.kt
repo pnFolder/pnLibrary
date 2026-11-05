@@ -69,15 +69,12 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
             snapshotProvider = provider
         }
 
-        /** Adds or replaces a fixed snapshot entry named [name]. */
         fun value(name: String, v: Any?): Builder = apply { fixed[name] = v }
 
-        /** Adds a configuration file and its redaction policy. */
         fun configuration(config: DiagnosticConfiguration): Builder = apply {
             configurations.add(config)
         }
 
-        /** Adds a configuration file at [path] with the default redaction policy. */
         fun configuration(path: String): Builder = apply {
             configurations.add(DiagnosticConfiguration.builder(path).build())
         }

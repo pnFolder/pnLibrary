@@ -43,16 +43,13 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
         /** Renders as `allowed` or `denied`. */
         override fun toString(): String = if (isAllowed) "allowed" else "denied"
 
-        /** Factory methods for [GenericResult]. */
         companion object {
             private val ALLOWED = GenericResult(true)
             private val DENIED = GenericResult(false)
 
-            /** Returns the shared allowed result. */
             @JvmStatic
             fun allowed(): GenericResult = ALLOWED
 
-            /** Returns the shared denied result. */
             @JvmStatic
             fun denied(): GenericResult = DENIED
         }
@@ -77,11 +74,9 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
         /** Renders as `allowed` or `denied`. */
         override fun toString(): String = if (isAllowed) "allowed" else "denied"
 
-        /** Factory methods for [ComponentResult]. */
         companion object {
             private val ALLOWED = ComponentResult(true, null)
 
-            /** Returns the shared allowed result. */
             @JvmStatic
             fun allowed(): ComponentResult = ALLOWED
 

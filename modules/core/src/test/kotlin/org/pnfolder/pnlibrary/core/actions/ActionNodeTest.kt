@@ -19,7 +19,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -30,7 +29,7 @@ class ActionNodeTest {
 
     private fun load(vararg lines: String): List<Action> {
         Files.writeString(directory.resolve("join.yml"), lines.joinToString("\n") + "\n")
-        ConfigurationServiceImpl(object : PlatformOwnership {}).use {
+        ConfigurationServiceImpl(ActionFormatTest.OwnerPlatform).use {
             val scope = it.scope(ActionFormatTest.Owner(directory.toFile()), PluginId.of("tester"))
             return scope.yaml<ActionFormatTest.ShopConfig>("join.yml", ConfigOptions.DEFAULT) {
                 ActionFormatTest.ShopConfig()

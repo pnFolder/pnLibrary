@@ -11,10 +11,8 @@ data class TaskId(
         require(value.isNotBlank()) { "Task id must not be blank" }
     }
 
-    /** Returns the raw identifier [value]. */
     override fun toString(): String = value
 
-    /** Creates task identifiers. */
     companion object {
         /** Returns a new UUID-backed task identifier. */
         @JvmStatic
@@ -50,7 +48,6 @@ class TaskExecution private constructor(val kind: Kind, val target: Any?) {
         ASYNC,
         ENTITY
     }
-    /** Creates execution-context selections. */
     companion object {
         /** Selects the platform's global execution context. */
         @JvmStatic

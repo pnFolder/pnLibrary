@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
+import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.ModuleBinding
 import org.pnfolder.pnlibrary.core.expansions.ModuleBoundExpansion
-import org.pnfolder.pnlibrary.core.lifecycle.ResourceCleanup
 
 /**
  * One module's hold on expansions: what it registers ends with it, and it gets its own view of each module-bound
@@ -27,7 +27,6 @@ internal class ModuleExpansions(
         }
     }
 
-    /** The view of [type] for this module, bound on first use. */
     fun <V : Any, E : ModuleBoundExpansion<V>> view(type: Class<E>): V = synchronized(lock) {
         check(!closed) { "Module is closed" }
         @Suppress("UNCHECKED_CAST")

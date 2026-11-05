@@ -20,13 +20,14 @@ import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.DataClient
 import org.pnfolder.pnlibrary.core.link.DataException
-import org.pnfolder.pnlibrary.core.link.LinkHub
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.lang.reflect.Type
 import java.time.Duration
 import java.time.Instant
@@ -38,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
-/** The names of the questions one server asks another about its library, and how their data travels as JSON. */
 object MenuCalls {
     const val VERSION = "version"
     const val SNAPSHOTS = "snapshots"
@@ -58,6 +58,8 @@ object MenuCalls {
     const val JOURNAL_GROUPS = "journalGroups"
     const val JOURNAL_DETAIL = "journalDetail"
     const val TASKS = "tasks"
+    const val STATS = "stats"
+    const val PLACEHOLDERS = "placeholders"
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
     const val EVENTS = "events"
@@ -78,11 +80,11 @@ object MenuCalls {
     /** The calls that change nothing, whose answers may be remembered for a moment. */
     val READS = setOf(
         GROUPS,
-        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS,
+        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, STATS,
+        PLACEHOLDERS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
 
-    /** The JSON of the library's data types. Times travel as text, durations as milliseconds. */
     val gson: Gson = GsonBuilder()
         .registerTypeAdapter(Instant::class.java, JsonSerializer<Instant> { value, _, _ -> JsonPrimitive(value.toString()) })
         .registerTypeAdapter(Instant::class.java, JsonDeserializer { json, _, _ -> Instant.parse(json.asString) })
@@ -94,13 +96,11 @@ object MenuCalls {
 
     private val chat = GsonComponentSerializer.gson()
 
-    /** Chat messages as JSON texts. */
     fun encodeLines(lines: List<Component>): List<String> = lines.map(chat::serialize)
 
     /** The chat messages in [texts]; one that cannot be read is skipped. */
     fun decodeLines(texts: List<String>): List<Component> = texts.mapNotNull { runCatching { chat.deserialize(it) }.getOrNull() }
 
-    /** The type token for [T], which keeps the element type of a list. */
     inline fun <reified T> typeOf(): Type = object : TypeToken<T>() {}.type
 }
 
@@ -116,7 +116,7 @@ object MenuCalls {
  */
 class RemoteMenuData(
     private val target: String,
-    private val client: DataClient = LinkHub.data,
+    private val client: DataClient,
 ) : MenuData {
     private class Remembered(val at: Long, val json: String)
 
@@ -165,6 +165,10 @@ class RemoteMenuData(
     override fun journalDetail(id: String): JournalDetail? = ask(MenuCalls.JOURNAL_DETAIL, args("id" to id))
 
     override fun tasks(): List<TaskSnapshot> = ask(MenuCalls.TASKS)
+
+    override fun stats(): StatsSnapshot = ask(MenuCalls.STATS)
+
+    override fun placeholders(): List<PlaceholderInfo> = ask(MenuCalls.PLACEHOLDERS)
 
     override fun runTask(id: String): TaskControl = ask(MenuCalls.RUN_TASK, args("id" to id))
 

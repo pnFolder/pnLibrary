@@ -62,13 +62,10 @@ class MenuBuilder internal constructor(private val title: String, private val ty
         }
     }
 
-    /** Sets the dynamic renderer invoked on open and refresh. */
     fun render(renderer: MenuRenderer): MenuBuilder = apply { this.renderer = renderer }
 
-    /** Sets the callback invoked after the inventory opens and renders. */
     fun onOpen(handler: MenuOpenHandler): MenuBuilder = apply { openHandler = handler }
 
-    /** Sets the callback invoked for normal session closure. */
     fun onClose(handler: MenuCloseHandler): MenuBuilder = apply { closeHandler = handler }
 
     /** Creates an immutable menu and snapshot of all current slot definitions. */
@@ -83,6 +80,5 @@ class MenuBuilder internal constructor(private val title: String, private val ty
         clickHandler = clickHandler,
         cancelPlayerInventory = cancelPlayerInventory,
     )
-    /** Returns the slot count implied by the current menu shape and rows. */
     private fun effectiveSize() = if (type == MenuType.CHEST) rows * 9 else type.defaultSize
 }

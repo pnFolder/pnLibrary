@@ -32,8 +32,13 @@ internal class DiagnosticIncidentLog(
         }
     }
 
+    /** Copies every incident and its timeline: the originals keep changing under the lock after this returns. */
     fun snapshot(): List<Map<String, Any?>> = synchronized(incidents) {
-        ArrayList(incidents)
+        incidents.map { incident ->
+            LinkedHashMap(incident).also { copy ->
+                copy["occurrenceTimeline"] = (incident["occurrenceTimeline"] as List<*>).toList()
+            }
+        }
     }
 
     fun summary(): Map<String, Any?> = synchronized(incidents) {

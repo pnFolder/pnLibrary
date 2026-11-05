@@ -11,7 +11,6 @@ import java.time.Instant
 import java.util.ArrayDeque
 import java.util.LinkedHashMap
 
-/** Bounded session history that aggregates repeated warnings and errors without losing their timeline. */
 internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     internal data class CaptureResult(val emitOriginal: Boolean, val summary: String? = null)
 
@@ -56,7 +55,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         message: String,
         error: Throwable?,
     ): CaptureResult? {
-        if (level != LogLevel.WARNING && level != LogLevel.ERROR) return null
+        if (level < LogLevel.WARNING) return null
 
         val nowMs = System.currentTimeMillis()
         val now = Instant.ofEpochMilli(nowMs).toString()
@@ -65,32 +64,44 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         val fingerprint = fingerprint(plugin, level, safeMessage, error)
         val existing = incidents[fingerprint]
 
-        if (existing == null) {
-            val completeError = error?.let(::fullStackTrace)
-            val incident = Incident(
-                id = fingerprint,
-                level = level,
-                plugin = plugin,
-                message = safeMessage,
-                exceptionType = error?.javaClass?.name,
-                origin = error?.let(DiagnosticThrowables::origin),
-                fullError = completeError,
-                consoleBlock = consoleBlock(now, level, safeMessage, completeError),
-                firstSeenUtc = now,
-                lastSeenUtc = now,
-                lastSummaryAtMs = nowMs,
-            )
-            addOccurrence(incident, now)
-            incidents[fingerprint] = incident
-            while (incidents.size > capacity.coerceAtLeast(1)) {
-                incidents.remove(incidents.keys.first())?.let {
-                    timelineEntryCount -= it.occurrences.size
-                }
-            }
-            notifyChanged()
-            return CaptureResult(emitOriginal = true)
-        }
+        if (existing == null) return startIncident(fingerprint, level, plugin, safeMessage, error, nowMs, now)
+        return repeatIncident(existing, plugin, nowMs, now)
+    }
 
+    private fun startIncident(
+        fingerprint: String,
+        level: LogLevel,
+        plugin: String,
+        message: String,
+        error: Throwable?,
+        nowMs: Long,
+        now: String,
+    ): CaptureResult {
+        val completeError = error?.let(::fullStackTrace)
+        val incident = Incident(
+            id = fingerprint,
+            level = level,
+            plugin = plugin,
+            message = message,
+            exceptionType = error?.javaClass?.name,
+            origin = error?.let(DiagnosticThrowables::origin),
+            fullError = completeError,
+            consoleBlock = consoleBlock(now, level, message, completeError),
+            firstSeenUtc = now,
+            lastSeenUtc = now,
+            lastSummaryAtMs = nowMs,
+        )
+        addOccurrence(incident, now)
+        incidents[fingerprint] = incident
+        while (incidents.size > capacity.coerceAtLeast(1)) {
+            incidents.remove(incidents.keys.first())?.let { timelineEntryCount -= it.occurrences.size }
+        }
+        notifyChanged()
+        return CaptureResult(emitOriginal = true)
+    }
+
+    /** A repeat is quiet except at milestones and once per interval, so a loop cannot flood the console. */
+    private fun repeatIncident(existing: Incident, plugin: String, nowMs: Long, now: String): CaptureResult {
         existing.count++
         existing.lastSeenUtc = now
         addOccurrence(existing, now)
@@ -108,7 +119,6 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         )
     }
 
-    /** Removes incidents last seen before [cutoffMs]; returns how many were dropped. */
     @Synchronized
     fun expireOlderThan(cutoffMs: Long): Int {
         val expired = incidents.values.filter { Instant.parse(it.lastSeenUtc).toEpochMilli() < cutoffMs }

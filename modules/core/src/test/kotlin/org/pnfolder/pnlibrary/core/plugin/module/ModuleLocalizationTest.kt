@@ -13,7 +13,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.expansions.ExpansionState
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
-import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
+import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.registerModule
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.registry
@@ -29,8 +29,8 @@ class ModuleLocalizationTest {
     @TempDir
     lateinit var cache: Path
 
-    private val expansions = ExpansionManagerImpl { _, error -> throw error }
-    private val library = ExpansionManagerImpl { _, error -> throw error }
+    private val expansions = ExpansionRegistry { _, error -> throw error }
+    private val library = ExpansionRegistry { _, error -> throw error }
     private lateinit var localization: LocalizationExpansion
     private val dvorak = KeyboardLayout.of("module-test-dvorak", "',.pyfgcrl/=\\aoeuidhtns-;qjkxbmwv`[")
     private val owner = Any()

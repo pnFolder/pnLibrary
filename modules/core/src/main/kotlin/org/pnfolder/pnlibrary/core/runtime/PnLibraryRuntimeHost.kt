@@ -45,7 +45,6 @@ class PnLibraryRuntimeHost private constructor(
     ) =
         library.services.register(type, service, priority)
 
-    /** Registers the type-safe public API for the active native platform. */
     fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         (library as PlatformRegistration).registerPlatform(type, implementation)
 
@@ -67,7 +66,6 @@ class PnLibraryRuntimeHost private constructor(
         throw first
     }
 
-    /** Complete runtime bootstrap entry point used by platform plugins. */
     companion object {
         /**
          * The policy of pnLibrary itself on Bukkit, Velocity and BungeeCord, published in the `pnlibrary-policy`
@@ -78,11 +76,10 @@ class PnLibraryRuntimeHost private constructor(
          * cannot be downloaded or compiled at start, for example offline or on a JRE without `javac`, stops pnLibrary
          * too; after one successful check such a failure only logs a warning.
          */
-        private val LIBRARY_POLICY: RemotePolicySettings? = RemotePolicySettings.builder()
+        private val LIBRARY_POLICY: RemotePolicySettings = RemotePolicySettings.builder()
             .source("https://raw.githubusercontent.com/pnFolder/pnlibrary-policy/main/.pnlibrary/policies/PnLibraryPolicy.java")
             .onDeny(DenyAction.DISABLE_PLUGIN)
             .checkEvery(Duration.ofHours(2))
-            // A library that could not be checked at start does not run; once checked, a dropped network only warns.
             .onError(PolicyErrorAction.DENY_UNTIL_CHECKED)
             .build()
 
@@ -103,12 +100,6 @@ class PnLibraryRuntimeHost private constructor(
             owner: Any,
             platform: PlatformAdapter,
             remotePolicy: RemotePolicySettings? = LIBRARY_POLICY,
-        ): PnLibraryRuntimeHost = startInternal(owner, platform, remotePolicy)
-
-        private fun startInternal(
-            owner: Any,
-            platform: PlatformAdapter,
-            remotePolicy: RemotePolicySettings?,
         ): PnLibraryRuntimeHost {
             // Reject invalid declarations before allocating or publishing a runtime.
             val policy = remotePolicy?.let(RuntimeRemotePolicy::validated)
@@ -125,11 +116,11 @@ class PnLibraryRuntimeHost private constructor(
                         )
                     }
                     runCatchingNonFatal {
-                        val box = started.library.logging.box(owner, PnLibraryIdentity.NAME, started.currentVersion)
+                        started.library.logging.box(owner, PnLibraryIdentity.NAME, started.currentVersion)
                             .ok("Runtime", "общие сервисы запущены")
                             .ok("Платформа", started.platformName)
                             .ok("Обновления", "проверка релизов запущена")
-                        box.show()
+                            .show()
                     }
                 }
             } catch (error: Throwable) {
@@ -139,7 +130,6 @@ class PnLibraryRuntimeHost private constructor(
             }
         }
 
-        /** Starts the runtime and registers the native platform API transactionally. */
         @JvmStatic
         @JvmOverloads
         fun <T : Any> startAndRegisterPlatform(
@@ -189,6 +179,5 @@ class PnLibraryRuntimeHost private constructor(
                 throw error
             }
         }
-
     }
 }

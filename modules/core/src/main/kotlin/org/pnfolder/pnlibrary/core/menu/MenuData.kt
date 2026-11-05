@@ -12,58 +12,46 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.lifecycle.JournalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.JournalGroup
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
+import org.pnfolder.pnlibrary.core.journal.JournalDetail
+import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
+import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 
-/** The state of the current update plan, as the menu shows it. */
 data class PlanInfo(val state: UpdateState, val hasChanges: Boolean, val blockers: List<String>)
 
-/** A plugin connected to the library. */
 data class PluginRow(val name: String, val version: String?, val modules: Int)
 
-/** What an event says about itself and who owns it. */
 data class EventAbout(val purpose: String, val usage: String, val owner: OwnerInfo?)
 
-/** Who asks for a chat command to be run on another server: the name and the permissions held at home. */
 data class ViewerInfo(val name: String, val permissions: Set<String>)
 
-/** What a change to a group of servers does; the server and the plugin are those the operation needs. */
 enum class GroupOp {
-    /** Makes the group. */
     CREATE,
 
-    /** Deletes the group. */
     DELETE,
 
-    /** Puts a server in the group. */
     ADD_SERVER,
 
-    /** Takes a server out of the group. */
     REMOVE_SERVER,
 
-    /** Asks every server of the group for a plugin. */
     ADD_PLUGIN,
 
-    /** Stops asking any server of the group for a plugin. */
     REMOVE_PLUGIN,
 
-    /** One server of the group needs a plugin, whatever the rest do. */
     NEED,
 
     /** One server of the group does not need a plugin, whatever the rest do. */
     SKIP,
 
-    /** One server of the group goes back to what the rest have. */
     RESET,
 }
 
-/** One change to a group of servers on the proxy. */
 data class GroupEdit(val op: GroupOp, val group: String, val server: String? = null, val plugin: String? = null)
 
 /**
@@ -77,16 +65,13 @@ data class GroupEdit(val op: GroupOp, val group: String, val server: String? = n
  * on another one, so the menu calls them away from the server thread.
  */
 interface MenuData {
-    /** The library version. */
     fun version(): String
 
-    /** The update state of every plugin that registered for updates, by name. */
     fun snapshots(): List<UpdateSnapshot>
 
     /** The update state of one plugin, or null when it did not register. */
     fun snapshot(product: String): UpdateSnapshot?
 
-    /** The plugins connected to the library, registered for updates or not. */
     fun plugins(): List<PluginRow>
 
     /** The current update plan, or null when there is none. */
@@ -95,22 +80,17 @@ interface MenuData {
     /** Until when updates of [product] are paused, or null. */
     fun heldUntil(product: String): Instant?
 
-    /** How many entries the update history has, for one plugin or for all. */
     fun historyCount(product: String?): CompletionStage<Int>
 
-    /** One page of the update history, from page 1. */
     fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>>
 
-    /** The saved backups. */
     fun backups(): CompletionStage<List<UpdateBackup>>
 
-    /** Asks every catalog for new versions. */
     fun checkAll(actor: UpdateActor): CompletionStage<Boolean>
 
     /** Asks the catalog of one plugin for a new version; it does not wait for the answer. */
     fun checkOne(product: String, actor: UpdateActor)
 
-    /** Switches the automatic download of [product]. */
     fun setAutomatic(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<Boolean>
 
     /** Sets the update channel of [product]; null returns it to the default. */
@@ -119,7 +99,6 @@ interface MenuData {
     /** Pauses updates of [product] for [duration]; null lifts the pause. */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean>
 
-    /** Prepares the rollback to a backup. */
     fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean>
 
     /** The journal groups of the last [hours] hours; [level] is `info`, `warning`, `error` or null. */
@@ -128,37 +107,31 @@ interface MenuData {
     /** The whole journal event behind a group, or null when it is no longer there. */
     fun journalDetail(id: String): JournalDetail?
 
-    /** Every task of every plugin. */
     fun tasks(): List<TaskSnapshot>
 
-    /** Starts the waiting task at once. */
+    fun stats(): StatsSnapshot
+
+    fun placeholders(): List<PlaceholderInfo>
+
     fun runTask(id: String): TaskControl
 
-    /** Stops the task. */
     fun cancelTask(id: String): TaskControl
 
-    /** The events of the event bus. */
     fun events(): List<EventInfo>
 
-    /** The listeners of the event bus. */
     fun listeners(): List<ListenerInfo>
 
-    /** The calls per day, for one event or for all. */
     fun eventHistory(eventType: String?): List<EventDay>
 
     /** How many days of calls are kept. */
     fun eventHistoryDays(): Int
 
-    /** The events whose calls are being recorded. */
     fun tracedEvents(): List<String>
 
-    /** The recorded calls. */
     fun traces(): List<EventTrace>
 
-    /** Forgets the recorded calls. */
     fun clearTraces()
 
-    /** Starts or stops recording the calls of an event. */
     fun setTracing(eventType: String, enabled: Boolean)
 
     /** Writes the call history to a file and returns where, or null. */
@@ -167,15 +140,12 @@ interface MenuData {
     /** The purpose and the owner of an event, or null when it is unknown. */
     fun eventAbout(eventType: String): EventAbout?
 
-    /** The plugin called [name], or null. */
     fun ownerNamed(name: String): OwnerInfo?
 
-    /** The groups of servers a proxy keeps; empty on a game server. */
     fun groups(): List<ServerGroups.Group>
 
     /** Applies one change to the groups; returns false when there is no such group or the name is unfit. */
     fun editGroup(edit: GroupEdit): Boolean
 
-    /** Runs a chat command such as `pn status` for [viewer] and returns what it printed. */
     fun command(viewer: ViewerInfo, line: String): List<Component>
 }

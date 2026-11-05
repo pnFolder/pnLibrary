@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Builds module metadata from the definition, falling back to the native plugin description. */
 internal class ModuleMetadataFactory(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,

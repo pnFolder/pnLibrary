@@ -48,7 +48,7 @@ bukkit.menus.open(this, player, menu)
 
 `ConfigurationRuntime` и `CurrencyRuntime` лежат в реализационных feature-модулях: это граница их интеграции
 с `core`. Плагины используют контракты из `*-api`. Внутри `core` у одной реализации нет отдельного интерфейса:
-`PlaceholderHub`, `DirectDownloadManager`, `ServiceManagerImpl` и `RemotePolicyMonitor` используются как есть,
+`PlaceholderHub`, `DirectDownloads`, `ServiceRegistry` и `RemotePolicyMonitor` используются как есть,
 а тесты подменяют их через Mockito.
 
 Общие сервисы закрывает рантайм, а полученные от них scope и регистрации — модуль. Если создание модуля
@@ -104,6 +104,10 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 |---|---|
 | `core.runtime` | запуск рантайма (`PnLibraryLauncher`), жизненный цикл, `config.yml`, часовой пояс |
 | `core.commands` | дерево команд, разбор аргументов, пять уровней ответа на ошибки |
+| `core.commands.events`, `.tasks`, `.groups`, `.proxy` | команды `/pn bus`, `/pn tasks`, группы серверов, `/pn servers` и управление прокси |
+| `core.menu` | меню `/pn gui`, платформенно-нейтральное; данные берёт у `MenuData` (свои или чужого сервера по связи) |
+| `core.link` | связь серверов через плагин-сообщения: подпись, доклады, запросы данных, удалённые действия |
+| `core.stats` | счётчики сервера для `/pn stats` и меню |
 | `core.journal` | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
 | `core.upload` | загрузка зашифрованных отчётов |

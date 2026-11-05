@@ -12,7 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import org.pnfolder.pnlibrary.api.expansions.AbstractExpansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionState
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
-import org.pnfolder.pnlibrary.core.expansions.ExpansionManagerImpl
+import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.ModuleBinding
 import org.pnfolder.pnlibrary.core.expansions.ModuleBoundExpansion
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.registerModule
@@ -20,8 +20,8 @@ import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.regis
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ModuleExpansionsTest {
-    private val expansions = ExpansionManagerImpl { _, error -> throw error }
-    private val library = ExpansionManagerImpl { _, error -> throw error }
+    private val expansions = ExpansionRegistry { _, error -> throw error }
+    private val library = ExpansionRegistry { _, error -> throw error }
     private val registry by lazy { registry(expansions = expansions, libraryExpansions = library) }
     private val owner = Any()
     private val bound = Bound()

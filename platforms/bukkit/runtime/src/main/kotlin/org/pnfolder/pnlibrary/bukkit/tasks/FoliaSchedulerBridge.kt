@@ -1,110 +1,65 @@
 package org.pnfolder.pnlibrary.bukkit.tasks
 
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
+import org.pnfolder.pnlibrary.bukkit.compat.Folia
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
-import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
+import org.pnfolder.pnlibrary.spi.tasks.RetirableCallback
+import java.time.Duration
 
 /**
- * Isolates Folia scheduler access from the legacy Bukkit classpath.
+ * Puts a portable task on the Folia scheduler that matches its execution: asynchronous, a player's region or global.
  *
- * Reflection avoids linking optional Folia classes on servers that do not provide them.
- * Methods are resolved with their declared parameter types, including primitive durations.
+ * Region schedulers count from one tick: they refuse a delay or period of zero for delayed and repeating work, so
+ * both are raised to one tick there.
  */
-internal class FoliaSchedulerBridge(
-    private val plugin: Plugin,
-) {
-    /** Routes a request to the asynchronous, player, or global-region scheduler. */
+internal class FoliaSchedulerBridge(private val plugin: Plugin) {
+
     fun schedule(request: PlatformTaskRequest): Any {
-        return when (request.executionKind) {
-            TaskExecution.Kind.ASYNC -> scheduleFoliaAsync(request)
-            TaskExecution.Kind.ENTITY -> scheduleFoliaEntity(request)
-            TaskExecution.Kind.GLOBAL -> scheduleFoliaGlobal(request)
+        val native = when (request.executionKind) {
+            TaskExecution.Kind.ASYNC -> scheduleAsync(request)
+            TaskExecution.Kind.ENTITY -> scheduleOnPlayer(player(request.target), request)
+            TaskExecution.Kind.GLOBAL -> scheduleGlobal(request)
         }
+        return checkNotNull(native) { "Folia did not schedule the task: the player has already left" }
     }
 
-    /** Schedules asynchronous work using nanosecond delays and intervals. */
-    private fun scheduleFoliaAsync(request: PlatformTaskRequest): Any {
-        val scheduler = bukkitMethod("getAsyncScheduler").invoke(null)
-        val callback = callback(request)
+    fun cancel(task: Any) = Folia.cancel(task)
+
+    private fun scheduleAsync(request: PlatformTaskRequest): Any? {
         val interval = request.interval
-
         return when {
-            interval != null -> invoke(scheduler, "runAtFixedRate", plugin, callback,
-                request.delay.toNanos(), interval.toNanos(), TimeUnit.NANOSECONDS)
-            request.delay.isZero -> invoke(scheduler, "runNow", plugin, callback)
-            else -> invoke(scheduler, "runDelayed", plugin, callback,
-                request.delay.toNanos(), TimeUnit.NANOSECONDS)
+            interval != null -> Folia.runAsyncRepeating(plugin, request.delay, interval, request.callback)
+            request.delay.isZero -> Folia.runAsync(plugin, request.callback)
+            else -> Folia.runAsyncLater(plugin, request.delay, request.callback)
         }
     }
 
-    /** Schedules work on the target player's owning region. */
-    private fun scheduleFoliaEntity(request: PlatformTaskRequest): Any {
-        val player = resolvePlayer(request.target)
-        val scheduler = player.javaClass.getMethod("getScheduler").invoke(player)
-        val callback = callback(request)
-
-        val delay = durationToTicks(request.delay).coerceAtLeast(1)
-        val period = request.interval?.let(::durationToTicks)
-
+    private fun scheduleGlobal(request: PlatformTaskRequest): Any? {
+        val interval = request.interval
         return when {
-            period != null -> invoke(scheduler, "runAtFixedRate", plugin, callback, null, delay, period)
-            request.delay.isZero -> invoke(scheduler, "run", plugin, callback, null)
-            else -> invoke(scheduler, "runDelayed", plugin, callback, null, delay)
+            interval != null -> Folia.runGlobalRepeating(plugin, ticks(request.delay), ticks(interval), request.callback)
+            request.delay.isZero -> Folia.runGlobal(plugin, request.callback)
+            else -> Folia.runGlobalLater(plugin, ticks(request.delay), request.callback)
         }
     }
 
-    /** Schedules global-region work using server ticks. */
-    private fun scheduleFoliaGlobal(request: PlatformTaskRequest): Any {
-        val scheduler = bukkitMethod("getGlobalRegionScheduler").invoke(null)
-        val callback = callback(request)
-        val delay = durationToTicks(request.delay)
-        val period = request.interval?.let(::durationToTicks)
-
+    private fun scheduleOnPlayer(player: Player, request: PlatformTaskRequest): Any? {
+        val interval = request.interval
+        val retired = Runnable { (request.callback as? RetirableCallback)?.retire() }
         return when {
-            period != null -> invoke(scheduler, "runAtFixedRate", plugin, callback, delay, period)
-            request.delay.isZero -> invoke(scheduler, "run", plugin, callback)
-            else -> invoke(scheduler, "runDelayed", plugin, callback, delay)
+            interval != null -> Folia.runOnRepeating(player, plugin, ticks(request.delay), ticks(interval), request.callback, retired)
+            request.delay.isZero -> Folia.runOn(player, plugin, request.callback, retired)
+            else -> Folia.runOnLater(player, plugin, ticks(request.delay), request.callback, retired)
         }
     }
 
-    /** Unwraps command senders and validates the native player target. */
-    private fun resolvePlayer(target: Any?): Player {
+    private fun ticks(value: Duration): Long = durationToTicks(value).coerceAtLeast(1)
+
+    private fun player(target: Any?): Player {
         val native = (target as? BukkitCommandSender)?.native ?: target
-        return requireNotNull(native as? Player) {
-            "Folia entity task requires a Bukkit Player target"
-        }
-    }
-
-    /** Adapts the portable callback to Folia's consumer contract. */
-    private fun callback(request: PlatformTaskRequest): Consumer<Any> =
-        Consumer { request.callback.run() }
-
-    /** Resolves an optional static scheduler accessor without linking Folia classes. */
-    private fun bukkitMethod(name: String) =
-        Bukkit::class.java.getMethod(name)
-
-    /** Invokes a native method using the declared types of the supplied arguments. */
-    private fun invoke(receiver: Any, name: String, vararg args: Any?): Any =
-        receiver.javaClass.getMethod(name, *args.map(::parameterType).toTypedArray()).invoke(receiver, *args)
-
-    /** Resolves interface and primitive parameter types used by scheduler overloads. */
-    private fun parameterType(argument: Any?): Class<*> = when (argument) {
-        null -> Runnable::class.java
-        is Plugin -> Plugin::class.java
-        is Consumer<*> -> Consumer::class.java
-        is Long -> java.lang.Long.TYPE
-        is TimeUnit -> TimeUnit::class.java
-        else -> argument.javaClass
-    }
-
-    /** Cancels a native Folia task through its public scheduler contract. */
-    fun cancel(task: Any) {
-        Class.forName("io.papermc.paper.threadedregions.scheduler.ScheduledTask")
-            .getMethod("cancel").invoke(task)
+        return requireNotNull(native as? Player) { "A Folia entity task needs a Bukkit player as its target" }
     }
 }

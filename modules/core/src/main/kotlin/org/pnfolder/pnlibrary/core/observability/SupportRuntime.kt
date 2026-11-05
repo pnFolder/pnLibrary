@@ -49,7 +49,7 @@ internal class SupportRuntime(
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(dataFolder)
     private val diagnosticBridge = DiagnosticObservationBridge(observations)
-    val service = ObservabilityServiceImpl(diagnostics, observations)
+    val service = ObservabilityHub(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(
@@ -108,7 +108,8 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(::persistHistory)
         diagnostics.onActivityEvent(diagnosticBridge::record)
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
-            capture.observe(nativeOwner, level, message, error, config.journalForeignPlugins || nativeOwner === owner)
+            if (config.journalForeignPlugins || nativeOwner === owner) capture.observe(nativeOwner, level, message, error)
+            else capture.observeWithoutJournal(nativeOwner, level, message, error)
         }
 
         worker.scheduleWithFixedDelay(

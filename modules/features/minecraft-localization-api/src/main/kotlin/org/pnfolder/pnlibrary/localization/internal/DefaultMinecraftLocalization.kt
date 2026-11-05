@@ -241,7 +241,7 @@ internal class LoadedLocale private constructor(
 
     private class LocaleData(values: Map<String, String>, layouts: KeyboardLayouts) {
         val values = Collections.unmodifiableMap(LinkedHashMap(values))
-        val keys by lazy { TranslationIndexImpl.keys(this.values, layouts) }
+        val keys by lazy { TranslationSearchIndex.keys(this.values, layouts) }
     }
 }
 

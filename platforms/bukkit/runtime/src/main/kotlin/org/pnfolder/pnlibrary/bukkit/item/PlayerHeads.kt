@@ -12,18 +12,29 @@ import java.util.UUID
 
 /** Creates player heads from a Minecraft texture hash, URL, or Base64 texture payload. */
 internal object PlayerHeads {
+    private const val TEXTURES = "https://textures.minecraft.net/texture/"
     private val textureUrl = Regex("https?://textures\\.minecraft\\.net/texture/[A-Za-z0-9]+")
     private val textureHash = Regex("[A-Fa-f0-9]{32,}")
 
     /** Invalid textures produce an untextured head. [displayName] accepts legacy color codes. */
     @JvmStatic
     fun create(texture: String?, displayName: String?): ItemStack {
+        val head = skinUrl(normalizeTexture(texture))?.let(::textured) ?: playerHead()
+        if (displayName == null) return head
+        val meta = head.itemMeta ?: return head
+        meta.setDisplayName(ItemText.color(displayName))
+        head.itemMeta = meta
+        return head
+    }
+
+    /** A head wearing the skin published under texture [hash], or `null` when this server cannot apply skins. */
+    fun textured(hash: String): ItemStack? = textured(URI(TEXTURES + hash).toURL())
+
+    // 1.18.1+ has the Bukkit profile API; older servers take an authlib GameProfile in a private field.
+    private fun textured(url: URL): ItemStack? {
         val head = playerHead()
-        val meta = head.itemMeta as? SkullMeta ?: return head
-        if (displayName != null) meta.setDisplayName(ItemText.color(displayName))
-        skinUrl(normalizeTexture(texture))?.let { url ->
-            if (!applyModernProfile(meta, url)) applyLegacyProfile(meta, url)
-        }
+        val meta = head.itemMeta as? SkullMeta ?: return null
+        if (!applyModernProfile(meta, url) && !applyLegacyProfile(meta, url)) return null
         head.itemMeta = meta
         return head
     }
@@ -76,7 +87,7 @@ internal object PlayerHeads {
         profileField(meta.javaClass).apply { isAccessible = true }.set(meta, profile)
     }
 
-    /** Server versions expose different profile APIs; try the next supported representation. */
+    /** Each server version supports one of the two profile APIs; a failure means "try the other one". */
     private inline fun tryProfile(action: () -> Unit): Boolean = try {
         action()
         true
@@ -104,7 +115,7 @@ internal object PlayerHeads {
         if (value == null) return null
         return when {
             textureUrl.matches(value) -> URI(value).toURL()
-            textureHash.matches(value) -> URI("https://textures.minecraft.net/texture/$value").toURL()
+            textureHash.matches(value) -> URI(TEXTURES + value).toURL()
             else -> textureUrl.find(decodeTexture(value))?.value?.let { URI(it).toURL() }
         }
     }

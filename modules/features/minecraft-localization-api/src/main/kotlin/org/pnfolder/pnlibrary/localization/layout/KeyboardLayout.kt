@@ -30,11 +30,11 @@ class KeyboardLayout private constructor(val id: String, private val keys: Strin
         @JvmField
         val EN_US = of("en_us", "qwertyuiop[]\\asdfghjkl;'zxcvbnm,.`-")
 
-        /** Russian ЙЦУКЕН. */
+        /** Russian JCUKEN layout. */
         @JvmField
         val RU = of("ru", "йцукенгшщзхъ\\фывапролджэячсмитьбюё-")
 
-        /** Ukrainian ЙЦУКЕН. */
+        /** Ukrainian JCUKEN layout. */
         @JvmField
         val UK = of("uk", "йцукенгшщзхїґфівапролджєячсмитьбю'-")
 
@@ -42,7 +42,7 @@ class KeyboardLayout private constructor(val id: String, private val keys: Strin
         @JvmField
         val DE = of("de", "qwertzuiopü+#asdfghjklöäyxcvbnm,.^ß")
 
-        /** Belarusian ЙЦУКЕН. */
+        /** Belarusian JCUKEN layout. */
         @JvmField
         val BE = of("be", "йцукенгшўзх'\\фывапролджэячсмітьбюё-")
 

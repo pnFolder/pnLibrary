@@ -41,28 +41,21 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal var verifyPluginId = true
         internal var verifyVersion = true
 
-        /** Sets an HTTPS page where administrators can obtain the plugin. */
         fun downloadPage(url: String): Builder = apply {
             downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
         }
 
-        /** Sets a fully verified artifact suitable for automatic installation. */
         fun artifact(url: String, size: Long, sha256: String): Builder = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
-        /** Sets an HTTPS artifact without publisher integrity metadata. */
         fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
 
-        /** Sets whether absence blocks the declaring product. */
         fun required(value: Boolean): Builder = apply { required = value }
 
-        /** Sets the inclusive maximum accepted plugin version. */
         fun maximumVersion(value: String): Builder = apply { maximumInclusive = SemanticVersion.parse(value) }
 
-        /** Sets the exclusive maximum accepted plugin version. */
         fun maximumVersionExclusive(value: String): Builder = apply { maximumExclusive = SemanticVersion.parse(value) }
 
-        /** Sets the download policy directly. */
         fun downloadPolicy(value: DownloadPolicy): Builder = apply { downloadPolicy = value }
 
         /** Selects automatic or manual download policy. */
@@ -94,7 +87,6 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         }
     }
 
-    /** Creates external-dependency builders. */
     companion object {
         /** Starts a dependency for [plugin] with the supplied minimum version. */
         @JvmStatic

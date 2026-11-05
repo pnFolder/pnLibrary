@@ -66,7 +66,7 @@ class OfflineUpdateInstallerTest {
         TransactionJournal.save(result.journal, journal.copy(state = TransactionState.PUBLISHING))
         assertThrows(IllegalArgumentException::class.java) { fixture.transactions.recoverAll() }
         assertArrayEquals(byteArrayOf(8), Files.readAllBytes(fixture.active))
-        fixture.transactions.recoverAll(offline = true)
+        fixture.transactions.recoverAllOffline()
         assertArrayEquals(byteArrayOf(1), Files.readAllBytes(fixture.active))
     }
 

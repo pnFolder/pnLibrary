@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** One capture path for library logs, service failures and observed native logs. */
 internal class DiagnosticCapture(
     private val ownership: PlatformOwnership,
     private val native: PlatformLogging,
@@ -37,13 +36,19 @@ internal class DiagnosticCapture(
             else -> return
         }
         rememberEcho(level, output)
-        emit { native.log(owner, level, output, if (output == message) error else null) }
+        emit { native.log(owner, level, ConsoleStyle.decorate(level, output), if (output == message) error else null) }
     }
 
     override fun console(owner: Any, message: String) = emit { native.console(owner, message) }
 
     /** Native observers already have console output; never emit it again or capture our own echo. */
-    fun observe(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
+    fun observe(owner: Any, level: LogLevel, message: String, error: Throwable?) = observeLine(owner, level, message, error, true)
+
+    /** Like [observe] for lines of other plugins: they reach the black box but not the journal. */
+    fun observeWithoutJournal(owner: Any, level: LogLevel, message: String, error: Throwable?) =
+        observeLine(owner, level, message, error, false)
+
+    private fun observeLine(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
         if (emitting.get() == true || echoedRecently(level, message)) return
         capture(owner, level, message, error, includeJournal)
     }
@@ -62,7 +67,7 @@ internal class DiagnosticCapture(
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
         if (includeJournal) runCatchingNonFatal { journal?.invoke(owner, level, message, error) }
-        if (error != null && level == LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
+        if (error != null && level >= LogLevel.ERROR) runCatchingNonFatal { onError(owner, message, error) }
         return runCatchingNonFatal { incidents?.record(ownership, owner, level, message, error) }.getOrNull()
     }
 

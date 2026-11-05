@@ -77,13 +77,12 @@ internal class VelocityPlatformAdapter(
             logObserver.runOwn {
                 when (level) {
                     LogLevel.WARNING -> logger.warn(message, error)
-                    LogLevel.ERROR -> logger.error(message, error)
+                    LogLevel.ERROR, LogLevel.CRITICAL -> logger.error(message, error)
                     else -> logger.info(message, error)
                 }
             }
         }
 
-    /** Sends a legacy-formatted message to the Velocity console. */
     override fun console(owner: Any, message: String) {
         proxy.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
@@ -98,10 +97,8 @@ internal class VelocityPlatformAdapter(
         uncaughtExceptionObserver.observe(observer)
     }
 
-    /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
         plugins.versions()
 
@@ -119,18 +116,15 @@ internal class VelocityPlatformAdapter(
         )
     }
 
-    /** Collects the detailed platform report used by support diagnostics. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
-    /** Builds the native context passed to a remotely loaded policy of an installed plugin owner. */
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
     ): RemotePolicyContext =
         VelocityRemotePolicyContextFactory.create(owner, plugins.requireInstalled(owner, "Remote policy owner"), proxy, values)
 
-    /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) {
             return
@@ -151,7 +145,6 @@ internal class VelocityPlatformAdapter(
         startup.markReady()
     }
 
-    /** Dispatches a reply task using the proxy-wide scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
     }

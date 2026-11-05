@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyActor
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
@@ -13,6 +14,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyHistoryQuery
 import org.pnfolder.pnlibrary.api.currency.CurrencyImportMode
 import org.pnfolder.pnlibrary.api.currency.CurrencyImportResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyKey
+import org.pnfolder.pnlibrary.api.currency.CurrencyRejectReason
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageSnapshot
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
@@ -22,6 +24,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -64,7 +67,16 @@ class ManagedCurrencyProviderTest {
         assertTrue(storage.closed)
     }
 
-    private fun provider(storage: CurrencyStorage, ownsStorage: Boolean = false) = ManagedCurrencyProvider(
+    @Test
+    fun `withdrawing more than the balance reports insufficient funds`(@TempDir directory: Path) {
+        FileCurrencyStorage(directory.resolve("currency.json"), 100).use { storage ->
+            val result = provider(storage).withdraw(CurrencyAccount(UUID.randomUUID()), BigDecimal.ONE).toCompletableFuture().join()
+
+            assertEquals(CurrencyRejectReason.INSUFFICIENT_FUNDS, result.reason)
+        }
+    }
+
+    private fun provider(storage: CurrencyStorage, ownsStorage: Boolean = false) =ManagedCurrencyProvider(
         key = CurrencyKey(PluginId.of("test"), "coins"),
         descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN),
         storage = storage,

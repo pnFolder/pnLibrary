@@ -16,11 +16,9 @@ import java.util.Locale
 internal class DiagnosticValueSanitizer(
     private val redactor: DiagnosticRedactor = DiagnosticRedactor(),
 ) {
-    /** Returns a normalized map containing only report-safe values. */
     fun map(values: Map<*, *>?): Map<String, Any?> =
         map(values, depth = 0, seen = IdentityHashMap())
 
-    /** Redacts and truncates [value] to at most [maximumLength] characters. */
     fun text(value: String?, maximumLength: Int): String =
         redactor.redact(value.orEmpty()).take(maximumLength)
 

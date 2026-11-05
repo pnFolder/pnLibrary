@@ -5,28 +5,28 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
-import org.bukkit.scheduler.BukkitTask
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import java.io.File
 
 /**
  * Restarts the server so staged updates apply: at once, after a countdown the players see, or when nobody is online.
  *
- * A restart needs a script that starts the server again (`restart-script` in `spigot.yml`). When that script is
- * missing the server cannot come back by itself, so it is stopped cleanly and the administrator is told to start it.
+ * With `restart-script` in `spigot.yml` the server restarts itself. Without it the server is stopped cleanly and
+ * comes back only if something outside starts it again (a hosting panel, a `start.sh` loop, Pterodactyl); the library
+ * cannot tell which, so it says so without calling it a problem.
  * Only one restart can be waiting; a new request replaces it and [cancel] withdraws it.
  */
-internal class ServerRestarter(private val plugin: Plugin) {
+internal class ServerRestarter(private val plugin: Plugin, private val scheduler: ServerScheduler, private val log: () -> PnLogger) {
     /** When the restart happens. */
     enum class Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY }
 
     @Volatile
-    private var waiting: BukkitTask? = null
+    private var waiting: ServerScheduler.Scheduled? = null
 
-    /** What starting a restart did, for the answer to the administrator. */
     enum class Started { COUNTDOWN, WAITING_FOR_EMPTY }
 
-    /** Starts a restart in [mode] and returns how it will proceed. */
     fun start(mode: Mode): Started {
         cancel()
         return when (mode) {
@@ -46,24 +46,24 @@ internal class ServerRestarter(private val plugin: Plugin) {
 
     private fun countdown(seconds: Int): Started {
         var left = seconds
-        waiting = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        waiting = scheduler.repeat(0L, TICKS_PER_SECOND) {
             if (left in WARNINGS && Bukkit.getOnlinePlayers().isNotEmpty()) announce("Сервер перезапустится через ${wait(left)} для применения обновлений.")
             if (left <= 0) {
                 cancel()
                 restart()
             }
             left--
-        }, 0L, TICKS_PER_SECOND)
+        }
         return Started.COUNTDOWN
     }
 
     private fun waitForEmpty(): Started {
-        waiting = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        waiting = scheduler.repeat(0L, EMPTY_CHECK_TICKS) {
             if (Bukkit.getOnlinePlayers().isEmpty()) {
                 cancel()
                 restart()
             }
-        }, 0L, EMPTY_CHECK_TICKS)
+        }
         return Started.WAITING_FOR_EMPTY
     }
 
@@ -73,10 +73,10 @@ internal class ServerRestarter(private val plugin: Plugin) {
             announce("Сервер перезапускается для применения обновлений.")
             Bukkit.spigot().restart()
         } else {
-            announce("Сервер останавливается для применения обновлений. Запустите его снова.")
-            plugin.logger.warning(
-                "restart-script in spigot.yml is not set or its file is missing, so the server cannot start itself again: " +
-                    "stopping it. Start it manually, or point restart-script at your start script (for example ./start.bat).",
+            announce("Сервер останавливается для применения обновлений. Если у него есть автозапуск, он включится сам.")
+            log().info(
+                "restart-script in spigot.yml is not set, so the server only stops: a hosting panel or a start script that " +
+                    "loops starts it again. Without one, start it manually, or point restart-script at your start script.",
             )
             Bukkit.shutdown()
         }

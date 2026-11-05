@@ -35,6 +35,10 @@
 | `/pn events` | журнал событий: ошибки, предупреждения, повторы, стек вызовов |
 | `/pninfo` | версия pnLibrary и платформа, для обращения в поддержку |
 | `/pn money` | управление валютами плагинов |
+| `/pn stats` | почасовая статистика ошибок, задач и событий |
+| `/pn placeholders [test <адрес>]` | список и проверка плейсхолдеров |
+| `/pn bus`, `/pn tasks`, `/pn groups` | шина событий, задачи, группы серверов |
+| `/pn servers`, `/pn support` | серверы прокси, обращение в поддержку |
 | `/pn debug [all\|плагин]` | отчёт для поддержки |
 
 На BungeeCord и Velocity каталог доступен из консоли командой `/pn update`. Все команды обновлений и права описаны
@@ -46,6 +50,8 @@
 |---|---|
 | `pnlibrary.admin` | всё управление pnLibrary |
 | `pnlibrary.events.view` | `/pn events` и сводку ошибок при входе |
+| `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
+| `pnlibrary.placeholders` | `/pn placeholders`: список и проверка плейсхолдеров |
 | `pnlibrary.debug` | `/pn debug` |
 
 ## Подключение к плагину
@@ -62,7 +68,8 @@ dependencies {
 
 ```kotlin
 val library = PnLibraryProvider.get()
-val plugin = library.plugins.register(this)
+val registration = library.plugins.register(this)
+val context = registration.registerModule("main")   // ModuleContext: tasks, events, configs, placeholders, updates
 val bukkit = library.platform<BukkitPlatform>()   // меню, предметы, визуальные сущности
 ```
 

@@ -64,7 +64,7 @@ class CatalogSource @JvmOverloads constructor(
             branch == other.branch && path == other.path && refType == other.refType
 
     /** Hash consistent with [equals]. */
-    override fun hashCode(): Int = arrayOf(owner, repository, branch, path, refType).contentHashCode()
+    override fun hashCode(): Int = arrayOf<Any>(owner, repository, branch, path, refType).contentHashCode()
 
     /** Constants and factories for [CatalogSource]. */
     companion object {

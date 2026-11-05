@@ -14,10 +14,8 @@ internal class ConfigurationFileStore(
     private val file: File,
     private val validator: (String) -> Unit,
 ) {
-    /** Normalizes newlines and guarantees exactly one trailing newline. */
     fun normalize(content: String): String = content.replace("\r\n", "\n").trimEnd() + "\n"
 
-    /** Atomically replaces the configuration after [validator] accepts it. */
     fun write(content: String) {
         val normalized = normalize(content)
         val temporary = Files.createTempFile(file.absoluteFile.parentFile.toPath(), "${file.name}.", ".tmp")
@@ -30,7 +28,7 @@ internal class ConfigurationFileStore(
         }
     }
 
-    /** Saves the previous document and enforces bounded backup retention. */
+    /** Saves the previous document beside the file, keeping the newest [MAX_BACKUPS] copies. */
     fun backup(content: String): File {
         val target = Files.createTempFile(
             file.absoluteFile.parentFile.toPath(),
@@ -44,9 +42,12 @@ internal class ConfigurationFileStore(
             deleteBestEffort(target)
             throw error
         }
+        // The new backup is kept explicitly: modification times have coarse resolution on some file systems,
+        // and a tie must not make the backup just written the one that gets deleted.
         existingBackups()
+            .filter { it != target }
             .sortedByDescending(File::lastModified)
-            .drop(MAX_BACKUPS)
+            .drop(MAX_BACKUPS - 1)
             .forEach(::deleteBestEffort)
         return target
     }

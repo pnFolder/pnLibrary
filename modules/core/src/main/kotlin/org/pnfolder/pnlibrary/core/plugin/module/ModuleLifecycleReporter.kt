@@ -9,7 +9,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.core.plugin.HidingLifecycleBox
 
-/** Builds the console cards printed when a module is enabled and disabled. */
 internal class ModuleLifecycleReporter(
     private val owner: Any,
     private val moduleId: ModuleId,
@@ -52,7 +51,6 @@ internal class ModuleLifecycleReporter(
     private fun ok(row: LifecycleRow, label: String, detail: String) =
         HidingLifecycleBox.AutoRow(row, notConfigured = false) { it.ok(label, detail) }
 
-    /** A configured feature is written with its state; an unconfigured one is a "not configured" skip row. */
     private fun status(row: LifecycleRow, label: String, detail: String?) =
         if (detail == null) HidingLifecycleBox.AutoRow(row, notConfigured = true) { it.skip(label, "not configured") }
         else HidingLifecycleBox.AutoRow(row, notConfigured = false) { it.ok(label, detail) }

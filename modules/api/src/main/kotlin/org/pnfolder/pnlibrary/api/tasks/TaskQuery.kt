@@ -40,10 +40,8 @@ class TaskQuery private constructor(
         /** Matches task names containing [value]. */
         fun nameContains(value: String): Builder = apply { nameContains = value }
 
-        /** Adds accepted lifecycle states. */
         fun status(vararg value: TaskStatus): Builder = apply { statuses += value }
 
-        /** Adds accepted execution kinds. */
         fun execution(vararg value: TaskExecution.Kind): Builder = apply { executionKinds += value }
 
         /** Requires matching tasks to contain [value]. */
@@ -66,9 +64,7 @@ class TaskQuery private constructor(
             )
         }
     }
-    /** Creates task queries. */
     companion object {
-        /** Returns an empty query builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
 

@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.core.lifecycle.TaskControl
 
 /**
  * Cross-platform scheduling service with owner-scoped resource management.
@@ -49,6 +48,5 @@ internal interface TaskService : AutoCloseable {
     /** Closes and removes [owner]'s scope when one exists. */
     fun close(owner: Any)
 
-    /** Closes all scopes and stops the background scheduler. This operation is idempotent. */
     override fun close()
 }

@@ -1,16 +1,21 @@
 package org.pnfolder.pnlibrary.currency
 
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
+import org.pnfolder.pnlibrary.api.currency.CurrencyKey
+import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import java.math.BigDecimal
+import java.time.Instant
+import java.util.UUID
 
 /** Pure balance transition shared by persistent currency backends. */
 internal object CurrencyMutationEngine {
+    /** Failure text of a debit or transfer the source cannot cover; providers map it to a reject reason. */
+    const val INSUFFICIENT_FUNDS = "Insufficient funds"
+
     /**
-     * Validates and evaluates one request without performing persistence.
-     *
      * A rejected transition preserves both balances. Storage implementations are
      * responsible for descriptor normalization before reading and after committing.
      */
@@ -53,7 +58,7 @@ internal object CurrencyMutationEngine {
         )
     }
 
-    private fun rejected(source: BigDecimal?, target: BigDecimal?, failure: String = "Insufficient funds") = CurrencyMutation(
+    private fun rejected(source: BigDecimal?, target: BigDecimal?, failure: String = INSUFFICIENT_FUNDS) = CurrencyMutation(
         status = CurrencyTransactionStatus.REJECTED,
         sourceBefore = source,
         sourceAfter = source,
@@ -71,4 +76,28 @@ internal data class CurrencyMutation(
     val targetBefore: BigDecimal?,
     val targetAfter: BigDecimal?,
     val failure: String? = null,
-)
+) {
+    val committed: Boolean get() = status == CurrencyTransactionStatus.COMMITTED
+
+    /** The ledger record of this mutation, created when the storage has applied it. */
+    fun transaction(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest) = CurrencyTransaction(
+        id = UUID.randomUUID(),
+        currency = currency,
+        type = request.type,
+        status = status,
+        amount = if (committed) descriptor.normalize(request.amount) else request.amount,
+        source = request.source,
+        target = request.target,
+        actor = request.actor,
+        service = request.service,
+        reason = request.reason,
+        metadata = request.metadata,
+        sourceBalanceBefore = sourceBefore,
+        sourceBalanceAfter = sourceAfter,
+        targetBalanceBefore = targetBefore,
+        targetBalanceAfter = targetAfter,
+        createdAt = Instant.now(),
+        failure = failure,
+        idempotencyKey = request.idempotencyKey,
+    )
+}
