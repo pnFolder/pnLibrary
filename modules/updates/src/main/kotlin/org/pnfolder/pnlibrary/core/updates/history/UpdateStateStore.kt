@@ -33,12 +33,7 @@ internal class UpdateStateStore(
     private val maximumBytes: Long = 10L * 1024L * 1024L,
     private val warning: (String) -> Unit = {},
 ) {
-    /**
-     * Update plans contain java.time.Instant values (release publication time).
-     * Gson's reflective adapter cannot access Instant's private fields across Java module
-     * boundaries (Java 17+), so persist it as the same ISO-8601 string used by the
-     * release catalog instead of relying on reflection.
-     */
+    // Gson cannot reflect into Instant on Java 17+ (module boundaries), so it is stored as the catalog's ISO-8601 text.
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(Instant::class.java, JsonSerializer<Instant> { value, _, _ ->
             JsonPrimitive(value.toString())
@@ -174,13 +169,15 @@ internal class UpdateStateStore(
         }.orEmpty()
 
     private fun prune() {
-        // A history file that vanished or is locked counts as empty; retention retries on the next write.
+        // A history file that vanished or is locked (antivirus on Windows) is skipped; retention retries on the next
+        // write. Failing here would fail a save whose state file is already written.
         val files = historyFiles().toMutableList()
         var bytes = files.sumOf { runCatchingNonFatal { Files.size(it) }.getOrDefault(0) }
         while (files.size > maximumEntries || bytes > maximumBytes) {
             val oldest = files.removeLast()
             bytes -= runCatchingNonFatal { Files.size(oldest) }.getOrDefault(0)
-            Files.deleteIfExists(oldest)
+            runCatchingNonFatal { Files.deleteIfExists(oldest) }
+                .onFailure { warning("Old update state ${oldest.fileName} could not be deleted: ${it.javaClass.simpleName}") }
         }
     }
 

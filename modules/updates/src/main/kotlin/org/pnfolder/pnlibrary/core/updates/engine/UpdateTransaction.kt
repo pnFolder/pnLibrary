@@ -121,14 +121,7 @@ internal class UpdateTransaction(
     /** Recovers an interrupted transaction, rolling back unsafe publication states. */
     fun recover(journalPath: Path): TransactionResult {
         val journal = journals.load(journalPath)
-        if ((journal.purpose in setOf("INSTALL", "RESTORE") && journal.state == TransactionState.AWAITING_HEALTH) || journal.state in setOf(
-                TransactionState.PUBLISHING,
-                TransactionState.ACTIVATING,
-                TransactionState.ROLLING_BACK,
-            )
-        ) {
-            rollbackInternal(journalPath, journal)
-        }
+        if (interruptedInstallation(journal) || journal.state in UNSAFE_STATES) rollbackInternal(journalPath, journal)
         return TransactionResult(journal.state, journalPath)
     }
 
@@ -139,10 +132,10 @@ internal class UpdateTransaction(
         val journal = journals.load(normalized)
         require(journal.isRestorable()) { "Transaction ${journal.id} cannot be rolled back from ${journal.state}" }
         require(journals.hasRollbackData(journal)) { "Transaction ${journal.id} has no complete rollback data" }
-        require(journal.purpose in setOf(null, "STAGE")) { "Internal installation transactions cannot be selected for rollback" }
+        require(journal.purpose in SAVED_SET_PURPOSES) { "Internal installation transactions cannot be selected for rollback" }
+        require(!restoreConfigurations || journal.configurationSnapshot != null) { "Transaction has no configuration snapshot" }
         journal.rollbackRequested = true
         journal.appliedOperation = null
-        require(!restoreConfigurations || journal.configurationSnapshot != null) { "Transaction has no configuration snapshot" }
         journal.restoreConfigurations = restoreConfigurations
         journal.rollbackSession = UpdateProcessSession.id
         journal.rollbackHealthVerified = false
@@ -159,22 +152,34 @@ internal class UpdateTransaction(
     /** Lists validated saved rollback sets without exposing incomplete or corrupt transactions. */
     fun rollbackCandidates(): List<Path> = rollbacks.all()
 
-    /** Recovers every journal found below the transaction root. */
-    fun recoverAll(offline: Boolean = false): List<TransactionResult> {
+    /**
+     * Recovers the saved sets at server start. Refuses to start while a set that touched the loaded plugin JARs is
+     * interrupted: only the offline installer may repair those, because the server may already have loaded them.
+     */
+    fun recoverAll(): List<TransactionResult> {
         if (!Files.isDirectory(root)) return emptyList()
         val paths = journals.journals()
-        if (!offline) require(paths.none { path ->
-            val journal = journals.load(path)
-            (journal.purpose in setOf("INSTALL", "RESTORE") && journal.state == TransactionState.AWAITING_HEALTH) ||
-                (journal.state in setOf(TransactionState.PUBLISHING, TransactionState.ACTIVATING, TransactionState.ROLLING_BACK) &&
-                (journal.purpose in setOf("INSTALL", "RESTORE") || journal.artifacts.any {
-                    Paths.get(it.target).toAbsolutePath().normalize().parent != publicationRoot.resolve("update")
-                }))
-        }) { "interrupted offline installation must be recovered before starting the server" }
-        return paths
-            .filter { offline || journals.load(it).purpose in setOf(null, "STAGE") }
-            .sorted()
-            .map(::recover)
+        require(paths.none { blocksServerStart(journals.load(it)) }) {
+            "interrupted offline installation must be recovered before starting the server"
+        }
+        return paths.filter { journals.load(it).purpose in SAVED_SET_PURPOSES }.sorted().map(::recover)
+    }
+
+    /** Recovers every journal, internal installations included; called only by the offline installer. */
+    fun recoverAllOffline(): List<TransactionResult> {
+        if (!Files.isDirectory(root)) return emptyList()
+        return journals.journals().sorted().map(::recover)
+    }
+
+    private fun interruptedInstallation(journal: TransactionJournal): Boolean =
+        journal.purpose in INTERNAL_PURPOSES && journal.state == TransactionState.AWAITING_HEALTH
+
+    private fun blocksServerStart(journal: TransactionJournal): Boolean {
+        if (interruptedInstallation(journal)) return true
+        if (journal.state !in UNSAFE_STATES) return false
+        return journal.purpose in INTERNAL_PURPOSES || journal.artifacts.any {
+            Paths.get(it.target).toAbsolutePath().normalize().parent != publicationRoot.resolve("update")
+        }
     }
 
     private fun rollbackInternal(path: Path, journal: TransactionJournal) {
@@ -214,7 +219,7 @@ internal class UpdateTransaction(
 
     internal fun pendingInstallations(): List<Path> = journals.journals().filter { path ->
         val journal = journals.load(path)
-        journal.purpose in setOf(null, "STAGE") && (
+        journal.purpose in SAVED_SET_PURPOSES && (
             (journal.state == TransactionState.AWAITING_HEALTH && journal.appliedOperation != "INSTALL") ||
                 (journal.state == TransactionState.ROLLED_BACK && journal.rollbackRequested && journal.appliedOperation != "RESTORE")
             )
@@ -227,12 +232,12 @@ internal class UpdateTransaction(
 
     internal fun revertInstallation(path: Path) {
         val journal = journals.load(path)
-        require(journal.purpose in setOf("INSTALL", "RESTORE")) { "Not an internal installation transaction" }
+        require(journal.purpose in INTERNAL_PURPOSES) { "Not an internal installation transaction" }
         rollbackInternal(path, journal)
     }
 
     internal fun markInstalled(path: Path, operation: String) {
-        require(operation in setOf("INSTALL", "RESTORE"))
+        require(operation in INTERNAL_PURPOSES)
         val journal = journals.load(path)
         journal.appliedOperation = operation
         journals.save(path, journal)
@@ -260,5 +265,8 @@ internal class UpdateTransaction(
     private companion object {
         const val LOCK_ATTEMPTS = 5
         const val LOCK_RETRY_MILLIS = 200L
+        val SAVED_SET_PURPOSES = setOf(null, "STAGE")
+        val INTERNAL_PURPOSES = setOf("INSTALL", "RESTORE")
+        val UNSAFE_STATES = setOf(TransactionState.PUBLISHING, TransactionState.ACTIVATING, TransactionState.ROLLING_BACK)
     }
 }

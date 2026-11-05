@@ -3,11 +3,9 @@ package org.pnfolder.pnlibrary.core.updates.engine
 import com.google.gson.GsonBuilder
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
-import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption.WRITE
 import java.time.Instant
 
 /** Durable lifecycle state of an update transaction. */
@@ -112,26 +110,16 @@ internal data class TransactionJournal(
     var healthCheckedAt: String? = null,
     var healthFailure: Boolean = false,
 ) {
-    /** Loads and persists transaction journals. */
     companion object {
         private val gson = GsonBuilder().setPrettyPrinting().create()
 
-        /** Loads a transaction journal from [path]. */
         fun load(path: Path): TransactionJournal = Files.newBufferedReader(path, StandardCharsets.UTF_8).use {
             gson.fromJson(it, TransactionJournal::class.java)
         }
 
-        internal fun save(path: Path, journal: TransactionJournal) {
-            val parent = path.toAbsolutePath().parent
-            Files.createDirectories(parent)
-            val temporary = Files.createTempFile(parent, path.fileName.toString(), ".tmp")
-            try {
-                Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(journal, it) }
-                FileChannel.open(temporary, WRITE).use { it.force(true) }
-                AtomicFiles.move(temporary, path)
-            } finally {
-                Files.deleteIfExists(temporary)
-            }
+        // Durable: after a power loss the journal is all that tells recovery which jars were half replaced.
+        internal fun save(path: Path, journal: TransactionJournal) = AtomicFiles.write(path, durable = true) { temporary ->
+            Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(journal, it) }
         }
     }
 }
