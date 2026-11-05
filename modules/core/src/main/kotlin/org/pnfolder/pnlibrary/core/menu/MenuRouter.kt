@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.link.NetworkReport
 import org.pnfolder.pnlibrary.core.link.NetworkServer
 import java.time.Duration
 
-/** Builds every part of one menu and answers the routes between them. */
 internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val homeScreens = HomeScreens(session, this)
     private val updateScreens = UpdateScreens(session, this)

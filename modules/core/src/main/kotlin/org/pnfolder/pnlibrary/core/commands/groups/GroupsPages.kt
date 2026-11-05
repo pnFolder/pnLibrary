@@ -15,7 +15,6 @@ internal const val GROUPS_ROOT = "/pn groups"
 
 internal fun groupsKit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
-/** One message in the style of the other chat commands. */
 internal fun groupsNotice(context: CommandContext, tone: ChatTone, text: String, detail: String? = null) {
     groupsKit(context).notice(ChatNotice(tone, text, detail)).forEach(context.sender::send)
 }

@@ -38,7 +38,6 @@ class EventBusCommand(private val library: PnLibrary) {
     private val traces = BusTracePages(library)
     private val history = BusHistoryPages(library)
 
-    /** Builds the command tree to mount under `/pn bus`. */
     fun definition(): CommandDefinition = command("bus") {
         permission(PERMISSION)
         noPermissionMessage("События плагинов доступны администраторам. Нужно право $PERMISSION.")
@@ -50,7 +49,6 @@ class EventBusCommand(private val library: PnLibrary) {
         historyViews()
     }
 
-    /** The list of events and the view of one of them. */
     private fun CommandBuilder.eventViews() {
         executes { events.list(it, "all", 1) }
         FILTERS.forEach { (word, _) ->
@@ -67,7 +65,6 @@ class EventBusCommand(private val library: PnLibrary) {
         }
     }
 
-    /** Listeners: all, slow, top, by range and export. */
     private fun CommandBuilder.listenerViews() {
         literal("listeners") {
             executes { listeners.listeners(it, 1) }
@@ -93,7 +90,6 @@ class EventBusCommand(private val library: PnLibrary) {
         }
     }
 
-    /** Listeners with errors and the listeners of one plugin. */
     private fun CommandBuilder.problemViews() {
         literal("errors") {
             executes { listeners.errors(it, 1) }
@@ -108,7 +104,6 @@ class EventBusCommand(private val library: PnLibrary) {
         }
     }
 
-    /** Recording of events and the recorded calls. */
     private fun CommandBuilder.traceViews() {
         literal("trace") {
             // Without a name the page lists the events, each with its own recording switch, so nothing has to be remembered.
@@ -139,7 +134,6 @@ class EventBusCommand(private val library: PnLibrary) {
         }
     }
 
-    /** The history of events by day and by event. */
     private fun CommandBuilder.historyViews() {
         literal("history") {
             executes { history.history(it, null, 1) }
@@ -161,9 +155,7 @@ class EventBusCommand(private val library: PnLibrary) {
         }
     }
 
-    /** Constants of the `/pn bus` command. */
     companion object {
-        /** Permission of the whole `/pn bus` tree. */
         const val PERMISSION = "pnlibrary.events.bus"
     }
 }

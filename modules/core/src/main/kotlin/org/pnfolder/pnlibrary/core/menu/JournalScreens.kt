@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Instant
 
 internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** The journal of the last day: equal events merged, each opening its card in the chat. */
     fun journal(player: MenuViewer, level: String?, page: Int) {
         val title = "Журнал сервера" + (level?.let { " " + LEVELS.getValue(it) } ?: "")
         val next = LEVEL_CYCLE[(LEVEL_CYCLE.indexOf(level) + 1) % LEVEL_CYCLE.size]
@@ -58,7 +57,6 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         return icon(null, material, "${LEVELS.getValue(group.level)}: ${group.source}", lore, danger = group.level == "error", warn = group.level == "warning")
     }
 
-    /** One journal event with its text, stack trace, repeats and facts; [back] returns to the list it was opened from. */
     private fun journalEvent(player: MenuViewer, id: String, back: (MenuViewer) -> Unit) {
         val detail = data.journalDetail(id)
         if (detail == null) {
@@ -66,25 +64,9 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
             return back(player)
         }
         val builder = frame(Menus.chest(title("Событие")).rows(DETAIL_ROWS), DETAIL_ROWS)
-        val error = detail.level == "error"
-        val summary = Style.lore(
-            wrap(detail.message),
-            listOf(
-                "Важность" to LEVELS.getValue(detail.level),
-                "Источник" to detail.source,
-                "Повторов" to "${detail.times.size}",
-                "Последний раз" to stamp(Instant.ofEpochMilli(detail.times.first())),
-                "" to ago(Instant.ofEpochMilli(detail.times.first())),
-            ),
-        )
-        builder.slot(4, icon(null, journalMaterial(detail.level), "Событие ${detail.source}", summary, danger = error, warn = detail.level == "warning"))
+        builder.slot(4, journalSummary(detail))
         detail.stackTrace?.let { trace ->
-            val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
-            builder.button(
-                20,
-                icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true),
-                go { who -> who.close(); runCommand(who, "pn events full $id") },
-            )
+            builder.button(20, traceItem(trace), go { who -> who.close(); runCommand(who, "pn events full $id") })
         }
         eventTimesAndFacts(builder, detail, id, back)
         builder.button(
@@ -97,6 +79,27 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         )
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
+    }
+
+    private fun journalSummary(detail: JournalDetail): ItemSpec {
+        val last = Instant.ofEpochMilli(detail.times.first())
+        val summary = Style.lore(
+            wrap(detail.message),
+            listOf(
+                "Важность" to LEVELS.getValue(detail.level),
+                "Источник" to detail.source,
+                "Повторов" to "${detail.times.size}",
+                "Последний раз" to stamp(last),
+                "" to ago(last),
+            ),
+        )
+        val material = journalMaterial(detail.level)
+        return icon(null, material, "Событие ${detail.source}", summary, danger = detail.level == "error", warn = detail.level == "warning")
+    }
+
+    private fun traceItem(trace: String): ItemSpec {
+        val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
+        return icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true)
     }
 
     private fun eventTimesAndFacts(builder: MenuBuilder, detail: JournalDetail, id: String, back: (MenuViewer) -> Unit) {
@@ -118,7 +121,6 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         }
     }
 
-    /** Every time a journal event happened, newest first, in the configured time zone. */
     private fun journalTimes(player: MenuViewer, id: String, page: Int, back: (MenuViewer) -> Unit) {
         val detail = data.journalDetail(id)
         if (detail == null) {

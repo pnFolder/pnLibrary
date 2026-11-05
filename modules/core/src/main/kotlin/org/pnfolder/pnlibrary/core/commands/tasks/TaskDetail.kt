@@ -7,9 +7,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.Instant
 
-/** The blocks of the page of one task in `/pn tasks view`. */
 internal object TaskDetail {
-    /** What the task is and how it runs. */
     fun who(kit: ChatKit, task: TaskSnapshot): List<Component> {
         val lines = mutableListOf<Component>()
         lines += kit.blank()
@@ -25,7 +23,6 @@ internal object TaskDetail {
         return lines
     }
 
-    /** When it was made, ran and runs next. */
     fun whenLines(kit: ChatKit, task: TaskSnapshot): List<Component> {
         val lines = mutableListOf<Component>()
         lines += kit.blank()
@@ -38,7 +35,6 @@ internal object TaskDetail {
         return lines
     }
 
-    /** Whether it may be stopped or started by hand. */
     fun rights(kit: ChatKit, task: TaskSnapshot): List<Component> {
         val lines = mutableListOf<Component>()
         lines += kit.blank()

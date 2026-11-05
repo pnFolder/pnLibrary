@@ -39,7 +39,6 @@ import java.time.Instant
  * @param servers the servers to show now
  */
 class ServersCommand(private val link: Link, private val servers: () -> List<NetworkServer>) {
-    /** Builds the command; it is mounted under `/pn` as `servers`. */
     fun definition(): CommandDefinition = command("servers") {
         permission(PERMISSION, "pnlibrary.admin")
         executes(::list)
@@ -162,19 +161,15 @@ class ServersCommand(private val link: Link, private val servers: () -> List<Net
         lines.forEach(context.sender::send)
     }
 
-    /** Constants and the sources of the `/pn servers` command. */
     companion object {
-        /** Permission of the command, next to `pnlibrary.admin`. */
         const val PERMISSION = "pnlibrary.servers"
         private const val ROOT = "/pn servers"
         private val STALE: Duration = Duration.ofMinutes(2)
 
-        /** The servers a proxy heard from, as they are listed there. */
         fun fromReports(link: Link): () -> List<NetworkServer> = {
             link.registry.all().map { NetworkServer(it.name, Duration.between(it.receivedAt, Instant.now()) < STALE, it.report) }
         }
 
-        /** The proxy and the servers of the network map a game server received, with the proxy first. */
         fun fromNetworkMap(link: Link): () -> List<NetworkServer> = {
             link.network?.report?.let { listOf(NetworkServer(LinkNames.PROXY, true, it.proxy)) + it.servers }.orEmpty()
         }

@@ -8,7 +8,6 @@ import java.time.Duration
 import java.time.Instant
 
 internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** Grey lines under the pause choices: how many plugins the pause reaches and how many have no update registration. */
     private fun pauseFootnote(registered: Int, unregistered: Int): List<String> = buildList {
         add("")
         add(Style.description("Пауза касается плагинов с обновлениями: $registered."))
@@ -91,15 +90,14 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 ),
                 alternative = "WATCH", warn = untils.isNotEmpty(),
             ),
-            go { who ->
-                allowed(who, SETTINGS) {
-                    val nextIndex = (pauseSelected + 1) % pauseChoices.size
-                    val duration = HOLDS.take(CYCLE_HOLDS).getOrNull(nextIndex - 1)
-                    val done = if (duration == null) "Все паузы сняты." else "Обновления всех плагинов приостановлены: ${duration.first}."
-                    routes.everyone(who, done) { routes.hold(it, duration?.second, who) }
-                }
-            },
+            go { who -> allowed(who, SETTINGS) { cyclePause(who, (pauseSelected + 1) % pauseChoices.size) } },
         )
+    }
+
+    private fun cyclePause(who: MenuViewer, nextIndex: Int) {
+        val duration = HOLDS.take(CYCLE_HOLDS).getOrNull(nextIndex - 1)
+        val done = if (duration == null) "Все паузы сняты." else "Обновления всех плагинов приостановлены: ${duration.first}."
+        routes.everyone(who, done) { routes.hold(it, duration?.second, who) }
     }
 
     fun tools(player: MenuViewer) {

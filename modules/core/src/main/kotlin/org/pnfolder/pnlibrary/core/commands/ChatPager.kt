@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 
-/** The `‹ назад  2 / 5  дальше ›` line under a chat list; [base] is the command that takes the page number last. */
 internal fun chatPager(kit: ChatKit, base: String, page: Int, pages: Int): Component {
     fun link(target: Int, label: String) = kit.option(label, "$base $target", "Страница $target из $pages", ChatPalette.SOFT)
     var line = kit.text("  ")

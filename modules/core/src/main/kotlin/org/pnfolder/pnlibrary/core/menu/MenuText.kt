@@ -7,7 +7,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** A time span in words: `1 д 4 ч`, `5 ч 12 мин`, `23 мин`. */
 internal fun left(span: Duration): String {
     val days = span.toDays()
     val hours = span.toHours() % HOURS_PER_DAY
@@ -24,16 +23,13 @@ internal fun duration(nanos: Long): String =
 
 internal fun shortName(name: String): String = name.substringAfterLast('.')
 
-/** A moment in the configured time zone, to the minute: `29 октября 2026, 14:05`; the year is left out for this year. */
-internal fun time(moment: Instant): String = format(moment, withSeconds = false)
+internal fun time(moment: Instant): String = format(moment, "HH:mm")
 
-/** A moment in the configured time zone, to the second: `29 октября 2026, 14:05:09`. */
-internal fun stamp(moment: Instant): String = format(moment, withSeconds = true)
+internal fun stamp(moment: Instant): String = format(moment, "HH:mm:ss")
 
-internal fun format(moment: Instant, withSeconds: Boolean): String {
+private fun format(moment: Instant, clock: String): String {
     val zone = DisplayZone.zone
     val year = if (moment.atZone(zone).year == LocalDate.now(zone).year) "" else " yyyy"
-    val clock = if (withSeconds) "HH:mm:ss" else "HH:mm"
     return DateTimeFormatter.ofPattern("d MMMM$year, $clock", Locale("ru")).withZone(zone).format(moment)
 }
 
@@ -58,7 +54,6 @@ internal fun bar(value: Long, busiest: Long): String {
     return "█".repeat(width)
 }
 
-/** [text] cut into lines of at most [width] letters at word borders, at most [limit] lines, ending with "…" when cut. */
 internal fun wrap(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
     val lines = ArrayList<String>()
     for (raw in text.lines()) {

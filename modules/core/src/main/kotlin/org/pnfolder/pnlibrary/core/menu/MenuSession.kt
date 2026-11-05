@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 
-/** What every screen of one menu shares: where its data comes from, which server it shows and how a click is answered. */
 internal class MenuSession(
     val data: MenuData,
     val host: MenuHost,
@@ -15,16 +14,13 @@ internal class MenuSession(
 ) {
     val remote get() = remoteName != null
 
-    /** Runs [action] when [player] holds [permission], otherwise says what is missing. */
     fun allowed(player: MenuViewer, permission: String, action: () -> Unit) {
         if (player.hasPermission(permission) || player.hasPermission("pnlibrary.admin")) action()
         else tell(player, ChatTone.FAILURE, "Не хватает права.", permission)
     }
 
-    /** Sends [lines] to [player] in chat; for a viewer from another server they travel back to that server. */
     fun deliver(player: MenuViewer, lines: List<net.kyori.adventure.text.Component>) = player.send(lines)
 
-    /** Sends one notice in the style of the chat commands. */
     fun tell(player: MenuViewer, tone: ChatTone, text: String, detail: String? = null) {
         val lines = UpdateCatalogView.notice(ChatNotice(tone, text, detail), ROUTES)
         deliver(player, lines)
@@ -76,7 +72,6 @@ internal class MenuSession(
 
     fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player) } }
 
-    /** A handler that also learns which click was used: left, right or shift-left. */
     fun goClick(action: (MenuViewer, ClickType) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player, click.click) } }
 
     /** Runs [action] where it may wait for the data: here at once, for another server away from the server thread. */
@@ -91,12 +86,10 @@ internal class MenuSession(
         }
     }
 
-    /** Runs [action] on the thread of the screen: the server thread here; for another server the waiting thread keeps going. */
     fun sync(action: () -> Unit) = if (remote) away(null, action) else host.sync(action)
 
     fun later(delayMillis: Long, action: () -> Unit) = host.later(delayMillis) { away(null, action) }
 
-    /** Runs a chat command: on the server of the menu, with the permissions the viewer holds at home, and prints the answer to the viewer. */
     fun runCommand(player: MenuViewer, line: String) {
         if (!remote) return player.runCommand(line)
         away(player) {

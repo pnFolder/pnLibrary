@@ -33,7 +33,6 @@ import org.pnfolder.pnlibrary.core.tasks.TaskControl
  * be shortened to its first characters. Requires `pnlibrary.tasks`; the console always may use it.
  */
 class TaskCommand(private val library: PnLibrary) {
-    /** Builds the command tree to mount under `/pn tasks`. */
     fun definition(): CommandDefinition = command("tasks") {
         permission(PERMISSION)
         noPermissionMessage("Задачи плагинов доступны администраторам. Нужно право $PERMISSION.")
@@ -81,7 +80,6 @@ class TaskCommand(private val library: PnLibrary) {
 
     private fun kit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
-    /** Runs [action] for the one task whose id starts with [typed], or says that there is no such single task. */
     private fun withTask(context: CommandContext, typed: String, action: (ChatKit, TaskSnapshot) -> Unit) {
         val kit = kit(context)
         val task = library.taskSnapshots().singleOrNull { it.id.value.startsWith(typed, ignoreCase = true) }
@@ -122,7 +120,6 @@ class TaskCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    /** One row of tabs: [title], then a button per choice with its count; the current one is marked. */
     private fun <T> tabs(
         kit: ChatKit,
         title: String,
@@ -146,7 +143,6 @@ class TaskCommand(private val library: PnLibrary) {
         return line
     }
 
-    /** Two or three lines per task: the title with its state, the plugin, runs and last activity, then the description. */
     private fun row(kit: ChatKit, task: TaskSnapshot): Component {
         val title = kit.text(" ").append(kit.text(kit.glyph('●'), TaskLabels.color(task.status)))
             .append(kit.text(" ${TaskLabels.title(task)}", ChatPalette.ACCENT))
@@ -194,7 +190,6 @@ class TaskCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    /** The run button, or a grey one that says why running is closed. */
     private fun start(kit: ChatKit, task: TaskSnapshot): Component? {
         if (task.status == TaskStatus.SCHEDULED && task.runnableNow) {
             return kit.button("запустить сейчас", "$ROOT run ${task.id.value}", "Выполнить, не дожидаясь срока", ChatPalette.OK)
@@ -202,7 +197,6 @@ class TaskCommand(private val library: PnLibrary) {
         return closed(kit, "запуск закрыт", TaskLabels.runAnswer(task))
     }
 
-    /** The stop button, or a grey one that says why stopping is closed. */
     private fun stop(kit: ChatKit, task: TaskSnapshot): Component? {
         if (TaskLabels.isActive(task.status) && task.cancellable) {
             return kit.button("остановить", "$ROOT cancel ${task.id.value}", "Остановить задачу", ChatPalette.DANGER)
@@ -238,9 +232,7 @@ class TaskCommand(private val library: PnLibrary) {
         )
     }
 
-    /** Constants of the `/pn tasks` command. */
     companion object {
-        /** Permission of the whole `/pn tasks` tree. */
         const val PERMISSION = "pnlibrary.tasks"
         private const val ROOT = "/pn tasks"
         private const val PAGE_SIZE = 6

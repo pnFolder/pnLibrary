@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.LocalDate
 
 internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** One row per day, newest first; for one [event] a click opens the event, otherwise the day. */
     fun busDays(player: MenuViewer, event: String?, page: Int) {
         val back: (MenuViewer) -> Unit = if (event == null) { who -> routes.busHome(who) } else { who -> routes.busEvent(who, event) { routes.busHome(it) } }
         val today = LocalDate.now(DisplayZone.zone)
@@ -51,7 +50,6 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
         )
     }
 
-    /** Recorded calls, newest first, each with the answer of every listener; clearing sits in the footer. */
     fun busTraces(player: MenuViewer, event: String?, page: Int) {
         val all = data.traces().filter { event == null || it.eventName == event }.reversed()
         val rows = all.map { trace -> Row(traceItem(trace), go { who -> busTrace(who, trace, 0) { busTraces(it, event, page) } }) }
@@ -91,7 +89,6 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
         return icon(null, "PAPER", "${shortName(trace.eventName)}: $verdict", lore, danger = !trace.allowed)
     }
 
-    /** One recorded call with every listener that answered, in the order they were asked. */
     private fun busTrace(player: MenuViewer, trace: EventTrace, page: Int, back: (MenuViewer) -> Unit) {
         val rows = trace.steps.mapIndexed { index, step ->
             val owner = step.module?.let { "${step.plugin}/$it" } ?: step.plugin.toString()

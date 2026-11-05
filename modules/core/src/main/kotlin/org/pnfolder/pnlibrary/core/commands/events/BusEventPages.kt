@@ -66,7 +66,6 @@ internal class BusEventPages(private val library: PnLibrary) {
         return line
     }
 
-    /** One event as a row: a dot that is lit while someone listens, the name, the counters and the recording mark. */
     private fun row(kit: ChatKit, info: EventInfo, traced: List<String>): Component {
         val listened = info.listeners > 0
         val tracing = info.eventType in traced
@@ -136,7 +135,6 @@ internal class BusEventPages(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    /** The recording switch: the pressed choice is checked and colored, the other one runs its command. */
     private fun traceSwitch(kit: ChatKit, name: String, on: Boolean): Component {
         if (!kit.reader.interactive) return kit.text(if (on) "включена" else "выключена", if (on) ChatPalette.OK else ChatPalette.SOFT)
         val enable = if (on) kit.selected("вкл", ChatPalette.OK)
@@ -150,7 +148,6 @@ internal class BusEventPages(private val library: PnLibrary) {
 
     fun stopTrace(context: CommandContext, typed: String) = withEventType(context, typed) { bus.disableTracing(it) }
 
-    /** Runs [change] for the event [typed] names and shows the event, or says that there is no such event. */
     private fun withEventType(context: CommandContext, typed: String, change: (Class<out Event>) -> Unit) {
         val name = bus.resolve(typed)
         val type = bus.eventType(name)

@@ -12,7 +12,6 @@ import java.time.LocalDate
 
 internal fun kit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
-/** A bar as long as [value] is against [busiest], at least one block. */
 internal fun bar(kit: ChatKit, value: Long, busiest: Long): String {
     val width = ((value * BAR_WIDTH + busiest - 1) / busiest.coerceAtLeast(1)).toInt().coerceIn(1, BAR_WIDTH)
     return (if (kit.reader.ascii) "#" else "█").repeat(width)
@@ -43,7 +42,6 @@ internal fun hints(kit: ChatKit): List<Component> =
         "$ROOT history of <событие>" to "вызовы одного события по дням",
     )
 
-/** The line of buttons under a page; empty when no button is shown. */
 internal fun footer(kit: ChatKit, vararg buttons: Component?): List<Component> = listOfNotNull(kit.actions(*buttons))
 
 internal fun backToEvents(kit: ChatKit): Component = kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT)
@@ -58,7 +56,6 @@ internal fun micros(nanos: Long): String =
 
 internal fun ownerOf(info: ListenerInfo): String = info.module?.let { "${info.plugin}/$it" } ?: info.plugin.toString()
 
-/** A listener among the listeners of every event: owner, the event it listens to, priority and flags. */
 internal fun listenerRow(kit: ChatKit, info: ListenerInfo): Component =
     listenerRow(
         kit, info,
@@ -70,7 +67,6 @@ internal fun listenerRow(kit: ChatKit, info: ListenerInfo): Component =
 internal fun eventListenerRow(kit: ChatKit, info: ListenerInfo): Component =
     listenerRow(kit, info, kit.text(ownerOf(info), ChatPalette.ACCENT))
 
-/** [title], then priority and flags, with the source and counters in the hover card. */
 private fun listenerRow(kit: ChatKit, info: ListenerInfo, title: Component): Component {
     var line = kit.text("   ").append(title).append(kit.text("  приоритет ${info.priority}", ChatPalette.SOFT))
     if (info.ignoreDenied) line = line.append(kit.text("  ignoreDenied", ChatPalette.INFO))
@@ -90,7 +86,6 @@ private fun listenerRow(kit: ChatKit, info: ListenerInfo, title: Component): Com
     ).clickEvent(ClickEvent.runCommand("$ROOT view ${info.eventType}"))
 }
 
-/** The full class name for a typed full or short name; the same text back when nothing matches. */
 internal fun EventInspector.resolve(typed: String): String {
     val known = events().map { it.eventType }
     if (typed in known) return typed

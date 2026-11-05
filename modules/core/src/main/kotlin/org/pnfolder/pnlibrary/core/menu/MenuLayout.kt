@@ -60,6 +60,7 @@ internal const val WRAP_WIDTH = 44
 internal const val WRAP_LINES = 8
 internal const val TRACE_LINES = 12
 internal const val NOTE_LINES = 8
+internal const val NOTE_PREVIEW_LINES = 2
 internal const val TIMES_SHOWN = 10
 internal const val DETAILS_SHOWN = 8
 internal const val TRACE_STEPS = 6

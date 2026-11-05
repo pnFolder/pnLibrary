@@ -23,7 +23,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             }
         }.map { snapshot ->
             Row(
-                plate(snapshot, hints = true),
+                plate(snapshot, Style.left("открыть карточку"), Style.right("проверить"), Style.shiftLeft("переключить автозагрузку")),
                 goClick { who, click ->
                     when (click) {
                         ClickType.RIGHT -> checkOne(who, snapshot.product)
@@ -44,7 +44,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
     fun card(player: MenuViewer, product: String) {
         val snapshot = data.snapshot(product) ?: return routes.home(player)
         val builder = frame(Menus.chest(title(snapshot.product)).rows(CARD_ROWS), CARD_ROWS)
-        builder.slot(4, plate(snapshot, withHint = false))
+        builder.slot(4, plate(snapshot))
         cardActions(builder, snapshot)
         channelSlot(builder, snapshot)
         builder.button(14, holdItem(snapshot), go { policy.holds(it, snapshot.product) })
@@ -159,7 +159,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         }
     }
 
-    /** Runs [change] for every registered plugin, then reports [done] and reopens the settings. */
     fun everyone(player: MenuViewer, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>) {
         val stages = snapshots().map { change(it).toCompletableFuture() }
         java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->
@@ -190,7 +189,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             Row(icon(Icons.PLUGIN, "PAPER", plugin.name, Style.lore(emptyList(), parameters)))
         }
 
-    private fun plate(snapshot: UpdateSnapshot, withHint: Boolean = true, hints: Boolean = false): ItemSpec {
+    private fun plate(snapshot: UpdateSnapshot, vararg clicks: String): ItemSpec {
         val material = when (snapshot.state) {
             UpdateState.UP_TO_DATE -> "EMERALD"
             UpdateState.UPDATE_AVAILABLE -> "GOLD_INGOT"
@@ -214,11 +213,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             snapshot.supportedApi?.let { add("API pnLibrary" to "${it.minimum}–${it.maximum}") }
         }
         val problems = (listOfNotNull(snapshot.message.takeIf { problem }) + blockers).map { Style.danger(it) }
-        val clicks = when {
-            hints -> arrayOf(Style.left("открыть карточку"), Style.right("проверить"), Style.shiftLeft("переключить автозагрузку"))
-            withHint -> arrayOf(Style.left("открыть карточку"))
-            else -> emptyArray()
-        }
         val lore = Style.lore(emptyList(), parameters, *clicks, extra = problems)
         return icon(null, material, snapshot.product, lore, alternative = "WATCH".takeIf { material == "CLOCK" }, danger = problem)
     }

@@ -24,10 +24,8 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 
-/** Shown when no level of the chain sets a usage line; `{usage}` is the generated usage text. */
 internal const val DEFAULT_USAGE = "Использование: {usage}"
 
-/** Handlers of one error class each. */
 internal typealias ErrorHandlers = Map<Class<out CommandError>, CommandErrorHandler<*>>
 
 /**
@@ -81,7 +79,6 @@ internal class StandardCommandFeedback(
         CommandFailed::class.java to failedMessage,
     )
 
-    /** Sends the standard text for [error], with its placeholders filled in. */
     fun answer(context: CommandContext, error: CommandError, help: List<String> = emptyList()) {
         var type: Class<*>? = error.javaClass
         var template = error.defaultMessage
@@ -96,7 +93,6 @@ internal class StandardCommandFeedback(
     }
 }
 
-/** Builds the standard answers from the library configuration; an unusable sound name simply means no sound. */
 internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFeedback = StandardCommandFeedback(
     deniedMessage = config.noPermissionMessage,
     deniedSound = config.noPermissionSound.takeIf { it.isNotBlank() }
@@ -108,7 +104,6 @@ internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFe
     consoleOnlyMessage = config.consoleOnlyMessage,
 )
 
-/** Sends [text] to this sender as a marked notice, the look of every other chat message of the library. */
 internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: String? = null) {
     ChatKit(ChatReader.of(this)).notice(ChatNotice(tone, text, detail)).forEach(::send)
 }
@@ -116,7 +111,6 @@ internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: Stri
 private val USAGE_PLACEHOLDER = Regex("""<[^>]+>|\[[^]]+]""")
 private val USAGE_COMMAND = Regex("""/\S.*""")
 
-/** A usage line: the mark, the text, and each `<placeholder>` in the accent; a click puts the command in the chat box. */
 internal fun CommandSender.usageNotice(text: String, help: List<String> = emptyList()) {
     val kit = ChatKit(ChatReader.of(this))
     var line = kit.mark(ChatTone.WARNING)

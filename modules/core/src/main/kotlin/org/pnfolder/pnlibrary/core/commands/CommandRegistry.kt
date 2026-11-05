@@ -25,7 +25,6 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
-/** Shown when neither the denied node nor its command has a no-permission message and the config sets none. */
 internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
 
 /**
@@ -158,7 +157,6 @@ internal class CommandRegistry(
         react(registration) { standard.answer(context, error, helpFor(nodes.firstOrNull(), context)) }
     }
 
-    /** What to tell a sender who stopped at [node]: its own description, then each way on that has one. */
     private fun helpFor(node: CommandNode?, context: CommandContext): List<String> {
         if (node == null) return emptyList()
         val ways = node.children

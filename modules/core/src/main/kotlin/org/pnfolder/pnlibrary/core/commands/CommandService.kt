@@ -24,6 +24,5 @@ internal interface CommandService {
     fun register(owner: Any, name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
         register(owner, command(name, configure))
 
-    /** Closes every command registration belonging to [owner]. */
     fun unregisterOwner(owner: Any)
 }
