@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-import org.pnfolder.pnlibrary.api.config.CommentPolicy
 import org.pnfolder.pnlibrary.api.config.ConfigCodec
 import org.pnfolder.pnlibrary.api.config.ConfigLoadResult
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
@@ -115,12 +114,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 
     private fun synchronize(working: String, defaultsYaml: String): YamlDefaultsMerger.Result {
         if (options.unknownValues != UnknownValuePolicy.REMOVE) {
-            return YamlDefaultsMerger.merge(
-                working,
-                defaultsYaml,
-                addMissingValues = options.missingValues == MissingValuePolicy.ADD,
-                addComments = options.comments == CommentPolicy.ADD_MISSING,
-            )
+            return YamlDefaultsMerger.merge(working, defaultsYaml, options.missingValues, options.comments)
         }
         var canonical = fileStore.normalize(codec.encode(decodeAndValidate(working)))
         options.migrations?.let { canonical = fileStore.normalize(migrationEngine.stampDefaults(canonical, it)) }

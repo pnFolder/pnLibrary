@@ -49,6 +49,18 @@ class CodeFirstYamlTest {
     }
 
     @Test
+    fun `a section indented with four spaces is matched instead of duplicated`() {
+        val current = "root:\n    existing: 5\n"
+        val defaults = "root:\n  existing: 1\n  added: 2\n"
+
+        val result = YamlDefaultsMerger.merge(current, defaults)
+
+        assertEquals(listOf("root.added"), result.addedPaths)
+        assertEquals("root:\n    existing: 5\n\n    added: 2\n", result.content)
+        assertEquals(listOf("root", "root.existing", "root.added"), YamlDefaultsMerger.paths(result.content))
+    }
+
+    @Test
     fun `managed lifecycle keeps last value after failed reload`() {
         data class Value(val port: Int)
         val file = directory.resolve("config.yml").toFile()

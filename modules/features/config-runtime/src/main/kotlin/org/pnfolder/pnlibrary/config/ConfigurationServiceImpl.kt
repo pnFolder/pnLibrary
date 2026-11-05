@@ -19,6 +19,7 @@ import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /** Hands out one configuration scope per plugin, rooted at its data folder, and closes them with their owner. */
@@ -126,18 +127,27 @@ class ConfigurationServiceImpl(
                 options = options,
             )
             val owned = OwnedConfig(target, handle)
-            val announced = runCatching {
-                fileListener?.invoke(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
-            }.getOrNull()
             synchronized(handles) {
                 check(!scopeClosed.get()) { "Configuration scope is closed" }
                 check(handles.none { (it as? OwnedConfig<*>)?.file == target }) {
                     "Configuration $path is already registered"
                 }
                 handles += owned
-                announced?.let { announcements += it }
             }
+            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
             return owned
+        }
+
+        // Announcing feeds diagnostics only, so a failing listener is logged and the file still works.
+        private fun announce(file: ManagedConfigFile) {
+            val announced = try {
+                fileListener?.invoke(file) ?: return
+            } catch (error: Exception) {
+                logger.log(Level.WARNING, "Диагностика не получила файл ${file.path}: ${error.message}", error)
+                return
+            }
+            val keep = synchronized(handles) { !scopeClosed.get() && announcements.add(announced) }
+            if (!keep) announced.close()
         }
 
         override fun <T : Any> serializer(type: Class<T>, serializer: ConfigSerializer<T>): ConfigScope = apply {
@@ -177,9 +187,9 @@ class ConfigurationServiceImpl(
             }
         }
 
-        override fun loadAll() = eachHandle { it.load() }
-        override fun reloadAll() = eachHandle { it.reload() }
-        override fun saveAll() = eachHandle(onlyLoaded = true) { it.save() }
+        override fun loadAll() = forEach(snapshot()) { it.load() }
+        override fun reloadAll() = forEach(snapshot()) { it.reload() }
+        override fun saveAll() = forEach(snapshot().filter { it.isLoaded }) { it.save() }
 
         override fun close() {
             if (!scopeClosed.compareAndSet(false, true)) return
@@ -205,10 +215,8 @@ class ConfigurationServiceImpl(
             )
         }
 
-        /** Applies [action] to every handle even when one fails, then rethrows the first failure with the rest suppressed. */
-        private fun eachHandle(onlyLoaded: Boolean = false, action: (ManagedConfig<*>) -> Unit) = runAll(
-            snapshot().filter { !onlyLoaded || it.isLoaded }.map { handle -> { action(handle) } },
-        )
+        private fun forEach(handles: List<ManagedConfig<*>>, action: (ManagedConfig<*>) -> Unit) =
+            runAll(handles.map { handle -> { action(handle) } })
 
         private fun snapshot() = synchronized(handles) { handles.toList() }
     }
