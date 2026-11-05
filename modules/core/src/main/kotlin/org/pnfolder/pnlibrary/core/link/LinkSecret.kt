@@ -12,7 +12,6 @@ import java.util.Base64
  * administrator copies the file from the proxy.
  */
 object LinkSecret {
-    /** Name of the key file. */
     const val FILE = "link.key"
     private const val KEY_BYTES = 32
 

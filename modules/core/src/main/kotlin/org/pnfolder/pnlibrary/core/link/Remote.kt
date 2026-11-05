@@ -7,7 +7,6 @@ import java.util.UUID
 enum class RemoteAction(
     /** The word used in the `/pn servers <name> <word>` command. */
     val word: String,
-    /** Whether the action needs a plugin name. */
     val needsProduct: Boolean,
     /** The permission the person asking must have on the server they ask from. */
     val permission: String,
@@ -47,16 +46,12 @@ data class RemoteRequest(
 /**
  * The answer to a [RemoteRequest].
  *
- * @property id id of the request
  * @property origin who asked, so the answer finds its way back
  * @property ok whether the action was carried out
- * @property text what happened, in words
  */
 data class RemoteResult(val id: UUID, val origin: String, val ok: Boolean, val text: String, val sentAt: Instant)
 
-/** Names used on the link. */
 object LinkNames {
-    /** The proxy as a target of a request. */
     const val PROXY = "proxy"
 
     /** The origin of a request made on the proxy itself. */

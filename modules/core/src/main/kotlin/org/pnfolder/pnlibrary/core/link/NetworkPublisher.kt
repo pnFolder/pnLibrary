@@ -9,7 +9,6 @@ import java.time.Instant
  *
  * @param link the proxy's link; it must have a key
  * @param platform names the proxy software and version
- * @param players counts the players on the proxy
  */
 class NetworkPublisher(
     private val library: PnLibrary,
