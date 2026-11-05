@@ -28,6 +28,10 @@ apiValidation {
         listOf(
             "core",
             "link",
+            "journal",
+            "upload",
+            "events",
+            "placeholders",
             "updates",
             "distribution",
             "runtime",
