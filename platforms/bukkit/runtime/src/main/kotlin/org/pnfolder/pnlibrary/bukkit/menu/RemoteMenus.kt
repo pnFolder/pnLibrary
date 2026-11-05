@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.commands
+package org.pnfolder.pnlibrary.bukkit.menu
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.commands
+package org.pnfolder.pnlibrary.bukkit.menu
 
 import org.bukkit.inventory.ItemStack
 import org.pnfolder.pnlibrary.bukkit.item.PlayerHeads

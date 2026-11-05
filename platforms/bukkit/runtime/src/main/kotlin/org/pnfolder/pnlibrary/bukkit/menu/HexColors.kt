@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bukkit.commands
+package org.pnfolder.pnlibrary.bukkit.menu
 
 /** Hex colours in item text, which servers before 1.16 cannot show. */
 internal object HexColors {
