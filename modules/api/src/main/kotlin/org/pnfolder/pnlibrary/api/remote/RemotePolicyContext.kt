@@ -79,22 +79,17 @@ class RemotePolicyContext private constructor(builder: Builder) {
         internal var server: ServerInfo? = null
         internal val values = linkedMapOf<String, String>()
         internal val nativeHandles = mutableListOf<Any>()
-        /** Sets the product being evaluated. */
         fun product(value: ProductInfo): Builder = apply { product = value }
 
-        /** Sets the active platform. */
         fun platform(value: PlatformInfo): Builder = apply { platform = value }
 
-        /** Sets server and Minecraft version information. */
         fun server(value: ServerInfo): Builder = apply { server = value }
 
-        /** Adds or replaces one application-defined policy value. */
         fun value(key: String, value: String): Builder = apply {
             val normalized = key.trim()
             require(normalized.isNotEmpty()) { "Remote policy context value key must not be blank" }
             values[normalized] = value
         }
-        /** Adds all application-defined policy values from [value]. */
         fun values(value: Map<String, String>): Builder = apply {
             val normalized = value.mapKeys { (key, _) ->
                 key.trim().also { require(it.isNotEmpty()) { "Remote policy context value key must not be blank" } }
@@ -108,9 +103,7 @@ class RemotePolicyContext private constructor(builder: Builder) {
         fun build(): RemotePolicyContext = RemotePolicyContext(this)
     }
 
-    /** Creates context builders. */
     companion object {
-        /** Returns an empty policy-context builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

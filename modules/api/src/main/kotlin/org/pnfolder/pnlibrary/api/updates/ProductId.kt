@@ -21,7 +21,6 @@ class ProductId private constructor(val value: String) : Comparable<ProductId> {
     /** Returns [value] without additional formatting. */
     override fun toString(): String = value
 
-    /** Creates validated product identifiers. */
     companion object {
         private val VALID = Regex("[a-z0-9][a-z0-9_.-]*")
 

@@ -94,13 +94,10 @@ class TaskSpec private constructor(
         internal val configuredInterval: Duration? get() = interval
         internal val configuredTags: Set<String> get() = tags.toSet()
 
-        /** Sets an optional human-readable task name. */
         fun name(value: String?): Builder = apply { name = value }
 
-        /** Sets an optional sentence on what the task is for. */
         fun description(value: String?): Builder = apply { description = value }
 
-        /** Sets an optional note on how the task is used or what it changes. */
         fun usage(value: String?): Builder = apply { usage = value }
 
         /** Sets whether an administrator may stop the task from the commands and the menu; `true` by default. */
@@ -109,19 +106,15 @@ class TaskSpec private constructor(
         /** Sets whether an administrator may start the task at once from the commands and the menu; `true` by default. */
         fun runnableNow(value: Boolean): Builder = apply { runnableNow = value }
 
-        /** Sets whether the task is left out of the commands and the menu; `false` by default. */
         fun hidden(value: Boolean): Builder = apply { hidden = value }
 
-        /** Sets an optional conflict-resolution key. */
         fun key(value: String?): Builder = apply { key = value }
 
-        /** Sets behavior for an existing task with the same key. */
         fun conflictPolicy(value: TaskConflictPolicy): Builder = apply { conflictPolicy = value }
 
         /** Selects the platform execution context. */
         fun execution(value: TaskExecution): Builder = apply { execution = value }
 
-        /** Sets the delay before the first invocation. */
         fun delay(value: Duration): Builder = apply { delay = value }
 
         /**
@@ -131,7 +124,6 @@ class TaskSpec private constructor(
          */
         fun delayTicks(value: Long): Builder = apply { delay = ticksToDuration(value, "delay") }
 
-        /** Sets a repeat interval, or `null` for one-shot execution. */
         fun interval(value: Duration?): Builder = apply { interval = value }
 
         /**
@@ -141,19 +133,14 @@ class TaskSpec private constructor(
          */
         fun intervalTicks(value: Long): Builder = apply { interval = ticksToDuration(value, "interval") }
 
-        /** Adds a predicate that must pass before an invocation runs. */
         fun condition(value: BooleanSupplier): Builder = apply { conditions += value }
 
-        /** Adds a predicate that permanently cancels the task when it passes. */
         fun cancelWhen(value: BooleanSupplier): Builder = apply { cancellationConditions += value }
 
-        /** Adds one non-blank lookup tag. */
         fun tag(value: String): Builder = apply { tags += value }
 
-        /** Adds all supplied lookup tags. */
         fun tags(values: Collection<String>): Builder = apply { tags += values }
 
-        /** Sets the required task callback. */
         fun action(value: TaskAction): Builder = apply { action = value }
 
         /** Validates this declaration and creates an immutable task specification. */
@@ -171,7 +158,6 @@ class TaskSpec private constructor(
         }
     }
 
-    /** Creates task-specification builders. */
     companion object {
         private const val MILLIS_PER_TICK = 50L
 
@@ -180,7 +166,6 @@ class TaskSpec private constructor(
             return Duration.ofMillis(Math.multiplyExact(value, MILLIS_PER_TICK))
         }
 
-        /** Returns an empty Java-friendly task builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }
@@ -230,7 +215,6 @@ class TaskSpecBuilder internal constructor() {
         get() = delegate.configuredDelay
         set(value) { delegate.delay(value) }
 
-    /** Sets the delay before the first invocation in server ticks. */
     fun delayTicks(value: Long) { delegate.delayTicks(value) }
 
     /** Repeat interval, or `null` for a one-shot task. */
@@ -238,20 +222,16 @@ class TaskSpecBuilder internal constructor() {
         get() = delegate.configuredInterval
         set(value) { delegate.interval(value) }
 
-    /** Sets a repeat interval in server ticks. */
     fun intervalTicks(value: Long) { delegate.intervalTicks(value) }
     /** Application-defined lookup tags. */
     var tags: Set<String>
         get() = delegate.configuredTags
         set(value) { delegate.tags(value) }
 
-    /** Adds a predicate that must pass before an invocation runs. */
     fun condition(test: () -> Boolean) { delegate.condition(BooleanSupplier(test)) }
 
-    /** Adds a predicate that permanently cancels the task when it passes. */
     fun cancelWhen(test: () -> Boolean) { delegate.cancelWhen(BooleanSupplier(test)) }
 
-    /** Sets the required task callback. */
     fun run(action: TaskAction) { delegate.action(action) }
 
     internal fun build(): TaskSpec = delegate.build()

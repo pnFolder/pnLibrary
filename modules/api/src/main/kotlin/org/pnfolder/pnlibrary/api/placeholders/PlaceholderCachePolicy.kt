@@ -22,7 +22,6 @@ data class PlaceholderCachePolicy @JvmOverloads constructor(
     }
     /** Factories for the most common cache policies. */
     companion object {
-        /** Creates a policy with caching disabled. */
         @JvmStatic
         fun none(): PlaceholderCachePolicy = PlaceholderCachePolicy()
         /**

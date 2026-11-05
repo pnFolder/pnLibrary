@@ -188,17 +188,14 @@ class CommandNodeBuilder internal constructor(
     /** Installs an asynchronous suggestion [handler]. */
     fun suggestsAsync(handler: SuggestionHandler): CommandNodeBuilder = apply { suggestions = handler }
 
-    /** Adds a literal child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandNodeBuilder =
         literal(name, Consumer { builder -> builder.configure() })
 
-    /** Adds a literal child configured by Java-friendly [configure]. */
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandNodeBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
-    /** Adds a typed argument child configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun <T : Any> argument(
         name: String,
@@ -206,7 +203,6 @@ class CommandNodeBuilder internal constructor(
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandNodeBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
-    /** Adds a typed argument child configured by Java-friendly [configure]. */
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,

@@ -17,22 +17,16 @@ enum class LogLevel {
     ERROR,
 }
 
-/** Creates native loggers and formatted lifecycle summaries for one plugin. */
 interface LoggingService {
 
-    /** Creates a logger that prefixes messages with [name] and attributes them to [owner]. */
     fun logger(owner: Any, name: String): PnLogger
 
-    /** Creates a generic one-shot message box with [title]. */
     fun box(owner: Any, title: String): MessageBox
 
-    /** Creates a one-shot shutdown summary with [title]. */
     fun shutdownBox(owner: Any, title: String): MessageBox
 
-    /** Creates an enabled box with explicit display metadata. */
     fun box(owner: Any, name: String, version: String): MessageBox = box(owner, "$name $version")
 
-    /** Creates a disabled box with explicit display metadata. */
     fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
         shutdownBox(owner, "$name $version")
 }
@@ -100,16 +94,12 @@ interface PnLogger {
  */
 interface MessageBox {
 
-    /** Adds a successful subsystem row. */
     fun ok(label: String, detail: String): MessageBox
 
-    /** Adds a recoverable-warning row. */
     fun warn(label: String, detail: String): MessageBox
 
-    /** Adds a deliberately skipped subsystem row. */
     fun skip(label: String, detail: String): MessageBox
 
-    /** Adds a failed row and optional original [error]. */
     fun fail(label: String, detail: String, error: Throwable? = null): MessageBox
 
     /**

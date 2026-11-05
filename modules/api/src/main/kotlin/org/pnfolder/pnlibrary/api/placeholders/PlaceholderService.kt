@@ -53,7 +53,6 @@ interface PlaceholderService : AutoCloseable {
     fun render(template: String, playerId: UUID? = null, values: Map<String, Any?> = emptyMap()): CompletionStage<String>
     /** Returns whether [expression] identifies a visible registered placeholder. */
     fun contains(expression: String): Boolean
-    /** Creates a consumer view for placeholders owned by [pluginId]. */
     fun provider(pluginId: PluginId): PlaceholderProvider
     /** Returns the adapter registry owned by this plugin scope. */
     fun adapters(): PlaceholderAdapterRegistry

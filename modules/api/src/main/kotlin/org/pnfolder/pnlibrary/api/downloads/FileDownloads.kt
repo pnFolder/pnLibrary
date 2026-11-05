@@ -52,9 +52,7 @@ class FileDownloads private constructor(builder: Builder) {
         }
     }
 
-    /** Creates download-unit builders. */
     companion object {
-        /** Returns an empty download-unit builder. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }
