@@ -117,7 +117,6 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         return PlatformCommandRegistration { native.unregister(commandMap) }
     }
 
-    /** Resolves the legacy command map used for undeclared commands. */
     private fun commandMap(): CommandMap {
         val field = Bukkit.getServer().javaClass.getDeclaredField("commandMap")
         field.isAccessible = true

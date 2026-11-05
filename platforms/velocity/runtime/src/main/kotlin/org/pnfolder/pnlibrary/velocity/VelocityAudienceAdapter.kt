@@ -19,7 +19,6 @@ internal class VelocityAudienceAdapter(
 
     override fun console(): AudienceSender = wrap(server.consoleCommandSource)
 
-    /** Resolves a player by UUID, returning `null` when the player is offline. */
     override fun player(uniqueId: UUID): LibraryPlayer? =
         server.getPlayer(uniqueId).orElse(null)?.let(VelocityLibraryPlayer::of)
 

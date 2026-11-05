@@ -23,7 +23,6 @@ internal class VelocityCommandAdapter internal constructor(
     private val audience: (CommandSource) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    /** Creates an adapter backed by Velocity's command manager. */
     constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->

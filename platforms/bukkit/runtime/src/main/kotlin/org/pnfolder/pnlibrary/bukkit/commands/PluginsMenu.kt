@@ -54,6 +54,5 @@ internal class PluginsMenu(
         else replies.say(reply, ChatTone.INFO, "Меню доступно только игроку.", "В консоли используйте /pn updates.")
     }
 
-    /** Opens the home page for [viewer], a player here or on another server. */
     fun home(viewer: MenuViewer) = menu.home(viewer)
 }

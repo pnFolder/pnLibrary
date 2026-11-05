@@ -19,7 +19,6 @@ data class ServerInfo(
     val minecraftVersion: MinecraftVersion,
     val rawMinecraftVersion: String,
 ) {
-    /** Human-readable software name and version. */
     val displayName: String get() = if (version.isBlank()) name else "$name $version"
 
     /** Returns whether the server runs [minimum] or a newer known release. */

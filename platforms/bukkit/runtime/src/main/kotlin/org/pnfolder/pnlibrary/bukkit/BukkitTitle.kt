@@ -9,9 +9,6 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.Setting
 /**
  * Titles in the chat palette for the Bukkit title API, which takes legacy strings on every version since 1.8;
  * Adventure downsamples each color to its legacy equivalent.
- *
- * @property title the large line
- * @property subtitle the line under it
  */
 internal data class BukkitTitle(val title: String, val subtitle: String) {
     companion object {

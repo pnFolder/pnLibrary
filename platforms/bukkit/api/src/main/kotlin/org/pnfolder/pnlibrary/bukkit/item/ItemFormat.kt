@@ -25,15 +25,6 @@ fun interface ItemField {
  * ```
  *
  * Keys not listed keep their default names. A `material` written as `base64:<texture>` is read as a texture.
- *
- * @property material key of the material
- * @property amount key of the stack size
- * @property name key of the display name
- * @property lore key of the lore lines
- * @property enchantments key of the enchantments
- * @property textures keys that may hold a head texture
- * @property exact key of the exact serialized item data
- * @property fields extra fields read by key
  */
 class ItemFormat private constructor(
     val material: String,
@@ -45,7 +36,6 @@ class ItemFormat private constructor(
     val exact: String,
     val fields: Map<String, ItemField>,
 ) {
-    /** A builder holding this format's keys, to change a few of them. */
     fun toBuilder(): Builder = Builder().also { builder ->
         builder.material(material).amount(amount).name(name).lore(lore).enchantments(enchantments)
             .texture(*textures.toTypedArray()).exact(exact)
@@ -90,7 +80,6 @@ class ItemFormat private constructor(
         /** Reads a field of your own from [key]; it runs after the standard fields, in the order added. */
         fun field(key: String, field: ItemField): Builder = apply { fields[key(key)] = field }
 
-        /** Creates the immutable format. */
         fun build(): ItemFormat = ItemFormat(
             material, amount, name, lore, enchantments, textures, exact,
             Collections.unmodifiableMap(LinkedHashMap(fields)),
@@ -102,13 +91,11 @@ class ItemFormat private constructor(
         }
     }
 
-    /** The default format and the builder entry point. */
     companion object {
         /** `material`, `amount`, `name`, `lore`, `enchantments`, `base64`/`texture` and `item_data`. */
         @JvmField
         val DEFAULT: ItemFormat = Builder().build()
 
-        /** A builder starting from the default keys. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

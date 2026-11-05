@@ -47,7 +47,6 @@ internal class BukkitTaskAdapter(
         }
     }
 
-    /** Schedules asynchronous one-shot or repeating work. */
     private fun scheduleBukkitAsync(
         scheduler: BukkitScheduler,
         callback: Runnable,
@@ -59,7 +58,6 @@ internal class BukkitTaskAdapter(
         else -> scheduler.runTaskAsynchronously(plugin, callback)
     }
 
-    /** Schedules primary-thread one-shot or repeating work. */
     private fun scheduleBukkitGlobal(
         scheduler: BukkitScheduler,
         callback: Runnable,

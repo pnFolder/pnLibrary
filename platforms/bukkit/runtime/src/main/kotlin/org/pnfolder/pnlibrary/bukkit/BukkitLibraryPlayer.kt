@@ -38,12 +38,10 @@ internal class BukkitLibraryPlayer(
 
     override fun hasPermission(permission: String): Boolean = player.hasPermission(permission)
 
-    /** Delivers chat through the version-safe audience transport. */
     override fun sendMessage(text: Component) {
         audiences.sendMessage(player, text)
     }
 
-    /** Delivers an action bar through the version-safe audience transport. */
     override fun actionBar(text: Component) {
         audiences.sendActionBar(player, text)
     }
@@ -51,7 +49,6 @@ internal class BukkitLibraryPlayer(
     /** Plays a sound, falling back to the native Bukkit API where needed. */
     override fun playSound(sound: Sound): Delivery = audiences.playSound(player, sound)
 
-    /** Shows a title through the version-safe audience transport. */
     override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Delivery =
         audiences.showTitle(player, Title.title(title, subtitle, Title.Times.times(fadeIn, stay, fadeOut)))
 

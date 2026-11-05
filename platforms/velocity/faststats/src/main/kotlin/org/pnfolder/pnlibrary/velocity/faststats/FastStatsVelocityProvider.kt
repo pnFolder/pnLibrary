@@ -9,7 +9,6 @@ import java.nio.file.Path
 
 /** Velocity adapter that supplies a Velocity context to the shared FastStats session. */
 class FastStatsVelocityProvider {
-    /** Opens a FastStats session for the Velocity plugin instance [owner]. */
     fun open(
         owner: Any,
         server: ProxyServer,

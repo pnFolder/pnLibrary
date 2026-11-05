@@ -69,7 +69,6 @@ internal class BungeePlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BungeeTaskAdapter(plugin)
 
-    /** Writes to the owning plugin's logger, falling back to pnLibrary's own. */
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 

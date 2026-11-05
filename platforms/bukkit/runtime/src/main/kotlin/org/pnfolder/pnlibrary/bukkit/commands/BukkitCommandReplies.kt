@@ -41,7 +41,6 @@ internal class BukkitCommandReplies(
     fun confirmChoices(reply: Reply, title: String, lines: List<String>, choices: List<ConfirmChoice>) =
         UpdateCatalogView.confirmationChoices(title, lines + "Подтверждение действует 30 секунд.", choices, routes(reply)).forEach(reply::send)
 
-    /** Returns a callback that reports [reply]-bound successes. */
     fun reported(reply: Reply): (String) -> Unit = { text -> say(reply, ChatTone.SUCCESS, text) }
 
     fun notRegistered(reply: Reply, product: String) =
@@ -79,7 +78,6 @@ internal class BukkitCommandReplies(
         scheduler.nextTick { if (!library.isClosed) action() }
     }
 
-    /** Identifies [sender] in update audit records. */
     fun updateActor(sender: CommandSender): UpdateActor = when (sender) {
         is Player -> UpdateActor(UpdateActor.Kind.PLAYER, sender.uniqueId.toString(), sender.name)
         is ConsoleCommandSender -> UpdateActor(UpdateActor.Kind.CONSOLE, "console", sender.name)

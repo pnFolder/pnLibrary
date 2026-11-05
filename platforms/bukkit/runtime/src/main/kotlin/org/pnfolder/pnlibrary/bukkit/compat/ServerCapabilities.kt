@@ -24,7 +24,6 @@ internal object ServerCapabilities {
      */
     val rawMinecraftVersion: String by lazy { BukkitMinecraftVersion.rawCurrent() }
 
-    /** Whether Paper configuration classes are present. */
     val isPaper: Boolean by lazy {
         hasClass("io.papermc.paper.configuration.Configuration") ||
         hasClass("com.destroystokyo.paper.PaperConfig")
@@ -35,12 +34,10 @@ internal object ServerCapabilities {
         hasClass("io.papermc.paper.threadedregions.RegionizedServer")
     }
 
-    /** Whether the Purpur configuration class is present. */
     val isPurpur: Boolean by lazy {
         hasClass("org.purpurmc.purpur.PurpurConfig")
     }
 
-    /** Whether either known Leaf configuration class is present. */
     val isLeaf: Boolean by lazy {
         hasClass("org.leaf.LeafConfig") || hasClass("cn.dreeam.leaf.LeafConfig")
     }

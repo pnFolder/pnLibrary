@@ -13,7 +13,6 @@ internal class BukkitDiagnosticTestErrors(
 ) {
     private val logger get() = library.logging.logger(plugin, "diagnostic-test")
 
-    /** Emits a uniquely identifiable failure. */
     fun unique(report: (String) -> Unit) {
         val id = UUID.randomUUID().toString().substring(0, 8)
         logger.error("Unique diagnostic test error [$id]", IllegalStateException("Generated unique failure [$id]"))

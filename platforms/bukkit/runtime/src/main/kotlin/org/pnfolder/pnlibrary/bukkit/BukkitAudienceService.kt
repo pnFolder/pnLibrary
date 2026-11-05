@@ -36,7 +36,6 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     /** Whether the native Adventure transport is still available for new deliveries. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
-    /** Creates a platform-neutral view of the currently supplied Bukkit [player]. */
     fun player(player: Player): LibraryPlayer =
         BukkitLibraryPlayer(player, this)
 
@@ -56,12 +55,10 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         pluginServer.onlinePlayers.map(::player)
     }
 
-    /** Delivers a chat component through the available transport. */
     internal fun sendMessage(player: Player, message: Component) {
         send(player, message, false)
     }
 
-    /** Delivers an action bar, with a legacy fallback where necessary. */
     internal fun sendActionBar(player: Player, message: Component) {
         send(player, message, true)
     }

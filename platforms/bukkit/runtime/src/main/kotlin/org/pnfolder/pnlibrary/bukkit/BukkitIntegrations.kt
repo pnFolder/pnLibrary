@@ -31,7 +31,6 @@ internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
         connectAll()
     }
 
-    /** Disconnects every integration and stops listening to plugin events. */
     fun stop() {
         HandlerList.unregisterAll(this)
         integrations.forEach(BukkitIntegration::close)

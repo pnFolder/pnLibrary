@@ -87,7 +87,6 @@ internal class VelocityTaskAdapter internal constructor(
         return handle
     }
 
-    /** Cancels all tasks still owned by this adapter. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) {
             return

@@ -48,7 +48,6 @@ internal class VelocityLibraryPlayer private constructor(
     override fun spawnParticle(particle: PlayerParticle): Delivery = Delivery.Unsupported
 
     companion object {
-        /** Wraps [player] in the platform-neutral player contract. */
         @JvmStatic
         fun of(player: Player): LibraryPlayer = VelocityLibraryPlayer(player)
     }

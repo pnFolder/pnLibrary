@@ -50,7 +50,6 @@ public final class PnLibraryBukkitPlugin extends JavaPlugin {
         }
     }
 
-    /** Stops the runtime and releases everything it registered. */
     @Override
     public void onDisable() {
         if (runtime == null) {
