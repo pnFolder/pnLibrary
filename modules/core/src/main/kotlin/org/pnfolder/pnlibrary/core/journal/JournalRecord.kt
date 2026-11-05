@@ -55,7 +55,6 @@ internal data class JournalRecord(
         /** Upper bound for the stack trace; at three bytes per character it still fits one UTF string. */
         const val MAX_STACK_CHARS = 20_000
 
-        /** Returns the whole stack trace of [error] with every `Caused by` section. */
         fun stackTraceOf(error: Throwable): String =
             java.io.StringWriter().also { error.printStackTrace(java.io.PrintWriter(it)) }.toString().trim()
     }

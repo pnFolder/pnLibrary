@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.util.Locale
 
-/** rows shown on one page of `/pn events`. */
 private const val PAGE_SIZE = 5
 
 /** Longest message shown in a player's chat so lines do not flood it; the console and the card show all. */
@@ -26,10 +25,8 @@ private const val SCAN_LIMIT = 5_000
 private const val HOVER_WIDTH = 44
 private const val HOVER_MESSAGE_LINES = 4
 
-/** Width at which the message in the card is wrapped. */
 private const val CARD_WIDTH = 56
 
-/** Occurrence times listed on the repeats page. */
 private const val REPEAT_ROWS = 15
 
 /**
@@ -79,7 +76,6 @@ internal fun journalCommand(journal: JournalStore, root: String = "/pn events"):
     }
 }
 
-/** Splits [text] into lines of at most [width] characters at spaces. */
 private fun wrap(text: String, width: Int): List<String> {
     val lines = mutableListOf<String>()
     var current = StringBuilder()

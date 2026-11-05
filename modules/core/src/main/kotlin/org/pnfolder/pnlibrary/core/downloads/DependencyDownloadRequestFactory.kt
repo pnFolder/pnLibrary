@@ -13,7 +13,6 @@ internal data class DependencyDownloadRequest(
     val requirements: Map<String, ExternalPluginDependency>,
 )
 
-/** Builds the download request for dependencies that are missing or too old and allow automatic download. */
 internal class DependencyDownloadRequestFactory(private val pluginDirectory: Path) {
     fun create(
         dependencies: List<PluginDependency>,

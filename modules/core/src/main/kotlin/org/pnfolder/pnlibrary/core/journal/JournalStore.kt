@@ -152,7 +152,6 @@ internal class JournalStore(
         }
     }
 
-    /** Deletes files older than their level's retention and returns how many were removed. */
     @Synchronized
     fun prune(): Int {
         if (!Files.isDirectory(directory)) return 0
