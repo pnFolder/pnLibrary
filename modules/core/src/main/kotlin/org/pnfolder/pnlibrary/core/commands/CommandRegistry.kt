@@ -20,29 +20,24 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashSet
+import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
-/** Shared validation, permission, dispatch, and lifecycle engine for portable commands. */
 /** Shown when neither the denied node nor its command has a no-permission message and the config sets none. */
 internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
 
 /**
- * Answers a problem with a command from the most specific level that has an answer: the subcommand, the command, the
- * plugin module, the plugin as a whole, and last [standard], the library's own wording from `config.yml`.
- *
- * @param standard the library's reactions, used when nothing more specific answers
+ * Registers, routes and runs portable commands, and answers a problem from the most specific level that has an
+ * answer: the subcommand, the command, the plugin module, the plugin as a whole, and last [standard], the library's
+ * own wording from `config.yml`.
  */
 internal class CommandRegistry(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
     private val standard: StandardCommandFeedback = StandardCommandFeedback(),
 ) : CommandService, PlatformCommandDispatcher, AutoCloseable {
-    /** Convenience for callers that only configure the no-permission text. */
-    constructor(commandAdapter: PlatformCommandAdapter, logging: PlatformLogging, defaultNoPermission: String) :
-        this(commandAdapter, logging, StandardCommandFeedback(deniedMessage = defaultNoPermission))
-
     private val lock = Any()
     private val closed = AtomicBoolean(false)
     private val reservedNames = linkedSetOf<String>()
@@ -257,7 +252,8 @@ internal class CommandRegistry(
         }
     }
 
-    private fun unwrap(error: Throwable): Throwable = error.cause ?: error
+    /** Only the wrapper a dependent stage adds is removed; the cause of the command's own exception stays with it. */
+    private fun unwrap(error: Throwable): Throwable = if (error is CompletionException) error.cause ?: error else error
 
     private inner class Registration(
         val owner: Any,
