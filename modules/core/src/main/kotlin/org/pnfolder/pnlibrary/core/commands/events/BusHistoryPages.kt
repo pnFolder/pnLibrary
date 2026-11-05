@@ -77,7 +77,6 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         return line.hoverEvent(kit.tooltip(*hover.toTypedArray())).clickEvent(ClickEvent.runCommand(command))
     }
 
-    /** The events of one day, the most called first, a few per page. */
     fun historyDay(context: CommandContext, typed: String, requestedPage: Int) {
         val kit = kit(context)
         val date = runCatching { java.time.LocalDate.parse(typed) }.getOrNull()

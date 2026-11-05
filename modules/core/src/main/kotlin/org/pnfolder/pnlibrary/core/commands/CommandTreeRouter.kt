@@ -18,12 +18,9 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
-/** Outcome of routing one invocation: a node that can run, or an error to answer. */
 internal sealed class CommandRoute {
-    /** [path] runs from the command's root down to [node]. */
     data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
 
-    /** Something went wrong; [nodes] runs from the deepest node involved up to the command's root. */
     data class Problem(val error: CommandError, val nodes: List<CommandNode>) : CommandRoute()
 }
 
@@ -108,12 +105,10 @@ internal class CommandTreeRouter {
         return lastSuggestions(node, routed.copy(currentInput = partial), partial)
     }
 
-    /** A literal child that matches [token] wins over the argument child. */
     private fun childFor(node: CommandNode, token: String): CommandNode? =
         node.children.firstOrNull { it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true) }
             ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
 
-    /** What can be typed after the last complete token: the literals of [node] and its argument's suggestions. */
     private fun lastSuggestions(node: CommandNode, suggestionContext: CommandContext, partial: String): CompletionStage<List<String>> {
         val literals = node.children.asSequence()
             .filter { it.kind == CommandNodeKind.LITERAL }
@@ -133,7 +128,6 @@ internal class CommandTreeRouter {
         }
     }
 
-    /** The accepted values of a choice or boolean argument, offered even when the command suggests nothing itself. */
     private fun builtInSuggestions(argument: CommandNode): List<String> {
         val spec = argument.argumentType?.spec ?: return emptyList()
         return when (spec.kind) {

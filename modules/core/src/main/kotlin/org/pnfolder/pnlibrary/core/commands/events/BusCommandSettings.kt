@@ -16,7 +16,6 @@ internal val DAY = java.time.format.DateTimeFormatter.ofPattern("d MMMM", java.u
 internal const val NANOS_PER_MICRO = 1_000L
 internal const val NANOS_PER_MILLI = 1_000_000L
 
-/** Tab words in order, with what each one keeps. */
 internal val FILTERS: List<Pair<String, (EventInfo) -> Boolean>> = listOf(
     "all" to { _: EventInfo -> true },
     "listened" to { e: EventInfo -> e.listeners > 0 },

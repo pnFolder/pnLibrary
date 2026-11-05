@@ -18,9 +18,7 @@ class LibraryMenu(
 ) {
     private val router = MenuRouter(MenuSession(data, host, remoteName))
 
-    /** The home page: counters and the way to every other screen. */
     fun home(player: MenuViewer) = router.home(player)
 
-    /** Opens the home page of the server of this menu for [player]. */
     fun open(player: MenuViewer) = router.open(player)
 }

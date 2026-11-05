@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
-/** The names of the questions one server asks another about its library, and how their data travels as JSON. */
 object MenuCalls {
     const val VERSION = "version"
     const val SNAPSHOTS = "snapshots"
@@ -86,7 +85,6 @@ object MenuCalls {
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
 
-    /** The JSON of the library's data types. Times travel as text, durations as milliseconds. */
     val gson: Gson = GsonBuilder()
         .registerTypeAdapter(Instant::class.java, JsonSerializer<Instant> { value, _, _ -> JsonPrimitive(value.toString()) })
         .registerTypeAdapter(Instant::class.java, JsonDeserializer { json, _, _ -> Instant.parse(json.asString) })
@@ -98,13 +96,11 @@ object MenuCalls {
 
     private val chat = GsonComponentSerializer.gson()
 
-    /** Chat messages as JSON texts. */
     fun encodeLines(lines: List<Component>): List<String> = lines.map(chat::serialize)
 
     /** The chat messages in [texts]; one that cannot be read is skipped. */
     fun decodeLines(texts: List<String>): List<Component> = texts.mapNotNull { runCatching { chat.deserialize(it) }.getOrNull() }
 
-    /** The type token for [T], which keeps the element type of a list. */
     inline fun <reified T> typeOf(): Type = object : TypeToken<T>() {}.type
 }
 

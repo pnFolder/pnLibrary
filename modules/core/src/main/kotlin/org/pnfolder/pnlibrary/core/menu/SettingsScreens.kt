@@ -8,7 +8,6 @@ import java.time.Duration
 import java.time.Instant
 
 internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** Grey lines under the pause choices: how many plugins the pause reaches and how many have no update registration. */
     private fun pauseFootnote(registered: Int, unregistered: Int): List<String> = buildList {
         add("")
         add(Style.description("Пауза касается плагинов с обновлениями: $registered."))

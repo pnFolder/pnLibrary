@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Instant
 
 internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** The journal of the last day: equal events merged, each opening its card in the chat. */
     fun journal(player: MenuViewer, level: String?, page: Int) {
         val title = "Журнал сервера" + (level?.let { " " + LEVELS.getValue(it) } ?: "")
         val next = LEVEL_CYCLE[(LEVEL_CYCLE.indexOf(level) + 1) % LEVEL_CYCLE.size]
@@ -58,7 +57,6 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         return icon(null, material, "${LEVELS.getValue(group.level)}: ${group.source}", lore, danger = group.level == "error", warn = group.level == "warning")
     }
 
-    /** One journal event with its text, stack trace, repeats and facts; [back] returns to the list it was opened from. */
     private fun journalEvent(player: MenuViewer, id: String, back: (MenuViewer) -> Unit) {
         val detail = data.journalDetail(id)
         if (detail == null) {
@@ -118,7 +116,6 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         }
     }
 
-    /** Every time a journal event happened, newest first, in the configured time zone. */
     private fun journalTimes(player: MenuViewer, id: String, page: Int, back: (MenuViewer) -> Unit) {
         val detail = data.journalDetail(id)
         if (detail == null) {

@@ -9,7 +9,6 @@ import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
 internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** The servers of the network as the proxy last described them; a click opens one server. */
     fun network(player: MenuViewer, page: Int) {
         val received = host.link.network
         if (received == null) {
@@ -30,7 +29,6 @@ internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         )
     }
 
-    /** The proxy as a member of groups, then the servers. */
     fun members(map: NetworkReport): List<NetworkServer> = listOf(NetworkServer(ServerGroups.PROXY, true, map.proxy)) + map.servers
 
     private fun serverItem(server: NetworkServer): ItemSpec {
@@ -55,7 +53,6 @@ internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         return icon(Icons.OVERVIEW, material, server.name, Style.lore(emptyList(), parameters, Style.left("открыть")), muted = !server.online)
     }
 
-    /** Opens the menu of [server]: a copy of its own menu, or the short page the proxy gets, which has no menu of its own. */
     private fun openServer(player: MenuViewer, server: NetworkServer, backPage: Int) {
         val target = if (server.name == PROXY_LABEL) LinkNames.PROXY else server.name
         if (!host.openRemote(player, target)) tell(player, ChatTone.FAILURE, "Некому передать запрос: на ${server.name} нет игроков онлайн.")

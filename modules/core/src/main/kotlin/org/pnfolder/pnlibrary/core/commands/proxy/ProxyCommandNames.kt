@@ -13,19 +13,15 @@ import java.util.regex.Pattern
  * command text and buttons mention into [NAME], so a click on the proxy runs the proxy command.
  */
 object ProxyCommandNames {
-    /** Name of the proxy control command. */
     const val NAME = "pnproxy"
 
-    /** Shorter names of the proxy control command. */
     val ALIASES = setOf("pnp")
 
     private val ROOT = Pattern.compile("/pn(?=[ \t]|$)")
     private val TEXT = TextReplacementConfig.builder().match(ROOT).replacement("/$NAME").build()
 
-    /** Whether [alias] is one of the proxy control command's names. */
     fun owns(alias: String): Boolean = alias.equals(NAME, ignoreCase = true) || ALIASES.any { it.equals(alias, ignoreCase = true) }
 
-    /** [message] with `/pn` in its text and in its click commands replaced by `/pnproxy`. */
     fun rewrite(message: Component): Component = clicks(message.replaceText(TEXT))
 
     private fun clicks(component: Component): Component {

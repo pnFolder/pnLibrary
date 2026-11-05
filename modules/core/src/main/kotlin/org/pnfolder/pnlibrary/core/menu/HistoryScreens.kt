@@ -64,7 +64,6 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         show(player, builder.build())
     }
 
-    /** One entry of the update history with the whole message and a button for every plugin it touched. */
     private fun historyEntry(player: MenuViewer, entry: UpdateHistoryEntry, back: (MenuViewer) -> Unit) {
         val builder = frame(Menus.chest(title("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, historyItem(entry, full = true))

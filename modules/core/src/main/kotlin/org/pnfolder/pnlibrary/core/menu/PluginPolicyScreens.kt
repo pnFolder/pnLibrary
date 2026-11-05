@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import java.time.Duration
 import java.time.Instant
 
-/** The two per-plugin policies an administrator sets from a card: the update channel and a pause of updates. */
 internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
     fun channels(player: MenuViewer, product: String) {
@@ -76,7 +75,6 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
         show(player, builder.build())
     }
 
-    /** The index of the shortest pause in [HOLDS] that is at least [remaining]; the last one when none is. */
     private fun holdIndex(remaining: Duration): Int = HOLDS.indexOfFirst { it.second >= remaining }.takeIf { it >= 0 } ?: (HOLDS.size - 1)
 
     private fun chooseChannel(player: MenuViewer, product: String, channel: UpdateChannel?) {

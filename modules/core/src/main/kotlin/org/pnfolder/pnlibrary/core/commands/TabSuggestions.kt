@@ -17,7 +17,6 @@ fun CompletionStage<List<String>>.suggestionsWithin(millis: Long): List<String> 
     emptyList()
 }
 
-/** How long the main thread of a game server may wait for tab suggestions. */
 const val MAIN_THREAD_SUGGESTION_MILLIS = 50L
 
 /** How long a proxy thread, which is not the tick loop, may wait for tab suggestions. */

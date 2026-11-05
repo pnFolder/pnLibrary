@@ -25,7 +25,6 @@ class MenuDataServer(
     private val data: MenuData,
     private val executor: Executor,
 ) : DataHandler, AutoCloseable {
-    /** Stops the thread pool, when [executor] is one; call it when the library shuts down. */
     override fun close() {
         (executor as? ExecutorService)?.shutdown()
     }

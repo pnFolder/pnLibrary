@@ -159,7 +159,6 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         }
     }
 
-    /** Runs [change] for every registered plugin, then reports [done] and reopens the settings. */
     fun everyone(player: MenuViewer, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>) {
         val stages = snapshots().map { change(it).toCompletableFuture() }
         java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->

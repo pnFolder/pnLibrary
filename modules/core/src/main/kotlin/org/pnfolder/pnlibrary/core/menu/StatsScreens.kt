@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu
 
 internal class StatsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** The numbers of the server: tasks, events, and the errors and warnings of the day. */
     fun stats(player: MenuViewer) {
         val now = data.stats()
         val builder = frame(Menus.chest(title("Статистика")).rows(DETAIL_ROWS), DETAIL_ROWS)

@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit
 class ProxyControlCommand(private val library: PnLibrary, private val link: Link) {
     private val built: CommandDefinition by lazy { build() }
 
-    /** Registers the command for this library runtime. */
     fun register(): CommandRegistration = library.registerRuntimeCommand(built)
 
     /**
@@ -75,7 +74,6 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
         return printed.toList()
     }
 
-    /** Builds the command: the update controls and the shared `events`, `bus`, `tasks` and `debug` commands. */
     fun definition(): CommandDefinition = built
 
     private fun build(): CommandDefinition {
@@ -95,7 +93,6 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
         }
     }
 
-    /** The servers that reported and the proxy itself, which groups know as [ServerGroups.PROXY]. */
     private fun withProxy(): () -> List<NetworkServer> {
         val servers = ServersCommand.fromReports(link)
         return { listOf(NetworkServer(ServerGroups.PROXY, true, LinkReports.build(library, "proxy", 0))) + servers() }

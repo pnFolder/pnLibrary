@@ -41,7 +41,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
     private val groups = link.groups()
     private val pages = GroupsPages(groups, servers)
 
-    /** Builds the command; it is mounted under `/pn` as `groups`. */
     fun definition(): CommandDefinition = command("groups") {
         permission(PERMISSION, "pnlibrary.admin")
         executes(pages::list)
@@ -92,7 +91,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         }
     }
 
-    /** The word [word], then the name of a group. */
     private fun CommandBuilder.withGroup(word: String, about: String, inside: CommandNodeBuilder.() -> Unit) {
         literal(word) {
             description(about)
@@ -103,7 +101,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         }
     }
 
-    /** The name of a server of the group, chosen from the servers the group has. */
     private fun CommandNodeBuilder.withServer(inside: CommandNodeBuilder.() -> Unit) {
         argument("server", ArgumentType.string()) {
             suggests { context -> groups.get(context.get<String>("group"))?.servers.orEmpty().toList() }
@@ -111,7 +108,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         }
     }
 
-    /** One more word: a server when [server] is true, otherwise a plugin. */
     private fun CommandNodeBuilder.valued(server: Boolean, edit: (ServerGroups.Group, String) -> ServerGroups.Group) {
         val word = if (server) "server" else "plugin"
         argument(word, ArgumentType.string()) {
@@ -123,7 +119,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         }
     }
 
-    /** A plugin after a server of the group: that server skips it, or carries it besides the rest; [extra] says which. */
     private fun CommandNodeBuilder.override(extra: Boolean) {
         argument("plugin", ArgumentType.string()) {
             suggests { context -> pluginNames(groups.get(context.get<String>("group"))) }
@@ -146,7 +141,6 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         else notice(context, ChatTone.FAILURE, "Нет группы ${context.get<String>("group")}.", "Список: $ROOT")
     }
 
-    /** One message in the style of the other chat commands. */
     private fun notice(context: CommandContext, tone: ChatTone, text: String, detail: String? = null) =
         groupsNotice(context, tone, text, detail)
 
@@ -194,9 +188,7 @@ class GroupsCommand(private val link: Link, private val servers: () -> List<Netw
         else notice(context, ChatTone.PROGRESS, "Запросов отправлено: $sent.", "Ответы придут сюда.")
     }
 
-    /** Constants of the `/pn groups` command. */
     companion object {
-        /** Permission of the command, next to `pnlibrary.admin`. */
         const val PERMISSION = "pnlibrary.groups"
         private const val ROOT = GROUPS_ROOT
     }

@@ -15,7 +15,6 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         TODAY("сегодня", { info -> info.lastCalledAt?.atZone(DisplayZone.zone)?.toLocalDate() == LocalDate.now(DisplayZone.zone) }),
     }
 
-    /** The start page of the plugin events: what they are, the counters and the way to every view. */
     fun busHome(player: MenuViewer) {
         val events = data.events()
         val listeners = data.listeners()
@@ -137,7 +136,6 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         return icon(null, material, shortName(info.eventType), lore, alternative = "REDSTONE_TORCH_ON".takeIf { info.listeners > 0 }, warn = info.denied > 0)
     }
 
-    /** One event: its counters, the recording switch and the ways to its listeners, days and recorded calls. */
     fun busEvent(player: MenuViewer, name: String, back: (MenuViewer) -> Unit) {
         val info = data.events().firstOrNull { it.eventType == name }
         if (info == null) {
@@ -192,7 +190,6 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         data.setTracing(name, name !in data.tracedEvents())
     }
 
-    /** What a list of listeners shows: its [title], which listeners to keep, their order and where to go back. */
     private class ListenerQuery(
         val title: String,
         val back: (MenuViewer) -> Unit,

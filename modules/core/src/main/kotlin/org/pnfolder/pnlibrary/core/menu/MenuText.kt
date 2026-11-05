@@ -7,7 +7,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** A time span in words: `1 д 4 ч`, `5 ч 12 мин`, `23 мин`. */
 internal fun left(span: Duration): String {
     val days = span.toDays()
     val hours = span.toHours() % HOURS_PER_DAY
@@ -24,10 +23,8 @@ internal fun duration(nanos: Long): String =
 
 internal fun shortName(name: String): String = name.substringAfterLast('.')
 
-/** A moment in the configured time zone, to the minute: `29 октября 2026, 14:05`; the year is left out for this year. */
 internal fun time(moment: Instant): String = format(moment, withSeconds = false)
 
-/** A moment in the configured time zone, to the second: `29 октября 2026, 14:05:09`. */
 internal fun stamp(moment: Instant): String = format(moment, withSeconds = true)
 
 internal fun format(moment: Instant, withSeconds: Boolean): String {
@@ -58,7 +55,6 @@ internal fun bar(value: Long, busiest: Long): String {
     return "█".repeat(width)
 }
 
-/** [text] cut into lines of at most [width] letters at word borders, at most [limit] lines, ending with "…" when cut. */
 internal fun wrap(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
     val lines = ArrayList<String>()
     for (raw in text.lines()) {

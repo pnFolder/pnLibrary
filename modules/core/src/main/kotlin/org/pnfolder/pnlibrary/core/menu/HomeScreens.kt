@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
 internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** The home page: counters and the way to every other screen. */
     fun home(player: MenuViewer) {
         val snapshots = snapshots()
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
@@ -67,7 +66,6 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         toolSections(builder)
     }
 
-    /** Tasks, events, statistics, placeholders, backups, checking, settings, tools and support. */
     private fun toolSections(builder: MenuBuilder) {
         builder.button(
             32,

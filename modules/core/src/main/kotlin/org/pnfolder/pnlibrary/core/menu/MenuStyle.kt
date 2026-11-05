@@ -21,14 +21,12 @@ internal fun closeItem(): ItemSpec =
 
 internal fun title(text: String): String = MenuColors.legacy('0') + "pnLibrary " + MenuColors.legacy('5') + "» " + MenuColors.legacy('0') + text
 
-/** Violet corner brackets on the four corners of a [rows]-row menu, then the dark glass between them. */
 internal fun frame(builder: MenuBuilder, rows: Int): MenuBuilder {
     val last = (rows - 1) * 9
     listOf(0, 1, 9, 7, 8, 17, last, last + 1, last - 9, last + 7, last + 8, last - 1).forEach { builder.slot(it, accent()) }
     return builder.fill(pane())
 }
 
-/** The two bottom corners of a list, leaving the rows above for the entries. */
 internal fun footerCorners(builder: MenuBuilder) {
     listOf(FOOTER_START, FOOTER_START + 1, FOOTER_END - 2, FOOTER_END - 1).forEach { builder.slot(it, accent()) }
 }
@@ -64,7 +62,6 @@ internal fun icon(
     return ItemSpec(texture, material, alternative, Style.name(label, tone), lore)
 }
 
-/** Colours and lines of the menu: the library's violet and pink, a gradient on every name and click hint. */
 internal object Style {
     private val DIM = MenuColors.color("&#64546E")
     private val PLAIN = MenuColors.color("&#F7F2F7")
@@ -85,7 +82,6 @@ internal object Style {
 
     fun description(text: String): String = DESCRIPTION + text
 
-    /** Every choice of a switch on its own line; the chosen one has a coloured mark and a gradient, the others are dim. */
     fun choices(options: List<String>, selected: Int): List<String> = options.mapIndexed { index, label ->
         if (index == selected) {
             MenuColors.color("   &#6EE7A0➤ ") + MenuColors.gradient(label, "D19BFF", "FF9BD2")
@@ -125,7 +121,6 @@ internal object Style {
     }
 }
 
-/** Texture hashes of the heads on textures.minecraft.net. */
 internal object Icons {
     const val OVERVIEW = "35747010d84aa56483b75f6243d94f34c534603584b2cc68a45bf365840105fd"
     const val PLUGINS = "c16808126eec0cd41d6040e211985719272c388d32ecae795d47f7a9cee71113"

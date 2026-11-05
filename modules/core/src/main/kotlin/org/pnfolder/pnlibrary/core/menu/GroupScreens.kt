@@ -15,7 +15,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
     /** The groups live on the proxy; this asks it from a menu that is not its own. */
     private val proxyData by lazy { RemoteMenuData(LinkNames.PROXY, host.link.data) }
 
-    /** The groups of servers the proxy keeps; a click opens one group. */
     fun groups(player: MenuViewer, page: Int): Unit = withGroups(player) { all, map ->
         val rows = all.map { group ->
             val bad = comparer.compare(group, routes.members(map)).count { !it.ok }
@@ -60,7 +59,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         }
     }
 
-    /** Asks the proxy for one change of the groups when [player] may, then runs [then]. */
     private fun editGroup(player: MenuViewer, edit: GroupEdit, then: () -> Unit) {
         allowed(player, GROUPS_PERMISSION) {
             host.async {
@@ -74,7 +72,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         }
     }
 
-    /** Puts [command] in the chat line of [player] to finish, with a click on the message. */
     private fun suggest(player: MenuViewer, text: String, command: String) {
         player.close()
         val kit = ChatKit(ChatReader.PLAYER)
@@ -85,7 +82,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         player.send(listOf(line))
     }
 
-    /** One group: each server with what it lacks, and the buttons that change the group or ask all of its servers at once. */
     private fun group(player: MenuViewer, name: String): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null) {
@@ -100,7 +96,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         )
     }
 
-    /** One server of a group as a row: green when nothing is missing; left click opens its settings, right click removes it. */
     private fun serverRow(name: String, state: ServerGroups.ServerState): Row {
         val material = if (state.ok) "EMERALD_BLOCK" else "REDSTONE_BLOCK"
         val parameters = buildList {
@@ -223,7 +218,6 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
         list(player, "Добавить плагин", rows, page, PAGE_SIZE, { who, to -> pickPlugin(who, name, server, to) }, back, "Все известные плагины уже есть")
     }
 
-    /** One server of a group: a click switches whether it needs a plugin, whatever the other servers do. */
     private fun groupServer(player: MenuViewer, name: String, server: String): Unit = withGroups(player) { all, map ->
         val group = all.firstOrNull { it.name == name }
         if (group == null || group.servers.none { it.equals(server, true) }) {

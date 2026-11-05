@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
-    /** Every task of every plugin, newest first, with two switches that show all their choices: the date and the state. */
     fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) {
         val nextPeriod = TaskPeriod.values()[(period.ordinal + 1) % TaskPeriod.values().size]
         val nextState = TaskState.values()[(state.ordinal + 1) % TaskState.values().size]
@@ -66,7 +65,6 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         )
     }
 
-    /** One task: what it is for, who owns it, how it runs, when; waiting tasks can be started, active ones stopped. */
     private fun taskDetail(player: MenuViewer, id: String, back: (MenuViewer) -> Unit) {
         val task = data.tasks().firstOrNull { it.id.value == id }
         if (task == null) {
@@ -215,7 +213,6 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
 
     fun versioned(owner: OwnerInfo): String = listOfNotNull(owner.name, owner.version).joinToString(" ")
 
-    /** The lines that say which plugin owns something: its name, version and authors. */
     fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = owner?.let {
         buildList {
             add("Плагин" to it.name)
