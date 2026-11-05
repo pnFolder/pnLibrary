@@ -18,7 +18,6 @@ internal class ConfigSerializerResolver(
 ) {
     private val annotationInstances = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
 
-    /** Returns the serializer responsible for [type], if one is configured. */
     @Suppress("UNCHECKED_CAST")
     fun forType(type: Class<*>): ConfigSerializer<Any>? {
         val annotated = type.getAnnotation(ConfigSerializeWith::class.java)
@@ -32,7 +31,6 @@ internal class ConfigSerializerResolver(
         return (annotated ?: exact ?: assignable) as? ConfigSerializer<Any>
     }
 
-    /** Returns the serializer explicitly declared on [field], if present. */
     @Suppress("UNCHECKED_CAST")
     fun forField(field: Field): ConfigSerializer<Any>? =
         field.getAnnotation(ConfigSerializeWith::class.java)
@@ -40,7 +38,6 @@ internal class ConfigSerializerResolver(
             ?.java
             ?.let(::annotationInstance) as? ConfigSerializer<Any>
 
-    /** Returns the shared instance of a [org.pnfolder.pnlibrary.api.config.ConfigTextForm] parser. */
     @Suppress("UNCHECKED_CAST")
     fun textParser(type: Class<out ConfigTextParser<*>>):
         ConfigTextParser<Any> = synchronized(textParsers) {
@@ -50,7 +47,6 @@ internal class ConfigSerializerResolver(
         } as ConfigTextParser<Any>
     }
 
-    /** Returns the shared instance of a [org.pnfolder.pnlibrary.api.config.ConfigNodeForm] rewriter. */
     fun nodeRewriter(type: Class<out ConfigNodeRewriter>): ConfigNodeRewriter = synchronized(textParsers) {
         textParsers.getOrPut(type) {
             runCatchingNonFatal { type.getField("INSTANCE").get(null) }.getOrNull()
