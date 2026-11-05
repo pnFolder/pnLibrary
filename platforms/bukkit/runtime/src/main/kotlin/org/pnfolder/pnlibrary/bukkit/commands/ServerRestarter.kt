@@ -6,6 +6,7 @@ import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import java.io.File
 
@@ -16,7 +17,7 @@ import java.io.File
  * missing the server cannot come back by itself, so it is stopped cleanly and the administrator is told to start it.
  * Only one restart can be waiting; a new request replaces it and [cancel] withdraws it.
  */
-internal class ServerRestarter(private val plugin: Plugin, private val scheduler: ServerScheduler) {
+internal class ServerRestarter(private val plugin: Plugin, private val scheduler: ServerScheduler, private val log: () -> PnLogger) {
     /** When the restart happens. */
     enum class Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY }
 
@@ -72,7 +73,7 @@ internal class ServerRestarter(private val plugin: Plugin, private val scheduler
             Bukkit.spigot().restart()
         } else {
             announce("Сервер останавливается для применения обновлений. Запустите его снова.")
-            plugin.logger.warning(
+            log().warning(
                 "restart-script in spigot.yml is not set or its file is missing, so the server cannot start itself again: " +
                     "stopping it. Start it manually, or point restart-script at your start script (for example ./start.bat).",
             )

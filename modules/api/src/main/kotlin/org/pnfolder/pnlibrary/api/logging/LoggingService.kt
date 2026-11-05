@@ -51,6 +51,9 @@ interface PnLogger {
     /** Writes normal operational information; with [record] `false` it stays out of the black box. */
     fun info(message: String, record: Boolean) = log(LogLevel.INFO, message, null, record)
 
+    /** Writes normal operational information together with the [error] that explains it, kept with its stack trace. */
+    fun info(message: String, error: Throwable?) = log(LogLevel.INFO, message, error, true)
+
     /** Writes positive completion or readiness information to the console and the black box. */
     fun success(message: String) = log(LogLevel.SUCCESS, message, null, true)
 
@@ -83,6 +86,9 @@ interface PnLogger {
      * old code logged at `FINE`.
      */
     fun debug(message: String) = log(LogLevel.DEBUG, message, null, true)
+
+    /** Writes a detail for a support report together with its [error]; the console stays quiet. */
+    fun debug(message: String, error: Throwable?) = log(LogLevel.DEBUG, message, error, true)
 }
 
 /**

@@ -2282,10 +2282,12 @@ public abstract interface class org/pnfolder/pnlibrary/api/logging/MessageBox {
 
 public abstract interface class org/pnfolder/pnlibrary/api/logging/PnLogger {
 	public fun debug (Ljava/lang/String;)V
+	public fun debug (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun error (Ljava/lang/String;)V
 	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun error (Ljava/lang/String;Ljava/lang/Throwable;Z)V
 	public fun info (Ljava/lang/String;)V
+	public fun info (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun info (Ljava/lang/String;Z)V
 	public abstract fun log (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;Z)V
 	public static synthetic fun log$default (Lorg/pnfolder/pnlibrary/api/logging/PnLogger;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ZILjava/lang/Object;)V

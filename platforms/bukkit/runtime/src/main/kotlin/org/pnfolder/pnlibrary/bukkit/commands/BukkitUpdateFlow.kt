@@ -38,7 +38,7 @@ internal class BukkitUpdateFlow(
     private val scheduler: ServerScheduler,
 ) {
     private val tokens = UpdateConfirmationTokens()
-    private val restarter = ServerRestarter(plugin, scheduler)
+    private val restarter = ServerRestarter(plugin, scheduler) { library.logging.logger(plugin, "pnLibrary") }
     private val restart = BukkitRestartFlow(library, replies, tokens, restarter)
 
     /** Replies immediately, then shows the refreshed list of updates on the server thread. */
