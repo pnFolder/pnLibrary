@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import java.lang.reflect.Proxy
 import org.bukkit.command.CommandSender as NativeCommandSender
 
@@ -25,8 +26,8 @@ class BukkitCurrencyCommandTest {
     @Test
     fun `currency definition exposes arbitrary continuation through portable tree`() {
         val definition = CurrencyCommandExecutor(
-            plugin = proxy(Plugin::class.java),
             currencies = EmptyCurrencies,
+            scheduler = ServerScheduler(proxy(Plugin::class.java)),
         ).definition()
 
         assertEquals("money", definition.name)
@@ -67,7 +68,7 @@ class BukkitCurrencyCommandTest {
     private fun run(vararg arguments: String, permitted: Boolean = true): List<String> {
         val console = ConsoleAudience(permitted)
         val sender = BukkitCommandSender(proxy(NativeCommandSender::class.java), console)
-        CurrencyCommandExecutor(proxy(Plugin::class.java), EmptyCurrencies).definition().execution
+        CurrencyCommandExecutor(EmptyCurrencies, ServerScheduler(proxy(Plugin::class.java))).definition().execution
             .execute(CommandContext(sender, arguments.toList(), "money", arguments.last()))
             .toCompletableFuture().join()
         return console.messages.map { LegacyComponentSerializer.legacySection().serialize(it).replace(Regex("§."), "") }

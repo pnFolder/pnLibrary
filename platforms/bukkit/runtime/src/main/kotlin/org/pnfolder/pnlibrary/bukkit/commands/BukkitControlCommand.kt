@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
@@ -49,21 +50,24 @@ internal class BukkitControlCommand(
     private val library: PnLibrary,
     private val currencies: CurrencyProviderRegistry,
     private val link: Link = Link.OFF,
-) {
-    private val feedback = BukkitSettingFeedback(plugin)
-    private val replies = BukkitCommandReplies(plugin, library)
+    private val scheduler: ServerScheduler = ServerScheduler(plugin),
+) : AutoCloseable {
+    private val feedback = BukkitSettingFeedback(scheduler)
+    private val replies = BukkitCommandReplies(library, scheduler)
     private val catalog = UpdateCatalogCommands(
         library = library,
         routes = ROUTES,
         viewPermission = "pnlibrary.updates.view",
         backupsPermission = "pnlibrary.updates.rollback",
         managePermission = "pnlibrary.updates.settings",
-        deliver = { task -> if (!library.isClosed) plugin.server.scheduler.runTask(plugin, task) },
+        deliver = { task -> if (!library.isClosed) scheduler.nextTick(task) },
         onSaved = { context, saved -> (context.sender as? BukkitCommandSender)?.native?.let { it as? Player }?.let { feedback.show(it, saved) } },
     )
-    private val updates = BukkitUpdateFlow(plugin, library, catalog, replies)
+    private val updates = BukkitUpdateFlow(plugin, library, catalog, replies, scheduler)
     private val support = BukkitSupportCommands(plugin, library, replies)
-    private val menu = PluginsMenu(plugin, library, replies, link)
+    private val menu = PluginsMenu(plugin, library, replies, link, scheduler)
+
+    override fun close() = menu.close()
 
     /** Builds the permission-aware control command tree. */
     fun definition(): CommandDefinition = command("pn") {
@@ -79,7 +83,7 @@ internal class BukkitControlCommand(
         mount("bus", EventBusCommand(library).definition())
         mount("tasks", TaskCommand(library).definition())
         mount("servers", ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition())
-        mount("money", CurrencyCommandExecutor(plugin, currencies).definition())
+        mount("money", CurrencyCommandExecutor(currencies, scheduler).definition())
         literal("support") {
             permission(ADMIN, VIEW)
             executes { replies.native(it) { _, reply -> support.support(reply) } }

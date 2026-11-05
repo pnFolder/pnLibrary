@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.bukkit.currency
 import org.bukkit.Bukkit
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
@@ -23,6 +22,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.text.RussianText
 import java.math.BigDecimal
 import java.util.UUID
@@ -30,9 +30,9 @@ import java.util.concurrent.CompletionStage
 
 /** What each `/pn money` action does to the currency and what it answers: balances, changes, payments, history, confirmation. */
 internal class CurrencyOperations(
-    private val plugin: Plugin,
     private val currencies: CurrencyProviderRegistry,
     private val confirmations: CurrencyConfirmationStore,
+    private val scheduler: ServerScheduler,
 ) {
     /** Every available currency: its name, then the key used in commands. */
     fun list(sender: BukkitCommandSender): Boolean {
@@ -163,10 +163,12 @@ internal class CurrencyOperations(
         (sender.native as? Player)?.let { CurrencyActor.player(it.uniqueId) } ?: CurrencyActor.server()
 
     private fun <T> complete(sender: BukkitCommandSender, stage: CompletionStage<T>, success: (T) -> Unit) {
-        stage.whenComplete { value, failure -> Bukkit.getScheduler().runTask(plugin, Runnable {
-            if (failure == null) success(value)
-            else error(sender, "Операция с валютой не выполнена.", failure.cause?.message ?: failure.message)
-        }) }
+        stage.whenComplete { value, failure ->
+            scheduler.nextTick {
+                if (failure == null) success(value)
+                else error(sender, "Операция с валютой не выполнена.", failure.cause?.message ?: failure.message)
+            }
+        }
     }
 
     private fun queueOrRun(

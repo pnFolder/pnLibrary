@@ -4,9 +4,11 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
-import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.menu.ViewerInfo
 import java.lang.reflect.Proxy
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 /**
@@ -16,9 +18,13 @@ import java.util.concurrent.TimeUnit
  */
 internal object RemoteMenus {
     /** Runs [command] for [viewer] on this server, on the server thread, and returns what it printed. */
-    fun run(plugin: Plugin, viewer: ViewerInfo, command: String): List<Component> =
-        if (Bukkit.isPrimaryThread()) execute(viewer, command)
-        else plugin.server.scheduler.callSyncMethod(plugin) { execute(viewer, command) }.get(RUN_SECONDS, TimeUnit.SECONDS)
+    fun run(scheduler: ServerScheduler, viewer: ViewerInfo, command: String): List<Component> {
+        val printed = CompletableFuture<List<Component>>()
+        scheduler.execute {
+            runCatchingNonFatal { execute(viewer, command) }.fold(printed::complete, printed::completeExceptionally)
+        }
+        return printed.get(RUN_SECONDS, TimeUnit.SECONDS)
+    }
 
     private const val RUN_SECONDS = 15L
 

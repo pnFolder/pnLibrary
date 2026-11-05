@@ -20,14 +20,18 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
         check(!closed.get()) { "Platform task adapter is closed" }
         val reference = AtomicReference<TrackedHandle?>()
         val completed = AtomicBoolean(false)
-        val forwarded = request.copy(callback = Runnable {
-            try {
-                request.callback.run()
-            } finally {
-                if (request.interval == null) {
-                    completed.set(true)
-                    reference.get()?.release()
+        val forwarded = request.copy(callback = object : Runnable, RetirableCallback {
+            override fun run() {
+                try {
+                    request.callback.run()
+                } finally {
+                    if (request.interval == null) retire()
                 }
+            }
+
+            override fun retire() {
+                completed.set(true)
+                reference.get()?.release()
             }
         })
         return TrackedHandle(scheduleNative(forwarded)).also { handle ->
@@ -70,4 +74,13 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
             handles.remove(this)
         }
     }
+}
+
+/**
+ * A task callback that the adapter can be told about when the platform drops the task without running it,
+ * for example when the entity it was bound to is gone.
+ */
+interface RetirableCallback {
+    /** Ends tracking of the task; call it once the platform will never run the task again. */
+    fun retire()
 }

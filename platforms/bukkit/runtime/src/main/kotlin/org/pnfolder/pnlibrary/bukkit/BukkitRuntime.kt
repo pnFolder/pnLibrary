@@ -36,7 +36,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
             integrations = optional
             plugin.server.pluginManager.registerEvents(optional, plugin)
             optional.start(runtime)
-            link = BukkitLinkReporter(plugin, runtime.library, network).also { it.start() }
+            link = BukkitLinkReporter(plugin, runtime.library, network, adapter.scheduler).also { it.start() }
         } catch (error: Throwable) {
             stop()
             throw error

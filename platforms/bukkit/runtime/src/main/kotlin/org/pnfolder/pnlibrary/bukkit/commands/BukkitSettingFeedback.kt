@@ -1,10 +1,11 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.bukkit.BukkitTitle
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved
+import java.lang.reflect.Method
 
 /**
  * Short feedback after a setting was saved: the setting's name as the title and what changed, such as
@@ -14,8 +15,8 @@ import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.Setting
  * The 1.8 title API has no timings and different sound names, so both are chosen at runtime; nothing here may
  * break the command that was just completed.
  */
-internal class BukkitSettingFeedback(private val plugin: Plugin) {
-    /** Shows the title and plays the chime for [player]. */
+internal class BukkitSettingFeedback(private val scheduler: ServerScheduler) {
+    /** Shows the title and plays the chime for [player]; call it on the player's thread. */
     fun show(player: Player, saved: SettingSaved) {
         runCatchingNonFatal { title(player, saved) }
         runCatchingNonFatal { chime(player, notes(saved)) }
@@ -23,15 +24,13 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
 
     private fun title(player: Player, saved: SettingSaved) {
         val (title, subtitle) = BukkitTitle.settingSaved(saved)
-        val timed = runCatchingNonFatal {
-            Player::class.java.getMethod(
-                "sendTitle", String::class.java, String::class.java, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-            ).invoke(player, title, subtitle, FADE_IN_TICKS, STAY_TICKS, FADE_OUT_TICKS)
-        }.isSuccess
-        if (!timed) {
-            @Suppress("DEPRECATION")
-            player.sendTitle(title, subtitle)
+        val timed = TIMED_TITLE
+        if (timed != null) {
+            timed.invoke(player, title, subtitle, FADE_IN_TICKS, STAY_TICKS, FADE_OUT_TICKS)
+            return
         }
+        @Suppress("DEPRECATION")
+        player.sendTitle(title, subtitle)
     }
 
     /** Rising notes for turning something on or picking a value, falling notes for turning it off. */
@@ -42,17 +41,12 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
     }
 
     private fun chime(player: Player, pitches: List<Float>) {
-        val sound = if (modernSounds) "entity.experience_orb.pickup" else "random.orb"
+        val sound = if (MODERN_SOUNDS) "entity.experience_orb.pickup" else "random.orb"
         pitches.forEachIndexed { index, pitch ->
             val play = Runnable { if (player.isOnline) player.playSound(player.location, sound, VOLUME, pitch) }
-            if (index == 0) play.run() else plugin.server.scheduler.runTaskLater(plugin, play, index * NOTE_GAP_TICKS)
+            if (index == 0) play.run() else scheduler.onPlayerLater(player, index * NOTE_GAP_TICKS, play)
         }
     }
-
-    /** Sound names changed in 1.9; the presence of the enum constant tells which generation this server is. */
-    private val modernSounds: Boolean = runCatchingNonFatal {
-        Class.forName("org.bukkit.Sound").getField("ENTITY_EXPERIENCE_ORB_PICKUP")
-    }.isSuccess
 
     private companion object {
         const val FADE_IN_TICKS = 5
@@ -60,5 +54,18 @@ internal class BukkitSettingFeedback(private val plugin: Plugin) {
         const val FADE_OUT_TICKS = 10
         const val NOTE_GAP_TICKS = 3L
         const val VOLUME = 0.6f
+
+        /** The title with timings, added in 1.11. */
+        val TIMED_TITLE: Method? = runCatchingNonFatal {
+            Player::class.java.getMethod(
+                "sendTitle", String::class.java, String::class.java,
+                Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
+            )
+        }.getOrNull()
+
+        /** Sound names changed in 1.9; the presence of the enum constant tells which generation this server is. */
+        val MODERN_SOUNDS: Boolean = runCatchingNonFatal {
+            Class.forName("org.bukkit.Sound").getField("ENTITY_EXPERIENCE_ORB_PICKUP")
+        }.isSuccess
     }
 }

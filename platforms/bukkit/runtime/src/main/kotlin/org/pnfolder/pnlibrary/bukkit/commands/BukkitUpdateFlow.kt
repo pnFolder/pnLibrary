@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
@@ -34,9 +35,10 @@ internal class BukkitUpdateFlow(
     private val library: PnLibrary,
     private val catalog: UpdateCatalogCommands,
     private val replies: BukkitCommandReplies,
+    private val scheduler: ServerScheduler,
 ) {
     private val tokens = UpdateConfirmationTokens()
-    private val restarter = ServerRestarter(plugin)
+    private val restarter = ServerRestarter(plugin, scheduler)
     private val restart = BukkitRestartFlow(library, replies, tokens, restarter)
 
     /** Replies immediately, then shows the refreshed list of updates on the server thread. */
@@ -130,19 +132,19 @@ internal class BukkitUpdateFlow(
         replies.say(reply, ChatTone.PROGRESS, "Ищу совместимое обновление $product…")
         val finished = AtomicBoolean(false)
         fun scheduleProgress() {
-            plugin.server.scheduler.runTaskLater(plugin, Runnable {
-                if (finished.get()) return@Runnable
+            scheduler.later(PROGRESS_TICKS) {
+                if (finished.get()) return@later
                 replies.say(reply, ChatTone.PROGRESS, "Проверка ещё идёт: жду ответ каталога релизов…")
                 scheduleProgress()
-            }, PROGRESS_TICKS)
+            }
         }
         scheduleProgress()
-        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+        scheduler.later(TIMEOUT_TICKS) {
             if (finished.compareAndSet(false, true)) {
                 replies.say(reply, ChatTone.FAILURE, "Проверка прервана: источники не ответили за 60 секунд.",
                     "Проверьте доступ сервера к raw.githubusercontent.com и повторите команду.")
             }
-        }, TIMEOUT_TICKS)
+        }
         library.updates.checkNow(replies.updateActor(sender)).whenComplete { result, error ->
             if (!finished.compareAndSet(false, true)) return@whenComplete
             replies.onServerThread {

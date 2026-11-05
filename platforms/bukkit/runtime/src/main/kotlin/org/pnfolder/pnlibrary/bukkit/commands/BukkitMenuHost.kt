@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu
 import org.pnfolder.pnlibrary.core.menu.MenuHost
@@ -17,15 +18,16 @@ internal class BukkitMenuHost(
     private val replies: BukkitCommandReplies,
     private val adapter: BukkitMenuAdapter,
     override val link: Link,
+    private val scheduler: ServerScheduler,
 ) : MenuHost {
     override fun sync(action: () -> Unit) = replies.onServerThread(action)
 
     override fun async(action: () -> Unit) {
-        plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable { if (!library.isClosed) action() })
+        scheduler.async { if (!library.isClosed) action() }
     }
 
     override fun later(delayMillis: Long, action: () -> Unit) {
-        plugin.server.scheduler.runTaskLater(plugin, Runnable { if (!library.isClosed) action() }, (delayMillis / MILLIS_PER_TICK).coerceAtLeast(1))
+        scheduler.later((delayMillis / MILLIS_PER_TICK).coerceAtLeast(1)) { if (!library.isClosed) action() }
     }
 
     override fun owner(owner: Any?): OwnerInfo? = (owner as? Plugin)?.let(::info)
