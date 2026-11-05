@@ -25,7 +25,6 @@ object ConsoleStyle {
     /** Turns underline on until the next color or [RESET]. */
     @JvmField val UNDERLINE: String = format(Component.text(PROBE).decorate(TextDecoration.UNDERLINED))
 
-    /** Restores the console's default style. */
     @JvmField val RESET: String = "${LegacyComponentSerializer.SECTION_CHAR}r"
 
     /** Every card: lavender borders, white labels and text, gray connectors; values follow the tone. */
@@ -39,7 +38,6 @@ object ConsoleStyle {
     @JvmStatic
     fun color(color: TextColor): String = format(Component.text(PROBE, color))
 
-    /** [text] in [color], followed by [RESET]. */
     @JvmStatic
     fun paint(text: String, color: TextColor): String = color(color) + text + RESET
 

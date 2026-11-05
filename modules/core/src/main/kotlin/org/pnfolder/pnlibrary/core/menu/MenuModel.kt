@@ -50,7 +50,6 @@ class MenuBuilder internal constructor(private val title: String) {
 
     fun button(index: Int, item: ItemSpec, click: MenuClickHandler): MenuBuilder = slot(index, item, click)
 
-    /** Puts [item] in every free slot from [from] up to [until]. */
     @JvmOverloads
     fun fill(item: ItemSpec, from: Int = 0, until: Int = rows * SLOTS_PER_ROW): MenuBuilder = apply {
         for (slot in from until until) if (slot !in items) items[slot] = MenuItem(item, null)
@@ -101,7 +100,6 @@ interface PluginDirectory {
     /** The plugin that [owner] is, or null when it is not one. */
     fun owner(owner: Any?): OwnerInfo?
 
-    /** The plugin called [name], or null. */
     fun ownerNamed(name: String): OwnerInfo?
 
     /** The plugin whose code defines [type], or null. */

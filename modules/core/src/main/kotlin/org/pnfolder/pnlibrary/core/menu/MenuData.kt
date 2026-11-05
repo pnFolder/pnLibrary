@@ -140,7 +140,6 @@ interface MenuData {
     /** The purpose and the owner of an event, or null when it is unknown. */
     fun eventAbout(eventType: String): EventAbout?
 
-    /** The plugin called [name], or null. */
     fun ownerNamed(name: String): OwnerInfo?
 
     fun groups(): List<ServerGroups.Group>
