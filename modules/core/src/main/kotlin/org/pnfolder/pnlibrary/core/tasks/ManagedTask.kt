@@ -16,7 +16,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
-/** One scheduled task: runs its action, tracks its state and reports to [onTerminal] once it can never run again. */
+/**
+ * One scheduled task: runs its action, tracks its state and reports to [onTerminal] once it can never run again.
+ *
+ * Every change of the state is a compare-and-set, so a cancel racing with a run is never overwritten when the run
+ * ends, and a run the platform had already queued does nothing once the task is over.
+ */
 internal class ManagedTask(
     val owner: Any,
     val scopeToken: Any,
@@ -33,57 +38,61 @@ internal class ManagedTask(
     private val cancelled = AtomicBoolean(false)
     private val native = AtomicReference<PlatformTaskHandle?>()
     private val created = Instant.now()
-    @Volatile
-    private var nextRun: Instant? = created.plus(spec.delay)
 
-    @Volatile
-    private var started: Instant? = null
+    @Volatile private var nextRun: Instant? = created.plus(spec.delay)
 
-    @Volatile
-    private var completed: Instant? = null
+    @Volatile private var started: Instant? = null
 
-    @Volatile
-    private var failure: String? = null
+    @Volatile private var completed: Instant? = null
 
-    @Volatile
-    private var lastDuration: Duration? = null
-    override val status get() = state.get()
-    override val isCancelled get() = cancelled.get()
+    @Volatile private var failure: String? = null
+
+    @Volatile private var lastDuration: Duration? = null
+
+    override val status: TaskStatus get() = state.get()
+    override val isCancelled: Boolean get() = cancelled.get()
 
     fun attach(handle: PlatformTaskHandle) {
         native.set(handle)
-        if (cancelled.get() || status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) {
-            handle.cancel()
+        if (status.isOver()) handle.cancel()
+    }
+
+    /** The run the platform scheduled. */
+    fun invoke() = exclusively(onBusy = { skipped.incrementAndGet() }) {
+        nextRun = null
+        when {
+            spec.cancellationConditions.any { it.asBoolean } -> cancel()
+            spec.conditions.any { !it.asBoolean } -> skip()
+            else -> {
+                runAction()
+                if (spec.interval == null) complete() else waitUntil(Instant.now().plus(spec.interval))
+            }
         }
     }
 
-    fun invoke() = execute(manual = false)
-
     /** Starts a waiting task now, on its own execution context, and leaves its schedule as it was. */
     fun runNow(): Boolean {
-        if (cancelled.get() || status != TaskStatus.SCHEDULED) return false
+        if (status != TaskStatus.SCHEDULED) return false
         adapter.schedule(
-            PlatformTaskRequest(spec.execution.kind, spec.execution.target, Duration.ZERO, null, Runnable { execute(manual = true) }, owner = owner),
+            PlatformTaskRequest(spec.execution.kind, spec.execution.target, Duration.ZERO, null, Runnable { runRequested() }, owner = owner),
         )
         return true
     }
 
-    private fun execute(manual: Boolean) {
-        if (cancelled.get()) return
-        if (!running.compareAndSet(false, true)) {
-            if (!manual) skipped.incrementAndGet()
-            return
-        }
+    private fun runRequested() = exclusively(onBusy = {}) {
+        val plannedNext = nextRun
+        runAction()
+        if (spec.interval != null) return@exclusively waitUntil(plannedNext)
+        complete()
+        native.get()?.cancel()
+    }
+
+    /** Runs [body] unless the task is over; while another run is still going, calls [onBusy] instead. */
+    private inline fun exclusively(onBusy: () -> Unit, body: () -> Unit) {
+        if (status.isOver()) return
+        if (!running.compareAndSet(false, true)) return onBusy()
         try {
-            val plannedNext = nextRun
-            if (!manual) nextRun = null
-            if (!manual && spec.cancellationConditions.any { it.asBoolean }) {
-                cancel()
-                return
-            }
-            if (!manual && spec.conditions.any { !it.asBoolean }) return skip()
-            runAction()
-            if (!cancelled.get()) finishRun(manual, plannedNext)
+            body()
         } catch (error: Throwable) {
             fail(error)
         } finally {
@@ -98,7 +107,7 @@ internal class ManagedTask(
     }
 
     private fun runAction() {
-        state.set(TaskStatus.RUNNING)
+        if (!state.compareAndSet(TaskStatus.SCHEDULED, TaskStatus.RUNNING)) return
         val runStartedAt = Instant.now()
         started = runStartedAt
         val number = runs.incrementAndGet()
@@ -114,46 +123,45 @@ internal class ManagedTask(
         lastDuration = Duration.ofNanos(System.nanoTime() - clock)
     }
 
-    /** After a run: a one-time task completes, a repeating one waits for its next time. */
-    private fun finishRun(manual: Boolean, plannedNext: Instant?) {
-        if (spec.interval == null) {
-            complete()
-            if (manual) native.get()?.cancel()
-        } else {
-            state.set(TaskStatus.SCHEDULED)
-            nextRun = if (manual) plannedNext else Instant.now().plus(spec.interval)
-        }
+    private fun waitUntil(next: Instant?) {
+        if (state.compareAndSet(TaskStatus.RUNNING, TaskStatus.SCHEDULED)) nextRun = next
     }
 
     private fun fail(error: Throwable) {
-        failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
-        state.set(TaskStatus.FAILED)
-        completed = Instant.now()
+        val failed = end(TaskStatus.FAILED)
+        if (failed) failure = "${error.javaClass.simpleName}: ${error.message.orEmpty()}"
         ResourceCleanup.suppressInto(
             error,
             { native.get()?.cancel() },
             { errorLogger(owner, "[pnLibrary/tasks] Task ${spec.name ?: id} failed", error) },
         )
-        terminal()
+        if (failed) onTerminal(this)
     }
 
     private fun complete() {
-        state.set(TaskStatus.COMPLETED)
-        completed = Instant.now()
-        terminal()
+        if (end(TaskStatus.COMPLETED)) onTerminal(this)
     }
 
-    override fun cancel() { cancelIfActive() }
+    override fun cancel() {
+        cancelIfActive()
+    }
 
     override fun cancelIfActive(): Boolean {
-        if (!cancelled.compareAndSet(false, true)) return false
-        state.set(TaskStatus.CANCELLED)
-        completed = Instant.now()
+        if (!end(TaskStatus.CANCELLED)) return false
+        cancelled.set(true)
         try {
             native.get()?.cancel()
         } finally {
-            terminal()
+            onTerminal(this)
         }
+        return true
+    }
+
+    /** Moves the task to the final [status]; false when it was already over. */
+    private fun end(status: TaskStatus): Boolean {
+        val previous = state.getAndUpdate { if (it.isOver()) it else status }
+        if (previous.isOver()) return false
+        completed = Instant.now()
         return true
     }
 
@@ -181,9 +189,9 @@ internal class ManagedTask(
         runnableNow = spec.runnableNow,
         hidden = spec.hidden,
     )
-
-    private fun terminal() = onTerminal(this)
 }
+
+private fun TaskStatus.isOver() = this == TaskStatus.COMPLETED || this == TaskStatus.CANCELLED || this == TaskStatus.FAILED
 
 /** The class that holds the action; a lambda reports the class it was written in. */
 private fun sourceOf(type: Class<*>): String = type.name.substringBefore("\$\$Lambda").substringBefore('/')
