@@ -49,9 +49,9 @@ object LibraryConfigFiles {
     }
 
     /** Hands warnings and errors to [warning]; the files are read before any logger exists. */
-    private class WarningLogger(private val warning: (String) -> Unit) : PnLogger {
+    private class WarningLogger(private val onWarning: (String) -> Unit) : PnLogger {
         override fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean) {
-            if (level >= LogLevel.WARNING) warning(message)
+            if (level >= LogLevel.WARNING) onWarning(message)
         }
     }
 }
