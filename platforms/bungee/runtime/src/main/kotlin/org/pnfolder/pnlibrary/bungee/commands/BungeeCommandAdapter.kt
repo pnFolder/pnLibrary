@@ -31,13 +31,11 @@ internal class BungeeCommandAdapter internal constructor(
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
 
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    /** Creates the native command registrar and audience bridge. */
     constructor(plugin: Plugin) : this(
         nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
     )
 
-    /** Converts native invocation arguments to the portable command context. */
     override fun context(
         source: NativeCommandSender,
         alias: String,

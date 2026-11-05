@@ -67,7 +67,6 @@ internal class BungeePlatformAdapter(
     override val taskAdapter: PlatformTaskAdapter =
         BungeeTaskAdapter(plugin)
 
-    /** Writes to the owning plugin's logger, falling back to pnLibrary's own. */
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
@@ -79,7 +78,6 @@ internal class BungeePlatformAdapter(
         uncaughtExceptionObserver.observe(observer)
     }
 
-    /** Sends legacy-formatted text to the proxy console. */
     @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
         plugin.proxy.console.sendMessage(
@@ -90,7 +88,6 @@ internal class BungeePlatformAdapter(
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed plugin names and versions for compatibility checks. */
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
     /** Collects typed proxy metadata without exposing individual player identities. */
@@ -106,7 +103,6 @@ internal class BungeePlatformAdapter(
         )
     }
 
-    /** Delegates diagnostic collection with the requested privacy policy. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
@@ -134,7 +130,6 @@ internal class BungeePlatformAdapter(
         startup.markReady()
     }
 
-    /** Dispatches recipient work through the same asynchronous proxy scheduler. */
     override fun executeReply(recipient: Any, task: Runnable) {
         executeGlobal(task)
     }

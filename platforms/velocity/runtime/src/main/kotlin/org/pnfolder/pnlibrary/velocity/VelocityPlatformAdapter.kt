@@ -83,7 +83,6 @@ internal class VelocityPlatformAdapter(
             }
         }
 
-    /** Sends a legacy-formatted message to the Velocity console. */
     override fun console(owner: Any, message: String) {
         proxy.consoleCommandSource.sendMessage(
             LEGACY_SERIALIZER.deserialize(message),
@@ -98,10 +97,8 @@ internal class VelocityPlatformAdapter(
         uncaughtExceptionObserver.observe(observer)
     }
 
-    /** Returns metadata for a native Velocity plugin owner. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    /** Returns installed Velocity plugin IDs and their versions. */
     override fun installedPlugins(): Map<String, String> =
         plugins.versions()
 
@@ -119,7 +116,6 @@ internal class VelocityPlatformAdapter(
         )
     }
 
-    /** Collects the detailed platform report used by support diagnostics. */
     override fun diagnosticDetails(includeSensitive: Boolean): Map<String, Any?> =
         diagnosticDetailsCollector.collect(snapshot(), includeSensitive)
 
@@ -130,7 +126,6 @@ internal class VelocityPlatformAdapter(
     ): RemotePolicyContext =
         VelocityRemotePolicyContextFactory.create(owner, plugins.requireInstalled(owner, "Remote policy owner"), proxy, values)
 
-    /** Schedules work on Velocity's plugin scheduler. */
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) {
             return
