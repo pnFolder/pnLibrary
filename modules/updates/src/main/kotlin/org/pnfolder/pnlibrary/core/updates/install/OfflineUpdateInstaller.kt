@@ -40,7 +40,7 @@ object OfflineUpdateInstaller {
             val snapshots = ConfigurationSnapshots(data.resolve("updates/configurations"), plugins)
             val restorer = ConfigurationRestorer(snapshots, data.resolve("updates/configuration-restores"))
             restorer.recoverInterrupted()
-            transactions.recoverAll(offline = true)
+            transactions.recoverAllOffline()
             val pending = transactions.pendingInstallations().map { path -> prepare(transactions, verifier, snapshots, plugins, path) }
             require(pending.flatMap { it.artifacts }.map { it.target }.distinct().size == pending.sumOf { it.artifacts.size }) {
                 "Conflicting prepared component sets; resolve them before starting the server"

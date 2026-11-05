@@ -64,10 +64,8 @@ internal class TransactionJournalRepository(
         require(targets.distinct().size == targets.size) { "Transaction contains duplicate targets" }
     }
 
-    /** Persists [journal] at [path]. */
     fun save(path: Path, journal: TransactionJournal) = TransactionJournal.save(path, journal)
 
-    /** Moves [journal] to [state] and persists it at [path]. */
     fun transition(path: Path, journal: TransactionJournal, state: TransactionState) {
         journal.state = state
         save(path, journal)
@@ -79,7 +77,6 @@ internal class TransactionJournalRepository(
             ((record.backupSha256 ?: record.prior?.sha256)?.let { digest(Paths.get(record.backup)) == it } ?: true))
     }
 
-    /** Returns the SHA-256 digest of [path]. */
     fun digest(path: Path): String = Digests.sha256(path)
 
     /** Normalizes [path] and requires it to stay inside [allowedRoot]. */
