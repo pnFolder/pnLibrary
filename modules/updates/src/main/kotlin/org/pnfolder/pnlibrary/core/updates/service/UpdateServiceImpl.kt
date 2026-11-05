@@ -110,8 +110,9 @@ class UpdateServiceImpl(
         }
         val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
         require(Files.isRegularFile(jar)) { "Plugin must be loaded from a JAR file" }
+        val pluginsDirectory = pluginsDirectoryOf(jar)
         request.configurationBackup?.let { backup ->
-            require(backup.root != jar.parent && backup.root.startsWith(jar.parent)) {
+            require(backup.root != pluginsDirectory && backup.root.toAbsolutePath().normalize().startsWith(pluginsDirectory)) {
                 "Configuration backup root must be a component data directory inside the plugins directory"
             }
         }
@@ -125,7 +126,7 @@ class UpdateServiceImpl(
             request = request,
             artifact = artifact,
             jar = jar,
-            updateDirectory = jar.parent.resolve("update"),
+            updateDirectory = pluginsDirectory.resolve("update"),
             selectedChannel = { graphResolver.channelFor(product.id, request.channel) },
             checkForUpdates = orchestrator::checkNow,
             stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
@@ -260,6 +261,13 @@ class UpdateServiceImpl(
 
     private companion object {
         val HOLD_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm", Locale("ru"))
+        const val PAPER_REMAPPED = ".paper-remapped"
+
+        /** Paper runs remapped copies from `plugins/.paper-remapped`; data folders and `update` still sit in `plugins`. */
+        fun pluginsDirectoryOf(jar: Path): Path {
+            val folder = jar.parent
+            return if (folder.fileName?.toString() == PAPER_REMAPPED) folder.parent else folder
+        }
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =
