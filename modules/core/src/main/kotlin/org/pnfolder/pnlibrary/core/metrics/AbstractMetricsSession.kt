@@ -31,27 +31,21 @@ abstract class AbstractMetricsSession(
     final override fun simplePie(id: String, value: Supplier<String?>): PluginMetrics =
         add(Chart.SimplePie(normalizeId(id), value))
 
-    /** Registers category counts. */
     final override fun advancedPie(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         add(Chart.AdvancedPie(normalizeId(id), values))
 
-    /** Registers nested category counts. */
     final override fun drilldownPie(id: String, values: Supplier<Map<String, Map<String, Int>>>): PluginMetrics =
         add(Chart.DrilldownPie(normalizeId(id), values))
 
-    /** Registers one numeric time-series sample. */
     final override fun singleLineChart(id: String, value: Supplier<Int>): PluginMetrics =
         add(Chart.SingleLine(normalizeId(id), value))
 
-    /** Registers named numeric time-series samples. */
     final override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         add(Chart.MultiLine(normalizeId(id), values))
 
-    /** Registers named bars. */
     final override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         add(Chart.SimpleBar(normalizeId(id), values))
 
-    /** Registers named arrays of bars. */
     final override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>): PluginMetrics =
         add(Chart.AdvancedBar(normalizeId(id), values))
 
@@ -66,13 +60,11 @@ abstract class AbstractMetricsSession(
         }
     }
 
-    /** Translates a validated chart into the provider's native registration format. */
     protected abstract fun register(chart: Chart)
 
     /** Releases resources owned by the provider. Called only once. */
     protected abstract fun shutdown()
 
-    /** Checks lifecycle state before handing registration to the provider. */
     private fun add(chart: Chart): PluginMetrics {
         check(!isClosed) { "Metrics session is closed" }
         register(chart)

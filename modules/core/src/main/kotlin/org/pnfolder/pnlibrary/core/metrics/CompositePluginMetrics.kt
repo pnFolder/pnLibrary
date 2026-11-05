@@ -34,33 +34,26 @@ internal class CompositePluginMetrics(
         .flatMap { it.providers }
         .toSet())
 
-    /** Registers a simple pie chart with every delegate. */
     override fun simplePie(id: String, value: Supplier<String?>): PluginMetrics =
         fanOut { it.simplePie(id, value) }
 
-    /** Registers an advanced pie chart with every delegate. */
     override fun advancedPie(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         fanOut { it.advancedPie(id, values) }
 
-    /** Registers a drilldown pie chart with every delegate. */
     override fun drilldownPie(
         id: String,
         values: Supplier<Map<String, Map<String, Int>>>,
     ): PluginMetrics = fanOut { it.drilldownPie(id, values) }
 
-    /** Registers a single-line chart with every delegate. */
     override fun singleLineChart(id: String, value: Supplier<Int>): PluginMetrics =
         fanOut { it.singleLineChart(id, value) }
 
-    /** Registers a multiline chart with every delegate. */
     override fun multiLineChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         fanOut { it.multiLineChart(id, values) }
 
-    /** Registers a simple bar chart with every delegate. */
     override fun simpleBarChart(id: String, values: Supplier<Map<String, Int>>): PluginMetrics =
         fanOut { it.simpleBarChart(id, values) }
 
-    /** Registers an advanced bar chart with every delegate. */
     override fun advancedBarChart(id: String, values: Supplier<Map<String, IntArray>>): PluginMetrics =
         fanOut { it.advancedBarChart(id, values) }
 
@@ -73,7 +66,6 @@ internal class CompositePluginMetrics(
         )
     }
 
-    /** Starts submission for every delegate. */
     override fun start() {
         delegates.forEach { it.start() }
     }
