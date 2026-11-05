@@ -63,6 +63,21 @@ class CommandRegistryTest {
     }
 
     @Test
+    fun `a failed asynchronous command logs its own exception, not the cause inside it`() {
+        val native = RecordingCommands()
+        val platform = TestPlatform(native)
+        val service = CommandRegistry(platform.commandAdapter, platform)
+        val failure = IllegalStateException("command failed", RuntimeException("root cause"))
+        service.register(Any(), command("hello") {
+            executesAsync { CompletableFuture<Void>().apply { completeExceptionally(failure) } }
+        })
+
+        native.dispatcher.execute(native.command, context(TestSender())).toCompletableFuture().join()
+
+        assertEquals(listOf<Throwable>(failure), platform.errors)
+    }
+
+    @Test
     fun `builder overload registers a command without manual definition construction`() {
         val native = RecordingCommands()
         val platform = TestPlatform(native)
@@ -265,7 +280,7 @@ class CommandRegistryTest {
     fun `a subcommand message wins over the command message and the configured default`() {
         val native = RecordingCommands()
         val service = CommandRegistry(
-            TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
+            TestPlatform(native).commandAdapter, TestPlatform(native), StandardCommandFeedback(deniedMessage = "Настроенный текст из config.yml"),
         )
         service.register(Any(), command("hello") {
             noPermissionMessage("Текст команды")
@@ -295,7 +310,7 @@ class CommandRegistryTest {
     fun `the configured default replaces the built in text when nothing more specific is set`() {
         val native = RecordingCommands()
         val service = CommandRegistry(
-            TestPlatform(native).commandAdapter, TestPlatform(native), "Настроенный текст из config.yml",
+            TestPlatform(native).commandAdapter, TestPlatform(native), StandardCommandFeedback(deniedMessage = "Настроенный текст из config.yml"),
         )
         service.register(Any(), command("hello") {
             permission("example.hello")

@@ -74,33 +74,34 @@ class EventBusCommand(private val library: PnLibrary) {
             argument("page", ArgumentType.integer()) { executes { listeners.listeners(it, it.get<Int>("page")) } }
         }
         literal("slow") {
-            executes { listeners.slowOrErrors(it, 1, errors = false) }
-            argument("page", ArgumentType.integer()) { executes { listeners.slowOrErrors(it, it.get<Int>("page"), errors = false) } }
+            executes { listeners.slow(it, 1) }
+            argument("page", ArgumentType.integer()) { executes { listeners.slow(it, it.get<Int>("page")) } }
         }
         literal("top") {
-            executes { listeners.top(it, denied = false) }
-            literal("calls") { executes { listeners.top(it, denied = false) } }
-            literal("denied") { executes { listeners.top(it, denied = true) } }
+            executes { listeners.topCalls(it) }
+            literal("calls") { executes { listeners.topCalls(it) } }
+            literal("denied") { executes { listeners.topDenied(it) } }
         }
         literal("range") {
             executes { listeners.range(it, "24h") }
             RANGES.keys.forEach { word -> literal(word) { executes { listeners.range(it, word) } } }
         }
         literal("export") {
-            executes { listeners.export(it, json = false) }
-            literal("csv") { executes { listeners.export(it, json = false) } }
-            literal("json") { executes { listeners.export(it, json = true) } }
+            executes { listeners.exportCsv(it) }
+            literal("csv") { executes { listeners.exportCsv(it) } }
+            literal("json") { executes { listeners.exportJson(it) } }
         }
     }
+
     /** Listeners with errors and the listeners of one plugin. */
     private fun CommandBuilder.problemViews() {
         literal("errors") {
-            executes { listeners.slowOrErrors(it, 1, errors = true) }
-            argument("page", ArgumentType.integer()) { executes { listeners.slowOrErrors(it, it.get<Int>("page"), errors = true) } }
+            executes { listeners.errors(it, 1) }
+            argument("page", ArgumentType.integer()) { executes { listeners.errors(it, it.get<Int>("page")) } }
         }
         literal("plugin") {
             argument("id", ArgumentType.string()) {
-                suggests { bus.listeners().map { l -> l.plugin.toString() }.distinct() }
+                suggests { bus.listeners().map { it.plugin.toString() }.distinct() }
                 executes { listeners.pluginView(it, it.get<String>("id"), 1) }
                 argument("page", ArgumentType.integer()) { executes { listeners.pluginView(it, it.get<String>("id"), it.get<Int>("page")) } }
             }
@@ -115,12 +116,12 @@ class EventBusCommand(private val library: PnLibrary) {
             literal("off") {
                 argument("event", ArgumentType.string()) {
                     suggests { bus.tracedEvents().map(::shortName) }
-                    executes { events.switchTrace(it, it.get<String>("event"), on = false) }
+                    executes { events.stopTrace(it, it.get<String>("event")) }
                 }
             }
             argument("event", ArgumentType.string()) {
                 suggests { events.eventNames() }
-                executes { events.switchTrace(it, it.get<String>("event"), on = true) }
+                executes { events.startTrace(it, it.get<String>("event")) }
             }
         }
         literal("traces") {

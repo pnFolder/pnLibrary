@@ -10,6 +10,9 @@ import java.util.concurrent.TimeUnit
  */
 fun CompletionStage<List<String>>.suggestionsWithin(millis: Long): List<String> = try {
     toCompletableFuture().get(millis, TimeUnit.MILLISECONDS)
+} catch (_: InterruptedException) {
+    Thread.currentThread().interrupt()
+    emptyList()
 } catch (_: Exception) {
     emptyList()
 }

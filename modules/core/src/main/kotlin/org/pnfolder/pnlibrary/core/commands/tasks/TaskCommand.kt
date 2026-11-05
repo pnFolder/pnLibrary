@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.text.RussianText
+import org.pnfolder.pnlibrary.core.commands.chatPager
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
@@ -80,13 +81,16 @@ class TaskCommand(private val library: PnLibrary) {
 
     private fun kit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
-    private fun find(typed: String): TaskSnapshot? =
-        library.taskSnapshots().filter { it.id.value.startsWith(typed, ignoreCase = true) }.singleOrNull()
-
-    private fun missing(kit: ChatKit, typed: String): Component =
-        kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER)
-
-    // --- the list ------------------------------------------------------------------------------------------------
+    /** Runs [action] for the one task whose id starts with [typed], or says that there is no such single task. */
+    private fun withTask(context: CommandContext, typed: String, action: (ChatKit, TaskSnapshot) -> Unit) {
+        val kit = kit(context)
+        val task = library.taskSnapshots().singleOrNull { it.id.value.startsWith(typed, ignoreCase = true) }
+        if (task == null) {
+            context.sender.send(kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER))
+            return
+        }
+        action(kit, task)
+    }
 
     private fun list(context: CommandContext, period: TaskPeriod, state: TaskState, requestedPage: Int) {
         val kit = kit(context)
@@ -104,7 +108,7 @@ class TaskCommand(private val library: PnLibrary) {
         shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { lines += row(kit, it) }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, "$ROOT ${period.word} ${state.word}", page, pages)
+            lines += chatPager(kit, "$ROOT ${period.word} ${state.word}", page, pages)
         }
         if (!kit.reader.interactive) {
             lines += kit.blank()
@@ -167,15 +171,7 @@ class TaskCommand(private val library: PnLibrary) {
         return block.hoverEvent(kit.tooltip(*hover.toTypedArray())).clickEvent(ClickEvent.runCommand("$ROOT view ${task.id.value}"))
     }
 
-    // --- one task ------------------------------------------------------------------------------------------------
-
-    private fun view(context: CommandContext, typed: String) {
-        val kit = kit(context)
-        val task = find(typed)
-        if (task == null) {
-            context.sender.send(missing(kit, typed))
-            return
-        }
+    private fun view(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val lines = mutableListOf(
             kit.blank(),
             kit.header(TaskLabels.title(task), kit.bracketed(TaskLabels.label(task.status), TaskLabels.color(task.status))),
@@ -220,15 +216,7 @@ class TaskCommand(private val library: PnLibrary) {
         return kit.bracketed(label, ChatPalette.FAINT).hoverEvent(kit.tooltip(why))
     }
 
-    // --- run and cancel ------------------------------------------------------------------------------------------
-
-    private fun cancel(context: CommandContext, typed: String) {
-        val kit = kit(context)
-        val task = find(typed)
-        if (task == null) {
-            context.sender.send(missing(kit, typed))
-            return
-        }
+    private fun cancel(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val title = TaskLabels.title(task)
         context.sender.send(
             when (library.cancelTask(task.id.value)) {
@@ -239,13 +227,7 @@ class TaskCommand(private val library: PnLibrary) {
         )
     }
 
-    private fun run(context: CommandContext, typed: String) {
-        val kit = kit(context)
-        val task = find(typed)
-        if (task == null) {
-            context.sender.send(missing(kit, typed))
-            return
-        }
+    private fun run(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val title = TaskLabels.title(task)
         context.sender.send(
             when (library.runTaskNow(task.id.value)) {
@@ -254,14 +236,6 @@ class TaskCommand(private val library: PnLibrary) {
                 TaskControl.UNAVAILABLE -> kit.text("Задачу $title сейчас запустить нельзя: она не ждёт срока.", ChatPalette.SOFT)
             },
         )
-    }
-
-    private fun pager(kit: ChatKit, base: String, page: Int, pages: Int): Component {
-        fun link(target: Int, label: String) = kit.option(label, "$base $target", "Страница $target из $pages", ChatPalette.SOFT)
-        var line = kit.text("  ")
-        line = line.append(if (page > 1) link(page - 1, "‹ назад") else kit.text("[‹ назад]", ChatPalette.FAINT))
-        line = line.append(kit.text("  $page / $pages  ", ChatPalette.ACCENT))
-        return line.append(if (page < pages) link(page + 1, "дальше ›") else kit.text("[дальше ›]", ChatPalette.FAINT))
     }
 
     /** Constants of the `/pn tasks` command. */

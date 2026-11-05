@@ -5,12 +5,12 @@ import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.events.EventDay
 import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.commands.chatPager
 
 internal class BusHistoryPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
@@ -27,24 +27,24 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         val page = requestedPage.coerceIn(1, pages)
         val shown = days.drop((page - 1) * DAYS_PER_PAGE).take(DAYS_PER_PAGE)
         val keep = bus.historyDays
-        val details = if (keep == 0) "выключена" else "хранится $keep ${RussianText.plural(keep.toLong(), "день", "дня", "дней")}"
+        val details = if (keep <= 0) "выключена" else "хранится $keep ${RussianText.plural(keep.toLong(), "день", "дня", "дней")}"
         val lines = mutableListOf(
             kit.blank(),
             kit.header(if (name == null) "История вызовов" else "История: ${shortName(name)}", kit.text(details, ChatPalette.LABEL)),
             kit.blank(),
         )
-        if (keep == 0) lines += kit.note("История отключена в коде (eventHistoryDays = 0).")
+        if (keep <= 0) lines += kit.note("История отключена в коде (eventHistoryDays = 0).")
         else if (shown.isEmpty()) lines += kit.note("За это время вызовов не было.")
         val busiest = shown.maxOfOrNull { (_, entries) -> entries.sumOf { it.calls } } ?: 1L
         val today = java.time.LocalDate.now(DisplayZone.zone)
         shown.forEach { (date, entries) -> lines += dayRow(kit, date, today, entries, busiest, name) }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, if (name == null) "$ROOT history" else "$ROOT history of $name", page, pages)
+            lines += chatPager(kit, if (name == null) "$ROOT history" else "$ROOT history of $name", page, pages)
         }
         if (name == null && shown.isNotEmpty()) lines += kit.note("Нажмите на день, чтобы увидеть его события.", ChatPalette.FAINT)
         lines += kit.blank()
-        lines += footer(kit, ROOT, kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT))
+        lines += footer(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 
@@ -102,10 +102,10 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         entries.drop((page - 1) * EVENTS_PER_PAGE).take(EVENTS_PER_PAGE).forEach { lines += historyRow(kit, it, busiest) }
         if (pages > 1) {
             lines += kit.blank()
-            lines += pager(kit, "$ROOT history day $date", page, pages)
+            lines += chatPager(kit, "$ROOT history day $date", page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, ROOT, kit.button("назад", "$ROOT history", "К списку дней", ChatPalette.ACCENT))
+        lines += footer(kit, kit.button("назад", "$ROOT history", "К списку дней", ChatPalette.ACCENT))
         lines.forEach(context.sender::send)
     }
 
