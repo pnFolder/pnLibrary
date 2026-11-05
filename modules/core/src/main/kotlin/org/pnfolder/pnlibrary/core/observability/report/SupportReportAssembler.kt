@@ -134,7 +134,7 @@ internal class SupportReportAssembler(
             val root = registered.dataDirectory ?: dataFolder
             val directory = "plugins/${safePath(registered.plugin)}/configuration/"
             if (encrypted) {
-                val file = configurations.readExactFile(registered.configuration, root)
+                val file = configurations.readProtectedFile(registered.configuration, root)
                 val path = safeConfigurationPath(file.path)
                 if (file.error == null) {
                     archive.bytes(directory + path, requireNotNull(file.content))
