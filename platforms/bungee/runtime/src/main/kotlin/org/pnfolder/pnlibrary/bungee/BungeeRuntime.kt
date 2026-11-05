@@ -49,7 +49,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     /** Opens the link to the game servers, registers `/pnproxy` on it and, when it is secured, starts announcing this proxy. */
     private fun connectLink(started: PnLibraryRuntimeHost) {
         val folder = plugin.dataFolder.toPath()
-        val transport = LinkTransport { name, bytes -> plugin.proxy.getServerInfo(name)?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
+        val transport = LinkTransport { name, bytes -> plugin.proxy.servers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false }
         val network = Link(LinkSecret.readOrCreate(folder), folder, transport)
         val control = ProxyControlCommand(started.library, network)
         control.register()
