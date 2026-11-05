@@ -5,16 +5,8 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
-import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.LinkReceiver
-import org.pnfolder.pnlibrary.core.link.LinkSecret
-import org.pnfolder.pnlibrary.core.link.LinkTransport
-import org.pnfolder.pnlibrary.core.link.NetworkPublisher
-import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
-import org.pnfolder.pnlibrary.core.menu.ProxyMenu
+import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
@@ -37,7 +29,7 @@ internal class VelocityRuntime(
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var playerEvents: VelocityPlayerEvents? = null
     private var linkListener: VelocityLinkListener? = null
-    private var menuData: MenuDataServer? = null
+    private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
 
     /**
@@ -48,6 +40,16 @@ internal class VelocityRuntime(
     @Suppress("UNUSED_PARAMETER")
     fun onInitialize(event: ProxyInitializeEvent) {
         check(runtimeHost == null) { "Velocity runtime is already initialized" }
+        try {
+            open()
+        } catch (error: Throwable) {
+            // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
+            runCatchingNonFatal(::close)
+            throw error
+        }
+    }
+
+    private fun open() {
         val adapter = VelocityPlatformAdapter(
             plugin = owner,
             proxy = server,
@@ -69,36 +71,35 @@ internal class VelocityRuntime(
         connectLink(started)
     }
 
-    /** Opens the link to the game servers, registers `/pnproxy` on it and, when it is secured, starts announcing this proxy. */
+    /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
     private fun connectLink(started: PnLibraryRuntimeHost) {
-        val transport = LinkTransport { name, bytes ->
-            server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
-        }
-        val network = Link(LinkSecret.readOrCreate(dataDirectory, logger::warn), dataDirectory, transport)
-        val control = ProxyControlCommand(started.library, network)
-        control.register()
-        val data = ProxyMenu.server(started.library, network, control) { instance ->
-            instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
-                OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
-            }
-        }
-        menuData = data
-        val link = VelocityLinkListener(LinkReceiver(network, RemoteExecutor(started.library), data))
+        val proxyLink = ProxyLink(
+            library = started.library,
+            folder = dataDirectory,
+            warn = logger::warn,
+            transport = { name, bytes ->
+                server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
+            },
+            describe = { instance ->
+                instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
+                    OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
+                }
+            },
+            platformName = { "Velocity ${server.version.version}" },
+            players = { server.playerCount },
+            broadcast = { message -> server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } } },
+        )
+        link = proxyLink
+        val listener = VelocityLinkListener(proxyLink.receiver)
         server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
-        server.eventManager.register(owner, link)
-        linkListener = link
-        if (network.enabled) {
-            val publisher = NetworkPublisher(started.library, network, { "Velocity ${server.version.version}" }, { server.playerCount })
-            networkTask = server.scheduler.buildTask(owner, Runnable {
-                val message = publisher.message()
-                server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } }
-            }).delay(NETWORK_DELAY_SECONDS, TimeUnit.SECONDS).repeat(NETWORK_PERIOD_SECONDS, TimeUnit.SECONDS).schedule()
+        server.eventManager.register(owner, listener)
+        linkListener = listener
+        if (proxyLink.announces) {
+            networkTask = server.scheduler.buildTask(owner, Runnable(proxyLink::announce))
+                .delay(ProxyLink.NETWORK_DELAY_SECONDS, TimeUnit.SECONDS)
+                .repeat(ProxyLink.NETWORK_PERIOD_SECONDS, TimeUnit.SECONDS)
+                .schedule()
         }
-    }
-
-    private companion object {
-        const val NETWORK_DELAY_SECONDS = 10L
-        const val NETWORK_PERIOD_SECONDS = 30L
     }
 
     /**
@@ -107,15 +108,17 @@ internal class VelocityRuntime(
      * @param event lifecycle signal supplied by Velocity; its payload is not required
      */
     @Suppress("UNUSED_PARAMETER")
-    fun onShutdown(event: ProxyShutdownEvent) {
+    fun onShutdown(event: ProxyShutdownEvent) = close()
+
+    private fun close() {
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
         networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null
-        menuData?.let { runCatchingNonFatal(it::close) }
-        menuData = null
+        link?.let { runCatchingNonFatal(it::close) }
+        link = null
         runCatchingNonFatal { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
         val host = runtimeHost
         runtimeHost = null

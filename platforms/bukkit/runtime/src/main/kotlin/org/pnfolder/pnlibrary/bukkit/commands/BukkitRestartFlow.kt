@@ -46,7 +46,7 @@ internal class BukkitRestartFlow(
         fun command(action: UpdateAction) =
             BukkitControlCommand.confirmCommand(tokens.issue(identityOf(sender), plan, revision, action, CONFIRMATION_TIME))
         val script = if (restarter.script() == null) {
-            "Скрипт перезапуска (restart-script в spigot.yml) не найден: сервер остановится, запустите его сами."
+            "restart-script в spigot.yml не задан: сервер остановится и поднимется, только если его запустит панель или скрипт автозапуска."
         } else {
             "Сервер поднимется сам."
         }

@@ -13,8 +13,9 @@ import java.io.File
 /**
  * Restarts the server so staged updates apply: at once, after a countdown the players see, or when nobody is online.
  *
- * A restart needs a script that starts the server again (`restart-script` in `spigot.yml`). When that script is
- * missing the server cannot come back by itself, so it is stopped cleanly and the administrator is told to start it.
+ * With `restart-script` in `spigot.yml` the server restarts itself. Without it the server is stopped cleanly and
+ * comes back only if something outside starts it again (a hosting panel, a `start.sh` loop, Pterodactyl); the library
+ * cannot tell which, so it says so without calling it a problem.
  * Only one restart can be waiting; a new request replaces it and [cancel] withdraws it.
  */
 internal class ServerRestarter(private val plugin: Plugin, private val scheduler: ServerScheduler, private val log: () -> PnLogger) {
@@ -72,10 +73,10 @@ internal class ServerRestarter(private val plugin: Plugin, private val scheduler
             announce("Сервер перезапускается для применения обновлений.")
             Bukkit.spigot().restart()
         } else {
-            announce("Сервер останавливается для применения обновлений. Запустите его снова.")
-            log().warning(
-                "restart-script in spigot.yml is not set or its file is missing, so the server cannot start itself again: " +
-                    "stopping it. Start it manually, or point restart-script at your start script (for example ./start.bat).",
+            announce("Сервер останавливается для применения обновлений. Если у него есть автозапуск, он включится сам.")
+            log().info(
+                "restart-script in spigot.yml is not set, so the server only stops: a hosting panel or a start script that " +
+                    "loops starts it again. Without one, start it manually, or point restart-script at your start script.",
             )
             Bukkit.shutdown()
         }
