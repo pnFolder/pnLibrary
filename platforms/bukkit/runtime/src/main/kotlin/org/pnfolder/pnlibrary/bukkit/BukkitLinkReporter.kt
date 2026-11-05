@@ -54,7 +54,10 @@ internal class BukkitLinkReporter(
         }
         LinkCodec.decodeRequest(message, key)?.let { request ->
             executor.run(request) { result ->
-                scheduler.nextTick { player.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key)) }
+                scheduler.nextTick {
+                    val sender = if (player.isOnline) player else Bukkit.getOnlinePlayers().firstOrNull()
+                    sender?.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key))
+                }
             }
             return
         }
