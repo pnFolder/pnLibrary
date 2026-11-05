@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
-import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.IdentityHashMap
@@ -69,21 +68,12 @@ class ConfigurationServiceImpl(
         }.forEach { it.close() }
     }
 
-    private fun ownerDirectory(owner: Any): Path = try {
-        val value = owner.javaClass.getMethod("getDataFolder").invoke(owner)
-        (value as File).toPath()
-    } catch (_: ReflectiveOperationException) {
-        // Owners without a Bukkit-style data folder use the conventional plugins/<id> directory.
-        val id = platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName
-        Paths.get("plugins", id)
-    }
+    // Platforms without per-plugin folders (Velocity) get the conventional plugins/<id> directory.
+    private fun ownerDirectory(owner: Any): Path =
+        platform.ownerDataFolder(owner) ?: Paths.get("plugins", platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
 
-    private fun ownerLogger(owner: Any): Logger = try {
-        owner.javaClass.getMethod("getLogger").invoke(owner) as Logger
-    } catch (_: Exception) {
-        // Owners without their own logger get a JUL logger named after the owner.
-        Logger.getLogger(platform.ownerDetails(owner)["id"] ?: owner.javaClass.name)
-    }
+    private fun ownerLogger(owner: Any): Logger =
+        platform.ownerLogger(owner) ?: Logger.getLogger(platform.ownerDetails(owner)["id"] ?: owner.javaClass.name)
 
     private inner class Scope(
         private val owner: Any,

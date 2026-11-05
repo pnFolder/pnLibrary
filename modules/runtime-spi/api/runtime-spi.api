@@ -178,7 +178,9 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwne
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwnerMetadata {
 	public fun acceptsOwner (Ljava/lang/Object;)Z
+	public fun ownerDataFolder (Ljava/lang/Object;)Ljava/nio/file/Path;
 	public fun ownerDetails (Ljava/lang/Object;)Ljava/util/Map;
+	public fun ownerLogger (Ljava/lang/Object;)Ljava/util/logging/Logger;
 	public fun ownerMetadata (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
 }
 

@@ -56,7 +56,6 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdownPlan
-import org.pnfolder.pnlibrary.core.runtime.platform.PlatformDataFolderResolver
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
@@ -64,6 +63,7 @@ import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.ZoneId
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
@@ -85,7 +85,9 @@ internal class PnLibraryImpl(
     override val configuration: PnLibraryConfig get() = config
     override val isClosed: Boolean get() = closedFlag.get()
     override val version: String = platform.ownership.ownerDetails(owner)["version"] ?: "unknown"
-    val dataFolder: Path = PlatformDataFolderResolver.resolve(owner, platform.dataFolder)
+    val dataFolder: Path = platform.dataFolder
+        ?: platform.ownership.ownerDataFolder(owner)
+        ?: Paths.get("plugins", owner.javaClass.simpleName)
 
     init {
         DisplayZone.zone = ZoneId.of(config.timeZone)

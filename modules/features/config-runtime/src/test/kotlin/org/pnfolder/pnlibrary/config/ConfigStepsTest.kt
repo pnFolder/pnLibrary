@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigSteps
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
 import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -47,7 +46,7 @@ class ConfigStepsTest {
     @TempDir lateinit var directory: Path
 
     private fun open(steps: ConfigSteps<*>): ManagedConfig<StepSettings> {
-        val service = ConfigurationServiceImpl(object : PlatformOwnership {})
+        val service = ConfigurationServiceImpl(FakeOwnerPlatform)
         val scope = service.scope(FakeConfigOwner(directory.toFile()), PluginId.of("steps"))
         val options = ConfigOptions.builder().migrations(steps).build()
         return scope.yaml("settings.yml", options) { StepSettings() }

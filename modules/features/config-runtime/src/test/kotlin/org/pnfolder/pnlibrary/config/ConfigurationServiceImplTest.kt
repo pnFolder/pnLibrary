@@ -19,10 +19,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.logging.Logger
 
-/** Plugin-like owner exposing the Bukkit-style accessors the service looks for. */
-class FakeConfigOwner(private val folder: File) {
-    fun getDataFolder(): File = folder
-    fun getLogger(): Logger = Logger.getLogger("fake-owner")
+/** A plugin as the tests see it: a folder and a logger. */
+class FakeConfigOwner(val folder: File) {
+    val logger: Logger = Logger.getLogger("fake-owner")
+}
+
+/** The platform of [FakeConfigOwner]: it gives each owner its own folder and logger. */
+object FakeOwnerPlatform : PlatformOwnership {
+    override fun ownerDataFolder(owner: Any): Path? = (owner as? FakeConfigOwner)?.folder?.toPath()
+
+    override fun ownerLogger(owner: Any): Logger? = (owner as? FakeConfigOwner)?.logger
 }
 
 data class ServiceSettings(
@@ -34,7 +40,7 @@ data class ServiceSettings(
 class ConfigurationServiceImplTest {
     @TempDir lateinit var directory: Path
 
-    private fun service() = ConfigurationServiceImpl(object : PlatformOwnership {})
+    private fun service() = ConfigurationServiceImpl(FakeOwnerPlatform)
 
     private fun scope(service: ConfigurationServiceImpl) =
         service.scope(FakeConfigOwner(directory.toFile()), PluginId.of("tester"))

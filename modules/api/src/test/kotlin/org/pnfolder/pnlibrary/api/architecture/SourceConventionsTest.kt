@@ -121,7 +121,7 @@ class SourceConventionsTest {
             "modules/core/src/main/kotlin/org/pnfolder/pnlibrary/core/menu/MenuColors.kt",
             "modules/features/currency-api/src/main/kotlin/org/pnfolder/pnlibrary/api/currency/CurrencyCommandSettings.kt",
             "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/item/ItemText.kt",
-            "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/commands/MenuHeads.kt",
+            "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/commands/HexColors.kt",
             "platforms/bukkit/runtime/src/main/kotlin/org/pnfolder/pnlibrary/bukkit/commands/PluginsMenu.kt",
         )
     }

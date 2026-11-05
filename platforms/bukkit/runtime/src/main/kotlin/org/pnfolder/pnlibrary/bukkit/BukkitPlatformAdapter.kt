@@ -29,8 +29,10 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
 import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * Runtime adapter for Bukkit-compatible Minecraft servers.
@@ -104,6 +106,10 @@ internal class BukkitPlatformAdapter(
 
     /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
+
+    override fun ownerDataFolder(owner: Any): Path? = plugins.find(owner)?.dataFolder?.toPath()
+
+    override fun ownerLogger(owner: Any): Logger? = plugins.find(owner)?.logger
 
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 

@@ -34,8 +34,8 @@ internal class BukkitMenuAdapter(private val plugin: Plugin, private val library
 
     /** The stack for [spec]: the head when the server can make one, otherwise the ordinary item. */
     fun stack(spec: ItemSpec): ItemStack {
-        val name = MenuHeads.downgrade(spec.name)
-        val lore = spec.lore.map(MenuHeads::downgrade)
+        val name = HexColors.downgrade(spec.name)
+        val lore = spec.lore.map(HexColors::downgrade)
         val head = spec.texture?.let { MenuHeads.head(it) }
         val base = head ?: ItemStack(listOfNotNull(spec.material, spec.alternative).firstNotNullOfOrNull(::resolve) ?: Material.PAPER)
         if (head == null && spec.legacyData != 0.toShort() && base.type.name in LEGACY_GLASS) base.durability = spec.legacyData

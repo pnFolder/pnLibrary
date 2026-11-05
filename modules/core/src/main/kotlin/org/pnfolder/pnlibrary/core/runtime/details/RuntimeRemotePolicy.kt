@@ -51,7 +51,8 @@ internal object RuntimeRemotePolicy {
         val monitor = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform))
         val startup = monitor.checkAtStartup(owner, metadata, policy, logger, policy.startupTimeout)
         if (startup == null) {
-            val guarded = try { platform.disableDependents(owner) } catch (_: Throwable) { false }
+            // Falling back to disabling the owner is safe; only fatal JVM errors must not be swallowed here.
+            val guarded = runCatchingNonFatal { platform.disableDependents(owner) }.getOrDefault(false)
             if (!guarded) runCatchingNonFatal { platform.disableOwner(owner) }
             throw PolicyDeniedException("${metadata.name} ${metadata.version}")
         }
