@@ -20,7 +20,6 @@ internal data class UploadReceipt(
     val expiresEpochSeconds: Long,
     val backend: String,
 ) {
-    /** Returns `true` when a deletion token is available. */
     fun canDelete(): Boolean = deleteToken.isNotBlank()
 
     override fun toString(): String = link.toString()

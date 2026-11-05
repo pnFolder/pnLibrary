@@ -37,7 +37,6 @@ internal class DownloadSettings {
         var cache: Boolean = true
     }
 
-    /** Converts the file model to the immutable runtime policy. */
     fun toConfiguration(): DownloadConfiguration = DownloadConfiguration(
         enabled = enabled,
         automatic = automatic,

@@ -8,12 +8,6 @@ public class SimplePie extends CustomChart {
 
     private final Callable<String> callable;
 
-    /**
-     * Class constructor.
-     *
-     * @param chartId The id of the chart.
-     * @param callable The callable which is used to request the chart data.
-     */
     public SimplePie(String chartId, Callable<String> callable) {
         super(chartId);
         this.callable = callable;

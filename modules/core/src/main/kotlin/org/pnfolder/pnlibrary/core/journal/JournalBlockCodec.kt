@@ -27,7 +27,6 @@ internal object JournalBlockCodec {
     private const val HEADER_BYTES = 8
     private const val MAX_PAYLOAD_BYTES = 16 * 1024 * 1024
 
-    /** Encodes [records] as one complete block. */
     fun encode(records: List<JournalRecord>): ByteArray {
         val raw = ByteArrayOutputStream()
         GZIPOutputStream(raw).use { gzip ->
