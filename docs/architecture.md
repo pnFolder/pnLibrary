@@ -113,7 +113,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `core.upload` | загрузка зашифрованных отчётов |
 | `core.updates.catalog` | страницы и команды каталога обновлений |
 | `core.updates.service` | сервис обновлений и оркестратор |
-| `core.updates.policy` | `updates.yml`, каналы, автозагрузка, переопределения |
+| `core.updates.policy` | каналы, автозагрузка, переопределения команд |
 | `core.updates.install` | подбор версий, подготовка, установка, офлайн-установщик |
 | `core.updates.history` | журнал обновлений, состояние, снимки конфигов |
 | `core.updates.engine` | каталоги релизов, загрузка, проверка, транзакции, пауза |
