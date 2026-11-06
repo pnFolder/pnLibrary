@@ -129,23 +129,27 @@ class LibraryLoaderTest {
 
     @Test
     void newJavaGetsTheNewCompilerAndOldJavaTheOldOne() {
-        LibraryManager modern = mock(LibraryManager.class);
-        LibraryManager legacy = mock(LibraryManager.class);
-
-        LibraryLoader.loadCompiler(modern, 21);
-        LibraryLoader.loadCompiler(legacy, 11);
-
-        verify(modern).loadLibrary(RuntimeLibraries.COMPILER_MODERN[0]);
-        verify(legacy).loadLibrary(RuntimeLibraries.COMPILER_LEGACY[0]);
+        assertSame(RuntimeLibraries.COMPILER_MODERN, LibraryLoader.librariesFor("compiler", 21));
+        assertSame(RuntimeLibraries.COMPILER_LEGACY, LibraryLoader.librariesFor("compiler", 11));
     }
 
     @Test
-    void aCompilerThatCannotBeLoadedDoesNotStopTheServer() {
+    void optionalGroupsAreLoadedOnlyWhenAsked() {
         LibraryManager manager = mock(LibraryManager.class);
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
+        verify(manager, never()).loadLibrary(RuntimeLibraries.DRIVER_MYSQL[0]);
+
+        assertEquals(true, LibraryLoader.loadOptional("mysql"));
+        verify(manager).loadLibrary(RuntimeLibraries.DRIVER_MYSQL[0]);
+        assertEquals(false, LibraryLoader.loadOptional("nothing"));
+    }
+
+    @Test
+    void anOptionalLibraryThatCannotBeLoadedDoesNotThrow() {
+        LibraryManager manager = mock(LibraryManager.class);
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
         doThrow(new RuntimeException("offline")).when(manager).loadLibrary(any(Library.class));
 
-        LibraryLoader.loadCompiler(manager, 21);
-
-        verify(manager, times(1)).loadLibrary(any(Library.class));
+        assertEquals(false, LibraryLoader.loadOptional("compiler"));
     }
 }

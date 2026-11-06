@@ -4,20 +4,21 @@ import net.byteflux.libby.Library;
 import net.byteflux.libby.LibraryManager;
 
 /**
- * Loads a database driver through Libby the first time a backup needs it. A driver is never loaded at start:
- * most servers keep no database that pnLibrary backs up.
+ * Loads a library through Libby the first time something needs it: a database driver, the policy compiler. It is never
+ * loaded at start,
+ * because most servers never need it.
  */
-final class DriverLoader {
+final class OptionalLoader {
     private final LibraryManager manager;
     private final LibrarySettings settings;
 
-    DriverLoader(LibraryManager manager, LibrarySettings settings) {
+    OptionalLoader(LibraryManager manager, LibrarySettings settings) {
         this.manager = manager;
         this.settings = settings;
     }
 
-    /** One attempt only: the backup reports a missing driver itself, and an offline server must not wait. */
-    boolean load(Library[] driver) {
+    /** One attempt only: the caller reports a missing library itself, and an offline server must not wait. */
+    boolean load(Library[] libraries) {
         for (String repository : settings.repositories()) {
             manager.addRepository(repository);
         }
@@ -28,7 +29,7 @@ final class DriverLoader {
             manager.addRepository(fallback);
         }
         try {
-            for (Library library : driver) {
+            for (Library library : libraries) {
                 manager.loadLibrary(library);
             }
             return true;

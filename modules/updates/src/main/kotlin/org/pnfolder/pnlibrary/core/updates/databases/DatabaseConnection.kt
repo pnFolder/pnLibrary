@@ -1,15 +1,26 @@
 package org.pnfolder.pnlibrary.core.updates.databases
 
+import org.pnfolder.pnlibrary.api.config.DatabaseKind
 import org.pnfolder.pnlibrary.api.config.DatabaseRole
 import org.pnfolder.pnlibrary.common.io.TextFiles
 import org.yaml.snakeyaml.Yaml
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 
-/** How to reach a database, read from the plugin's own configuration file at the moment it is needed. */
-class DatabaseConnection(val host: String, val port: Int, val database: String, val user: String, val password: String) {
+/**
+ * How to reach a database, read from the plugin's own configuration file at the moment it is needed.
+ * @property uri a full connection string, when the plugin keeps one; it replaces host, port, user and password
+ */
+class DatabaseConnection(
+    val host: String,
+    val port: Int,
+    val database: String,
+    val user: String,
+    val password: String,
+    val uri: String? = null,
+) {
     /** The password is left out so a connection never reaches a log by accident. */
-    override fun toString(): String = "$user@$host:$port/$database"
+    override fun toString(): String = if (uri != null) "uri/$database" else "$user@$host:$port/$database"
 
     companion object {
         /** Names tried for a field that carries no `@DatabaseField`. */
@@ -19,6 +30,7 @@ class DatabaseConnection(val host: String, val port: Int, val database: String, 
             DatabaseRole.DATABASE to listOf("database", "db", "name"),
             DatabaseRole.USER to listOf("user", "username"),
             DatabaseRole.PASSWORD to listOf("password", "pass"),
+            DatabaseRole.URI to listOf("uri", "url", "connection-string"),
         )
 
         fun read(source: DatabaseSource): DatabaseConnection {
@@ -31,11 +43,15 @@ class DatabaseConnection(val host: String, val port: Int, val database: String, 
                 val keys = source.keys[role]?.let(::listOf) ?: USUAL.getValue(role)
                 return keys.firstNotNullOfOrNull { section[it]?.toString()?.takeIf(String::isNotBlank) }
             }
+            val mongo = source.kind == DatabaseKind.MONGODB
+            val uri = if (mongo) text(DatabaseRole.URI) else null
+            val database = text(DatabaseRole.DATABASE) ?: missing(source, "database")
+            if (uri != null) return DatabaseConnection("", 0, database, "", "", uri)
             return DatabaseConnection(
                 host = text(DatabaseRole.HOST) ?: missing(source, "host"),
-                port = text(DatabaseRole.PORT)?.toIntOrNull() ?: 3306,
-                database = text(DatabaseRole.DATABASE) ?: missing(source, "database"),
-                user = text(DatabaseRole.USER) ?: missing(source, "user"),
+                port = text(DatabaseRole.PORT)?.toIntOrNull() ?: if (mongo) 27017 else 3306,
+                database = database,
+                user = text(DatabaseRole.USER) ?: if (mongo) "" else missing(source, "user"),
                 password = text(DatabaseRole.PASSWORD) ?: "",
             )
         }

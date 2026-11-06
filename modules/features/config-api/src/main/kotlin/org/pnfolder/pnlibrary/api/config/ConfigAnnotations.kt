@@ -196,6 +196,9 @@ annotation class ConfigType(
 enum class DatabaseKind {
     /** MySQL and MariaDB. */
     MYSQL,
+
+    /** MongoDB; documents are copied with their indexes, without a snapshot in time. */
+    MONGODB,
 }
 
 /**
@@ -226,6 +229,9 @@ enum class DatabaseRole {
     DATABASE,
     USER,
     PASSWORD,
+
+    /** A full connection string such as `mongodb://user:pass@host/db`; when present it replaces host, port, user and password. */
+    URI,
 }
 
 /**

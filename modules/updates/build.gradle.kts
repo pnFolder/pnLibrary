@@ -80,6 +80,8 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
+    // Loaded through Libby the first time a MongoDB backup needs it; never packed.
+    compileOnly(libs.mongodb.driver.sync)
     implementation(libs.adventure.minimessage)
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.gson)

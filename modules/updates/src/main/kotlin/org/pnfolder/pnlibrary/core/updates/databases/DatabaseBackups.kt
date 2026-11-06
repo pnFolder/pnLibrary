@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.databases
 
+import org.pnfolder.pnlibrary.api.config.DatabaseKind
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
@@ -14,13 +15,13 @@ import java.util.stream.Collectors
 
 /**
  * Copies the databases plugins marked with `@BackupDatabase` before an update and puts them back on request.
- * Copies live in `<folder>/<plan>/<plugin>/<name>.sql.gz`; before a restore the current state is copied too, so a
+ * Copies live in `<folder>/<plan>/<plugin>/<name>.db.gz`; before a restore the current state is copied too, so a
  * restore can itself be undone.
  */
 internal class DatabaseBackups(
     private val folder: Path,
     private val sources: DatabaseSources,
-    private val connections: MysqlConnections = MysqlConnections(),
+    private val engines: Map<DatabaseKind, DatabaseEngine> = mapOf(DatabaseKind.MYSQL to MysqlEngine(), DatabaseKind.MONGODB to MongoEngine()),
 ) {
     /** Copies every marked database of [plugins]. A failure stops the update: it would run without its safety copy. */
     fun copyBefore(plan: UUID, plugins: Collection<String>) {
@@ -60,13 +61,16 @@ internal class DatabaseBackups(
         Files.createDirectories(before.parent)
         dump(source, before)
         val connection = DatabaseConnection.read(source)
-        connections.open(connection).use { MysqlRestore().read(it, saved) }
+        engineOf(source).restore(connection, saved)
     }
 
     private fun dump(source: DatabaseSource, target: Path) {
         val connection = DatabaseConnection.read(source)
-        connections.open(connection).use { MysqlDump().write(it, target) }
+        engineOf(source).dump(connection, target)
     }
+
+    private fun engineOf(source: DatabaseSource): DatabaseEngine =
+        engines[source.kind] ?: error("Базы ${source.kind} пока не поддерживаются")
 
     private fun file(plan: UUID, plugin: String, name: String): Path =
         folder.resolve(plan.toString()).resolve(plugin).resolve(URLEncoder.encode(name, "UTF-8") + SUFFIX)
@@ -74,7 +78,7 @@ internal class DatabaseBackups(
     private fun nameOf(path: Path): String = URLDecoder.decode(path.fileName.toString().removeSuffix(SUFFIX), "UTF-8")
 
     private companion object {
-        const val SUFFIX = ".sql.gz"
+        const val SUFFIX = ".db.gz"
         const val BEFORE_RESTORE = "before-restore"
     }
 }

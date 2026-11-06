@@ -53,4 +53,11 @@ class DatabaseConnectionTest {
         val error = assertThrows(IllegalStateException::class.java) { DatabaseConnection.read(source("storage:\n  host: h\n", "storage")) }
         assertEquals(true, error.message!!.contains("Кланы"))
     }
+
+    @Test
+    fun `a mongo connection may be a single connection string or parts without a user`() {
+        fun mongo(yaml: String) = source(yaml, "mongo").let { DatabaseSource(it.plugin, DatabaseKind.MONGODB, it.name, it.file, it.path, it.keys) }
+        assertEquals("uri/clans", DatabaseConnection.read(mongo("mongo:\n  uri: mongodb://u:p@h/clans\n  database: clans\n")).toString())
+        assertEquals("@h:27017/clans", DatabaseConnection.read(mongo("mongo:\n  host: h\n  database: clans\n")).toString())
+    }
 }
