@@ -49,7 +49,11 @@ class DatabaseConnection(
             if (uri != null) return DatabaseConnection("", 0, database, "", "", uri)
             return DatabaseConnection(
                 host = text(DatabaseRole.HOST) ?: missing(source, "host"),
-                port = text(DatabaseRole.PORT)?.toIntOrNull() ?: if (mongo) 27017 else 3306,
+                port = text(DatabaseRole.PORT)?.toIntOrNull() ?: when (source.kind) {
+                    DatabaseKind.MONGODB -> 27017
+                    DatabaseKind.POSTGRESQL -> 5432
+                    DatabaseKind.MYSQL -> 3306
+                },
                 database = database,
                 user = text(DatabaseRole.USER) ?: if (mongo) "" else missing(source, "user"),
                 password = text(DatabaseRole.PASSWORD) ?: "",

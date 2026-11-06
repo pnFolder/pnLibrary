@@ -48,7 +48,7 @@ public final class LibraryLoader {
     }
 
     /**
-     * Loads an optional library group the first time it is needed: {@code mysql}, {@code mongo} or {@code compiler}.
+     * Loads an optional library group the first time it is needed: {@code mysql}, {@code postgres}, {@code mongo} or {@code compiler}.
      * Returns false when it cannot be loaded, for example offline; the caller says what is missing. Called by name
      * from the runtime, which cannot see this module.
      */
@@ -62,6 +62,8 @@ public final class LibraryLoader {
         switch (id) {
             case "mysql":
                 return RuntimeLibraries.DRIVER_MYSQL;
+            case "postgres":
+                return RuntimeLibraries.DRIVER_POSTGRES;
             case "mongo":
                 return RuntimeLibraries.DRIVER_MONGO;
             case "compiler":

@@ -40,6 +40,7 @@ val platformLibraries: Map<String, List<Root>> = mapOf(
     // Loaded the first time a database backup needs it, never at start.
     "DRIVER_MYSQL" to listOf(lib(libs.mariadb.jdbc)),
     "DRIVER_MONGO" to listOf(lib(libs.mongodb.driver.sync)),
+    "DRIVER_POSTGRES" to listOf(lib(libs.postgresql.jdbc)),
 )
 val skippedGroups = listOf("com.google")
 

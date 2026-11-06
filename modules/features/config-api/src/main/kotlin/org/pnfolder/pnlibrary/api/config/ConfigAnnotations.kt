@@ -199,6 +199,9 @@ enum class DatabaseKind {
 
     /** MongoDB; documents are copied with their indexes, without a snapshot in time. */
     MONGODB,
+
+    /** PostgreSQL; tables of the current schema are copied with indexes, constraints and sequences. */
+    POSTGRESQL,
 }
 
 /**

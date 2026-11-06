@@ -26,6 +26,7 @@
   в чат администраторам (Bukkit), без обращения к GitHub. Администратор их не отключает.
 - В шапке `config.yml` на русском и английском перечислены все команды и права; тест сверяет её с `plugin.yml`.
 - Резервные копии с типом и именем (`BackupKind`: конфигурация, база данных, данные игроков, прочее; `PluginUpdateRequest.Builder.backup`). Наборы хранятся 30 дней, при 500 МБ и больше в консоль идёт предупреждение; удалить: `/pn updates backups delete <id>` (`UpdateService.deleteBackup`). Напоминания в чат админам теперь и на Velocity/BungeeCord.
+- PostgreSQL: `DatabaseKind.POSTGRESQL` (копия таблиц текущей схемы с индексами, ограничениями и последовательностями).
 - MongoDB: `DatabaseKind.MONGODB`, `DatabaseRole.URI`. Необязательные библиотеки (драйверы баз, компилятор ECJ) скачиваются через Libby только в момент первого использования (`LibraryLoader.loadOptional`, `OptionalLibrary`), а не на старте.
 - Базы MySQL/MariaDB: `@BackupDatabase`, `@DatabaseField`, `DatabaseKind`. Библиотека копирует базу перед обновлением; вернуть её можно кнопкой в меню отката (с предупреждением о потере данных) или `/pn updates backups restore` (`UpdateService.restoreDatabase`). Драйвер грузится через Libby при первой копии.
 - `PluginUpdateRequest.Builder.backupExport`: плагин сам выгружает данные (например MySQL) перед обновлением; файл хранится с набором, откат его не восстанавливает.

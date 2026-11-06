@@ -81,7 +81,9 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
         return if (type in NUMBER_TYPES) text else MysqlSyntax.literal(text)
     }
 
-    private companion object {
+    companion object {
+        const val HEADER = "-- pnlibrary-db 1"
+
         const val FETCH_ROWS = 1000
         const val ROWS_PER_INSERT = 200
         val BINARY_TYPES = setOf(Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB)

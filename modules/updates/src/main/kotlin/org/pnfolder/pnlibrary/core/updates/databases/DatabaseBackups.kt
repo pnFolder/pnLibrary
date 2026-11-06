@@ -21,7 +21,11 @@ import java.util.stream.Collectors
 internal class DatabaseBackups(
     private val folder: Path,
     private val sources: DatabaseSources,
-    private val engines: Map<DatabaseKind, DatabaseEngine> = mapOf(DatabaseKind.MYSQL to MysqlEngine(), DatabaseKind.MONGODB to MongoEngine()),
+    private val engines: Map<DatabaseKind, DatabaseEngine> = mapOf(
+        DatabaseKind.MYSQL to MysqlEngine(),
+        DatabaseKind.POSTGRESQL to PostgresEngine(),
+        DatabaseKind.MONGODB to MongoEngine(),
+    ),
 ) {
     /** Copies every marked database of [plugins]. A failure stops the update: it would run without its safety copy. */
     fun copyBefore(plan: UUID, plugins: Collection<String>) {
