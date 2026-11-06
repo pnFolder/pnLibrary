@@ -124,7 +124,7 @@ internal class RemotePolicyMonitor(
                     explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                 }
                 notices.render(owner, metadata, policy, false, explanation.build())
-                logger.error("Remote policy failed for ${metadata.name}", error)
+                logFailure(logger, metadata, error)
                 null
             }
         }
@@ -168,10 +168,16 @@ internal class RemotePolicyMonitor(
                         explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                     }
                     notices.render(owner, metadata, policy, false, explanation.build())
-                    logger.error("Remote policy failed for ${metadata.name}", error)
+                    logFailure(logger, metadata, error)
                     deny(owner, policy, closeModule, closePlugin)
                 })
             }
+    }
+
+    // A server without internet or without a JDK is the administrator's setup, not an error to send to telemetry.
+    private fun logFailure(logger: PnLogger, metadata: PluginMetadata, error: Throwable) {
+        val message = "Remote policy failed for ${metadata.name}"
+        if (RemotePolicyFailureInterpreter.isEnvironment(error)) logger.warning(message) else logger.error(message, error)
     }
 
     private fun hostOf(source: String): String =

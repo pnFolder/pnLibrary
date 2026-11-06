@@ -35,4 +35,11 @@ class RemotePolicyFailureInterpreterTest {
             RemotePolicyFailureInterpreter.message(IllegalStateException("Java compiler is unavailable; run the server with a JDK")),
         )
     }
+
+    @Test
+    fun `a missing JDK and a missing network are server setup, a broken policy is not`() {
+        assertEquals(true, RemotePolicyFailureInterpreter.isEnvironment(IllegalStateException("Java compiler is unavailable; run the server with a JDK")))
+        assertEquals(true, RemotePolicyFailureInterpreter.isEnvironment(java.net.UnknownHostException("raw.githubusercontent.com")))
+        assertEquals(false, RemotePolicyFailureInterpreter.isEnvironment(IllegalArgumentException("Remote policy compilation failed")))
+    }
 }
