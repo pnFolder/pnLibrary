@@ -8,8 +8,8 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
-import java.time.Clock
-import java.time.Instant
+import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
+import java.time.Duration
 import java.util.Collections
 import java.util.Optional
 import java.util.UUID
@@ -29,12 +29,12 @@ internal class UpdateOrchestrator(
     private val resolver: () -> ResolutionResult,
     private val stageAction: (UpdatePlanSnapshot) -> Unit,
     private val announcement: (UpdatePlanSnapshot) -> Unit,
-    private val clock: Clock = Clock.systemUTC(),
     private val automaticAllowed: (UpdatePlanSnapshot) -> Boolean = { true },
     private val remoteResolver: (() -> ResolutionResult)? = null,
     private val observeState: (UpdatePlanSnapshot, UpdateActor, String) -> Unit = { _, _, _ -> },
     private val beforeCheck: () -> Unit = {},
     private val automaticOverridesActive: () -> Boolean = { false },
+    private val reminderInterval: Duration = UpdateDefaults.REMINDER_INTERVAL,
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -54,7 +54,6 @@ internal class UpdateOrchestrator(
     private var current: UpdatePlanSnapshot? = store.current()
     private val revision = java.util.concurrent.atomic.AtomicLong(current?.revision ?: 0L)
     private var announcedFingerprint: String? = null
-    private var announcedAt: Instant? = null
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
 
     fun start() {
@@ -65,6 +64,22 @@ internal class UpdateOrchestrator(
             configuration.checks.interval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
+        executor.scheduleWithFixedDelay(
+            { runCatchingNonFatal(::remind) },
+            reminderInterval.toMillis(),
+            reminderInterval.toMillis(),
+            TimeUnit.MILLISECONDS,
+        )
+    }
+
+    /**
+     * Repeats the announcement of an update that is still waiting. It works on the state already known, so it never
+     * asks GitHub; once a check finds the release gone, the state is up to date and the reminders stop.
+     */
+    internal fun remind() {
+        val snapshot = synchronized(lock) { current } ?: return
+        if (closed.get()) return
+        if (snapshot.state == UpdateState.UPDATE_AVAILABLE || snapshot.state == UpdateState.UPDATE_STAGED) announcement(snapshot)
     }
 
     fun checkNow(forceRemote: Boolean = true, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
@@ -239,13 +254,9 @@ internal class UpdateOrchestrator(
         observeState(snapshot, actor, operation)
         if (closed.get()) return
         val fingerprint = fingerprint(snapshot.state, snapshot.plan, snapshot.blockers)
-        val now = clock.instant()
-        val repeat = announcedAt?.let { !now.isBefore(it.plus(configuration.notifications.repeatInterval)) } ?: true
-        if (fingerprint != announcedFingerprint || repeat) {
-            announcement(snapshot)
-            announcedFingerprint = fingerprint
-            announcedAt = now
-        }
+        if (fingerprint == announcedFingerprint) return
+        announcement(snapshot)
+        announcedFingerprint = fingerprint
     }
 
     private fun observeFailure(planId: UUID, actor: UpdateActor, operation: String, error: Throwable) {

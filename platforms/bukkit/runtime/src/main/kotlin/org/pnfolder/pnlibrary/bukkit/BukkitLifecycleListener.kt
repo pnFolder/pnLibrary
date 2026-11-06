@@ -12,16 +12,13 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
+import org.pnfolder.pnlibrary.bukkit.updates.UpdateReminders
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -35,6 +32,7 @@ internal class BukkitLifecycleListener(
     private val closed = AtomicBoolean(false)
     private val readyCallbacks = CopyOnWriteArrayList<Runnable>()
     private val serverReady = AtomicBoolean(false)
+    private val reminders = UpdateReminders(plugin) { library }
 
     /** Runs a callback immediately when ready, otherwise queues it for server startup. */
     fun whenServerReady(task: Runnable) {
@@ -57,6 +55,7 @@ internal class BukkitLifecycleListener(
     /** Registers lifecycle events and the optional modern server-load notification. */
     fun start(): BukkitLifecycleListener = apply {
         plugin.server.pluginManager.registerEvents(this, plugin)
+        reminders.start()
         // ServerLoadEvent exists on modern Bukkit/Paper, but this module also
         // targets old 1.8 APIs. Register it reflectively when available.
         runCatchingNonFatal {
@@ -83,14 +82,16 @@ internal class BukkitLifecycleListener(
         library?.let { PlayerLifecyclePublisher.left(it, event.player.uniqueId, event.player.name) }
     }
 
-    /** Notifies authorized players about available or staged updates after joining, in the catalog's style. */
+    /** Tells authorized players about updates and shows the journal notice after joining. */
     @EventHandler
     fun onAdministratorJoin(event: PlayerJoinEvent) {
         val player = event.player
-        val canSeeUpdates = player.isOp || player.hasPermission("*") ||
-            player.hasPermission("pnlibrary.admin") || player.hasPermission("pnlibrary.updates.notify")
         val canSeeJournal = player.isOp || player.hasPermission("pnlibrary.events.view")
-        if (!canSeeUpdates && !canSeeJournal) return
+        if (reminders.canSeeUpdates(player)) reminders.remind(player, withTitle = true)
+        if (canSeeJournal) showJournalNotice(player)
+    }
+
+    private fun showJournalNotice(player: Player) {
         val runtime = library ?: return
         runtime.runtimeTaskScope().schedule(TaskSpec.builder()
             .execution(TaskExecution.entity(player))
@@ -99,23 +100,9 @@ internal class BukkitLifecycleListener(
                 val active = library ?: return@task
                 if (!player.isOnline) return@task
                 val audience = active.audiences.player(player.uniqueId) ?: return@task
-                if (canSeeJournal) active.journalJoinNotice().forEach(audience::sendMessage)
-                if (!canSeeUpdates) return@task
-                val snapshots = active.updates.all().map { it.snapshot }
-                val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
-                if (notice.isEmpty()) return@task
-                notice.forEach(audience::sendMessage)
-                val pending = snapshots.count { it.state == UpdateState.UPDATE_AVAILABLE || it.state == UpdateState.UPDATE_STAGED }
-                showTitle(player, pending)
+                active.journalJoinNotice().forEach(audience::sendMessage)
             }
             .build())
-    }
-
-    /** The two-argument title is the only one 1.8 servers have; newer servers merely deprecate it. */
-    @Suppress("DEPRECATION")
-    private fun showTitle(player: Player, pending: Int) {
-        val (title, subtitle) = BukkitTitle.updatesPending(pending)
-        player.sendTitle(title, subtitle)
     }
 
     /** Closing the plugin registration releases all its module commands and task scopes. */
@@ -134,6 +121,7 @@ internal class BukkitLifecycleListener(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         HandlerList.unregisterAll(this)
+        reminders.close()
         readyCallbacks.clear()
         library = null
     }

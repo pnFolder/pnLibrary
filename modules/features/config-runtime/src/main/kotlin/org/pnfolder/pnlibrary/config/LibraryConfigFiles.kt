@@ -11,7 +11,7 @@ import java.nio.file.Path
 import java.util.function.Supplier
 
 /**
- * Loads the library's own YAML files (`config.yml`, `updates.yml`, `downloads.yml`) through the same
+ * Loads the library's own YAML files (`config.yml`, `downloads.yml`) through the same
  * code-first configuration system that plugins use: defaults, comments and validation come from the model.
  *
  * Keys that no longer exist in the model are removed after a backup, so a file never keeps stale options.

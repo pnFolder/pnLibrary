@@ -89,6 +89,15 @@ interface UpdateService {
     fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("automatic download changes")
 
+    /**
+     * Turns automatic download on or off for every plugin at once, including plugins registered later. Choices made
+     * for single plugins are dropped, so the new value applies to all of them. Does not grant permissions.
+     */
+    fun setAutomaticDownloadForAllPlugins(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> =
+        CompletableFuture<List<UpdateSnapshot>>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support automatic download changes"))
+        }
+
     /** Holds updates of [product] for seven days, or releases a hold. */
     fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         setHeld(product, if (held) Duration.ofDays(7) else null, actor)

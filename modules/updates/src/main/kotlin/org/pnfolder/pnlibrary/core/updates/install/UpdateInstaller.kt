@@ -57,7 +57,6 @@ internal class UpdateInstaller(
             transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
         require(transaction.pendingInstallations().isEmpty()) { "A prepared rollback must be applied before preparing another update" }
         val plan = requireNotNull(snapshot.plan) { "Update plan has no installable target" }
-        verifyPluginDownloadsAllowed(plan)
 
         val targets = registrations.associate { registration ->
             registration.descriptor.id to InstalledUpdateTarget(
@@ -166,13 +165,4 @@ internal class UpdateInstaller(
             .any { pending -> (pending.expectedVersions.keys + pending.unknownProducts).any { it !in installed } }
     }
 
-    private fun verifyPluginDownloadsAllowed(plan: UpdatePlan) {
-        plan.changes
-            .filterNot { change -> change.product.value == PnLibraryIdentity.PRODUCT_ID }
-            .forEach { change ->
-                require(change.product.value !in configuration.ignoredPlugins) {
-                    "Загрузка плагина ${change.product} отключена политикой обновлений"
-                }
-            }
-    }
 }

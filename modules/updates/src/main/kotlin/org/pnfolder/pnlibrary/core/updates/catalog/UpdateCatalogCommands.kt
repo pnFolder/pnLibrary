@@ -94,6 +94,14 @@ class UpdateCatalogCommands(
     private fun installSettings(addLiteral: (String, CommandNodeBuilder.() -> Unit) -> Unit) {
         addLiteral("set") {
             managePermission?.let(::permission)
+            literal("all") {
+                literal("auto") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { UpdateCatalogSettingsCommands.SWITCH_SUGGESTIONS }
+                        executes(settings::setAllAutomatic)
+                    }
+                }
+            }
             argument("plugin", ArgumentType.string()) {
                 suggests { productNames() }
                 literal("channel") {

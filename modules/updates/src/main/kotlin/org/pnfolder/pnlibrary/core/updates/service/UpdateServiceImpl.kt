@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.service
 
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
@@ -57,8 +58,9 @@ class UpdateServiceImpl(
 ) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val registrations = UpdateRegistrationStore()
-    private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
-        logging.log(this, LogLevel.WARNING, it)
+    private val configuration = UpdateConfiguration()
+    init {
+        retireOldSettingsFile()
     }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
@@ -87,6 +89,18 @@ class UpdateServiceImpl(
         automaticOverridesActive = { overrides.anyAutomaticEnabled() },
     )
     private val orchestrator get() = runtime.orchestrator
+
+    /** The settings file of older versions no longer does anything; it is kept aside so nothing is lost. */
+    private fun retireOldSettingsFile() {
+        val old = dataFolder.resolve("updates.yml")
+        if (!Files.isRegularFile(old)) return
+        val kept = dataFolder.resolve("updates.yml.old")
+        Files.move(old, kept, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        logging.log(
+            this, LogLevel.WARNING,
+            "updates.yml больше не используется: обновления настраиваются командой /pn update и в меню. Файл сохранён как ${kept.fileName}.",
+        )
+    }
 
     /** Implements [UpdateService.register]. */
     override fun register(
@@ -190,6 +204,13 @@ class UpdateServiceImpl(
                 "автозагрузка: ${if (before) "вкл" else "выкл"} → ${if (enabled) "вкл" else "выкл"}"
             }
         }
+
+    /** Implements [UpdateService.setAutomaticDownloadForAllPlugins]. */
+    override fun setAutomaticDownloadForAllPlugins(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> {
+        overrides.setAllPlugins(enabled, PnLibraryIdentity.PRODUCT_ID)
+        logging.log(this, LogLevel.INFO, "Автозагрузка обновлений плагинов: ${if (enabled) "включена" else "выключена"} для всех (${actor.name})")
+        return CompletableFuture.completedFuture(registrations.snapshot().map { it.snapshot })
+    }
 
     /** Implements [UpdateService.setHeld]. */
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =

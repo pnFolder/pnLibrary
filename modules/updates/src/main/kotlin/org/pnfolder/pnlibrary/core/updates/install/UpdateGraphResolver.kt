@@ -42,7 +42,7 @@ internal class UpdateGraphResolver(
             releases = releases,
             channels = registrations.associate { it.descriptor.id to channelFor(it) },
             defaultChannel = UpdateChannel.STABLE,
-            frozen = frozenProducts(registrations),
+            frozen = frozenProducts(),
             platform = identity.type,
             javaFeature = JavaRuntime.feature,
             policy = resolverPolicy(),
@@ -83,12 +83,7 @@ internal class UpdateGraphResolver(
         }
     }
 
-    private fun frozenProducts(registrations: List<RegisteredUpdate>): Set<ProductId> {
-        val configuredFreezes = registrations.mapNotNull { registration ->
-            registration.descriptor.id.takeIf { registration.product in configuration.ignoredPlugins }
-        }
-        return (freezes.active().keys + configuredFreezes).toSet()
-    }
+    private fun frozenProducts(): Set<ProductId> = freezes.active().keys.toSet()
 
     private fun resolverPolicy() = ResolverPolicy(
         allowManagedInstalls = configuration.downloads.allowManagedPlugins &&
