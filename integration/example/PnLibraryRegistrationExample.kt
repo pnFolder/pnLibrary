@@ -119,8 +119,8 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
             }
 
             // 8. Удалённая политика: разработчик может запретить запуск плагина.
-            // Политика это ОДИН .java-файл (до 1 МБ) по https:// или file:, сервер компилирует его своим JDK
-            // (нужен JDK, не JRE). Другие расширения библиотека отвергает.
+            // Политика это ОДИН .java-файл (до 1 МБ) по https:// или file:, сервер компилирует его своим javac,
+            // а на JRE без компилятора библиотека сама скачивает ECJ. Другие расширения библиотека отвергает.
             setup.remotePolicy(
                 RemotePolicySettings.builder()
                     .source("https://raw.githubusercontent.com/pnFolder/MyPlugin/main/policy/MyPluginPolicy.java")

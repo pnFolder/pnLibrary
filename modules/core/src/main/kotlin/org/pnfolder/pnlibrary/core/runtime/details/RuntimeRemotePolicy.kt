@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
+import org.pnfolder.pnlibrary.core.remote.PolicyCompilers
 import org.pnfolder.pnlibrary.core.remote.PolicyDeniedException
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
@@ -47,7 +48,7 @@ internal object RuntimeRemotePolicy {
             details["authors"] ?: PnLibraryIdentity.ORGANIZATION, platform.type, platform.implementationName,
             System.getProperty("java.version", "unknown"), JavaRuntime.feature,
         )
-        val monitor = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform))
+        val monitor = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform), PolicyCompilers.storedIn(platform.dataFolder))
         val startup = monitor.checkAtStartup(owner, metadata, policy, logger, policy.startupTimeout)
         if (startup == null) {
             // Falling back to disabling the owner is safe; only fatal JVM errors must not be swallowed here.

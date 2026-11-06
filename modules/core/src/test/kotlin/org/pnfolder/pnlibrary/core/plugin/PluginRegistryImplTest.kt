@@ -46,6 +46,7 @@ import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.remote.PolicyCompilers
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
@@ -647,7 +648,10 @@ class PluginRegistryImplTest {
             PluginRegistryImpl(
                 ownership = platform,
                 identity = platform,
-                remotePolicies = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)),
+                remotePolicies = RemotePolicyMonitor(
+                    platform, platform, RemotePolicyNoticeRenderer(platform),
+                    PolicyCompilers.storedIn(java.nio.file.Files.createTempDirectory("pn-policy-compilers")),
+                ),
                 events = events,
                 tasks = tasks,
                 services = ServiceRegistry(),

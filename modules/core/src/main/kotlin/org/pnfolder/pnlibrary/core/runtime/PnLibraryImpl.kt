@@ -49,6 +49,7 @@ import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
 import org.pnfolder.pnlibrary.core.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
+import org.pnfolder.pnlibrary.core.remote.PolicyCompilers
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
@@ -159,7 +160,9 @@ internal class PnLibraryImpl(
     override val plugins: PluginRegistry = PluginRegistryImpl(
         ownership = platform.ownership,
         identity = platform.identity,
-        remotePolicies = RemotePolicyMonitor(platform.ownership, platform.execution, RemotePolicyNoticeRenderer(support.capture)),
+        remotePolicies = RemotePolicyMonitor(
+            platform.ownership, platform.execution, RemotePolicyNoticeRenderer(support.capture), PolicyCompilers.storedIn(dataFolder),
+        ),
         events = eventService,
         tasks = tasks,
         services = features.services,

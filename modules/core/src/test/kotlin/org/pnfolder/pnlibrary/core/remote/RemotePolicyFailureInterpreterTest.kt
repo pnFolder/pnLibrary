@@ -31,7 +31,7 @@ class RemotePolicyFailureInterpreterTest {
     @Test
     fun `a server without javac is told to run on a JDK`() {
         assertEquals(
-            "На сервере нет компилятора Java: сервер запущен на JRE, а для политики нужен JDK",
+            "На сервере нет компилятора Java (это JRE), а запасной компилятор скачать не удалось",
             RemotePolicyFailureInterpreter.message(IllegalStateException("Java compiler is unavailable; run the server with a JDK")),
         )
     }

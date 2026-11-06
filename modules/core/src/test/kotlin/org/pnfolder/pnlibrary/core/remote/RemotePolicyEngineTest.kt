@@ -9,8 +9,11 @@ import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
+import java.nio.file.Files
 
 class RemotePolicyEngineTest {
+    private val engine = RemotePolicyEngine(PolicyCompilers.storedIn(Files.createTempDirectory("pn-policy-compilers")))
+
     @Test
     fun `compiles a raw Java policy against the shared context`() {
         val source = """
@@ -28,7 +31,7 @@ class RemotePolicyEngineTest {
             .platform(PlatformInfo(PlatformType.VELOCITY, "Velocity", "3.3.0"))
             .server(ServerInfo("3.3.0", MinecraftVersion.parseInfo(null)))
             .build()
-        val result = RemotePolicyEngine.checkSource(source, context)
+        val result = engine.checkSource(source, context)
         assertFalse(result.allowed)
         assertEquals("update required", result.message)
     }

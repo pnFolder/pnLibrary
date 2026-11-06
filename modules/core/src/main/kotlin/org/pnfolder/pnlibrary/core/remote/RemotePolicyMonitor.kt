@@ -29,7 +29,10 @@ internal class RemotePolicyMonitor(
     private val ownership: PlatformOwnerControl,
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
+    compilers: PolicyCompilers,
 ) {
+    private val engine = RemotePolicyEngine(compilers)
+
     /** Runs startup checks; daemon threads so a hung download never keeps the JVM alive, and an idle one is dropped. */
     private val startupChecks = Executors.newCachedThreadPool { task ->
         Thread(task, "pnlibrary-policy-check").apply { isDaemon = true }
@@ -98,7 +101,7 @@ internal class RemotePolicyMonitor(
         timeout: Duration,
     ): StartupCheck? {
         val context = ownership.remotePolicyContext(owner, policy.values)
-        val outcome = startupChecks.submit(Callable { RemotePolicyEngine.check(policy.source, context) })
+        val outcome = startupChecks.submit(Callable { engine.check(policy.source, context) })
         return try {
             val decision = outcome.get(timeout.toMillis(), TimeUnit.MILLISECONDS)
             notices.render(owner, metadata, policy, decision)
@@ -141,7 +144,7 @@ internal class RemotePolicyMonitor(
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {
-        runCatchingNonFatal { RemotePolicyEngine.check(policy.source, policyContext) }
+        runCatchingNonFatal { engine.check(policy.source, policyContext) }
             .onSuccess { decision ->
                 execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable

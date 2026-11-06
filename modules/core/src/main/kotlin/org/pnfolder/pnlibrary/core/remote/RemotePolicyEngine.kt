@@ -10,16 +10,11 @@ import java.net.URI
 import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Comparator
-import javax.tools.ToolProvider
 
 /** Shared source loader used by every platform adapter. */
-internal object RemotePolicyEngine {
-    private const val MAX_BYTES = 1024L * 1024L
-    private val packagePattern = Regex("\\bpackage\\s+([A-Za-z_\$][\\w\$]*(?:\\.[A-Za-z_\$][\\w\$]*)*)\\s*;?")
-    private val classPattern = Regex("\\b(?:public\\s+)?(?:final\\s+|abstract\\s+)?class\\s+([A-Za-z_\$][\\w\$]*)")
+internal class RemotePolicyEngine(private val compilers: PolicyCompilers) {
 
     fun check(url: String, context: RemotePolicyContext): RemotePolicyResult {
         val uri = URI(url)
@@ -55,7 +50,7 @@ internal object RemotePolicyEngine {
             Files.write(file, source)
             val classpath = listOf(System.getProperty("java.class.path", ""), location(RemotePolicy::class.java), location(RemotePolicyContext::class.java))
                 .filter(String::isNotBlank).joinToString(File.pathSeparator)
-            compileJava(file, root, classpath)
+            compilers.compile(file, root, classpath)
             URLClassLoader(arrayOf(root.toUri().toURL()), RemotePolicy::class.java.classLoader).use { loader ->
                 val type = Class.forName(name, true, loader)
                 require(RemotePolicy::class.java.isAssignableFrom(type)) { "Remote class must implement RemotePolicy" }
@@ -65,21 +60,6 @@ internal object RemotePolicyEngine {
         } finally {
             Files.walk(root).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists) }
         }
-    }
-
-    private fun compileJava(file: Path, root: Path, classpath: String) {
-        val compiler = ToolProvider.getSystemJavaCompiler()
-            ?: error("Java compiler is unavailable; run the server with a JDK")
-        val compatibility = if (compiler.isSupportedOption("--release") >= 0) {
-            arrayOf("--release", "8")
-        } else {
-            arrayOf("-source", "8", "-target", "8")
-        }
-        // -Xlint:-options hides javac's "source value 8 is obsolete" notes; its output goes to the error, not the red console.
-        val arguments = compatibility + arrayOf("-Xlint:-options", "-classpath", classpath, "-d", root.toString(), file.toString())
-        val output = ByteArrayOutputStream()
-        val exit = compiler.run(null, output, output, *arguments)
-        require(exit == 0) { "Remote policy compilation failed: ${output.toString(Charsets.UTF_8.name()).take(500)}" }
     }
 
     private fun download(uri: URI): ByteArray {
@@ -106,4 +86,10 @@ internal object RemotePolicyEngine {
     private fun location(type: Class<*>): String = try {
         File(type.protectionDomain.codeSource.location.toURI()).path
     } catch (_: Exception) { "" }
+
+    private companion object {
+        const val MAX_BYTES = 1024L * 1024L
+        val packagePattern = Regex("\\bpackage\\s+([A-Za-z_\$][\\w\$]*(?:\\.[A-Za-z_\$][\\w\$]*)*)\\s*;?")
+        val classPattern = Regex("\\b(?:public\\s+)?(?:final\\s+|abstract\\s+)?class\\s+([A-Za-z_\$][\\w\$]*)")
+    }
 }
