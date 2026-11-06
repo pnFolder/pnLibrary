@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import java.util.Locale
@@ -144,6 +145,10 @@ class UpdateCatalogCommands(
         addLiteral("backups") {
             (backupsPermission ?: viewPermission)?.let(::permission)
             backupFilters(emptySet())
+            literal("delete") {
+                managePermission?.let(::permission)
+                argument("backupId", ArgumentType.string()) { executes(::deleteBackup) }
+            }
         }
     }
 
@@ -239,6 +244,20 @@ class UpdateCatalogCommands(
         val pages = maxOf(1, (total + UpdateCatalogView.PAGE_SIZE - 1) / UpdateCatalogView.PAGE_SIZE)
         UpdateCatalogView.history(entries, page, routesFor(context), totalPages = pages, product = product)
             .forEach(context.sender::send)
+    }
+
+    private fun deleteBackup(context: CommandContext) {
+        if (!ready(context)) return
+        val sender = context.sender
+        val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
+            ?: return sender.send(error("Некорректный ID резервного набора."))
+        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        library.updates.deleteBackup(id, actor).whenComplete { _, failure ->
+            deliver(Runnable {
+                if (failure == null) sender.send(Component.text("Резервный набор $id удалён."))
+                else sender.send(error("Не удалось удалить набор: ${generateSequence(failure) { it.cause }.last().message}"))
+            })
+        }
     }
 
     private fun showBackups(context: CommandContext) {

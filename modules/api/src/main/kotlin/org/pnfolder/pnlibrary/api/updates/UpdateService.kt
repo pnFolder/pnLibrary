@@ -123,6 +123,11 @@ interface UpdateService {
         it.completeExceptionally(UnsupportedOperationException("Update service does not support saved rollback sets"))
     }
 
+    /** Permanently deletes one retained rollback set with its saved files. A set that a restart still verifies is refused. */
+    fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = CompletableFuture<Void?>().also {
+        it.completeExceptionally(UnsupportedOperationException("Update service does not support deleting saved rollback sets"))
+    }
+
     /** Prepares exactly [transactionId] for restart. Never substitutes another backup. */
     fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         unsupported("selected transaction rollback")

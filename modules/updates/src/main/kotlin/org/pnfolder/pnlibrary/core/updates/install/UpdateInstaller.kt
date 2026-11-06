@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
@@ -16,6 +17,8 @@ import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateProcessSession
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
+import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
+import org.pnfolder.pnlibrary.core.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.core.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
@@ -31,11 +34,14 @@ internal class UpdateInstaller(
     dataFolder: Path,
     private val configuration: UpdateConfiguration,
     http: TrustedHttpClient,
+    private val warn: (String) -> Unit = {},
 ) {
-    private val configurations = ConfigurationSnapshots(dataFolder.resolve("updates/configurations"), dataFolder.parent)
-    private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("updates.yml"))
+    private val configurationsFolder = dataFolder.resolve("updates/configurations")
+    private val configurations = ConfigurationSnapshots(configurationsFolder, dataFolder.parent)
+    private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("config.yml"))
+    private val transactionsFolder = dataFolder.resolve("updates/transactions")
     private val transaction = UpdateTransaction(
-        dataFolder.resolve("updates/transactions"),
+        transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
         dataFolder.parent,
     )
@@ -50,6 +56,45 @@ internal class UpdateInstaller(
 
     fun recoverInterruptedTransactions() {
         transaction.recoverAll()
+        pruneBackups()
+    }
+
+    /** Removes saved sets older than the retention period, except those a restart still has to verify. Returns how many went. */
+    fun pruneBackups(now: Instant = Instant.now()): Int {
+        val busy = busyBackups()
+        val old = transaction.rollbackCandidates().filter { path ->
+            val journal = TransactionJournal.load(path)
+            journal.id !in busy && BackupStorage.expired(journal.createdAt?.let(Instant::parse), now)
+        }
+        old.forEach(::removeBackup)
+        warnIfLarge()
+        return old.size
+    }
+
+    /** Deletes one saved set with its configuration and data copies; a set that a restart still verifies is refused. */
+    fun deleteBackup(id: UUID) {
+        val path = transaction.rollbackCandidate(id)
+        require(id.toString() !in busyBackups()) { "Набор $id ещё проверяется после перезапуска" }
+        removeBackup(path)
+    }
+
+    private fun busyBackups(): Set<String> =
+        (transaction.awaitingHealth() + transaction.awaitingRollbackHealth()).map { transaction.readJournal(it.journal).id }.toSet() +
+            transaction.pendingInstallations().map { transaction.readJournal(it).id }
+
+    private fun removeBackup(journalPath: Path) {
+        val journal = TransactionJournal.load(journalPath)
+        journal.configurationSnapshot?.let { BackupStorage.delete(configurationsFolder.resolve(it)) }
+        BackupStorage.delete(journalPath.parent)
+    }
+
+    private fun warnIfLarge() {
+        val total = BackupStorage.bytes(configurationsFolder) + BackupStorage.bytes(transactionsFolder)
+        if (total < BackupStorage.LARGE_BYTES) return
+        warn(
+            "Резервные копии занимают ${BackupItemText.size(total)}. Старше ${BackupStorage.RETENTION.toDays()} дней удаляются сами; " +
+                "ненужные можно удалить командой /pn update backups delete <id>.",
+        )
     }
 
     fun stage(snapshot: UpdatePlanSnapshot, registrations: List<RegisteredUpdate>) {
@@ -73,13 +118,18 @@ internal class UpdateInstaller(
         }.toMap()
         val configurationSnapshot = configurations.capture(snapshot.id, selections)
         stager.stage(snapshot.id, plan, targets, configurationSnapshot)
+        warnIfLarge()
     }
 
     fun backups(): List<UpdateBackup> = transaction.rollbackCandidates().map { path ->
         val journal = TransactionJournal.load(path)
+        val files = journal.configurationSnapshot
+            ?.let { id -> runCatchingNonFatal { configurations.read(UUID.fromString(id)).files.filter { it.existed } }.getOrNull() }
+            .orEmpty()
         UpdateBackup(UUID.fromString(journal.id), journal.createdAt?.let(Instant::parse), journal.planId?.let(UUID::fromString),
             journal.artifacts.map { UpdateBackupComponent(ProductId.of(it.component), it.expectedVersion, it.previousVersion) },
-            journal.configurationSnapshot?.let { id -> runCatchingNonFatal { configurations.read(UUID.fromString(id)).files.size }.getOrDefault(0) } ?: 0)
+            files.size,
+            files.map { UpdateBackupItem(ProductId.of(it.product), it.backupKind, it.name.orEmpty(), it.size) })
     }
 
     fun rollbackLatest(): UpdatePlanSnapshot {

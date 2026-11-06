@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
+import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
 
 internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun history(player: MenuViewer, product: String?, page: Int) {
@@ -115,7 +116,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         val parameters = buildList {
             backup.createdAt?.let { add("Создана" to time(it)) }
             backup.components.forEach { add(it.product.value to "${it.backupVersion ?: "?"} (было ${it.updatedVersion ?: "?"})") }
-            if (backup.configurationFiles > 0) add("Файлов настроек" to "${backup.configurationFiles}")
+            backup.items.forEach { add("Сохранено" to BackupItemText.describe(it)) }
         }
         val lore = Style.lore(emptyList(), parameters, *clicks)
         return icon(Icons.BACKUPS, "CHEST", "Резервный набор", lore)

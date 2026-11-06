@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.history
 
 import com.google.gson.Gson
 import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
@@ -33,7 +34,10 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         }
         val declarations = snapshot.files.groupBy { it.product }.map { (product, files) ->
             require(files.map { it.root }.distinct().size == 1) { "Component has conflicting configuration roots" }
-            ProductId.of(product) to UpdateConfigurationBackup(Paths.get(files.first().root), files.map { it.relative })
+            ProductId.of(product) to UpdateConfigurationBackup(
+                Paths.get(files.first().root), files.map { it.relative },
+                files.associate { it.relative to BackupLabel(it.backupKind, it.name.orEmpty()) },
+            )
         }.toMap()
         val before = requireNotNull(snapshots.capture(UUID.fromString(snapshot.planId), declarations))
         val id = UUID.randomUUID()

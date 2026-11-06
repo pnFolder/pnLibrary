@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
 import java.nio.file.Path
@@ -31,6 +32,7 @@ internal class VelocityRuntime(
     private var linkListener: VelocityLinkListener? = null
     private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
+    private var reminderTask: ScheduledTask? = null
 
     /**
      * Starts the shared runtime when Velocity announces proxy initialization.
@@ -69,6 +71,14 @@ internal class VelocityRuntime(
         server.eventManager.register(owner, listener)
         playerEvents = listener
         connectLink(started)
+        remindAdministrators(started)
+    }
+
+    /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
+    private fun remindAdministrators(started: PnLibraryRuntimeHost) {
+        reminderTask = server.scheduler.buildTask(owner, Runnable {
+            server.allPlayers.filter { ProxyUpdateReminder.canSee(it::hasPermission) }.forEach { ProxyUpdateReminder.send(started.library, it.uniqueId) }
+        }).delay(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).repeat(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).schedule()
     }
 
     /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
@@ -114,6 +124,8 @@ internal class VelocityRuntime(
         playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
+        reminderTask?.cancel()
+        reminderTask = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null

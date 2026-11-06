@@ -70,7 +70,9 @@ class UpdateServiceImpl(
         logging.log(this, LogLevel.WARNING, it)
     }
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
-    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.downloadHttp)
+    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.downloadHttp) {
+        logging.log(this, LogLevel.WARNING, it)
+    }
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
     private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(
@@ -259,6 +261,13 @@ class UpdateServiceImpl(
     /** Implements [UpdateService.backups]. */
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
         Collections.unmodifiableList(installer.backups())
+    }
+
+    /** Implements [UpdateService.deleteBackup]. */
+    override fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {
+        installer.deleteBackup(transactionId)
+        logging.log(this, LogLevel.INFO, "Резервный набор $transactionId удалён (${actor.name})")
+        null
     }
     /** Implements [UpdateService.rollback]. */
     override fun rollback(): CompletionStage<UpdatePlanSnapshot> = rollback(UpdateActor.UNKNOWN)

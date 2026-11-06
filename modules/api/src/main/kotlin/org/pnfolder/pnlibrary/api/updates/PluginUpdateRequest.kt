@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
+import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
@@ -88,8 +90,22 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var configurationBackup: UpdateConfigurationBackup? = null
 
         /** Preserves only [files] relative to the component's own [dataDirectory] before updating. */
-        fun configurationBackup(dataDirectory: Path, vararg files: String): Builder = apply {
-            configurationBackup = UpdateConfigurationBackup(dataDirectory, files.toList())
+        fun configurationBackup(dataDirectory: Path, vararg files: String): Builder =
+            backup(BackupKind.CONFIGURATION, "", dataDirectory, *files)
+
+        /**
+         * Preserves [files] of the component's own [dataDirectory] before updating, and says what they are: a
+         * [kind] such as [BackupKind.DATABASE] and a short [name] the menu and commands show. May be called
+         * several times, but every call must name the same [dataDirectory]; a file may be declared once.
+         */
+        fun backup(kind: BackupKind, name: String, dataDirectory: Path, vararg files: String): Builder = apply {
+            val previous = configurationBackup
+            val label = BackupLabel(kind, name)
+            val added = UpdateConfigurationBackup(dataDirectory, files.toList(), files.associate { it to label })
+            configurationBackup = if (previous == null) added else {
+                require(previous.root == added.root) { "All backups of one component must use the same data directory" }
+                UpdateConfigurationBackup(previous.root, previous.files + added.files, previous.labels + added.labels)
+            }
         }
 
         fun repository(owner: String, name: String): Builder = apply {

@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
 import java.util.concurrent.TimeUnit
 
 /**
@@ -23,6 +24,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var linkListener: BungeeLinkListener? = null
     private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
+    private var reminderTask: ScheduledTask? = null
 
     fun start() {
         try {
@@ -48,9 +50,23 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
         connectLink(started)
+        remindAdministrators(started)
     }
 
     /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
+    /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
+    private fun remindAdministrators(started: PnLibraryRuntimeHost) {
+        reminderTask = plugin.proxy.scheduler.schedule(
+            plugin,
+            {
+                plugin.proxy.players.filter { ProxyUpdateReminder.canSee(it::hasPermission) }.forEach { ProxyUpdateReminder.send(started.library, it.uniqueId) }
+            },
+            ProxyUpdateReminder.INTERVAL_SECONDS,
+            ProxyUpdateReminder.INTERVAL_SECONDS,
+            TimeUnit.SECONDS,
+        )
+    }
+
     private fun connectLink(started: PnLibraryRuntimeHost) {
         val proxyLink = ProxyLink(
             library = started.library,
@@ -83,6 +99,8 @@ internal class BungeeRuntime(private val plugin: Plugin) {
 
     fun stop() {
         networkTask?.cancel()
+        reminderTask?.cancel()
+        reminderTask = null
         networkTask = null
         linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null

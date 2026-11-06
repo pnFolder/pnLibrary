@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.common.text.RussianText
+import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
 import java.time.Instant
 import java.time.ZoneId
 
@@ -71,7 +72,7 @@ internal class BackupsScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
         ) + backup.components.map { component ->
             hoverField("Вернёт", text("${component.product} ${component.backupVersion?.let(::version) ?: "?"}", ChatPalette.TEXT)
                 .append(text(" (сейчас ${component.updatedVersion?.let(::version) ?: "?"})", ChatPalette.SOFT)))
-        } + hoverField("Конфигураций", text("${backup.configurationFiles}", ChatPalette.TEXT))
+        } + backup.items.map { hoverField("Сохранено", text(BackupItemText.describe(it), ChatPalette.TEXT)) }
         var row = text("  ").append(text(restores, ChatPalette.TEXT))
             .append(text("  ")).append(text(backup.createdAt?.let(::age) ?: "дата не записана", ChatPalette.SOFT))
             .hoverEvent(tooltip(*card.toTypedArray()))
