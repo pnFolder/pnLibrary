@@ -166,6 +166,42 @@ PluginUpdateRequest.builder()
 - удалить набор вручную: `/pn updates backups delete <id>` (право на управление обновлениями),
   в API `UpdateService.deleteBackup`.
 
+### Базы данных MySQL/MariaDB
+
+Плагин помечает раздел конфига с подключением. Имя в `@BackupDatabase` — это ID базы у плагина, оно должно быть
+разным у разных баз:
+
+```kotlin
+class Config {
+    @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы")
+    var clans = Connection()
+
+    @field:BackupDatabase(DatabaseKind.MYSQL, "Банк")
+    var bank = Connection()
+}
+
+class Connection {
+    @field:DatabaseField(DatabaseRole.HOST) var address = "localhost"   // имя поля любое
+    var port = 3306
+    var database = ""
+    var user = ""
+    @field:ConfigSecret var password = ""
+}
+```
+
+Поля находятся по обычным именам (`host`, `port`, `database`, `user`/`username`, `password`) или по
+`@DatabaseField(роль)`, если названы иначе. Аннотацию можно поставить и на сам класс конфига, когда поля
+подключения лежат в корне файла. Драйвер загружается через Libby при первой копии.
+
+Перед обновлением библиотека делает копию каждой помеченной базы (одним снимком, без остановки плагина) в
+`plugins/pnLibrary/updates/databases/`. Если копия не получилась, обновление не готовится. Копируются таблицы;
+триггеры, процедуры и представления нет.
+
+Вернуть базу: в меню «Резервные копии → набор» кнопка «Вернуть базу «…»» открывает предупреждение о потере данных,
+или командой `/pn updates backups restore <id> <плагин> <имя>`: она сначала предупреждает и показывает команду с
+`confirm`. Перед заменой текущее состояние базы сохраняется отдельной копией (`before-restore`). Откат JAR базы не
+трогает, её возвращают отдельно. После возврата перезапустите плагин.
+
 Правила:
 
 - копируются только зарегистрированные пути компонента, а не вся папка плагина или сервера;

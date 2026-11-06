@@ -191,3 +191,51 @@ annotation class ConfigType(
     val aliases: Array<String> = [],
     val priority: Int = 0,
 )
+
+/** A kind of database pnLibrary can copy before an update and put back on a rollback. */
+enum class DatabaseKind {
+    /** MySQL and MariaDB. */
+    MYSQL,
+}
+
+/**
+ * Marks a section with the connection to a database that pnLibrary copies before an update of this plugin and
+ * can put back when the administrator rolls the update back.
+ *
+ * Put it on the field that holds the connection section, or on the configuration class itself when the connection
+ * fields sit at the top of the file. Fields are found by their usual names (`host`, `port`, `database`, `user` or
+ * `username`, `password`); when yours are called otherwise, mark each with [DatabaseField] and any name works. Mark the
+ * password with [ConfigSecret] so reports hide it:
+ * ```kotlin
+ * @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы")
+ * var storage = StorageSection()
+ * ```
+ * Only tables are copied: triggers, procedures and views are not.
+ *
+ * @property kind the database server type
+ * @property name short name the menu and commands show for this database
+ */
+@Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class BackupDatabase(val kind: DatabaseKind, val name: String)
+
+/** What a field of a database connection section holds. */
+enum class DatabaseRole {
+    HOST,
+    PORT,
+    DATABASE,
+    USER,
+    PASSWORD,
+}
+
+/**
+ * Says which part of the connection a field holds, so it can have any name. Use it inside a section marked with
+ * [BackupDatabase]; fields without it are found by their usual names.
+ * ```kotlin
+ * @field:DatabaseField(DatabaseRole.HOST)
+ * var address = "localhost"
+ * ```
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DatabaseField(val role: DatabaseRole)

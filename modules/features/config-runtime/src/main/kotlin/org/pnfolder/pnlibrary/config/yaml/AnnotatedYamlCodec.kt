@@ -58,6 +58,9 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     /** Dotted paths of the `@ConfigSecret` fields, which diagnostic reports never show. */
     val secretPaths: List<String> = introspector.secretPaths(type)
+
+    /** The sections marked `@BackupDatabase`; the update system copies those databases. */
+    val databases: List<DatabasePath> = introspector.databasePaths(type)
     private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = false

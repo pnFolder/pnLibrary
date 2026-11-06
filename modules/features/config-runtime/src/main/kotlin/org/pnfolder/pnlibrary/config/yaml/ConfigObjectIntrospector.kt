@@ -1,10 +1,14 @@
 package org.pnfolder.pnlibrary.config.yaml
 
+import org.pnfolder.pnlibrary.api.config.BackupDatabase
 import org.pnfolder.pnlibrary.api.config.ConfigIgnore
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
 import org.pnfolder.pnlibrary.api.config.ConfigOrder
 import org.pnfolder.pnlibrary.api.config.ConfigSecret
+import org.pnfolder.pnlibrary.api.config.DatabaseField
+import org.pnfolder.pnlibrary.api.config.DatabaseKind
+import org.pnfolder.pnlibrary.api.config.DatabaseRole
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -68,6 +72,20 @@ internal class ConfigObjectIntrospector(
             if (nested) collectSecrets(raw, "$path.", depth + 1, out)
         }
     }
+
+    /** The sections marked `@BackupDatabase` in [type], with the dotted YAML path of each. */
+    fun databasePaths(type: Class<*>): List<DatabasePath> {
+        val root = type.getAnnotation(BackupDatabase::class.java)?.let { DatabasePath("", it.kind, it.name, roleKeys(type)) }
+        val sections = fields(type).mapNotNull { field ->
+            field.getAnnotation(BackupDatabase::class.java)?.let { DatabasePath(key(field), it.kind, it.name, roleKeys(rawClass(field.genericType))) }
+        }
+        return listOfNotNull(root) + sections
+    }
+
+    /** The YAML key of each field that says which part of a connection it holds, whatever the field is called. */
+    private fun roleKeys(section: Class<*>): Map<DatabaseRole, String> = fields(section).mapNotNull { field ->
+        field.getAnnotation(DatabaseField::class.java)?.let { it.role to key(field) }
+    }.toMap()
 
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 
@@ -152,3 +170,6 @@ internal class ConfigObjectIntrospector(
         val WORD_SEPARATOR = Regex("[_\\-\\s]+")
     }
 }
+
+/** A section holding database connection details: where it is in the file, what kind it is and what it is called. */
+class DatabasePath(val path: String, val kind: DatabaseKind, val name: String, val keys: Map<DatabaseRole, String> = emptyMap())

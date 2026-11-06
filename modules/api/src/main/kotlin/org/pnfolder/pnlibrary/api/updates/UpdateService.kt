@@ -128,6 +128,16 @@ interface UpdateService {
         it.completeExceptionally(UnsupportedOperationException("Update service does not support deleting saved rollback sets"))
     }
 
+    /**
+     * Puts the database [name] of [product] back as it was in the retained set [transactionId]: the tables in the
+     * copy are replaced and rows written since are lost. The state it replaces is kept first. Runs at once, not at
+     * the next restart. Does not grant permissions.
+     */
+    fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
+        CompletableFuture<Void?>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support restoring databases"))
+        }
+
     /** Prepares exactly [transactionId] for restart. Never substitutes another backup. */
     fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         unsupported("selected transaction rollback")

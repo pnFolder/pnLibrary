@@ -55,6 +55,7 @@ object MenuCalls {
     const val SET_CHANNEL = "setChannel"
     const val SET_HELD = "setHeld"
     const val ROLLBACK = "rollback"
+    const val RESTORE_DATABASE = "restore-database"
     const val JOURNAL_GROUPS = "journalGroups"
     const val JOURNAL_DETAIL = "journalDetail"
     const val TASKS = "tasks"
@@ -155,6 +156,9 @@ class RemoteMenuData(
 
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.SET_HELD, args("product" to product, "millis" to duration?.toMillis()), actor.name) }
+
+    override fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean> =
+        later { ask<Boolean>(MenuCalls.RESTORE_DATABASE, args("id" to id.toString(), "product" to product, "name" to name), actor.name) }
 
     override fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.ROLLBACK, args("id" to id.toString(), "restore" to restoreConfigurations), actor.name) }

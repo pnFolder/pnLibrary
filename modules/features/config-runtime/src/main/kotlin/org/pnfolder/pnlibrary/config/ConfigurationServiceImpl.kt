@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
+import org.pnfolder.pnlibrary.config.yaml.DatabasePath
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
@@ -132,7 +133,7 @@ class ConfigurationServiceImpl(
                 }
                 handles += owned
             }
-            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
+            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths, codec.databases))
             return owned
         }
 
@@ -269,10 +270,12 @@ private fun runAll(steps: List<() -> Unit>) {
  *
  * @property path path relative to [directory], with `/` separators
  * @property secretPaths dotted paths of the `@ConfigSecret` fields
+ * @property databases sections marked `@BackupDatabase`
  */
 class ManagedConfigFile(
     val pluginId: PluginId,
     val directory: Path,
     val path: String,
     val secretPaths: List<String>,
+    val databases: List<DatabasePath> = emptyList(),
 )

@@ -85,6 +85,9 @@ class MenuDataServer(
                 done(data.setHeld(text("product").orEmpty(), duration, actor))
             }
             MenuCalls.ROLLBACK -> done(data.rollback(UUID.fromString(text("id")), args.get("restore")?.asBoolean == true, actor))
+            MenuCalls.RESTORE_DATABASE -> done(
+                data.restoreDatabase(UUID.fromString(text("id")), requireNotNull(text("product")), requireNotNull(text("name")), actor),
+            )
             else -> return@with false
         }
         true

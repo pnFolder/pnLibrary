@@ -37,6 +37,8 @@ val platformLibraries: Map<String, List<Root>> = mapOf(
     // The compiler for remote policies, loaded only on a server that runs a JRE without javac.
     "COMPILER_LEGACY" to listOf(lib(libs.ecj.legacy)),
     "COMPILER_MODERN" to listOf(lib(libs.ecj.modern)),
+    // Loaded the first time a database backup needs it, never at start.
+    "DRIVER_MYSQL" to listOf(lib(libs.mariadb.jdbc)),
 )
 val skippedGroups = listOf("com.google")
 

@@ -2,7 +2,9 @@ package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
+import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
@@ -51,7 +53,8 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         val builder = frame(Menus.chest(title("Откат")).rows(SMALL_ROWS), SMALL_ROWS)
         builder.slot(4, backupItem(backup))
         val plain = Style.lore(
-            listOf("Вернутся сохранённые JAR.", "Конфигурации не изменятся.", "Применится после перезапуска."),
+            listOf("Вернутся сохранённые JAR.", "Конфигурации не изменятся.", "Применится после перезапуска.") +
+                if (databasesOf(backup).isEmpty()) emptyList() else listOf("Базы данных не изменятся: их возвращают кнопками справа."),
             emptyList(), Style.left("откатить"),
         )
         builder.button(11, icon(Icons.ROLLBACK, "TNT", "Откатить плагины", plain, danger = true), go { who ->
@@ -66,8 +69,49 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
                 allowed(who, ROLLBACK) { rollback(who, backup, restoreConfigurations = true) }
             })
         }
+        databasesOf(backup).take(DATABASE_BUTTONS).forEachIndexed { index, item ->
+            val lore = Style.lore(
+                listOf("Заменит данные базы сохранёнными.", "Спросит подтверждение."),
+                listOf("Размер копии" to BackupItemText.size(item.bytes)), Style.left("вернуть базу"),
+            )
+            builder.button(DATABASE_FIRST + index, icon(Icons.BACKUPS, "CHEST", "Вернуть базу «${item.name}»", lore, danger = true), go { who ->
+                allowed(who, ROLLBACK) { databaseConfirm(who, backup, item) }
+            })
+        }
         builder.button(SMALL_BACK, backItem("Отмена"), go { backups(it, 0) })
         show(player, builder.build())
+    }
+
+    private fun databasesOf(backup: UpdateBackup) = backup.items.filter { it.kind == BackupKind.DATABASE }
+
+    /** The last question before a database is replaced: what is lost, what is kept, and a way out. */
+    private fun databaseConfirm(player: MenuViewer, backup: UpdateBackup, item: UpdateBackupItem) {
+        val builder = frame(Menus.chest(title("Вернуть базу")).rows(SMALL_ROWS), SMALL_ROWS)
+        val warning = Style.lore(
+            listOf(
+                "Таблицы базы «${item.name}» будут заменены теми, что были до обновления.",
+                "Всё, что записано в базу с тех пор, пропадёт: игроки, балансы, прогресс.",
+                "Текущее состояние сохранится отдельной копией на сервере, вернуть его можно командой.",
+            ),
+            listOf("Плагин" to item.product.value, "Копия" to BackupItemText.size(item.bytes)), Style.left("подтвердить"),
+        )
+        builder.slot(4, icon(Icons.BACKUPS, "CHEST", "Вы можете потерять данные", warning, danger = true))
+        builder.button(11, icon(Icons.ROLLBACK, "TNT", "Да, заменить базу", warning, danger = true), go { who ->
+            allowed(who, ROLLBACK) { restoreDatabase(who, backup, item) }
+        })
+        builder.button(SMALL_BACK, backItem("Отмена"), go { backupChoice(it, backup) })
+        show(player, builder.build())
+    }
+
+    private fun restoreDatabase(player: MenuViewer, backup: UpdateBackup, item: UpdateBackupItem) {
+        player.close()
+        data.restoreDatabase(backup.id, item.product.value, item.name, player.actor).whenComplete { _, error ->
+            sync {
+                if (!player.online) return@sync
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось вернуть базу.", reason(error))
+                else tell(player, ChatTone.SUCCESS, "База «${item.name}» возвращена.", "Перезапустите плагин ${item.product.value}, чтобы он перечитал данные.")
+            }
+        }
     }
 
     private fun historyEntry(player: MenuViewer, entry: UpdateHistoryEntry, back: (MenuViewer) -> Unit) {

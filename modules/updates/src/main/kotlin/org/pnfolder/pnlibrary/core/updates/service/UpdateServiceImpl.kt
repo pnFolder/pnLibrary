@@ -19,6 +19,8 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAnnouncementRenderer
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCommandWords
+import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
+import org.pnfolder.pnlibrary.core.updates.databases.DatabaseSources
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
@@ -70,7 +72,12 @@ class UpdateServiceImpl(
         logging.log(this, LogLevel.WARNING, it)
     }
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
-    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.downloadHttp) {
+    /** Where plugins say their databases are; the configuration service fills it as files are registered. */
+    val databaseSources = DatabaseSources()
+    private val installer = UpdateInstaller(
+        identity, dataFolder, configuration, resources.downloadHttp,
+        DatabaseBackups(dataFolder.resolve("updates/databases"), databaseSources),
+    ) {
         logging.log(this, LogLevel.WARNING, it)
     }
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
@@ -262,6 +269,14 @@ class UpdateServiceImpl(
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
         Collections.unmodifiableList(installer.backups())
     }
+
+    /** Implements [UpdateService.restoreDatabase]. */
+    override fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
+        runtime.readAsync {
+            installer.restoreDatabase(transactionId, product, name)
+            logging.log(this, LogLevel.WARNING, "База «$name» плагина $product возвращена из набора $transactionId (${actor.name})")
+            null
+        }
 
     /** Implements [UpdateService.deleteBackup]. */
     override fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {

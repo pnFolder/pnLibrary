@@ -101,6 +101,9 @@ interface MenuData {
 
     fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean>
 
+    /** Puts the saved database [name] of [product] back from the set [id]; rows written since are lost. */
+    fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean>
+
     /** The journal groups of the last [hours] hours; [level] is `info`, `warning`, `error` or null. */
     fun journalGroups(level: String?, hours: Int, limit: Int): List<JournalGroup>
 

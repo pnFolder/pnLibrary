@@ -4192,6 +4192,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService
 	public abstract fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/updates/ProductDescriptor;Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public static synthetic fun register$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/updates/ProductDescriptor;Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
+	public fun restoreDatabase (Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun rollback ()Ljava/util/concurrent/CompletionStage;
 	public fun rollback (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun rollback (Ljava/util/UUID;ZLorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;

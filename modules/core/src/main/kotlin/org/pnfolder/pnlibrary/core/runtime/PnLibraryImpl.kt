@@ -123,7 +123,11 @@ internal class PnLibraryImpl(
     )
 
     private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
-        set.configurations.fileListener = configFileDiagnostics(diagnostics)
+        val reports = configFileDiagnostics(diagnostics)
+        set.configurations.fileListener = { file ->
+            val handles = listOfNotNull(reports(file), set.updates.databaseSources.register(file))
+            AutoCloseable { handles.forEach(AutoCloseable::close) }
+        }
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,

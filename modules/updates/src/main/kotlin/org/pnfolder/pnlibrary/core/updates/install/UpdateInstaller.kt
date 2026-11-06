@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
@@ -35,6 +36,7 @@ internal class UpdateInstaller(
     dataFolder: Path,
     private val configuration: UpdateConfiguration,
     http: TrustedHttpClient,
+    private val databases: DatabaseBackups,
     private val warn: (String) -> Unit = {},
 ) {
     private val configurationsFolder = dataFolder.resolve("updates/configurations")
@@ -42,6 +44,7 @@ internal class UpdateInstaller(
     private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("config.yml"))
     private val transactionsFolder = dataFolder.resolve("updates/transactions")
     private val exportsFolder = dataFolder.resolve("updates/exports")
+    private val databasesFolder = dataFolder.resolve("updates/databases")
     private val transaction = UpdateTransaction(
         transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
@@ -97,6 +100,12 @@ internal class UpdateInstaller(
         }
     }
 
+    /** Puts a saved database of [product] back for the set [id]; what it replaces is kept first. */
+    fun restoreDatabase(id: UUID, product: String, name: String) {
+        val journal = TransactionJournal.load(transaction.rollbackCandidate(id))
+        databases.restore(UUID.fromString(requireNotNull(journal.planId) { "У набора нет плана" }), product, name)
+    }
+
     private fun busyBackups(): Set<String> =
         (transaction.awaitingHealth() + transaction.awaitingRollbackHealth()).map { transaction.readJournal(it.journal).id }.toSet() +
             transaction.pendingInstallations().map { transaction.readJournal(it).id }
@@ -105,11 +114,12 @@ internal class UpdateInstaller(
         val journal = TransactionJournal.load(journalPath)
         journal.configurationSnapshot?.let { BackupStorage.delete(configurationsFolder.resolve(it)) }
         journal.planId?.let { BackupStorage.delete(exportsFolder.resolve(it)) }
+        journal.planId?.let { BackupStorage.delete(databasesFolder.resolve(it)) }
         BackupStorage.delete(journalPath.parent)
     }
 
     private fun warnIfLarge() {
-        val total = BackupStorage.bytes(configurationsFolder) + BackupStorage.bytes(transactionsFolder) + BackupStorage.bytes(exportsFolder)
+        val total = listOf(configurationsFolder, transactionsFolder, exportsFolder, databasesFolder).sumOf(BackupStorage::bytes)
         if (total < BackupStorage.LARGE_BYTES) return
         warn(
             "Резервные копии занимают ${BackupItemText.size(total)}. Старше ${BackupStorage.RETENTION.toDays()} дней удаляются сами; " +
@@ -137,6 +147,7 @@ internal class UpdateInstaller(
             selection?.let { registration.descriptor.id to it }
         }.toMap()
         runExports(snapshot.id, registrations.filter { it.descriptor.id in changed })
+        databases.copyBefore(snapshot.id, registrations.filter { it.descriptor.id in changed }.map { it.product })
         val configurationSnapshot = configurations.capture(snapshot.id, selections)
         stager.stage(snapshot.id, plan, targets, configurationSnapshot)
         warnIfLarge()
@@ -150,7 +161,8 @@ internal class UpdateInstaller(
         UpdateBackup(UUID.fromString(journal.id), journal.createdAt?.let(Instant::parse), journal.planId?.let(UUID::fromString),
             journal.artifacts.map { UpdateBackupComponent(ProductId.of(it.component), it.expectedVersion, it.previousVersion) },
             files.size,
-            files.map { UpdateBackupItem(ProductId.of(it.product), it.backupKind, it.name.orEmpty(), it.size) })
+            files.map { UpdateBackupItem(ProductId.of(it.product), it.backupKind, it.name.orEmpty(), it.size) } +
+                journal.planId?.let { databases.items(UUID.fromString(it)) }.orEmpty())
     }
 
     fun rollbackLatest(): UpdatePlanSnapshot {

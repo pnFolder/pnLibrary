@@ -18,6 +18,9 @@ public final class LibraryLoader {
     // 3.26 is the last ECJ that runs on Java 8; the newer one needs Java 17.
     private static final int MODERN_COMPILER_JAVA = 17;
 
+    // Libby is tied to the plugin that started it, so later driver loads have to reuse that one manager.
+    private static volatile DriverLoader drivers;
+
     private LibraryLoader() {
     }
 
@@ -27,6 +30,7 @@ public final class LibraryLoader {
      * @throws LibraryLoadException if a library cannot be loaded after every attempt
      */
     public static void load(LibraryManager manager, ClassLoader loader, LibrarySettings settings, Library... libraries) {
+        drivers = new DriverLoader(manager, settings);
         boolean kotlinMissing = !present(loader, PROBE);
         boolean compilerMissing = needsCompiler(loader);
         if (!kotlinMissing && !compilerMissing) {
@@ -65,6 +69,15 @@ public final class LibraryLoader {
                 return;
             }
         }
+    }
+
+    /**
+     * Loads the MySQL/MariaDB driver for a backup. Returns false when it cannot be loaded, for example offline.
+     * Called by name from the runtime, which cannot see this module.
+     */
+    public static boolean loadMysqlDriver() {
+        DriverLoader loader = drivers;
+        return loader != null && loader.load(RuntimeLibraries.DRIVER_MYSQL);
     }
 
     private static boolean needsCompiler(ClassLoader loader) {

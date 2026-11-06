@@ -145,6 +145,16 @@ class UpdateCatalogCommands(
         addLiteral("backups") {
             (backupsPermission ?: viewPermission)?.let(::permission)
             backupFilters(emptySet())
+            literal("restore") {
+                managePermission?.let(::permission)
+                argument("backupId", ArgumentType.string()) {
+                    argument("backupPlugin", ArgumentType.string()) {
+                        suggests { productNames() }
+                        literal("confirm") { argument("databaseName", ArgumentType.greedyString()) { executes { restoreDatabase(it, true) } } }
+                        argument("databaseName", ArgumentType.greedyString()) { executes { restoreDatabase(it, false) } }
+                    }
+                }
+            }
             literal("delete") {
                 managePermission?.let(::permission)
                 argument("backupId", ArgumentType.string()) { executes(::deleteBackup) }
@@ -244,6 +254,33 @@ class UpdateCatalogCommands(
         val pages = maxOf(1, (total + UpdateCatalogView.PAGE_SIZE - 1) / UpdateCatalogView.PAGE_SIZE)
         UpdateCatalogView.history(entries, page, routesFor(context), totalPages = pages, product = product)
             .forEach(context.sender::send)
+    }
+
+    /** Without `confirm` it only warns and shows the command that does it: a database cannot be put back by accident. */
+    private fun restoreDatabase(context: CommandContext, confirmed: Boolean) {
+        if (!ready(context)) return
+        val sender = context.sender
+        val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
+            ?: return sender.send(error("Некорректный ID резервного набора."))
+        val plugin = context.get<String>("backupPlugin")
+        val name = context.get<String>("databaseName")
+        if (!confirmed) {
+            sender.send(error("База «$name» плагина $plugin будет заменена сохранённой: всё, что записано в неё после копии, пропадёт."))
+            sender.send(
+                Component.text("Текущее состояние сохранится отдельной копией."),
+            )
+            sender.send(
+                Component.text("Если согласны, выполните: /pn updates backups restore $id $plugin confirm $name"),
+            )
+            return
+        }
+        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        library.updates.restoreDatabase(id, plugin, name, actor).whenComplete { _, failure ->
+            deliver(Runnable {
+                if (failure == null) sender.send(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
+                else sender.send(error("Не удалось вернуть базу: ${generateSequence(failure) { it.cause }.last().message}"))
+            })
+        }
     }
 
     private fun deleteBackup(context: CommandContext) {
