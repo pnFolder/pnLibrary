@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.remote
 import org.pnfolder.pnlibrary.api.remote.RemotePolicy
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
-import org.pnfolder.pnlibrary.common.io.Digests
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
@@ -44,11 +43,6 @@ internal object RemotePolicyEngine {
         source: ByteArray,
         context: RemotePolicyContext,
     ): RemotePolicyResult {
-        context.values["pnlibrary.policy.sha256"]?.let { expected ->
-            require(expected.matches(Regex("[0-9a-fA-F]{64}")) && Digests.sha256(source).equals(expected, true)) {
-                "Remote policy SHA-256 does not match the pinned source"
-            }
-        }
         val text = source.toString(StandardCharsets.UTF_8)
         val simpleName = classPattern.find(text)?.groupValues?.get(1)
             ?: error("Remote policy does not declare a class")

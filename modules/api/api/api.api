@@ -3320,7 +3320,6 @@ public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builde
 	public final fun checkEvery (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun onDeny (Lorg/pnfolder/pnlibrary/api/remote/DenyAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun onError (Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public final fun sha256 (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun startupTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
 	public final fun support (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
