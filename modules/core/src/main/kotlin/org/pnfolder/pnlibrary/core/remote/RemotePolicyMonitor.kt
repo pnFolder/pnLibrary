@@ -29,9 +29,8 @@ internal class RemotePolicyMonitor(
     private val ownership: PlatformOwnerControl,
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
-    compilers: PolicyCompilers,
 ) {
-    private val engine = RemotePolicyEngine(compilers)
+    private val engine = RemotePolicyEngine(PolicyCompilers())
 
     /** Runs startup checks; daemon threads so a hung download never keeps the JVM alive, and an idle one is dropped. */
     private val startupChecks = Executors.newCachedThreadPool { task ->

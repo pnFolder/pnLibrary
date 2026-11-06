@@ -126,4 +126,26 @@ class LibraryLoaderTest {
         assertThrows(IllegalArgumentException.class, () -> LibrarySettings.builder().serverDirectory(" "));
         assertThrows(IllegalStateException.class, () -> LibrarySettings.builder().mavenCentral(false).build());
     }
+
+    @Test
+    void newJavaGetsTheNewCompilerAndOldJavaTheOldOne() {
+        LibraryManager modern = mock(LibraryManager.class);
+        LibraryManager legacy = mock(LibraryManager.class);
+
+        LibraryLoader.loadCompiler(modern, 21);
+        LibraryLoader.loadCompiler(legacy, 11);
+
+        verify(modern).loadLibrary(RuntimeLibraries.COMPILER_MODERN[0]);
+        verify(legacy).loadLibrary(RuntimeLibraries.COMPILER_LEGACY[0]);
+    }
+
+    @Test
+    void aCompilerThatCannotBeLoadedDoesNotStopTheServer() {
+        LibraryManager manager = mock(LibraryManager.class);
+        doThrow(new RuntimeException("offline")).when(manager).loadLibrary(any(Library.class));
+
+        LibraryLoader.loadCompiler(manager, 21);
+
+        verify(manager, times(1)).loadLibrary(any(Library.class));
+    }
 }

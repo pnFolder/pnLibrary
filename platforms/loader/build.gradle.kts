@@ -34,6 +34,9 @@ val platformLibraries: Map<String, List<Root>> = mapOf(
     "BUKKIT" to listOf(lib(libs.kotlin.stdlib), lib(libs.adventure.legacy), lib(libs.adventure.platform.bukkit)),
     "BUNGEE" to listOf(lib(libs.kotlin.stdlib), lib(libs.adventure.legacy)),
     "VELOCITY" to listOf(lib(libs.kotlin.stdlib)),
+    // The compiler for remote policies, loaded only on a server that runs a JRE without javac.
+    "COMPILER_LEGACY" to listOf(lib(libs.ecj.legacy)),
+    "COMPILER_MODERN" to listOf(lib(libs.ecj.modern)),
 )
 val skippedGroups = listOf("com.google")
 
@@ -84,7 +87,7 @@ val generateRuntimeLibraries by tasks.registering {
                 val extra = repositories.distinct().joinToString("") { ", \"$it\"" }
                 "        library(\"${id.group}\", \"${id.name}\", \"${id.version}\", \"$checksum\"$extra)"
             }
-            "    /** Libraries the light JAR needs on $platform. */\n" +
+            "    /** Libraries loaded for $platform. */\n" +
                 "    public static final Library[] $platform = {\n$entries\n    };"
         }
         val file = generatedSources.get().file("org/pnfolder/pnlibrary/loader/RuntimeLibraries.java").asFile

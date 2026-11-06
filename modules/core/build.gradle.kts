@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":modules:console"))
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.ecj.modern)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)
 }

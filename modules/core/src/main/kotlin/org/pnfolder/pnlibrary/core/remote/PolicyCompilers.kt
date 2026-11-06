@@ -1,7 +1,5 @@
 package org.pnfolder.pnlibrary.core.remote
 
-import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import javax.tools.Diagnostic
@@ -10,10 +8,13 @@ import javax.tools.JavaCompiler
 import javax.tools.JavaFileObject
 import javax.tools.ToolProvider
 
-/** Compiles a policy with the server's javac, or with ECJ when the server runs a JRE without a compiler. */
+/**
+ * Compiles a policy with the server's javac, or with ECJ when the server runs a JRE without a compiler. The platform
+ * loader puts ECJ on the plugin classpath at start (see LibraryLoader), so it is only looked up here.
+ */
 internal class PolicyCompilers(
-    private val ecj: EcjJar,
     private val systemCompiler: () -> JavaCompiler? = ToolProvider::getSystemJavaCompiler,
+    private val ecjLoader: ClassLoader = PolicyCompilers::class.java.classLoader,
 ) {
     fun compile(file: Path, root: Path, classpath: String) {
         val system = systemCompiler()
@@ -21,18 +22,16 @@ internal class PolicyCompilers(
             run(system, javacOptions(system, classpath, root), file)
             return
         }
-        val jar = try {
-            ecj.file()
-        } catch (failure: Exception) {
-            throw IllegalStateException("Java compiler is unavailable and ECJ could not be downloaded", failure)
+        run(ecj(), ecjOptions(classpath, root), file)
+    }
+
+    private fun ecj(): JavaCompiler {
+        val type = try {
+            Class.forName(ECJ_COMPILER, true, ecjLoader)
+        } catch (missing: ClassNotFoundException) {
+            throw IllegalStateException("Java compiler is unavailable: the server runs a JRE and ECJ was not loaded at start", missing)
         }
-        // The parent is the platform loader, so ECJ never sees (or clashes with) other plugins' classes.
-        val parent = ClassLoader.getSystemClassLoader().parent
-        URLClassLoader(arrayOf(jar.toUri().toURL()), parent).use { loader ->
-            val type = Class.forName("org.eclipse.jdt.internal.compiler.tool.EclipseCompiler", true, loader)
-            val compiler = type.getDeclaredConstructor().newInstance() as JavaCompiler
-            run(compiler, ecjOptions(classpath, root), file)
-        }
+        return type.getDeclaredConstructor().newInstance() as JavaCompiler
     }
 
     // -Xlint:-options hides javac's "source value 8 is obsolete" note; its output goes to the error, not the red console.
@@ -62,9 +61,7 @@ internal class PolicyCompilers(
         diagnostics.diagnostics.filter { it.kind == Diagnostic.Kind.ERROR }
             .joinToString("; ") { "line ${it.lineNumber}: ${it.getMessage(null)}" }.take(500)
 
-    companion object {
-        /** Compilers that keep a downloaded ECJ in the `compilers` folder of the library data. */
-        fun storedIn(dataFolder: Path): PolicyCompilers =
-            PolicyCompilers(EcjJar(dataFolder.resolve("compilers"), EcjBuild.forJava(JavaRuntime.feature)))
+    private companion object {
+        const val ECJ_COMPILER = "org.eclipse.jdt.internal.compiler.tool.EclipseCompiler"
     }
 }

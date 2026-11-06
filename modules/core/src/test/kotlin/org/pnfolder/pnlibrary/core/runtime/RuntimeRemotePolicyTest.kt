@@ -206,7 +206,6 @@ class RuntimeRemotePolicyTest {
         var closed = false
         var closes = 0
         init {
-            `when`(platform.dataFolder).thenReturn(Files.createTempDirectory("pn-policy-data"))
             `when`(library.owner).thenReturn(owner)
             `when`(library.version).thenReturn("1.0.0")
             `when`((library as RuntimeResources).runtimeTasks).thenReturn(tasks)
