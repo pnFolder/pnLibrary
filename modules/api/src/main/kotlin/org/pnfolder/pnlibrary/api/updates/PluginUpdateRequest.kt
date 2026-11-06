@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.backup.BackupExport
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
@@ -66,6 +67,9 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Explicit opt-in configuration backup; absent by default. */
     val configurationBackup: UpdateConfigurationBackup? = builder.configurationBackup
 
+    /** Copies the plugin makes itself before an update; kept with the backup set and restored by hand. */
+    val exports: List<BackupExport> = Collections.unmodifiableList(ArrayList(builder.exports))
+
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
         .filter { it.supports(javaFeature) }
@@ -88,6 +92,13 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
         internal var configurationBackup: UpdateConfigurationBackup? = null
+        internal val exports = mutableListOf<BackupExport>()
+
+        /** Adds a copy that [export] writes to a file before updating, for data such as a MySQL database. A rollback does not restore it. */
+        fun backupExport(kind: BackupKind, name: String, fileName: String, export: (Path) -> Unit): Builder = apply {
+            require(exports.none { it.fileName == fileName }) { "Export file names must differ" }
+            exports += BackupExport(kind, name, fileName, export)
+        }
 
         /** Preserves only [files] relative to the component's own [dataDirectory] before updating. */
         fun configurationBackup(dataDirectory: Path, vararg files: String): Builder =

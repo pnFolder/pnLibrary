@@ -98,6 +98,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
             .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
             .also { target -> copyArtifactRules(source, target) }
             .also { target -> source.configurationBackup?.let { copyBackups(it, target) } }
+            .also { target -> source.exports.forEach { target.backupExport(it.kind, it.name, it.fileName, it.export) } }
             .build()
     }
 

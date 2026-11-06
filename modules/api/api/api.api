@@ -4029,6 +4029,7 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest {
 	public final fun getCatalog ()Lorg/pnfolder/pnlibrary/api/updates/CatalogSource;
 	public final fun getChannel ()Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;
 	public final fun getConfigurationBackup ()Lorg/pnfolder/pnlibrary/api/updates/backup/UpdateConfigurationBackup;
+	public final fun getExports ()Ljava/util/List;
 	public final fun getRepositoryName ()Ljava/lang/String;
 	public final fun getRepositoryOwner ()Ljava/lang/String;
 	public final fun getSupportedApi ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
@@ -4043,6 +4044,7 @@ public final class org/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builde
 	public static synthetic fun artifact$default (Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/platform/PlatformType;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun automaticDownload (Z)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun backup (Lorg/pnfolder/pnlibrary/api/updates/backup/BackupKind;Ljava/lang/String;Ljava/nio/file/Path;[Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
+	public final fun backupExport (Lorg/pnfolder/pnlibrary/api/updates/backup/BackupKind;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun branch (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest;
 	public final fun catalogPath (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/PluginUpdateRequest$Builder;
@@ -4235,6 +4237,14 @@ public final class org/pnfolder/pnlibrary/api/updates/UpdateState : java/lang/En
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateState;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/updates/UpdateState;
+}
+
+public final class org/pnfolder/pnlibrary/api/updates/backup/BackupExport {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/updates/backup/BackupKind;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun getExport ()Lkotlin/jvm/functions/Function1;
+	public final fun getFileName ()Ljava/lang/String;
+	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/updates/backup/BackupKind;
+	public final fun getName ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/backup/BackupKind : java/lang/Enum {

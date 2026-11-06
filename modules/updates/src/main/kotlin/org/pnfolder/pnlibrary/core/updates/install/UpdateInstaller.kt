@@ -24,6 +24,7 @@ import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.core.updates.service.UpdateHealthReport
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
+import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
@@ -40,6 +41,7 @@ internal class UpdateInstaller(
     private val configurations = ConfigurationSnapshots(configurationsFolder, dataFolder.parent)
     private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("config.yml"))
     private val transactionsFolder = dataFolder.resolve("updates/transactions")
+    private val exportsFolder = dataFolder.resolve("updates/exports")
     private val transaction = UpdateTransaction(
         transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
@@ -78,6 +80,23 @@ internal class UpdateInstaller(
         removeBackup(path)
     }
 
+    /** Lets each plugin write its own copies; a plugin that fails stops the update, since the copy would be missing. */
+    private fun runExports(planId: UUID, changed: List<RegisteredUpdate>) {
+        changed.forEach { registration ->
+            if (registration.request.exports.isEmpty()) return@forEach
+            val folder = exportsFolder.resolve(planId.toString()).resolve(registration.product)
+            Files.createDirectories(folder)
+            registration.request.exports.forEach { export ->
+                try {
+                    export.export(folder.resolve(export.fileName))
+                } catch (error: Exception) {
+                    BackupStorage.delete(exportsFolder.resolve(planId.toString()))
+                    throw IllegalStateException("Плагин ${registration.product} не смог сохранить копию «${export.name}»: ${error.message}", error)
+                }
+            }
+        }
+    }
+
     private fun busyBackups(): Set<String> =
         (transaction.awaitingHealth() + transaction.awaitingRollbackHealth()).map { transaction.readJournal(it.journal).id }.toSet() +
             transaction.pendingInstallations().map { transaction.readJournal(it).id }
@@ -85,15 +104,16 @@ internal class UpdateInstaller(
     private fun removeBackup(journalPath: Path) {
         val journal = TransactionJournal.load(journalPath)
         journal.configurationSnapshot?.let { BackupStorage.delete(configurationsFolder.resolve(it)) }
+        journal.planId?.let { BackupStorage.delete(exportsFolder.resolve(it)) }
         BackupStorage.delete(journalPath.parent)
     }
 
     private fun warnIfLarge() {
-        val total = BackupStorage.bytes(configurationsFolder) + BackupStorage.bytes(transactionsFolder)
+        val total = BackupStorage.bytes(configurationsFolder) + BackupStorage.bytes(transactionsFolder) + BackupStorage.bytes(exportsFolder)
         if (total < BackupStorage.LARGE_BYTES) return
         warn(
             "Резервные копии занимают ${BackupItemText.size(total)}. Старше ${BackupStorage.RETENTION.toDays()} дней удаляются сами; " +
-                "ненужные можно удалить командой /pn update backups delete <id>.",
+                "копии плагинов лежат в updates/exports; ненужные можно удалить командой /pn update backups delete <id>.",
         )
     }
 
@@ -116,6 +136,7 @@ internal class UpdateInstaller(
                 ?: libraryConfiguration.takeIf { registration.product == PnLibraryIdentity.PRODUCT_ID }
             selection?.let { registration.descriptor.id to it }
         }.toMap()
+        runExports(snapshot.id, registrations.filter { it.descriptor.id in changed })
         val configurationSnapshot = configurations.capture(snapshot.id, selections)
         stager.stage(snapshot.id, plan, targets, configurationSnapshot)
         warnIfLarge()
