@@ -4193,6 +4193,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService
 	public fun rollback (Ljava/util/UUID;ZLorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun rollback (Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun setAutomaticDownload (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public fun setAutomaticDownloadForAllPlugins (ZLorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun setChannel (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/UpdateChannel;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun setHeld (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun setHeld (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
