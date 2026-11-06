@@ -31,8 +31,15 @@ class RemotePolicyFailureInterpreterTest {
     @Test
     fun `a server without javac is told to run on a JDK`() {
         assertEquals(
-            "На сервере нет компилятора Java: сервер запущен на JRE, а для политики нужен JDK",
+            "На сервере нет компилятора Java (это JRE), а запасной не загрузился при старте: проверьте интернет и перезапустите сервер",
             RemotePolicyFailureInterpreter.message(IllegalStateException("Java compiler is unavailable; run the server with a JDK")),
         )
+    }
+
+    @Test
+    fun `a missing JDK and a missing network are server setup, a broken policy is not`() {
+        assertEquals(true, RemotePolicyFailureInterpreter.isEnvironment(IllegalStateException("Java compiler is unavailable; run the server with a JDK")))
+        assertEquals(true, RemotePolicyFailureInterpreter.isEnvironment(java.net.UnknownHostException("raw.githubusercontent.com")))
+        assertEquals(false, RemotePolicyFailureInterpreter.isEnvironment(IllegalArgumentException("Remote policy compilation failed")))
     }
 }

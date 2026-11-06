@@ -30,6 +30,8 @@ internal class RemotePolicyMonitor(
     private val execution: PlatformExecution,
     private val notices: RemotePolicyNoticeRenderer,
 ) {
+    private val engine = RemotePolicyEngine(PolicyCompilers())
+
     /** Runs startup checks; daemon threads so a hung download never keeps the JVM alive, and an idle one is dropped. */
     private val startupChecks = Executors.newCachedThreadPool { task ->
         Thread(task, "pnlibrary-policy-check").apply { isDaemon = true }
@@ -98,7 +100,7 @@ internal class RemotePolicyMonitor(
         timeout: Duration,
     ): StartupCheck? {
         val context = ownership.remotePolicyContext(owner, policy.values)
-        val outcome = startupChecks.submit(Callable { RemotePolicyEngine.check(policy.source, context) })
+        val outcome = startupChecks.submit(Callable { engine.check(policy.source, context) })
         return try {
             val decision = outcome.get(timeout.toMillis(), TimeUnit.MILLISECONDS)
             notices.render(owner, metadata, policy, decision)
@@ -124,7 +126,7 @@ internal class RemotePolicyMonitor(
                     explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                 }
                 notices.render(owner, metadata, policy, false, explanation.build())
-                logger.error("Remote policy failed for ${metadata.name}", error)
+                logFailure(logger, metadata, error)
                 null
             }
         }
@@ -141,7 +143,7 @@ internal class RemotePolicyMonitor(
         closeModule: () -> Unit,
         closePlugin: () -> Unit,
     ) {
-        runCatchingNonFatal { RemotePolicyEngine.check(policy.source, policyContext) }
+        runCatchingNonFatal { engine.check(policy.source, policyContext) }
             .onSuccess { decision ->
                 execution.executeGlobal(Runnable {
                     if (isClosed()) return@Runnable
@@ -168,10 +170,16 @@ internal class RemotePolicyMonitor(
                         explanation.child("Для запуска нужен интернет: откройте серверу доступ к ${hostOf(policy.source)}")
                     }
                     notices.render(owner, metadata, policy, false, explanation.build())
-                    logger.error("Remote policy failed for ${metadata.name}", error)
+                    logFailure(logger, metadata, error)
                     deny(owner, policy, closeModule, closePlugin)
                 })
             }
+    }
+
+    // A server without internet or without a JDK is the administrator's setup, not an error to send to telemetry.
+    private fun logFailure(logger: PnLogger, metadata: PluginMetadata, error: Throwable) {
+        val message = "Remote policy failed for ${metadata.name}"
+        if (RemotePolicyFailureInterpreter.isEnvironment(error)) logger.warning(message) else logger.error(message, error)
     }
 
     private fun hostOf(source: String): String =
