@@ -82,7 +82,13 @@ internal class ConfigObjectIntrospector(
         val sections = fields(type).flatMap { field ->
             field.getAnnotationsByType(BackupDatabase::class.java).map {
                 val section = rawClass(field.genericType)
-                DatabasePath(key(field), it.kind, it.name, roleKeys(section, it.name), it.tables.toList(), tableKeys(section, it.name))
+                if (isScalar(section)) {
+                    // On the field that holds the database name: the other fields of the class carry the same name.
+                    val keys = roleKeys(type, it.name) + (DatabaseRole.DATABASE to key(field))
+                    DatabasePath("", it.kind, it.name, keys, it.tables.toList(), tableKeys(type, it.name))
+                } else {
+                    DatabasePath(key(field), it.kind, it.name, roleKeys(section, it.name), it.tables.toList(), tableKeys(section, it.name))
+                }
             }
         }
         return root + sections

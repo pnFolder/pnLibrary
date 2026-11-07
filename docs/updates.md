@@ -193,26 +193,28 @@ class Connection {
 `@DatabaseField(роль)`, если названы иначе. Аннотацию можно поставить и на сам класс конфига, когда поля
 подключения лежат в корне файла. Драйвер загружается через Libby при первой копии.
 
-**Несколько баз в одном классе, без отдельных классов подключения.** Поставьте на класс по аннотации на каждую базу, а
-полям с подключением укажите, какой базе они принадлежат (`database = "ID"`). Поле без `database` общее для всех баз
-(например, один пользователь и пароль), поле с `database` важнее общего:
+**Несколько баз в одном классе, без отдельных классов и без аннотаций на классе.** Тип и имя базы пишутся на поле с
+названием базы, остальные поля подключения помечаются тем же именем (`database = "имя"`):
 
 ```kotlin
-@BackupDatabase(DatabaseKind.MYSQL, "Игроки", tables = ["players", "stats"])
-@BackupDatabase(DatabaseKind.MYSQL, "Экономика", tables = ["accounts", "log_*"])
-@BackupDatabase(DatabaseKind.MYSQL, "Кланы")
 class GlobalConfig {
-    @field:DatabaseField(DatabaseRole.HOST) var address = "localhost"            // общее для всех баз
-    @field:DatabaseField(DatabaseRole.USER) var login = "root"
-    @field:DatabaseField(DatabaseRole.PASSWORD) @field:ConfigSecret var secret = ""
+    @field:BackupDatabase(DatabaseKind.MYSQL, "Игроки", tables = ["players", "stats"])
+    var playersDb = "players"
+    @field:DatabaseField(DatabaseRole.HOST, database = "Игроки") var playersHost = "db1.local"
+    @field:DatabaseField(DatabaseRole.USER, database = "Игроки") var playersUser = "app"
+    @field:DatabaseField(DatabaseRole.PASSWORD, database = "Игроки") @field:ConfigSecret var playersPass = ""
 
-    @field:DatabaseField(DatabaseRole.DATABASE, database = "Игроки") var playersSchema = "players"
-    @field:DatabaseField(DatabaseRole.DATABASE, database = "Экономика") var economySchema = "economy"
-    @field:DatabaseField(DatabaseRole.DATABASE, database = "Кланы") var clansSchema = "clans"
+    @field:BackupDatabase(DatabaseKind.POSTGRESQL, "Кланы")
+    var clansDb = "clans"
+    @field:DatabaseField(DatabaseRole.HOST, database = "Кланы") var clansHost = "pg.local"
+    @field:DatabaseField(DatabaseRole.USER, database = "Кланы") var clansUser = "clans"
+    @field:DatabaseField(DatabaseRole.PASSWORD, database = "Кланы") @field:ConfigSecret var clansPass = ""
 }
 ```
 
-`@BackupTable(database = "ID")` работает так же. ID баз в одном плагине должны быть разными.
+Поле без `database` общее для всех баз класса (например, один пароль на всё). Можно и поставить по аннотации
+`@BackupDatabase` на сам класс, тогда имя базы берётся из `@DatabaseField(DATABASE, database = "имя")`.
+`@BackupTable(database = "имя")` работает так же. Имена баз в одном плагине должны быть разными.
 
 **Только свои таблицы.** Если база общая с другими плагинами, копируйте только нужное:
 

@@ -84,4 +84,29 @@ class ConfigObjectIntrospectorTest {
         assertEquals(emptyList<String>(), paths[0].tableKeys)
         assertEquals(listOf("accounts"), paths[1].tableKeys)
     }
+
+    class OnTheFields {
+        @BackupDatabase(DatabaseKind.MYSQL, "Игроки")
+        var playersDb = ""
+
+        @DatabaseField(DatabaseRole.HOST, database = "Игроки")
+        var playersHost = ""
+
+        @BackupDatabase(DatabaseKind.POSTGRESQL, "Кланы", tables = ["clans"])
+        var clansDb = ""
+
+        @DatabaseField(DatabaseRole.HOST, database = "Кланы")
+        var clansHost = ""
+    }
+
+    @Test
+    fun `a database can be described on its fields alone with no annotation on the class`() {
+        val paths = ConfigObjectIntrospector(ConfigNamingStrategy.AS_DECLARED).databasePaths(OnTheFields::class.java)
+
+        assertEquals(listOf("Игроки", "Кланы"), paths.map { it.name })
+        assertEquals(listOf(DatabaseKind.MYSQL, DatabaseKind.POSTGRESQL), paths.map { it.kind })
+        assertEquals(mapOf(DatabaseRole.HOST to "playersHost", DatabaseRole.DATABASE to "playersDb"), paths[0].keys)
+        assertEquals(mapOf(DatabaseRole.HOST to "clansHost", DatabaseRole.DATABASE to "clansDb"), paths[1].keys)
+        assertEquals("", paths[0].path)
+    }
 }
