@@ -23,7 +23,7 @@ internal class PostgresDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 
             val schema = PostgresSchema(connection)
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write(HEADER + "\n")
-                val tables = schema.tables().filter { only.isEmpty() || it in only }
+                val tables = schema.tables().filter { TableMask.matches(only, it) }
                 // Dropping a table also drops the sequences it owns, so all drops come before the sequences are created.
                 tables.forEach { out.write("DROP TABLE IF EXISTS ${PostgresSyntax.identifier(it)} CASCADE;\n") }
                 schema.sequences(only).forEach { out.write("CREATE SEQUENCE IF NOT EXISTS ${PostgresSyntax.identifier(it)};\n") }

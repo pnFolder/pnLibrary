@@ -45,7 +45,7 @@ internal class PostgresSchema(private val connection: Connection) {
     private fun ownedSequences(sql: String, only: List<String>): List<String> = connection.createStatement().use { statement ->
         statement.executeQuery(sql).use { rows ->
             generateSequence { if (rows.next()) rows.getString(1) to rows.getString(2) else null }
-                .filter { (_, owner) -> only.isEmpty() || owner in only }.map { it.first }.toList()
+                .filter { (_, owner) -> owner != null && TableMask.matches(only, owner) || only.isEmpty() }.map { it.first }.toList()
         }
     }
 

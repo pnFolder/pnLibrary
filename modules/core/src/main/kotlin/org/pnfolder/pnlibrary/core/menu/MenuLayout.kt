@@ -12,6 +12,7 @@ internal const val SETTINGS = "pnlibrary.updates.settings"
 internal const val ROLLBACK = "pnlibrary.updates.rollback"
 internal const val DATABASE_BUTTONS = 3
 internal const val DATABASE_FIRST = 15
+internal const val FILES_BUTTON = 20
 internal const val HOME_ROWS = 5
 internal const val NETWORK_SLOT = 34
 internal const val NETWORK_CHECK = 49

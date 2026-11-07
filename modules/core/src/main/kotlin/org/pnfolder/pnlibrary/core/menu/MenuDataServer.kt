@@ -88,6 +88,8 @@ class MenuDataServer(
             MenuCalls.RESTORE_DATABASE -> done(
                 data.restoreDatabase(UUID.fromString(text("id")), requireNotNull(text("product")), requireNotNull(text("name")), actor),
             )
+            MenuCalls.EXTRACT_BACKUP -> data.extractBackup(UUID.fromString(text("id")), requireNotNull(text("product")), actor)
+                .whenComplete { value, error -> finish(reply, value, error) }
             else -> return@with false
         }
         true

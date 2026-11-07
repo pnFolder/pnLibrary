@@ -155,6 +155,15 @@ class UpdateCatalogCommands(
                     }
                 }
             }
+            literal("files") {
+                managePermission?.let(::permission)
+                argument("backupId", ArgumentType.string()) {
+                    argument("backupPlugin", ArgumentType.string()) {
+                        suggests { productNames() }
+                        executes(::extractBackup)
+                    }
+                }
+            }
             literal("delete") {
                 managePermission?.let(::permission)
                 argument("backupId", ArgumentType.string()) { executes(::deleteBackup) }
@@ -279,6 +288,22 @@ class UpdateCatalogCommands(
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
                 else sender.send(error("Не удалось вернуть базу: ${generateSequence(failure) { it.cause }.last().message}"))
+            })
+        }
+    }
+
+    /** Hands out the saved databases and exports of a plugin as plain files, for what the library cannot put back itself. */
+    private fun extractBackup(context: CommandContext) {
+        if (!ready(context)) return
+        val sender = context.sender
+        val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
+            ?: return sender.send(error("Некорректный ID резервного набора."))
+        val plugin = context.get<String>("backupPlugin")
+        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        library.updates.extractBackup(id, plugin, actor).whenComplete { folder, failure ->
+            deliver(Runnable {
+                if (failure == null) sender.send(Component.text("Файлы плагина $plugin лежат в папке: $folder"))
+                else sender.send(error("Не удалось выдать файлы: ${generateSequence(failure) { it.cause }.last().message}"))
             })
         }
     }

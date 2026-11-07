@@ -138,6 +138,16 @@ interface UpdateService {
             it.completeExceptionally(UnsupportedOperationException("Update service does not support restoring databases"))
         }
 
+    /**
+     * Copies the saved databases and plugin exports of [product] from the retained set [transactionId] into a new
+     * folder under `plugins/pnLibrary/updates/handout`, for a plugin that cannot take them back itself, and returns
+     * the folder path. Does not grant permissions.
+     */
+    fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> =
+        CompletableFuture<String>().also {
+            it.completeExceptionally(UnsupportedOperationException("Update service does not support handing out saved files"))
+        }
+
     /** Prepares exactly [transactionId] for restart. Never substitutes another backup. */
     fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         unsupported("selected transaction rollback")

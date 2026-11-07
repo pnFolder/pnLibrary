@@ -45,6 +45,7 @@ internal class UpdateInstaller(
     private val transactionsFolder = dataFolder.resolve("updates/transactions")
     private val exportsFolder = dataFolder.resolve("updates/exports")
     private val databasesFolder = dataFolder.resolve("updates/databases")
+    private val handoutFolder = dataFolder.resolve("updates/handout")
     private val transaction = UpdateTransaction(
         transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
@@ -104,6 +105,17 @@ internal class UpdateInstaller(
     fun restoreDatabase(id: UUID, product: String, name: String) {
         val journal = TransactionJournal.load(transaction.rollbackCandidate(id))
         databases.restore(UUID.fromString(requireNotNull(journal.planId) { "У набора нет плана" }), product, name)
+    }
+
+    /** Copies the saved databases and exports of [product] from the set [id] into a new folder and returns it. */
+    fun extractBackup(id: UUID, product: String): Path {
+        val journal = TransactionJournal.load(transaction.rollbackCandidate(id))
+        val plan = requireNotNull(journal.planId) { "У набора нет плана" }.toString()
+        val target = handoutFolder.resolve("${id.toString().take(HANDOUT_ID)}-$product")
+        val sources = listOf(databasesFolder, exportsFolder).mapNotNull { BackupStorage.child(it.resolve(plan), product) }
+        require(sources.isNotEmpty()) { "В наборе $id нет сохранённых баз и выгрузок плагина $product" }
+        sources.forEach { BackupStorage.copy(it, target) }
+        return target
     }
 
     private fun busyBackups(): Set<String> =
@@ -248,4 +260,7 @@ internal class UpdateInstaller(
             .any { pending -> (pending.expectedVersions.keys + pending.unknownProducts).any { it !in installed } }
     }
 
+    private companion object {
+        const val HANDOUT_ID = 8
+    }
 }

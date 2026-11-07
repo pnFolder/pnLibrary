@@ -4181,6 +4181,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService
 	public fun confirm (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
 	public fun currentPlan ()Ljava/util/Optional;
 	public fun deleteBackup (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public fun extractBackup (Ljava/util/UUID;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public fun heldUntil (Ljava/lang/String;)Ljava/time/Instant;
 	public fun history ()Ljava/util/List;

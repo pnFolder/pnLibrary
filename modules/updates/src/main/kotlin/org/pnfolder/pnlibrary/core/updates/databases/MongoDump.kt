@@ -23,7 +23,7 @@ internal class MongoDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
             val db = client.getDatabase(database)
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write("-- pnlibrary-mongo 1\n")
-                db.listCollectionNames().filterNot { it.startsWith("system.") || (only.isNotEmpty() && it !in only) }.forEach { name ->
+                db.listCollectionNames().filterNot { it.startsWith("system.") || !TableMask.matches(only, it) }.forEach { name ->
                     require(name.none { it == '\n' || it == '\r' }) { "Имя коллекции с переводом строки не поддерживается" }
                     out.write("#collection $name\n")
                     val collection = db.getCollection(name, BsonDocument::class.java)

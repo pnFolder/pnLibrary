@@ -278,6 +278,13 @@ class UpdateServiceImpl(
             null
         }
 
+    /** Implements [UpdateService.extractBackup]. */
+    override fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> = runtime.readAsync {
+        val folder = installer.extractBackup(transactionId, product).toAbsolutePath().toString()
+        logging.log(this, LogLevel.INFO, "Файлы плагина $product из набора $transactionId выданы в $folder (${actor.name})")
+        folder
+    }
+
     /** Implements [UpdateService.deleteBackup]. */
     override fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {
         installer.deleteBackup(transactionId)

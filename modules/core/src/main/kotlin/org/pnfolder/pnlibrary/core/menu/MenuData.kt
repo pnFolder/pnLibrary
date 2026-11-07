@@ -104,6 +104,9 @@ interface MenuData {
     /** Puts the saved database [name] of [product] back from the set [id]; rows written since are lost. */
     fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean>
 
+    /** Copies the saved files of [product] from the set [id] into a folder and returns its path. */
+    fun extractBackup(id: UUID, product: String, actor: UpdateActor): CompletionStage<String>
+
     /** The journal groups of the last [hours] hours; [level] is `info`, `warning`, `error` or null. */
     fun journalGroups(level: String?, hours: Int, limit: Int): List<JournalGroup>
 

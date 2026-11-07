@@ -21,7 +21,7 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
         try {
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write("-- pnlibrary-db 1\n")
-                tables(connection).filter { only.isEmpty() || it in only }.forEach { table -> dumpTable(connection, table, out, target) }
+                tables(connection).filter { TableMask.matches(only, it) }.forEach { table -> dumpTable(connection, table, out, target) }
             }
         } finally {
             connection.rollback()

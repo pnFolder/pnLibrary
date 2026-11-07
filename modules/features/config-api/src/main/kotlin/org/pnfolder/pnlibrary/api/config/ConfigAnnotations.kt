@@ -225,7 +225,7 @@ enum class DatabaseKind {
  *
  * @property kind the database server type
  * @property name short name the menu and commands show for this database
- * @property tables tables or collections to copy; empty means all of them
+ * @property tables tables or collections to copy; `*` in a name stands for any text (`"log_*"`, for tables a plugin creates by date); empty means all
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
