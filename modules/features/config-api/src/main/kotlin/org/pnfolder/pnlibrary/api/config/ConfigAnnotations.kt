@@ -216,14 +216,20 @@ enum class DatabaseKind {
  * @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы")
  * var storage = StorageSection()
  * ```
+ * By default every table (every collection in MongoDB) is copied. List the ones the plugin owns in [tables] to copy only
+ * those, so a database shared with other plugins is left alone:
+ * ```kotlin
+ * @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы", tables = ["clans", "clan_members"])
+ * ```
  * Only tables are copied: triggers, procedures and views are not.
  *
  * @property kind the database server type
  * @property name short name the menu and commands show for this database
+ * @property tables tables or collections to copy; empty means all of them
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class BackupDatabase(val kind: DatabaseKind, val name: String)
+annotation class BackupDatabase(val kind: DatabaseKind, val name: String, val tables: Array<String> = [])
 
 /** What a field of a database connection section holds. */
 enum class DatabaseRole {
@@ -248,3 +254,16 @@ enum class DatabaseRole {
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class DatabaseField(val role: DatabaseRole)
+
+/**
+ * Marks a text field of a section with [BackupDatabase] that holds the name of a table (or collection) to copy, for
+ * plugins whose table names are set in the configuration. Several fields may carry it; with [BackupDatabase.tables]
+ * both lists are joined.
+ * ```kotlin
+ * @field:BackupTable
+ * var table = "clans"
+ * ```
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class BackupTable

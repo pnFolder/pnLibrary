@@ -70,7 +70,7 @@ internal class DatabaseBackups(
 
     private fun dump(source: DatabaseSource, target: Path) {
         val connection = DatabaseConnection.read(source)
-        engineOf(source).dump(connection, target)
+        engineOf(source).dump(connection, connection.tables, target)
     }
 
     private fun engineOf(source: DatabaseSource): DatabaseEngine =

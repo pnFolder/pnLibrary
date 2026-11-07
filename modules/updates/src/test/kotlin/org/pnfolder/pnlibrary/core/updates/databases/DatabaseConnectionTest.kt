@@ -60,4 +60,20 @@ class DatabaseConnectionTest {
         assertEquals("uri/clans", DatabaseConnection.read(mongo("mongo:\n  uri: mongodb://u:p@h/clans\n  database: clans\n")).toString())
         assertEquals("@h:27017/clans", DatabaseConnection.read(mongo("mongo:\n  host: h\n  database: clans\n")).toString())
     }
+
+    @Test
+    fun `only the listed tables and the tables named in marked fields are copied`() {
+        val yaml = "storage:\n  host: h\n  database: d\n  user: u\n  members: clan_members\n"
+        val base = source(yaml, "storage")
+        val marked = DatabaseSource(base.plugin, base.kind, base.name, base.file, base.path, base.keys, listOf("clans"), listOf("members"))
+        assertEquals(listOf("clans", "clan_members"), DatabaseConnection.read(marked).tables)
+        assertEquals(emptyList<String>(), DatabaseConnection.read(base).tables)
+    }
+
+    @Test
+    fun `an empty marked table field is an error and not a copy of everything`() {
+        val base = source("storage:\n  host: h\n  database: d\n  user: u\n  table: ''\n", "storage")
+        val marked = DatabaseSource(base.plugin, base.kind, base.name, base.file, base.path, base.keys, emptyList(), listOf("table"))
+        assertThrows(IllegalStateException::class.java) { DatabaseConnection.read(marked) }
+    }
 }

@@ -15,9 +15,9 @@ internal class MongoEngine(
         check(library.ensure()) { "Не удалось загрузить драйвер MongoDB: проверьте доступ сервера в интернет и повторите" }
     }
 
-    override fun dump(connection: DatabaseConnection, target: Path) {
+    override fun dump(connection: DatabaseConnection, tables: List<String>, target: Path) {
         ensureDriver()
-        MongoDump().write(address(connection), connection.database, target)
+        MongoDump().write(address(connection), connection.database, tables, target)
     }
 
     override fun restore(connection: DatabaseConnection, source: Path) {

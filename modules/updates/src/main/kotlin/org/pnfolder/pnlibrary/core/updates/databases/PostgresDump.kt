@@ -16,20 +16,20 @@ import java.util.zip.GZIPOutputStream
  * consistent read-only transaction. Views, functions, triggers and other schemas are not copied.
  */
 internal class PostgresDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 1024) {
-    fun write(connection: Connection, target: Path) {
+    fun write(connection: Connection, only: List<String>, target: Path) {
         connection.autoCommit = false
         connection.createStatement().use { it.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY") }
         try {
             val schema = PostgresSchema(connection)
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write(HEADER + "\n")
-                val tables = schema.tables()
+                val tables = schema.tables().filter { only.isEmpty() || it in only }
                 // Dropping a table also drops the sequences it owns, so all drops come before the sequences are created.
                 tables.forEach { out.write("DROP TABLE IF EXISTS ${PostgresSyntax.identifier(it)} CASCADE;\n") }
-                schema.sequences().forEach { out.write("CREATE SEQUENCE IF NOT EXISTS ${PostgresSyntax.identifier(it)};\n") }
+                schema.sequences(only).forEach { out.write("CREATE SEQUENCE IF NOT EXISTS ${PostgresSyntax.identifier(it)};\n") }
                 tables.forEach { dumpTable(connection, schema, it, out, target) }
                 tables.flatMap(schema::foreignKeys).forEach { out.write("$it;\n") }
-                schema.sequencePositions().forEach { out.write("$it;\n") }
+                schema.sequencePositions(only).forEach { out.write("$it;\n") }
             }
         } finally {
             connection.rollback()

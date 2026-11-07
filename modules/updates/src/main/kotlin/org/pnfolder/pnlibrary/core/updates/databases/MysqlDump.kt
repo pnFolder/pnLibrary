@@ -15,13 +15,13 @@ import java.util.zip.GZIPOutputStream
  * table definition, then its rows. All tables are read in one consistent transaction, so rows match each other.
  */
 internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 1024) {
-    fun write(connection: Connection, target: Path) {
+    fun write(connection: Connection, only: List<String>, target: Path) {
         connection.autoCommit = false
         connection.createStatement().use { it.execute("START TRANSACTION WITH CONSISTENT SNAPSHOT") }
         try {
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write("-- pnlibrary-db 1\n")
-                tables(connection).forEach { table -> dumpTable(connection, table, out, target) }
+                tables(connection).filter { only.isEmpty() || it in only }.forEach { table -> dumpTable(connection, table, out, target) }
             }
         } finally {
             connection.rollback()

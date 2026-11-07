@@ -1,6 +1,10 @@
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupDatabase : java/lang/annotation/Annotation {
 	public abstract fun kind ()Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
 	public abstract fun name ()Ljava/lang/String;
+	public abstract fun tables ()[Ljava/lang/String;
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupTable : java/lang/annotation/Annotation {
 }
 
 public final class org/pnfolder/pnlibrary/api/config/CommentPolicy : java/lang/Enum {

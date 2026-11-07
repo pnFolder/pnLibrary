@@ -10,22 +10,42 @@ internal class PostgresSchema(private val connection: Connection) {
         "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' ORDER BY 1",
     )
 
-    /** Sequences that belong to no identity column; identity columns bring their own. */
-    fun sequences(): List<String> = strings(
+    /** Sequences that belong to no identity column; identity columns bring their own. [only] keeps those owned by the listed tables. */
+    fun sequences(only: List<String>): List<String> = ownedSequences(
         """
-        SELECT s.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace
+        SELECT s.relname, t.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace
+        LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype = 'a' LEFT JOIN pg_class t ON t.oid = d.refobjid
         WHERE s.relkind = 'S' AND n.nspname = current_schema()
-          AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = s.oid AND d.deptype = 'i') ORDER BY 1
+          AND NOT EXISTS (SELECT 1 FROM pg_depend i WHERE i.objid = s.oid AND i.deptype = 'i') ORDER BY 1
         """,
+        only,
     )
 
     /** `setval` statements that give every sequence its current position back. */
-    fun sequencePositions(): List<String> = connection.createStatement().use { statement ->
-        statement.executeQuery(
-            "SELECT sequencename, last_value FROM pg_sequences WHERE schemaname = current_schema() AND last_value IS NOT NULL",
-        ).use { rows ->
-            generateSequence { if (rows.next()) rows.getString(1) to rows.getLong(2) else null }
-                .map { (name, value) -> "SELECT setval(${PostgresSyntax.literal(PostgresSyntax.identifier(name))}, $value, true)" }.toList()
+    fun sequencePositions(only: List<String>): List<String> {
+        val owners = ownedSequences(
+            """
+            SELECT s.relname, t.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace
+            LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype IN ('a', 'i') LEFT JOIN pg_class t ON t.oid = d.refobjid
+            WHERE s.relkind = 'S' AND n.nspname = current_schema()
+            """,
+            only,
+        ).toSet()
+        return connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT sequencename, last_value FROM pg_sequences WHERE schemaname = current_schema() AND last_value IS NOT NULL",
+            ).use { rows ->
+                generateSequence { if (rows.next()) rows.getString(1) to rows.getLong(2) else null }
+                    .filter { (name, _) -> name in owners }
+                    .map { (name, value) -> "SELECT setval(${PostgresSyntax.literal(PostgresSyntax.identifier(name))}, $value, true)" }.toList()
+            }
+        }
+    }
+
+    private fun ownedSequences(sql: String, only: List<String>): List<String> = connection.createStatement().use { statement ->
+        statement.executeQuery(sql).use { rows ->
+            generateSequence { if (rows.next()) rows.getString(1) to rows.getString(2) else null }
+                .filter { (_, owner) -> only.isEmpty() || owner in only }.map { it.first }.toList()
         }
     }
 

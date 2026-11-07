@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.config.yaml
 
 import org.pnfolder.pnlibrary.api.config.BackupDatabase
+import org.pnfolder.pnlibrary.api.config.BackupTable
 import org.pnfolder.pnlibrary.api.config.ConfigIgnore
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
@@ -75,9 +76,14 @@ internal class ConfigObjectIntrospector(
 
     /** The sections marked `@BackupDatabase` in [type], with the dotted YAML path of each. */
     fun databasePaths(type: Class<*>): List<DatabasePath> {
-        val root = type.getAnnotation(BackupDatabase::class.java)?.let { DatabasePath("", it.kind, it.name, roleKeys(type)) }
+        val root = type.getAnnotation(BackupDatabase::class.java)?.let {
+            DatabasePath("", it.kind, it.name, roleKeys(type), it.tables.toList(), tableKeys(type))
+        }
         val sections = fields(type).mapNotNull { field ->
-            field.getAnnotation(BackupDatabase::class.java)?.let { DatabasePath(key(field), it.kind, it.name, roleKeys(rawClass(field.genericType))) }
+            field.getAnnotation(BackupDatabase::class.java)?.let {
+                val section = rawClass(field.genericType)
+                DatabasePath(key(field), it.kind, it.name, roleKeys(section), it.tables.toList(), tableKeys(section))
+            }
         }
         return listOfNotNull(root) + sections
     }
@@ -86,6 +92,9 @@ internal class ConfigObjectIntrospector(
     private fun roleKeys(section: Class<*>): Map<DatabaseRole, String> = fields(section).mapNotNull { field ->
         field.getAnnotation(DatabaseField::class.java)?.let { it.role to key(field) }
     }.toMap()
+
+    /** The YAML keys of the fields marked `@BackupTable` in [section]. */
+    private fun tableKeys(section: Class<*>): List<String> = fields(section).filter { it.isAnnotationPresent(BackupTable::class.java) }.map(::key)
 
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 
@@ -172,4 +181,11 @@ internal class ConfigObjectIntrospector(
 }
 
 /** A section holding database connection details: where it is in the file, what kind it is and what it is called. */
-class DatabasePath(val path: String, val kind: DatabaseKind, val name: String, val keys: Map<DatabaseRole, String> = emptyMap())
+class DatabasePath(
+    val path: String,
+    val kind: DatabaseKind,
+    val name: String,
+    val keys: Map<DatabaseRole, String> = emptyMap(),
+    val tables: List<String> = emptyList(),
+    val tableKeys: List<String> = emptyList(),
+)

@@ -17,13 +17,13 @@ import java.util.zip.GZIPOutputStream
  * snapshot across collections, so a plugin that writes during the copy can leave collections a moment apart.
  */
 internal class MongoDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 1024) {
-    fun write(address: String, database: String, target: Path) {
+    fun write(address: String, database: String, only: List<String>, target: Path) {
         val json = JsonWriterSettings.builder().outputMode(JsonMode.EXTENDED).build()
         MongoClients.create(address).use { client ->
             val db = client.getDatabase(database)
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
                 out.write("-- pnlibrary-mongo 1\n")
-                db.listCollectionNames().filterNot { it.startsWith("system.") }.forEach { name ->
+                db.listCollectionNames().filterNot { it.startsWith("system.") || (only.isNotEmpty() && it !in only) }.forEach { name ->
                     require(name.none { it == '\n' || it == '\r' }) { "Имя коллекции с переводом строки не поддерживается" }
                     out.write("#collection $name\n")
                     val collection = db.getCollection(name, BsonDocument::class.java)
