@@ -229,6 +229,7 @@ enum class DatabaseKind {
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
+@Repeatable
 annotation class BackupDatabase(val kind: DatabaseKind, val name: String, val tables: Array<String> = [])
 
 /** What a field of a database connection section holds. */
@@ -253,7 +254,7 @@ enum class DatabaseRole {
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DatabaseField(val role: DatabaseRole)
+annotation class DatabaseField(val role: DatabaseRole, val database: String = "")
 
 /**
  * Marks a text field of a section with [BackupDatabase] that holds the name of a table (or collection) to copy, for
@@ -266,4 +267,4 @@ annotation class DatabaseField(val role: DatabaseRole)
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class BackupTable
+annotation class BackupTable(val database: String = "")

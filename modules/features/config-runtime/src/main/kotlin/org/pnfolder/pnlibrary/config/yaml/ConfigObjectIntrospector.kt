@@ -74,27 +74,34 @@ internal class ConfigObjectIntrospector(
         }
     }
 
-    /** The sections marked `@BackupDatabase` in [type], with the dotted YAML path of each. */
+    /** The databases marked `@BackupDatabase` in [type] (the class may carry several), with the dotted YAML path of each. */
     fun databasePaths(type: Class<*>): List<DatabasePath> {
-        val root = type.getAnnotation(BackupDatabase::class.java)?.let {
-            DatabasePath("", it.kind, it.name, roleKeys(type), it.tables.toList(), tableKeys(type))
+        val root = type.getAnnotationsByType(BackupDatabase::class.java).map {
+            DatabasePath("", it.kind, it.name, roleKeys(type, it.name), it.tables.toList(), tableKeys(type, it.name))
         }
-        val sections = fields(type).mapNotNull { field ->
-            field.getAnnotation(BackupDatabase::class.java)?.let {
+        val sections = fields(type).flatMap { field ->
+            field.getAnnotationsByType(BackupDatabase::class.java).map {
                 val section = rawClass(field.genericType)
-                DatabasePath(key(field), it.kind, it.name, roleKeys(section), it.tables.toList(), tableKeys(section))
+                DatabasePath(key(field), it.kind, it.name, roleKeys(section, it.name), it.tables.toList(), tableKeys(section, it.name))
             }
         }
-        return listOfNotNull(root) + sections
+        return root + sections
     }
 
-    /** The YAML key of each field that says which part of a connection it holds, whatever the field is called. */
-    private fun roleKeys(section: Class<*>): Map<DatabaseRole, String> = fields(section).mapNotNull { field ->
-        field.getAnnotation(DatabaseField::class.java)?.let { it.role to key(field) }
-    }.toMap()
+    /**
+     * The YAML key of each field that says which part of a connection it holds, whatever the field is called. A field
+     * with a `database` belongs to that database only and wins over a shared field without one.
+     */
+    private fun roleKeys(section: Class<*>, database: String): Map<DatabaseRole, String> = fields(section)
+        .mapNotNull { field ->
+            field.getAnnotation(DatabaseField::class.java)?.takeIf { it.database.isEmpty() || it.database == database }?.let { it to key(field) }
+        }
+        .sortedBy { it.first.database.isNotEmpty() }.associate { it.first.role to it.second }
 
-    /** The YAML keys of the fields marked `@BackupTable` in [section]. */
-    private fun tableKeys(section: Class<*>): List<String> = fields(section).filter { it.isAnnotationPresent(BackupTable::class.java) }.map(::key)
+    /** The YAML keys of the fields marked `@BackupTable` in [section] for [database]. */
+    private fun tableKeys(section: Class<*>, database: String): List<String> = fields(section)
+        .filter { field -> field.getAnnotation(BackupTable::class.java)?.let { it.database.isEmpty() || it.database == database } == true }
+        .map(::key)
 
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 

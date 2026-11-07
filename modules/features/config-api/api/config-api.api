@@ -4,7 +4,12 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/config/Bac
 	public abstract fun tables ()[Ljava/lang/String;
 }
 
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupDatabase$Container : java/lang/annotation/Annotation {
+	public abstract fun value ()[Lorg/pnfolder/pnlibrary/api/config/BackupDatabase;
+}
+
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupTable : java/lang/annotation/Annotation {
+	public abstract fun database ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/config/CommentPolicy : java/lang/Enum {
@@ -352,6 +357,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigurationS
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/DatabaseField : java/lang/annotation/Annotation {
+	public abstract fun database ()Ljava/lang/String;
 	public abstract fun role ()Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
 }
 

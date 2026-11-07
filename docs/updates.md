@@ -193,6 +193,27 @@ class Connection {
 `@DatabaseField(роль)`, если названы иначе. Аннотацию можно поставить и на сам класс конфига, когда поля
 подключения лежат в корне файла. Драйвер загружается через Libby при первой копии.
 
+**Несколько баз в одном классе, без отдельных классов подключения.** Поставьте на класс по аннотации на каждую базу, а
+полям с подключением укажите, какой базе они принадлежат (`database = "ID"`). Поле без `database` общее для всех баз
+(например, один пользователь и пароль), поле с `database` важнее общего:
+
+```kotlin
+@BackupDatabase(DatabaseKind.MYSQL, "Игроки", tables = ["players", "stats"])
+@BackupDatabase(DatabaseKind.MYSQL, "Экономика", tables = ["accounts", "log_*"])
+@BackupDatabase(DatabaseKind.MYSQL, "Кланы")
+class GlobalConfig {
+    @field:DatabaseField(DatabaseRole.HOST) var address = "localhost"            // общее для всех баз
+    @field:DatabaseField(DatabaseRole.USER) var login = "root"
+    @field:DatabaseField(DatabaseRole.PASSWORD) @field:ConfigSecret var secret = ""
+
+    @field:DatabaseField(DatabaseRole.DATABASE, database = "Игроки") var playersSchema = "players"
+    @field:DatabaseField(DatabaseRole.DATABASE, database = "Экономика") var economySchema = "economy"
+    @field:DatabaseField(DatabaseRole.DATABASE, database = "Кланы") var clansSchema = "clans"
+}
+```
+
+`@BackupTable(database = "ID")` работает так же. ID баз в одном плагине должны быть разными.
+
 **Только свои таблицы.** Если база общая с другими плагинами, копируйте только нужное:
 
 ```kotlin
