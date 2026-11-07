@@ -52,7 +52,7 @@ internal class UpdatePlanStager(
         installedTarget: InstalledUpdateTarget?,
     ): TransactionArtifact {
         val release = plan.selected.single { it.product == change.product }
-        val artifact = selectArtifact(change, release)
+        val artifact = selectArtifact(change, release, installedTarget?.currentJar?.fileName?.toString())
         require(!requireSha256 || artifact.sha256 != null) {
             "Release artifact has no published SHA-256: ${artifact.file}"
         }
@@ -87,13 +87,20 @@ internal class UpdatePlanStager(
         )
     }
 
-    /** The artifact built exactly for [platform], or, when none is listed, one built for every platform. */
+    /**
+     * Keeps the variant that is installed: a universal JAR (the one the bootstrap puts into `plugins`) is replaced by the
+     * newer universal one, a platform JAR by the platform one. A fresh install prefers the platform JAR, then the universal.
+     */
     private fun selectArtifact(
         change: ProductChange,
         release: ProductRelease,
+        installedFile: String?,
     ): ArtifactDescriptor {
         val candidates = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
-        return candidates.firstOrNull { it.platform == platform }
+        val universalInstalled = installedFile?.endsWith("-universal.jar", ignoreCase = true) == true
+        val preferred = if (universalInstalled) PlatformType.UNIVERSAL else platform
+        return candidates.firstOrNull { it.platform == preferred }
+            ?: candidates.firstOrNull { it.platform == platform }
             ?: candidates.firstOrNull()
             ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
     }
