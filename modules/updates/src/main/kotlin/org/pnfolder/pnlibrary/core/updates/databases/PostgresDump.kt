@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.databases
 
+import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets.UTF_8
@@ -22,14 +23,15 @@ internal class PostgresDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 
         connection.createStatement().use { it.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY") }
         try {
             val schema = PostgresSchema(connection)
-            BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
+            BufferedWriter(OutputStreamWriter(GZIPOutputStream(PrivateFiles.output(target)), UTF_8)).use { out ->
                 out.write(HEADER + "\n")
                 val tables = schema.tables().filter { TableMask.matches(only, it) }
                 // Dropping a table also drops the sequences it owns, so all drops come before the sequences are created.
                 tables.forEach { out.write("DROP TABLE IF EXISTS ${PostgresSyntax.identifier(it)} CASCADE;\n") }
-                schema.sequences(only).forEach { out.write("CREATE SEQUENCE IF NOT EXISTS ${PostgresSyntax.identifier(it)};\n") }
+                schema.enumTypes(tables).forEach { out.write("$it;\n") }
+                schema.sequences(only).forEach { out.write("$it;\n") }
                 tables.forEach { dumpTable(connection, schema, it, out, target) }
-                tables.flatMap(schema::foreignKeys).forEach { out.write("$it;\n") }
+                (tables.flatMap(schema::foreignKeys) + schema.externalForeignKeys(tables)).forEach { out.write("$it;\n") }
                 schema.sequencePositions(only).forEach { out.write("$it;\n") }
             }
         } finally {

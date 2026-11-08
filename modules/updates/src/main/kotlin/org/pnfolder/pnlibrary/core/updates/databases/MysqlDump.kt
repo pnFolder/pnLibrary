@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.databases
 
+import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets.UTF_8
@@ -20,7 +21,7 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
         connection.autoCommit = false
         connection.createStatement().use { it.execute("START TRANSACTION WITH CONSISTENT SNAPSHOT") }
         try {
-            BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
+            BufferedWriter(OutputStreamWriter(GZIPOutputStream(PrivateFiles.output(target)), UTF_8)).use { out ->
                 out.write(HEADER + "\n")
                 tables(connection).filter { TableMask.matches(only, it) }.forEach { table -> dumpTable(connection, table, out, target) }
             }
@@ -55,6 +56,7 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
     private fun writeRows(rows: ResultSet, quoted: String, out: BufferedWriter, target: Path) {
         val columns = rows.metaData.columnCount
         var inBatch = 0
+        var batchChars = 0
         while (rows.next()) {
             out.write(if (inBatch == 0) "INSERT INTO $quoted VALUES (" else ",(")
             for (column in 1..columns) {
@@ -88,6 +90,7 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
 
         private const val FETCH_ROWS = 1000
         private const val ROWS_PER_INSERT = 200
+        private const val MAX_INSERT_CHARS = 1_000_000
         private val BINARY_TYPES = setOf(Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB)
         private val NUMBER_TYPES = setOf(
             Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.FLOAT, Types.REAL, Types.DOUBLE,

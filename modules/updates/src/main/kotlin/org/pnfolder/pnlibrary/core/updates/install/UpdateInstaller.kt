@@ -22,11 +22,11 @@ import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
 import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
 import org.pnfolder.pnlibrary.core.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.core.updates.history.ConfigurationSnapshots
+import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.core.updates.service.UpdateHealthReport
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
@@ -94,7 +94,7 @@ internal class UpdateInstaller(
         changed.forEach { registration ->
             if (registration.request.exports.isEmpty()) return@forEach
             val folder = exportsFolder.resolve(planId.toString()).resolve(registration.product)
-            Files.createDirectories(folder)
+            PrivateFiles.directories(folder)
             registration.request.exports.forEach { export ->
                 try {
                     export.export(folder.resolve(export.fileName))

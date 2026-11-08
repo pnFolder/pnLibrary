@@ -3,7 +3,9 @@ package org.pnfolder.pnlibrary.core.updates.databases
 import org.pnfolder.pnlibrary.api.config.DatabaseKind
 import org.pnfolder.pnlibrary.api.config.DatabaseRole
 import org.pnfolder.pnlibrary.common.io.TextFiles
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 
@@ -43,7 +45,7 @@ class DatabaseConnection(
         /** Reads the connection of [source] from its configuration file, applying the usual defaults for the port. */
         fun read(source: DatabaseSource): DatabaseConnection {
             require(Files.isRegularFile(source.file)) { "Файл настроек ${source.file.fileName} не найден" }
-            var node: Any? = Yaml().load<Any?>(TextFiles.read(source.file, UTF_8))
+            var node: Any? = Yaml(SafeConstructor(LoaderOptions())).load<Any?>(TextFiles.read(source.file, UTF_8))
             source.path.split('.').filter(String::isNotEmpty).forEach { node = (node as? Map<*, *>)?.get(it) }
             val section = node as? Map<*, *> ?: error("В ${source.file.fileName} нет раздела «${source.path}» с подключением к базе")
 

@@ -17,8 +17,28 @@ internal class PostgresSchema(private val connection: Connection) {
         "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' ORDER BY 1",
     )
 
-    /** Sequences that belong to no identity column; identity columns bring their own. [only] keeps those owned by the listed tables. */
-    fun sequences(only: List<String>): List<String> = ownedSequences(
+    /**
+     * `CREATE SEQUENCE` for sequences that belong to no identity column; identity columns bring their own.
+     * [only] keeps those owned by the listed tables.
+     */
+    fun sequences(only: List<String>): List<String> {
+        val wanted = sequenceNames(only).toSet()
+        return connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT sequencename, data_type::text, start_value, increment_by, min_value, max_value, cycle " +
+                    "FROM pg_sequences WHERE schemaname = current_schema() ORDER BY 1",
+            ).use { rows ->
+                generateSequence { if (rows.next()) rows.getString(1) to sequenceStatement(rows) else null }
+                    .filter { (name, _) -> name in wanted }.map { it.second }.toList()
+            }
+        }
+    }
+
+    private fun sequenceStatement(rows: ResultSet): String = PostgresSyntax.createSequence(
+        rows.getString(1), rows.getString(2), rows.getLong(3), rows.getLong(4), rows.getLong(5), rows.getLong(6), rows.getBoolean(7),
+    )
+
+    private fun sequenceNames(only: List<String>): List<String> = ownedSequences(
         """
         SELECT s.relname, t.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace
         LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype = 'a' LEFT JOIN pg_class t ON t.oid = d.refobjid
@@ -54,6 +74,60 @@ internal class PostgresSchema(private val connection: Connection) {
             generateSequence { if (rows.next()) rows.getString(1) to rows.getString(2) else null }
                 .filter { (_, owner) -> owner != null && TableMask.matches(only, owner) || only.isEmpty() }.map { it.first }.toList()
         }
+    }
+
+    /** Statements that create the enum types the columns of [tables] use; they run before the tables. */
+    fun enumTypes(tables: List<String>): List<String> {
+        if (tables.isEmpty()) return emptyList()
+        val types = connection.prepareStatement(
+            """
+            SELECT DISTINCT ty.oid, ty.typname FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace JOIN pg_type col ON col.oid = a.atttypid
+            JOIN pg_type ty ON ty.oid = CASE WHEN col.typcategory = 'A' THEN col.typelem ELSE col.oid END
+            WHERE ty.typtype = 'e' AND ty.typnamespace = n.oid AND n.nspname = current_schema() AND c.relkind = 'r'
+              AND a.attnum > 0 AND NOT a.attisdropped AND c.relname = ANY (?) ORDER BY ty.typname
+            """,
+        ).use { statement ->
+            statement.setArray(1, connection.createArrayOf("text", tables.toTypedArray()))
+            statement.executeQuery().use { rows -> generateSequence { if (rows.next()) rows.getLong(1) to rows.getString(2) else null }.toList() }
+        }
+        return types.map { (oid, name) -> PostgresSyntax.createEnum(name, enumLabels(oid)) }
+    }
+
+    private fun enumLabels(oid: Long): List<String> = connection.prepareStatement(
+        "SELECT enumlabel FROM pg_enum WHERE enumtypid = ? ORDER BY enumsortorder",
+    ).use { statement ->
+        statement.setLong(1, oid)
+        statement.executeQuery().use { rows -> generateSequence { if (rows.next()) rows.getString(1) else null }.toList() }
+    }
+
+    /**
+     * Foreign keys of tables outside [tables] that point at them. `DROP TABLE ... CASCADE` removes these, so they are
+     * added back as `NOT VALID`: the restored rows may differ from what those tables hold now, and a check must not undo the restore.
+     */
+    fun externalForeignKeys(tables: List<String>): List<String> {
+        if (tables.isEmpty()) return emptyList()
+        return connection.prepareStatement(
+            """
+            SELECT cl.relname, c.conname, pg_get_constraintdef(c.oid) FROM pg_constraint c
+            JOIN pg_class cl ON cl.oid = c.conrelid JOIN pg_namespace n ON n.oid = cl.relnamespace
+            JOIN pg_class ref ON ref.oid = c.confrelid
+            WHERE c.contype = 'f' AND n.nspname = current_schema() AND ref.relname = ANY (?) AND NOT (cl.relname = ANY (?))
+            ORDER BY 1, 2
+            """,
+        ).use { statement ->
+            val names = connection.createArrayOf("text", tables.toTypedArray())
+            statement.setArray(1, names)
+            statement.setArray(2, names)
+            statement.executeQuery().use { rows ->
+                generateSequence { if (rows.next()) externalKey(rows.getString(1), rows.getString(2), rows.getString(3)) else null }.toList()
+            }
+        }
+    }
+
+    private fun externalKey(table: String, name: String, definition: String): String {
+        val notValid = if (definition.endsWith(" NOT VALID")) "" else " NOT VALID"
+        return "ALTER TABLE ${PostgresSyntax.identifier(table)} ADD CONSTRAINT ${PostgresSyntax.identifier(name)} $definition$notValid"
     }
 
     /** The columns of [table] in order. */

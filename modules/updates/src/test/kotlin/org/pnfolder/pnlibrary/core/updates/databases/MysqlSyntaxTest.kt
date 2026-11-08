@@ -14,4 +14,11 @@ class MysqlSyntaxTest {
     fun `an identifier doubles its backticks`() {
         assertEquals("`a``b`", MysqlSyntax.identifier("a`b"))
     }
+
+    @Test
+    fun `line breaks inside quotes are escaped and others become spaces`() {
+        val sql = "CREATE TABLE `t` (\n `a` int DEFAULT 'x\ny\\'z\r' COMMENT \"c\nd\"\n)"
+        val expected = "CREATE TABLE `t` (  `a` int DEFAULT 'x\\ny\\'z\\r' COMMENT \"c\\nd\" )"
+        assertEquals(expected, MysqlSyntax.singleLine(sql))
+    }
 }

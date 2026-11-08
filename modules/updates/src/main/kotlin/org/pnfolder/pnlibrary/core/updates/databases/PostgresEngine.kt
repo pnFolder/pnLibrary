@@ -9,7 +9,7 @@ internal class PostgresEngine(private val connections: JdbcConnections = JdbcCon
     }
 
     override fun restore(connection: DatabaseConnection, source: Path) {
-        val restore = SqlScriptRestore(PostgresDump.HEADER)
+        val restore = SqlScriptRestore(PostgresDump.HEADER, atomic = true)
         connections.open(connection).use { restore.read(it, source) }
     }
 }

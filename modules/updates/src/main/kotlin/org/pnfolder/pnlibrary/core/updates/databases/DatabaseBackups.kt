@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
 import org.pnfolder.pnlibrary.core.updates.history.BackupStorage
+import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.file.Files
@@ -33,7 +34,7 @@ internal class DatabaseBackups(
             sources.of(plugin).forEach { source ->
                 val target = file(plan, plugin, source.name)
                 try {
-                    Files.createDirectories(target.parent)
+                    PrivateFiles.directories(target.parent)
                     dump(source, target)
                 } catch (error: Exception) {
                     BackupStorage.delete(folder.resolve(plan.toString()))
@@ -62,7 +63,7 @@ internal class DatabaseBackups(
             ?: error("Плагин $plugin сейчас не описывает базу «$name»: она не отмечена @BackupDatabase или плагин не загружен")
         val before = folder.resolve(plan.toString()).resolve(BEFORE_RESTORE).resolve(Instant.now().toEpochMilli().toString())
             .resolve(plugin).resolve(saved.fileName)
-        Files.createDirectories(before.parent)
+        PrivateFiles.directories(before.parent)
         dump(source, before)
         val connection = DatabaseConnection.read(source)
         engineOf(source).restore(connection, saved)

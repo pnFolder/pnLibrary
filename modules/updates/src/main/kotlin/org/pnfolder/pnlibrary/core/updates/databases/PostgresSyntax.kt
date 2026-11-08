@@ -25,4 +25,16 @@ internal object PostgresSyntax {
 
     /** Binary [value] as a hex literal. */
     fun bytes(value: ByteArray): String = "'\\x" + value.joinToString("") { "%02x".format(it) } + "'"
+
+    /** Creates an enum type once; a type that is already there is left alone. */
+    fun createEnum(name: String, labels: List<String>): String {
+        val body = "CREATE TYPE ${identifier(name)} AS ENUM (${labels.joinToString(", ") { literal(it) }})"
+        val tag = if (labels.any { "$$" in it }) "${'$'}pn${'$'}" else "$$"
+        return "DO $tag BEGIN $body; EXCEPTION WHEN duplicate_object THEN NULL; END $tag"
+    }
+
+    /** A sequence with the settings it has now, so numbering continues the way the plugin set it up. */
+    fun createSequence(name: String, type: String, start: Long, increment: Long, min: Long, max: Long, cycle: Boolean): String =
+        "CREATE SEQUENCE IF NOT EXISTS ${identifier(name)} AS $type INCREMENT BY $increment MINVALUE $min MAXVALUE $max " +
+            "START WITH $start ${if (cycle) "" else "NO "}CYCLE"
 }

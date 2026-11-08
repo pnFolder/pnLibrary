@@ -43,9 +43,9 @@ internal object BackupStorage {
             paths.forEach { path ->
                 val target = to.resolve(from.relativize(path).toString())
                 if (Files.isDirectory(path)) {
-                    Files.createDirectories(target)
+                    PrivateFiles.directories(target)
                 } else {
-                    Files.createDirectories(target.parent)
+                    PrivateFiles.directories(target.parent)
                     Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
                 }
             }

@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClients
 import org.bson.BsonDocument
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
+import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets.UTF_8
@@ -22,7 +23,7 @@ internal class MongoDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
         val json = JsonWriterSettings.builder().outputMode(JsonMode.EXTENDED).build()
         MongoClients.create(address).use { client ->
             val db = client.getDatabase(database)
-            BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
+            BufferedWriter(OutputStreamWriter(GZIPOutputStream(PrivateFiles.output(target)), UTF_8)).use { out ->
                 out.write(HEADER + "\n")
                 db.listCollectionNames().filterNot { it.startsWith("system.") || !TableMask.matches(only, it) }.forEach { name ->
                     require(name.none { it == '\n' || it == '\r' }) { "Имя коллекции с переводом строки не поддерживается" }
