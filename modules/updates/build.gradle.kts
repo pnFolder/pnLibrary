@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.adventure.plain)
     implementation(project(":modules:console"))
 
+    testImplementation(libs.mongodb.driver.sync)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)

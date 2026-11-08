@@ -16,7 +16,12 @@ import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
 import java.nio.file.Path
 import java.util.UUID
 
-/** Where an installed component lives and where its update is placed for the next restart. */
+/**
+ * Where an installed component lives and where its update is placed for the next restart.
+ * @property currentJar the jar now in use
+ * @property updateDirectory folder the new jar is placed in
+ * @property supportedApi API versions the component accepts, null when it does not say
+ */
 internal data class InstalledUpdateTarget(
     val currentJar: Path,
     val updateDirectory: Path,

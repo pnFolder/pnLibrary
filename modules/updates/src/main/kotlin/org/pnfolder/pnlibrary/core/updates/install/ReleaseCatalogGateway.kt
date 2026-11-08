@@ -101,6 +101,7 @@ internal class ReleaseCatalogGateway(
     }
 
     private companion object {
+        /** Number of catalog endpoints queried for one load. */
         const val ENDPOINT_COUNT = 3
     }
 }

@@ -293,6 +293,7 @@ internal class UpdateInstaller(
     }
 
     private companion object {
+        /** Characters of the set id used in a handout folder name. */
         const val HANDOUT_ID = 8
     }
 }

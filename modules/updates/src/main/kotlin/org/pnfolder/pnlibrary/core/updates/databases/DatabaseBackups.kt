@@ -82,7 +82,9 @@ internal class DatabaseBackups(
     private fun nameOf(path: Path): String = URLDecoder.decode(path.fileName.toString().removeSuffix(SUFFIX), "UTF-8")
 
     private companion object {
+        /** Ending of every copy file. */
         const val SUFFIX = ".db.gz"
+        /** Folder under a plan that holds the state replaced by a restore. */
         const val BEFORE_RESTORE = "before-restore"
     }
 }

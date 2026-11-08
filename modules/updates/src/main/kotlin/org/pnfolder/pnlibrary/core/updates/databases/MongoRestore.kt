@@ -3,6 +3,11 @@ package org.pnfolder.pnlibrary.core.updates.databases
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
+import com.mongodb.client.model.Collation
+import com.mongodb.client.model.CollationAlternate
+import com.mongodb.client.model.CollationCaseFirst
+import com.mongodb.client.model.CollationMaxVariable
+import com.mongodb.client.model.CollationStrength
 import com.mongodb.client.model.IndexOptions
 import org.bson.BsonBoolean
 import org.bson.BsonDocument
@@ -63,17 +68,45 @@ internal class MongoRestore {
         }
 
         private fun createIndex(collection: MongoCollection<BsonDocument>, index: BsonDocument) {
+            collection.createIndex(index.getDocument("key"), indexOptions(index))
+        }
+    }
+
+    internal companion object {
+        private const val BATCH = 500
+
+        /** Index options written by [MongoDump]: name, uniqueness, TTL, partial filter and collation are kept. */
+        fun indexOptions(index: BsonDocument): IndexOptions {
             val options = IndexOptions().name(index.getString("name").value)
             if (index.getBoolean("unique", BsonBoolean.FALSE).value) options.unique(true)
             if (index.getBoolean("sparse", BsonBoolean.FALSE).value) options.sparse(true)
             if (index.containsKey("expireAfterSeconds")) {
                 options.expireAfter(index.getNumber("expireAfterSeconds").longValue(), TimeUnit.SECONDS)
             }
-            collection.createIndex(index.getDocument("key"), options)
+            if (index.containsKey("partialFilterExpression")) {
+                options.partialFilterExpression(index.getDocument("partialFilterExpression"))
+            }
+            if (index.containsKey("collation")) options.collation(collationOf(index.getDocument("collation")))
+            return options
         }
-    }
 
-    private companion object {
-        const val BATCH = 500
+        private fun collationOf(document: BsonDocument): Collation {
+            val builder = Collation.builder().locale(document.getString("locale").value)
+            document.optionalBoolean("caseLevel")?.let(builder::caseLevel)
+            document.optionalBoolean("numericOrdering")?.let(builder::numericOrdering)
+            document.optionalBoolean("backwards")?.let(builder::backwards)
+            document.optionalBoolean("normalization")?.let(builder::normalization)
+            document.optionalString("caseFirst")?.let { builder.collationCaseFirst(CollationCaseFirst.fromString(it)) }
+            document.optionalString("alternate")?.let { builder.collationAlternate(CollationAlternate.fromString(it)) }
+            document.optionalString("maxVariable")?.let { builder.collationMaxVariable(CollationMaxVariable.fromString(it)) }
+            if (document.isNumber("strength")) {
+                builder.collationStrength(CollationStrength.fromInt(document.getNumber("strength").intValue()))
+            }
+            return builder.build()
+        }
+
+        private fun BsonDocument.optionalBoolean(key: String): Boolean? = if (get(key)?.isBoolean == true) getBoolean(key).value else null
+
+        private fun BsonDocument.optionalString(key: String): String? = if (get(key)?.isString == true) getString(key).value else null
     }
 }

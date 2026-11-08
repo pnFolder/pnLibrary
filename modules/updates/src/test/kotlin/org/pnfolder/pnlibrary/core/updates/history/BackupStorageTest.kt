@@ -42,4 +42,29 @@ class BackupStorageTest {
         assertEquals("pnclans: База данных «Кланы» · 3.0 МБ", BackupItemText.describe(item))
         assertEquals("pnclans: Конфигурация · 10 Б", BackupItemText.describe(UpdateBackupItem(ProductId.of("pnclans"), BackupKind.CONFIGURATION, "", 10)))
     }
+
+    @Test
+    fun `child ignores letter case and returns null for a missing name or parent`() {
+        Files.createDirectories(directory.resolve("parent/PnClans"))
+        Files.write(directory.resolve("parent/file"), ByteArray(1))
+        assertEquals("PnClans", BackupStorage.child(directory.resolve("parent"), "pnclans")?.fileName.toString())
+        assertEquals(null, BackupStorage.child(directory.resolve("parent"), "file"))
+        assertEquals(null, BackupStorage.child(directory.resolve("parent"), "other"))
+        assertEquals(null, BackupStorage.child(directory.resolve("missing"), "x"))
+    }
+
+    @Test
+    fun `copy keeps the structure, replaces existing files and copies empty folders`() {
+        val from = Files.createDirectories(directory.resolve("from/sub"))
+        Files.createDirectories(directory.resolve("from/empty"))
+        Files.write(from.resolve("a.txt"), "new".toByteArray())
+        Files.createDirectories(directory.resolve("to"))
+        Files.write(directory.resolve("to/a.txt"), "old".toByteArray())
+        Files.write(directory.resolve("from/top.txt"), "t".toByteArray())
+        BackupStorage.copy(directory.resolve("from"), directory.resolve("to"))
+        assertEquals("new", Files.readString(directory.resolve("to/sub/a.txt")))
+        assertEquals("t", Files.readString(directory.resolve("to/top.txt")))
+        assertTrue(Files.isDirectory(directory.resolve("to/empty")))
+        assertEquals("old", Files.readString(directory.resolve("to/a.txt")))
+    }
 }

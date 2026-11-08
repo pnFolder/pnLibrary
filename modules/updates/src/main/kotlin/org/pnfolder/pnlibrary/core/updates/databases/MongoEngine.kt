@@ -34,6 +34,7 @@ internal class MongoEngine(
     private fun encode(text: String) = URLEncoder.encode(text, "UTF-8")
 
     private companion object {
+        /** Class whose presence shows the MongoDB driver is loaded. */
         const val PROBE = "com.mongodb.client.MongoClients"
     }
 }

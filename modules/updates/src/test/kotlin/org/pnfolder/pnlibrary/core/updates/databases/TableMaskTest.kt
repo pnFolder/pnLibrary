@@ -13,4 +13,12 @@ class TableMaskTest {
         assertFalse(TableMask.matches(listOf("clans"), "clans_old"))
         assertFalse(TableMask.matches(listOf("log_*"), "blog_1"))
     }
+
+    @Test
+    fun `regex characters in a mask are plain text`() {
+        assertTrue(TableMask.matches(listOf("a.b"), "a.b"))
+        assertFalse(TableMask.matches(listOf("a.b"), "axb"))
+        assertTrue(TableMask.matches(listOf("t(1)+*"), "t(1)+rest"))
+        assertTrue(TableMask.matches(listOf("*"), ""))
+    }
 }

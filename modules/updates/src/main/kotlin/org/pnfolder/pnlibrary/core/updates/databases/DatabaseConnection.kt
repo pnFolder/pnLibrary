@@ -9,6 +9,11 @@ import java.nio.file.Files
 
 /**
  * How to reach a database, read from the plugin's own configuration file at the moment it is needed.
+ * @property host server address
+ * @property port server port
+ * @property database database name
+ * @property user login
+ * @property password password, never printed
  * @property uri a full connection string, when the plugin keeps one; it replaces host, port, user and password
  * @property tables the tables or collections to copy, empty for all
  */

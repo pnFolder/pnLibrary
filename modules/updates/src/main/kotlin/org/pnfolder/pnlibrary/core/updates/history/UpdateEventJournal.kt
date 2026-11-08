@@ -242,8 +242,11 @@ internal class UpdateEventJournal(
     }
 
     private companion object {
+        /** Events older than this many days are pruned. */
         const val DEFAULT_MAX_AGE_DAYS = 90L
+        /** Newest events kept when there are more. */
         const val DEFAULT_MAX_EVENTS = 1_000
+        /** Pruning runs once per this many writes. */
         const val PRUNE_EVERY_WRITES = 25
         val COMPONENT_OPERATIONS = setOf(
             ComponentLedger.OPERATION_ADDED, ComponentLedger.OPERATION_REMOVED,

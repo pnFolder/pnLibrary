@@ -5,7 +5,11 @@ import java.sql.ResultSet
 
 /** Reads the shape of the tables of the current schema from the system catalogs and writes it as statements. */
 internal class PostgresSchema(private val connection: Connection) {
-    /** A table column; [generated] columns are computed by the server and are not copied. */
+    /**
+ * A table column; [generated] columns are computed by the server and are not copied.
+ * @property name column name
+ * @property generated true for a stored generated column
+ */
     class Column(val name: String, val generated: Boolean)
 
     /** Names of the base tables of the current schema. */

@@ -10,6 +10,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A database a plugin marked with `@BackupDatabase`: whose it is, what it is called and where its connection is written.
+ * @property plugin lowercase id of the plugin that owns the database
+ * @property kind database engine
+ * @property name name given in `@BackupDatabase`, unique within the plugin
+ * @property file configuration file that holds the connection
  * @property path dotted path of the connection section inside [file]
  * @property keys field names that replace the usual ones, by role
  * @property tables fixed tables or collections to copy, empty for all
