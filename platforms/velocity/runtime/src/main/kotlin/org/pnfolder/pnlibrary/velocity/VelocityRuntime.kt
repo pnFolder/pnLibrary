@@ -95,6 +95,7 @@ internal class VelocityRuntime(
                     OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
                 }
             },
+            holds = { viewer, permission -> server.getPlayer(viewer).map { it.hasPermission(permission) }.orElse(false) },
             platformName = { "Velocity ${server.version.version}" },
             players = { server.playerCount },
             broadcast = { message -> server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } } },

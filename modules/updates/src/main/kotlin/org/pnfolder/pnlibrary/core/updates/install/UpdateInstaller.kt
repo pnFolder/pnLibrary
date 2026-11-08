@@ -54,6 +54,7 @@ internal class UpdateInstaller(
         transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
         dataFolder.parent,
+        warn,
     )
     private val stager = UpdatePlanStager(
         platform = platform.type,

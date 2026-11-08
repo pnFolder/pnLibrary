@@ -20,6 +20,23 @@ class UpdateTransactionTest {
     @TempDir lateinit var directory: Path
 
     @Test
+    fun `corrupt journal is skipped with a warning and does not break other operations`() {
+        val root = directory.resolve("transactions")
+        val broken = root.resolve(UUID.randomUUID().toString()).also(Files::createDirectories).resolve("journal.json")
+        Files.write(broken, ByteArray(0))
+        val warnings = mutableListOf<String>()
+        val transaction = UpdateTransaction(root, ArtifactVerifier(1024), warn = { warnings += it })
+
+        assertEquals(emptyList<Any>(), transaction.recoverAll())
+        assertEquals(emptyList<Any>(), transaction.awaitingHealth())
+        assertEquals(emptyList<Any>(), transaction.awaitingRollbackHealth())
+        assertEquals(emptyList<Any>(), transaction.pendingInstallations())
+        assertEquals(emptyList<Any>(), transaction.failedHealthChecks())
+        assertTrue(transaction.automaticUpdatesHealthy(setOf("market")))
+        assertTrue(warnings.isNotEmpty() && warnings.all { it.contains("journal.json") }, warnings.toString())
+    }
+
+    @Test
     fun `verifier rejects checksum mismatches`() {
         val jar = artifact("market.jar", "market", "2.0.0", 4, byteArrayOf(1, 2, 3))
         val valid = specification(jar, "market", "2.0.0", 4)

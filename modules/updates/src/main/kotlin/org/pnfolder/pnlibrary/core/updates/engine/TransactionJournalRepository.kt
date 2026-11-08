@@ -14,6 +14,7 @@ import kotlin.streams.toList
 internal class TransactionJournalRepository(
     private val root: Path,
     private val publicationRoot: Path,
+    private val warn: (String) -> Unit = {},
 ) {
     /** Lists every `journal.json` found in a direct child directory of the root. */
     fun journals(): List<Path> {
@@ -23,6 +24,16 @@ internal class TransactionJournalRepository(
                 .map { it.resolve("journal.json") }
                 .filter(Files::isRegularFile)
                 .toList()
+        }
+    }
+
+    /** Loads every readable journal; an empty, corrupt or foreign one is reported through the warning callback and skipped. */
+    fun loadAll(): List<Pair<Path, TransactionJournal>> = journals().mapNotNull { path ->
+        try {
+            path to load(path)
+        } catch (error: Exception) {
+            warn("Журнал обновления $path нечитаем и пропущен: ${error.message ?: error.javaClass.simpleName}")
+            null
         }
     }
 

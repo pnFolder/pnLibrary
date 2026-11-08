@@ -86,6 +86,41 @@ class ReleaseCatalogGatewayTest {
         }
     }
 
+    @Test
+    fun `jsDelivr is asked only when raw and api both fail`() {
+        val executor = Executors.newFixedThreadPool(4)
+        val requested = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val fresh = catalogJson().toByteArray()
+        val stale = catalogJson().replace("1.0.0", "0.9.0").toByteArray()
+        fun gateway(githubWorks: Boolean): ReleaseCatalogGateway {
+            val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
+                override fun get(uri: URI, maximumBytes: Int): ByteArray {
+                    requested += uri.host
+                    return when {
+                        uri.host == "cdn.jsdelivr.net" -> stale
+                        !githubWorks -> throw java.io.IOException("HTTP 503")
+                        uri.host == "api.github.com" ->
+                            """{"content":"${Base64.getEncoder().encodeToString(fresh)}"}""".toByteArray()
+                        else -> fresh
+                    }
+                }
+            }
+            val store = ReleaseCatalogStore(temporaryDirectory.resolve("cdn-$githubWorks"))
+            return ReleaseCatalogGateway(ReleaseCatalogClient(http, store, executor, Duration.ofMinutes(30)), http, executor)
+        }
+        try {
+            val source = CatalogSource("owner", "example")
+            val ok = gateway(true).load(source, RefreshMode.FORCE_REMOTE)
+            assertEquals("1.0.0", ok.releases.single().version.toString())
+            org.junit.jupiter.api.Assertions.assertFalse(requested.contains("cdn.jsdelivr.net"), requested.toString())
+
+            val fallback = gateway(false).load(source, RefreshMode.FORCE_REMOTE)
+            assertEquals("0.9.0", fallback.releases.single().version.toString())
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
     private fun catalogJson(): String = """
         {
           "schema": 1,

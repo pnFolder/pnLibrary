@@ -52,7 +52,7 @@ open class TrustedHttpClient(
                 if (status in REDIRECT_CODES) {
                     if (redirect == MAX_REDIRECTS) error("Too many update redirects")
                     val location = connection.getHeaderField("Location") ?: error("Redirect has no Location")
-                    current = validate(current.resolve(location))
+                    current = TrustedHosts.requireRedirect(validate(current.resolve(location)))
                     return@repeat
                 }
                 require(status in 200..299) { "Update request failed with HTTP $status" }

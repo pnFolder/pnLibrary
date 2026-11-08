@@ -78,6 +78,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
                 server?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false
             },
             describe = { owner -> (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) } },
+            holds = { viewer, permission -> plugin.proxy.getPlayer(viewer)?.hasPermission(permission) == true },
             platformName = { "${plugin.proxy.name} ${plugin.proxy.version}" },
             players = { plugin.proxy.onlineCount },
             broadcast = { message -> plugin.proxy.servers.values.forEach { runCatchingNonFatal { it.sendData(LinkCodec.CHANNEL, message, false) } } },

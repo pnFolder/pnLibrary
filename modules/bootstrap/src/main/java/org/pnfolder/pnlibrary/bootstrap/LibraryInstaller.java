@@ -97,7 +97,7 @@ public final class LibraryInstaller {
         Path directory = pluginsDirectory.toAbsolutePath().normalize();
         Files.createDirectories(directory);
         Path target = directory.resolve(release.fileName()).normalize();
-        if (!directory.equals(target.getParent()) || !release.fileName().matches("[A-Za-z0-9._-]+\\.jar")) {
+        if (!directory.equals(target.getParent()) || !RepositoryCatalog.isLibraryFileName(release.fileName())) {
             throw new IllegalStateException("unsafe release filename: " + release.fileName());
         }
 

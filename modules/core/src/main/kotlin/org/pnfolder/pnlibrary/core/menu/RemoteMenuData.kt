@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.menu
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
@@ -216,8 +215,7 @@ class RemoteMenuData(
         ask(MenuCalls.EDIT_GROUP, args("op" to edit.op.name, "group" to edit.group, "server" to edit.server, "plugin" to edit.plugin))
 
     override fun command(viewer: ViewerInfo, line: String): List<Component> {
-        val permissions = JsonArray().also { array -> viewer.permissions.forEach { array.add(it) } }
-        val lines = ask<List<String>>(MenuCalls.COMMAND, args("line" to line).also { it.add("permissions", permissions) }, viewer.name)
+        val lines = ask<List<String>>(MenuCalls.COMMAND, args("line" to line), viewer.name)
         return MenuCalls.decodeLines(lines)
     }
 

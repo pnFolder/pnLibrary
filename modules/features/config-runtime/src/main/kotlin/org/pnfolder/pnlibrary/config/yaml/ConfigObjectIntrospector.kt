@@ -67,13 +67,25 @@ internal class ConfigObjectIntrospector(
                 out += path
                 return@forEach
             }
-            val raw = rawClass(field.genericType)
-            val nested = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
-                !Collection::class.java.isAssignableFrom(raw) && !Map::class.java.isAssignableFrom(raw) &&
-                !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
-            if (nested) collectSecrets(raw, "$path.", depth + 1, out)
+            collectNestedSecrets(field.genericType, path, depth, out)
         }
     }
+
+    /** Lists add no segment to a report path; a map value adds its key, written `*` because it is only known at run time. */
+    private fun collectNestedSecrets(type: Type, path: String, depth: Int, out: MutableList<String>) {
+        val raw = rawClass(type)
+        val arguments = (type as? ParameterizedType)?.actualTypeArguments.orEmpty()
+        when {
+            Collection::class.java.isAssignableFrom(raw) ->
+                arguments.firstOrNull()?.let { collectNestedSecrets(it, path, depth + 1, out) }
+            Map::class.java.isAssignableFrom(raw) ->
+                arguments.getOrNull(1)?.let { collectNestedSecrets(it, "$path.*", depth + 1, out) }
+            isSection(raw) -> if (depth < 8) collectSecrets(raw, "$path.", depth + 1, out)
+        }
+    }
+
+    private fun isSection(raw: Class<*>): Boolean = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
+        !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
 
     /** The databases marked `@BackupDatabase` in [type] (the class may carry several), with the dotted YAML path of each. */
     fun databasePaths(type: Class<*>): List<DatabasePath> {

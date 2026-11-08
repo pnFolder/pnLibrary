@@ -14,9 +14,10 @@ internal class UpdateTransaction(
     private val root: Path,
     private val verifier: ArtifactVerifier,
     publicationRoot: Path = root.toAbsolutePath().normalize().parent,
+    warn: (String) -> Unit = {},
 ) {
     private val publicationRoot = publicationRoot.toAbsolutePath().normalize()
-    private val journals = TransactionJournalRepository(root, this.publicationRoot)
+    private val journals = TransactionJournalRepository(root, this.publicationRoot, warn)
     private val health = TransactionHealth(root, journals)
     private val rollbacks = RollbackCatalog(root, journals)
 
@@ -162,17 +163,17 @@ internal class UpdateTransaction(
      */
     fun recoverAll(): List<TransactionResult> {
         if (!Files.isDirectory(root)) return emptyList()
-        val paths = journals.journals()
-        require(paths.none { blocksServerStart(journals.load(it)) }) {
+        val readable = journals.loadAll()
+        require(readable.none { (_, journal) -> blocksServerStart(journal) }) {
             "interrupted offline installation must be recovered before starting the server"
         }
-        return paths.filter { journals.load(it).purpose in SAVED_SET_PURPOSES }.sorted().map(::recover)
+        return readable.filter { (_, journal) -> journal.purpose in SAVED_SET_PURPOSES }.map { it.first }.sorted().map(::recover)
     }
 
     /** Recovers every journal, internal installations included; called only by the offline installer. */
     fun recoverAllOffline(): List<TransactionResult> {
         if (!Files.isDirectory(root)) return emptyList()
-        return journals.journals().sorted().map(::recover)
+        return journals.loadAll().map { it.first }.sorted().map(::recover)
     }
 
     private fun interruptedInstallation(journal: TransactionJournal): Boolean =
@@ -223,19 +224,17 @@ internal class UpdateTransaction(
     internal fun readJournal(path: Path): TransactionJournal = journals.load(path)
 
     /** Saved-set journals that were applied but not yet installed or restored. */
-    internal fun pendingInstallations(): List<Path> = journals.journals().filter { path ->
-        val journal = journals.load(path)
+    internal fun pendingInstallations(): List<Path> = journals.loadAll().filter { (_, journal) ->
         journal.purpose in SAVED_SET_PURPOSES && (
             (journal.state == TransactionState.AWAITING_HEALTH && journal.appliedOperation != "INSTALL") ||
                 (journal.state == TransactionState.ROLLED_BACK && journal.rollbackRequested && journal.appliedOperation != "RESTORE")
             )
-    }
+    }.map { it.first }
 
     /** The committed journal of [purpose] that belongs to [parent], if any. */
-    internal fun appliedChildJournal(parent: UUID, purpose: String): Path? = journals.journals().firstOrNull { path ->
-        val journal = journals.load(path)
+    internal fun appliedChildJournal(parent: UUID, purpose: String): Path? = journals.loadAll().firstOrNull { (_, journal) ->
         journal.parentTransaction == parent.toString() && journal.purpose == purpose && journal.state == TransactionState.COMMITTED
-    }
+    }?.first
 
     /** Rolls back an internal installation transaction. */
     internal fun revertInstallation(path: Path) {

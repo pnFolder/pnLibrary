@@ -48,9 +48,11 @@ internal class ConfigReader(
         val path = configSpec.path
         val read = secureFileReader.read(rootDirectory, path)
         val content = read.content ?: return ExactFile(path, error = read.error)
-        if (!documentCodec.isStructured(path)) return ExactFile(path, content)
-
         val redaction = redaction(configSpec, rootDirectory)
+        if (!documentCodec.isStructured(path)) {
+            // Values of a format that is not parsed cannot be hidden one by one, so the file is only sent when nothing has to be.
+            return if (redaction.hasRequests) ExactFile(path, error = UNPARSABLE_WITH_RULES) else ExactFile(path, content)
+        }
         val data = runCatchingNonFatal { documentCodec.parse(path, content) }.getOrNull()
         if (data == null) {
             // A file that cannot be parsed cannot have single values hidden, so it is only sent when nothing has to be.
