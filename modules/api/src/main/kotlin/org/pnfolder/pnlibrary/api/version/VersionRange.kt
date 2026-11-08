@@ -38,21 +38,26 @@ class VersionRange private constructor(
 
     /** Factories for unbounded, one-sided, and closed semantic-version ranges. */
     companion object {
+        /** Returns a range that accepts every version. */
         @JvmStatic
         fun any(): VersionRange = VersionRange(null, null, true, true)
 
+        /** Returns a range accepting versions from [minimum], inclusive. */
         @JvmStatic
         fun atLeast(minimum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), null, true, true)
 
+        /** Returns a range accepting versions above [minimum], exclusive. */
         @JvmStatic
         fun greaterThan(minimum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), null, false, true)
 
+        /** Returns a range accepting versions from [minimum] to [maximum], both inclusive. */
         @JvmStatic
         fun closed(minimum: String, maximum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), SemanticVersion.parse(maximum), true, true)
 
+        /** Returns a range accepting versions below [maximum], exclusive. */
         @JvmStatic
         fun until(maximum: String): VersionRange =
             VersionRange(null, SemanticVersion.parse(maximum), true, false)

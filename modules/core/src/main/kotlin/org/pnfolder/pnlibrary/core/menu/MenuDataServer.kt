@@ -47,6 +47,7 @@ class MenuDataServer(
         reply(false, "Неизвестный запрос: ${call.method}")
     }
 
+    /** Pending confirmation of a data call awaiting the player's answer. */
     private class Question(val call: DataCall, val args: JsonObject, val actor: UpdateActor, val reply: (Boolean, String) -> Unit) {
         fun text(name: String): String? = args.get(name)?.takeIf { !it.isJsonNull }?.asString
 

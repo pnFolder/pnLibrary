@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
+/** Menu screens describing the proxy network and its servers. */
 internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun network(player: MenuViewer, page: Int) {
         val received = host.link.network

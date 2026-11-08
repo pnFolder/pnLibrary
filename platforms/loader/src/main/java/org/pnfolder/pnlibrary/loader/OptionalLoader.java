@@ -5,8 +5,7 @@ import net.byteflux.libby.LibraryManager;
 
 /**
  * Loads a library through Libby the first time something needs it: a database driver, the policy compiler. It is never
- * loaded at start,
- * because most servers never need it.
+ * loaded at start, because most servers never need it.
  */
 final class OptionalLoader {
     private final LibraryManager manager;
@@ -17,8 +16,11 @@ final class OptionalLoader {
         this.settings = settings;
     }
 
-    /** One attempt only: the caller reports a missing library itself, and an offline server must not wait. */
-    boolean load(Library[] libraries) {
+    /**
+     * One attempt only: the caller reports a missing library itself, and an offline server must not wait.
+     * Calls are serialized because Libby's manager is not safe for two threads loading at once.
+     */
+    synchronized boolean load(Library[] libraries) {
         for (String repository : settings.repositories()) {
             manager.addRepository(repository);
         }

@@ -50,6 +50,7 @@ internal class ConfigObjectIntrospector(
             .onEach { it.isAccessible = true }
     }
 
+    /** The YAML key of [field]: `@ConfigKey` if present, otherwise the field name in the configured naming style. */
     fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)
         ?.value
         ?.takeIf(String::isNotBlank)
@@ -109,6 +110,7 @@ internal class ConfigObjectIntrospector(
         .filter { field -> field.getAnnotation(BackupTable::class.java)?.let { it.database.isEmpty() || it.database == database } == true }
         .map(::key)
 
+    /** Reads the current value of [field] from [owner]. */
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 
     /** Resolves the concrete raw class represented by [type], or [Any] if unknown. */
@@ -139,6 +141,7 @@ internal class ConfigObjectIntrospector(
         )
     }
 
+    /** Builds the collection of declared [type] holding [values]; an interface or abstract type gets a standard one. */
     @Suppress("UNCHECKED_CAST")
     fun collection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
@@ -153,6 +156,7 @@ internal class ConfigObjectIntrospector(
         return collection
     }
 
+    /** Builds the map of declared [type] holding [values]; an interface or abstract type gets a standard one. */
     @Suppress("UNCHECKED_CAST")
     fun map(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) {
@@ -193,7 +197,16 @@ internal class ConfigObjectIntrospector(
     }
 }
 
-/** A section holding database connection details: where it is in the file, what kind it is and what it is called. */
+/**
+ * A section holding database connection details: where it is in the file, what kind it is and what it is called.
+ *
+ * @property path dotted path of the section; empty when the connection fields sit at the top of the file
+ * @property kind database server type
+ * @property name short name from `@BackupDatabase`
+ * @property keys YAML key of the field that holds each part of the connection
+ * @property tables table or collection names written in the annotation
+ * @property tableKeys YAML keys of the fields that hold table names
+ */
 class DatabasePath(
     val path: String,
     val kind: DatabaseKind,

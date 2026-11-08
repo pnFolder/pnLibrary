@@ -121,6 +121,7 @@ class RemoteMenuData(
     private val target: String,
     private val client: DataClient,
 ) : MenuData {
+    /** Cached remote response with the time it was received. */
     private class Remembered(val at: Long, val json: String)
 
     private val remembered = ConcurrentHashMap<String, Remembered>()

@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.databases
 
 /** Quoting for the statements a copy of a MySQL database is made of. */
 internal object MysqlSyntax {
+    /** [name] quoted as a MySQL identifier. */
     fun identifier(name: String): String = "`" + name.replace("`", "``") + "`"
 
     /** A text literal on one line: every character that could end or change the statement is escaped. */

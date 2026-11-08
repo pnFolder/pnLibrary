@@ -14,6 +14,7 @@ import org.slf4j.Logger
 import java.nio.file.Path
 import java.util.Optional
 
+/** Checks that startup-dependent work waits until the Velocity adapter is marked ready. */
 class VelocityReadinessTest {
     @TempDir
     lateinit var directory: Path

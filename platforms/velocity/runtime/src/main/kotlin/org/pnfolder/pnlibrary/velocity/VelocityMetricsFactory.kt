@@ -15,6 +15,7 @@ internal class VelocityMetricsFactory(
     private val dataDirectory: Path,
 ) : ProviderMetricsFactory() {
 
+    /** Opens a bStats session for the plugin instance [owner] under [projectId]. */
     override fun openBStats(owner: Any, projectId: Int): PluginMetrics {
         val client = VelocityBStats.open(owner, projectId, server, logger, dataDirectory)
         return BStatsMetricsSession(projectId, client::addCustomChart, client::shutdown)

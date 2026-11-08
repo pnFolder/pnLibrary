@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 
+/** Renders the library configuration as a map for the diagnostics report. */
 internal object RuntimeConfigurationDetails {
     fun of(config: PnLibraryConfig): Map<String, Any?> = linkedMapOf(
         "privacy" to config.privacy,

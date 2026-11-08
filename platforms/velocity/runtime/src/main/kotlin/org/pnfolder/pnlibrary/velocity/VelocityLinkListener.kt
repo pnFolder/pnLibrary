@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.core.link.LinkReceiver
 
 /** Takes the reports that game servers send on the pnLibrary link channel; messages from players are dropped. */
 internal class VelocityLinkListener(private val receiver: LinkReceiver) {
+    /** Handles every message on the link channel and passes the ones from game servers to the receiver. */
     @Subscribe
     fun onMessage(event: PluginMessageEvent) {
         if (event.identifier != CHANNEL) return

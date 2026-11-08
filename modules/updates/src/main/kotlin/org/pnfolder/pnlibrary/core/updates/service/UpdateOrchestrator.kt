@@ -56,6 +56,7 @@ internal class UpdateOrchestrator(
     private var announcedFingerprint: String? = null
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
 
+    /** Begins periodic checks. */
     fun start() {
         if (closed.get() || !started.compareAndSet(false, true)) return
         executor.scheduleWithFixedDelay(
@@ -82,6 +83,7 @@ internal class UpdateOrchestrator(
         if (snapshot.state == UpdateState.UPDATE_AVAILABLE || snapshot.state == UpdateState.UPDATE_STAGED) announcement(snapshot)
     }
 
+    /** Checks for updates right away and returns the resulting plan. */
     fun checkNow(forceRemote: Boolean = true, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "Update orchestrator is closed" }
         inFlight?.let { active ->
@@ -153,6 +155,7 @@ internal class UpdateOrchestrator(
         }
     }
 
+    /** The latest plan, if one exists. */
     fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.ofNullable(synchronized(lock) { current })
 
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
@@ -166,6 +169,7 @@ internal class UpdateOrchestrator(
         }
     }
 
+    /** Downloads and prepares the plan with [planId]. */
     fun stage(planId: UUID, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> {
         val promise = operationPromise()
         if (promise.isDone) return promise
@@ -189,10 +193,12 @@ internal class UpdateOrchestrator(
         return promise
     }
 
+    /** Recent plans, newest last. */
     fun history(): List<UpdatePlanSnapshot> = synchronized(lock) {
         Collections.unmodifiableList(ArrayList(sessionHistory))
     }
 
+    /** Runs [action] as a rollback and records the result. */
     fun rollback(actor: UpdateActor = UpdateActor.UNKNOWN, action: () -> Unit): CompletionStage<UpdatePlanSnapshot> = rollbackTo(actor) {
         val selected = synchronized(lock) { current } ?: error("No update plan is available for rollback")
         action()
@@ -200,6 +206,7 @@ internal class UpdateOrchestrator(
             "Предыдущие версии JAR подготовлены к следующему перезапуску.")
     }
 
+    /** Runs [action] as a rollback, optionally of the failure [failureId]. */
     fun rollbackTo(actor: UpdateActor, failureId: UUID? = null, action: () -> UpdatePlanSnapshot): CompletionStage<UpdatePlanSnapshot> {
         val promise = operationPromise()
         if (promise.isDone) return promise

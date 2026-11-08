@@ -34,6 +34,7 @@ data class MetricsProviderConfiguration(
         return copy(projectId = id, platformProjectIds = emptyMap())
     }
 
+    /** Returns the provider credentials built from this configuration. */
     fun credentials(): MetricsCredentials<*> = when (provider) {
         MetricsProvider.BSTATS -> MetricsCredentials.BStats(
             requireNotNull(projectId) { "Metrics project ID is required for bStats" },

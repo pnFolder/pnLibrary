@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets
  * Reads a language file into a flat key-to-text map; accepts JSON objects and `key=value` lines.
  */
 internal object TranslationJsonCodec {
+    /** Parses [bytes]; throws MALFORMED_DATA when the content is invalid or empty. */
     fun parse(bytes: ByteArray): Map<String, String> = try {
         val text = String(bytes, StandardCharsets.UTF_8)
         val values = if (text.trimStart().startsWith("{")) {

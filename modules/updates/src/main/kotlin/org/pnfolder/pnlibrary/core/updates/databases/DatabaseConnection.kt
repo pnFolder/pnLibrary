@@ -35,6 +35,7 @@ class DatabaseConnection(
             DatabaseRole.URI to listOf("uri", "url", "connection-string"),
         )
 
+        /** Reads the connection of [source] from its configuration file, applying the usual defaults for the port. */
         fun read(source: DatabaseSource): DatabaseConnection {
             require(Files.isRegularFile(source.file)) { "Файл настроек ${source.file.fileName} не найден" }
             var node: Any? = Yaml().load<Any?>(TextFiles.read(source.file, UTF_8))

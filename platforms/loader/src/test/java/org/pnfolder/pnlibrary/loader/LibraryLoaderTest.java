@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -16,9 +17,11 @@ import net.byteflux.libby.Library;
 import net.byteflux.libby.LibraryManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
+/** Checks repository order, retries and optional library groups of {@link LibraryLoader}. */
 class LibraryLoaderTest {
     // Kotlin is not on this module's classpath, which is exactly the light JAR's situation.
     private static final ClassLoader LOADER = LibraryLoaderTest.class.getClassLoader();
@@ -151,5 +154,28 @@ class LibraryLoaderTest {
         doThrow(new RuntimeException("offline")).when(manager).loadLibrary(any(Library.class));
 
         assertEquals(false, LibraryLoader.loadOptional("compiler"));
+    }
+
+    @Test
+    void optionalLoadsFromTwoThreadsNeverOverlap() throws Exception {
+        LibraryManager manager = mock(LibraryManager.class);
+        AtomicInteger running = new AtomicInteger();
+        AtomicInteger overlaps = new AtomicInteger();
+        doAnswer(call -> {
+            if (running.incrementAndGet() > 1) overlaps.incrementAndGet();
+            Thread.sleep(50);
+            running.decrementAndGet();
+            return null;
+        }).when(manager).loadLibrary(any(Library.class));
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
+
+        Thread first = new Thread(() -> LibraryLoader.loadOptional("mysql"));
+        Thread second = new Thread(() -> LibraryLoader.loadOptional("postgres"));
+        first.start();
+        second.start();
+        first.join();
+        second.join();
+
+        assertEquals(0, overlaps.get());
     }
 }

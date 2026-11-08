@@ -11,7 +11,12 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
  */
 internal object SupportHeader {
     /** One place where administrators get help. */
-    class Channel(val name: String, val url: String)
+    class Channel(
+        /** Platform name shown before the link. */
+        val name: String,
+        /** Address of the support place. */
+        val url: String,
+    )
 
     /** The support platforms listed in every configuration, in this order. */
     val CHANNELS: List<Channel> = listOf(

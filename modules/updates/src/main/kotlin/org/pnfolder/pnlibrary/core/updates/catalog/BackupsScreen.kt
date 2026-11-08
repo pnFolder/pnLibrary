@@ -10,6 +10,7 @@ import java.time.ZoneId
 
 /** Retained rollback sets with their age; paths and file contents are never shown. */
 internal class BackupsScreen(routes: UpdateCatalogRoutes, now: Instant, zone: ZoneId) : CatalogStyle(routes, now, zone) {
+    /** One page of backups matching [query]. */
     fun backups(all: List<UpdateBackup>, page: Int, query: BackupQuery = BackupQuery()): List<Component> {
         require(page > 0) { "Page must be positive" }
         val backups = query.apply(all)

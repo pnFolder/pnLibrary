@@ -54,6 +54,7 @@ internal object ServerCapabilities {
         runCatching { method.invoke(Bukkit.getServer()) as? DoubleArray }.getOrNull()
     }
 
+    /** Whether [className] can be loaded on this server. */
     fun hasClass(className: String): Boolean =
         try {
             Class.forName(className, false, javaClass.classLoader)
@@ -64,6 +65,7 @@ internal object ServerCapabilities {
             false
         }
 
+    /** Whether [clazz] declares or inherits a public method with that name and parameters. */
     fun hasMethod(clazz: Class<*>, methodName: String, vararg paramTypes: Class<*>): Boolean =
         try {
             clazz.getMethod(methodName, *paramTypes)

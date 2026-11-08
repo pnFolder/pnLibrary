@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
 
+/** Menu screens showing the history of updates and changes. */
 internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun history(player: MenuViewer, product: String?, page: Int) {
         val normalized = product?.lowercase()

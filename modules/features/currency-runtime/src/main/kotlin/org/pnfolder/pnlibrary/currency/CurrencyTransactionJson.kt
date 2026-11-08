@@ -14,6 +14,7 @@ import java.util.UUID
 
 /** How a transaction is written to and read from the currency file. */
 internal object CurrencyTransactionJson {
+    /** Serializes [value]; absent optional fields are omitted. */
     fun encode(value: CurrencyTransaction) = JsonObject().apply {
         addProperty("id", value.id.toString())
         addProperty("currency", value.currency.toString())
@@ -38,6 +39,7 @@ internal object CurrencyTransactionJson {
         })
     }
 
+    /** Reads a transaction written by [encode]; optional fields default to null. */
     fun decode(value: JsonObject): CurrencyTransaction {
         val currencyParts = value["currency"].asString.split(':', limit = 2)
         fun decimal(name: String) = value.get(name)?.takeUnless { it.isJsonNull }?.asString?.toBigDecimal()

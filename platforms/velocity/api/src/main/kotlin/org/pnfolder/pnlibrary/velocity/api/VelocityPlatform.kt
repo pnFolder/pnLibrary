@@ -6,5 +6,4 @@ import com.velocitypowered.api.proxy.ProxyServer
 interface VelocityPlatform {
     /** Active native proxy; its registered servers and players remain directly available. */
     val proxy: ProxyServer
-
 }

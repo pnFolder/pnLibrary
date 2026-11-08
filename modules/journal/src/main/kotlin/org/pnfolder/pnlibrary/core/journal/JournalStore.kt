@@ -100,9 +100,7 @@ class JournalStore(
     ): Snapshot {
         require(limit in 1..100_000) { "Journal limit must be between 1 and 100000" }
         val wanted = if (levels.isEmpty()) JournalLevel.values().toSet() else levels
-        val sinceDate = sinceMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
-        val files = wanted.flatMap(::filesOf).filter { sinceDate == null || dateOf(it)?.isBefore(sinceDate) != true }
-            .sortedWith(compareByDescending<Path> { dateOf(it) }.thenByDescending(::segmentOf))
+        val files = segmentsNewestFirst(wanted, sinceMillis)
         val newest = PriorityQueue<JournalRecord>(compareBy { it.timeMillis })
         var remaining = maximumReadBytes
         var scannedDate: LocalDate? = null
@@ -113,16 +111,12 @@ class JournalStore(
             scannedDate = date
             try {
                 val size = Files.size(file)
-                // Files are read whole and newest first: a file that does not fit is skipped, so the
+                // Files are read whole and newest first: reading stops at a file that does not fit, so the
                 // returned records are always the newest complete set rather than an arbitrary prefix.
                 if (size > remaining) { truncated = true; break }
                 Files.newInputStream(file).buffered().use { input ->
                     JournalBlockCodec.visit(input, size) { record ->
-                        val typeFits = if (type == null) record.type != JournalRecord.STATS_TYPE else record.type == type
-                        if (typeFits && (source == null || record.source == source) && (sinceMillis == null || record.timeMillis >= sinceMillis)) {
-                            if (newest.size < limit) newest.add(record)
-                            else if (record.timeMillis > newest.peek().timeMillis) { newest.poll(); newest.add(record) }
-                        }
+                        offer(newest, record, limit, source, sinceMillis, type)
                     }
                 }
                 remaining -= size
@@ -131,6 +125,32 @@ class JournalStore(
             }
         }
         return Snapshot(newest.sortedByDescending { it.timeMillis }, truncated)
+    }
+
+    /** The segment files of [levels] that can hold records from [sinceMillis] on, newest day and segment first. */
+    private fun segmentsNewestFirst(levels: Set<JournalLevel>, sinceMillis: Long?): List<Path> {
+        val sinceDate = sinceMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
+        return levels.flatMap(::filesOf).filter { sinceDate == null || dateOf(it)?.isBefore(sinceDate) != true }
+            .sortedWith(compareByDescending<Path> { dateOf(it) }.thenByDescending(::segmentOf))
+    }
+
+    /** Keeps [record] in [newest] when it matches the filters and is among the [limit] newest seen so far. */
+    private fun offer(
+        newest: PriorityQueue<JournalRecord>,
+        record: JournalRecord,
+        limit: Int,
+        source: String?,
+        sinceMillis: Long?,
+        type: String?,
+    ) {
+        val typeFits = if (type == null) record.type != JournalRecord.STATS_TYPE else record.type == type
+        if (!typeFits || (source != null && record.source != source) || (sinceMillis != null && record.timeMillis < sinceMillis)) return
+        if (newest.size < limit) {
+            newest.add(record)
+        } else if (record.timeMillis > newest.peek().timeMillis) {
+            newest.poll()
+            newest.add(record)
+        }
     }
 
     private class Snapshot(val records: List<JournalRecord>, val truncated: Boolean)
@@ -156,6 +176,7 @@ class JournalStore(
         }
     }
 
+    /** Deletes segments past the retention of their level, then enforces the disk budget; returns the number of files removed. */
     @Synchronized
     fun prune(): Int {
         if (!Files.isDirectory(directory)) return 0

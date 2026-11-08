@@ -12,6 +12,7 @@ internal data class ReleaseChannelSelection(
 
 /** Builds the release view for one product using the channel chosen in configuration. */
 internal object ReleaseChannelSelector {
+    /** Picks the releases of [product] the channel allows. */
     fun select(
         product: ProductId,
         releases: List<ProductRelease>,

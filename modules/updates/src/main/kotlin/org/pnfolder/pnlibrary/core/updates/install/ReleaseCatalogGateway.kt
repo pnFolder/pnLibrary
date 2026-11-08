@@ -26,6 +26,7 @@ internal class ReleaseCatalogGateway(
     private val http: TrustedHttpClient,
     private val requestExecutor: Executor,
 ) {
+    /** Returns the first catalog any endpoint delivers; fails with every endpoint's error when all three fail. */
     fun load(source: CatalogSource, refreshMode: RefreshMode): ReleaseCatalog {
         val endpoints = CatalogEndpoints(source)
         val result = CompletableFuture<ReleaseCatalog>()

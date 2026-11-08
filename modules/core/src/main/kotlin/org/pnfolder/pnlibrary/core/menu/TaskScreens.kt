@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
+/** Menu screens for scheduled tasks. */
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) {
         val nextPeriod = TaskPeriod.values()[(period.ordinal + 1) % TaskPeriod.values().size]

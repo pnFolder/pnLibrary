@@ -25,6 +25,7 @@ import java.util.logging.Logger
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
+    /** The pnLibrary plugin; internal work such as global tasks belongs to it. */
     val plugin: Plugin,
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)

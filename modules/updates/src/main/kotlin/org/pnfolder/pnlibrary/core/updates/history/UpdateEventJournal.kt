@@ -36,8 +36,10 @@ internal class UpdateEventJournal(
     private val maxAge: Duration = Duration.ofDays(DEFAULT_MAX_AGE_DAYS),
     private val maxEvents: Int = DEFAULT_MAX_EVENTS,
 ) {
+    /** A product that moved from [from] (null when it was absent) to [to]. */
     data class Change(val product: String, val from: String?, val to: String)
 
+    /** One journal entry: what was observed for a plan, who caused it and which products changed. */
     data class Event(
         val id: UUID,
         val occurredAt: Instant,

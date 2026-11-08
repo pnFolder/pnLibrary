@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 
+/** Starts the library's own metrics session and reports failure as a warning instead of failing startup. */
 internal class RuntimeMetricsBootstrap(
     private val registry: MetricsSessions,
     private val platform: PlatformIdentity,

@@ -32,6 +32,7 @@ internal class UpdatePlanStager(
     private val maximumArtifactBytes: Long,
     private val requireSha256: Boolean = true,
 ) {
+    /** Downloads the artifacts of [plan] and hands them to the transaction as one set for the next restart. */
     fun stage(
         planId: UUID,
         plan: UpdatePlan,

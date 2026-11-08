@@ -18,9 +18,12 @@ internal class TranslationSearchIndex<T>(
     matches: List<TranslationMatch<T>>,
     override val layouts: KeyboardLayouts = KeyboardLayouts.builtIn,
 ) : TranslationIndex<T> {
+    /** All indexed translations with their normalized text. */
     private val entries = matches.map { Indexed(it, normalize(it.translation)) }
+    /** Normalized text to its matches, for [findExact]. */
     private val exact = entries.groupBy({ it.normalized }, { it.match })
         .mapValues { (_, matches) -> Collections.unmodifiableList(matches) }
+    /** Small LRU of substring-search results; guarded by its own monitor. */
     private val searchCache = object : LinkedHashMap<String, List<TranslationMatch<T>>>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<TranslationMatch<T>>>?): Boolean =
             size > SEARCH_CACHE_CAPACITY
@@ -88,21 +91,26 @@ internal class TranslationSearchIndex<T>(
         }.sortedWith(compareByDescending<Ranked<T>> { it.score }.thenByDescending { it.typedAsIs }.thenBy { it.match.key })
     }
 
+    /** A match with its similarity [score]; [typedAsIs] is true when the query matched without layout conversion. */
     private class Ranked<T>(val match: TranslationMatch<T>, val score: Double, val typedAsIs: Boolean)
 
+    /** A match with its normalized text; [candidates] are the whole text and each word, compared separately. */
     private class Indexed<T>(val match: TranslationMatch<T>, val normalized: String) {
         val candidates: List<String> = (listOf(normalized) + normalized.split(' ')).distinct()
     }
 
     companion object {
+        /** Folds case, width and whitespace and treats `ё` as `е`, so lookups ignore those differences. */
         fun normalize(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
             .trim().lowercase(Locale.ROOT).replace('ё', 'е').replace(WHITESPACE, " ")
 
+        /** Builds an index whose results are keyed by the translation key itself. */
         fun keys(values: Map<String, String>, layouts: KeyboardLayouts) = TranslationSearchIndex(
             values.map { (key, value) -> TranslationMatch(key, value, key) },
             layouts,
         )
 
+        /** Runs of whitespace collapsed by [normalize]. */
         private val WHITESPACE = Regex("\\s+")
         private const val SEARCH_CACHE_CAPACITY = 64
         private const val SUGGEST_FLOOR = 0.5

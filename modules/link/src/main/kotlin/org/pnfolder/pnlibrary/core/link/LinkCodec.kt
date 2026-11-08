@@ -19,16 +19,19 @@ import javax.crypto.spec.SecretKeySpec
  * sends bytes on the channel by hand cannot pose as a server.
  */
 object LinkCodec {
+    /** The plugin message channel the link uses between servers and the proxy. */
     const val CHANNEL = "pnlibrary:link"
 
     /** Longer lists are cut so the message stays under the plugin message limit. */
     const val MAX_PLUGINS = 150
 
+    /** The most plugins listed per server in a network map, before the map is cut further to fit the frame. */
     const val MAX_NETWORK_PLUGINS = 40
 
     /** A plugin message may not be larger than this. */
     const val MAX_FRAME_BYTES = 32_000
 
+    /** The most servers listed in a network map. */
     const val MAX_SERVERS = 30
 
     private const val MAX_GROUPS = 30
@@ -46,6 +49,7 @@ object LinkCodec {
     private const val MAX_TEXT = 200
     private val TOLERANCE: Duration = Duration.ofMinutes(2)
 
+    /** Encodes and signs a server report with [key]. */
     fun encode(report: LinkReport, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(VERSION)
         writeReport(out, report, MAX_PLUGINS)
@@ -133,6 +137,7 @@ object LinkCodec {
             NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 
+    /** Encodes and signs a remote update request with [key]. */
     fun encodeRequest(request: RemoteRequest, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(REQUEST_VERSION)
         out.writeLong(request.id.mostSignificantBits)
@@ -160,6 +165,7 @@ object LinkCodec {
             RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
         }
 
+    /** Encodes and signs the answer to a remote request with [key]. */
     fun encodeResult(result: RemoteResult, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(RESULT_VERSION)
         out.writeLong(result.id.mostSignificantBits)
@@ -180,6 +186,7 @@ object LinkCodec {
             RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
         }
 
+    /** Encodes and signs a data question with [key]. */
     fun encodeCall(call: DataCall, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CALL_VERSION)
         out.writeLong(call.id.mostSignificantBits)
@@ -209,6 +216,7 @@ object LinkCodec {
             DataCall(id, target, origin, viewer, method, args, sentAt)
         }
 
+    /** Encodes and signs one piece of an answer with [key]. */
     fun encodeChunk(chunk: DataChunk, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CHUNK_VERSION)
         out.writeLong(chunk.id.mostSignificantBits)

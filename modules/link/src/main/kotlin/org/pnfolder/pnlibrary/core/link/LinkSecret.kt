@@ -12,6 +12,7 @@ import java.util.Base64
  * administrator copies the file from the proxy.
  */
 object LinkSecret {
+    /** The name of the key file in the pnLibrary folder. */
     const val FILE = "link.key"
     private const val KEY_BYTES = 32
 

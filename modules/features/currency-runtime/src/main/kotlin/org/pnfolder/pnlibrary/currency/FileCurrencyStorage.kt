@@ -146,6 +146,7 @@ internal class FileCurrencyStorage(
         worker.close()
     }
 
+    /** Evaluates [request] against current balances and stores the new balances when it commits. */
     private fun apply(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CurrencyTransaction {
         val sourceKey = request.source?.let { accountKey(currency, it) }
         val targetKey = request.target?.let { accountKey(currency, it) }
@@ -159,6 +160,7 @@ internal class FileCurrencyStorage(
         return mutation.transaction(currency, descriptor, request)
     }
 
+    /** Reads balances and ledger from [file]; a missing file means an empty store. */
     private fun load() {
         if (!Files.exists(file)) return
         require(!Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
@@ -180,11 +182,13 @@ internal class FileCurrencyStorage(
         }
     }
 
+    /** Appends [transaction] to the ledger and indexes its idempotency key. */
     private fun record(transaction: CurrencyTransaction) {
         transactions += transaction
         transaction.idempotencyKey?.let { idempotency[idempotencyKey(transaction.currency, it)] = transaction }
     }
 
+    /** Drops the oldest transactions beyond [maximumTransactions], together with their idempotency keys. */
     private fun trimHistory() {
         val excess = transactions.size - maximumTransactions
         if (excess <= 0) return
@@ -205,6 +209,7 @@ internal class FileCurrencyStorage(
         }
     }
 
+    /** Applies every non-null filter of [query] with logical AND. */
     private fun matches(
         transaction: CurrencyTransaction,
         currency: CurrencyKey,
@@ -217,12 +222,14 @@ internal class FileCurrencyStorage(
         (query.from == null || !transaction.createdAt.isBefore(query.from)) &&
         (query.until == null || transaction.createdAt.isBefore(query.until))
 
+    /** Copies the in-memory state so [restore] can roll back a failed save. */
     private fun snapshotState() = StorageState(
         balances = LinkedHashMap(balances),
         transactions = transactions.toList(),
         idempotency = HashMap(idempotency),
     )
 
+    /** Puts back a state taken by [snapshotState]. */
     private fun restore(state: StorageState) {
         balances.clear()
         balances.putAll(state.balances)
@@ -232,10 +239,13 @@ internal class FileCurrencyStorage(
         idempotency.putAll(state.idempotency)
     }
 
+    /** Map key of one account balance: `currency|playerId`. */
     private fun accountKey(currency: CurrencyKey, account: CurrencyAccount) = "$currency|${account.playerId}"
 
+    /** Map key of one idempotency key, scoped per currency. */
     private fun idempotencyKey(currency: CurrencyKey, key: String) = "$currency|$key"
 
+    /** Deletes all balances, transactions and idempotency keys of [currency]. */
     private fun removeCurrency(currency: CurrencyKey) {
         val prefix = "$currency|"
         balances.keys.removeIf { it.startsWith(prefix) }
@@ -243,8 +253,10 @@ internal class FileCurrencyStorage(
         idempotency.keys.removeIf { it.startsWith(prefix) }
     }
 
+    /** Runs [operation] on the single storage worker so file access never blocks the caller. */
     private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
 
+    /** In-memory copy used to roll back after a failed save. */
     private data class StorageState(
         val balances: Map<String, BigDecimal>,
         val transactions: List<CurrencyTransaction>,

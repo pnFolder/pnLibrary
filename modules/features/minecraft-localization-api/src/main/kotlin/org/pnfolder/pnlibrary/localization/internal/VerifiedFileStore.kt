@@ -11,16 +11,22 @@ import java.security.MessageDigest
  * and quarantine for files that fail verification.
  */
 internal class VerifiedFileStore(private val root: Path) {
+    /** Cache file of one language of one version. */
     fun translation(version: String, locale: String): Path = root.resolve("translations").resolve(version).resolve("$locale.json")
+    /** Cache file of the Mojang version manifest. */
     fun manifest(): Path = root.resolve("version-manifest.json")
+    /** Cache file of the metadata of [version]. */
     fun versionMetadata(version: String): Path = root.resolve("versions").resolve("$version.json")
+    /** Cache file of the asset index of [version]. */
     fun assetIndex(version: String): Path = root.resolve("asset-indexes").resolve("$version.json")
+    /** Creates an empty temporary file in the cache for a large download. */
     fun temporary(suffix: String): Path {
         val directory = root.resolve("temporary")
         Files.createDirectories(directory)
         return Files.createTempFile(directory, "download-", suffix)
     }
 
+    /** Returns the file bytes, or null when it is missing or larger than [maximumBytes]. */
     fun read(path: Path, maximumBytes: Int = DEFAULT_READ_LIMIT): ByteArray? {
         if (!Files.isRegularFile(path)) return null
         if (maximumBytes < 0) throw IllegalArgumentException("Maximum bytes must not be negative")
@@ -28,6 +34,7 @@ internal class VerifiedFileStore(private val root: Path) {
         return Files.readAllBytes(path)
     }
 
+    /** Writes [bytes] through a temporary file and an atomic move, so readers never see a partial file. */
     fun write(path: Path, bytes: ByteArray) {
         Files.createDirectories(path.parent)
         val temporary = Files.createTempFile(path.parent, path.fileName.toString(), ".tmp")
@@ -39,14 +46,17 @@ internal class VerifiedFileStore(private val root: Path) {
         }
     }
 
+    /** Renames a file that failed verification so it is neither reused nor lost. */
     fun quarantine(path: Path) {
         if (!Files.exists(path)) return
         Files.move(path, path.resolveSibling("${path.fileName}.corrupt-${System.currentTimeMillis()}"), StandardCopyOption.REPLACE_EXISTING)
     }
 
+    /** Lowercase hex SHA-1 of [bytes]. */
     fun sha1(bytes: ByteArray): String = MessageDigest.getInstance("SHA-1")
         .digest(bytes).joinToString("") { "%02x".format(it) }
 
+    /** Lowercase hex SHA-1 of the file, streamed so large archives are not loaded into memory. */
     fun sha1(path: Path): String {
         val digest = MessageDigest.getInstance("SHA-1")
         Files.newInputStream(path).use { input ->

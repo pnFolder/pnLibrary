@@ -14,13 +14,16 @@ internal object BackupStorage {
     /** A set this large is reported to the administrator, who can delete it. */
     const val LARGE_BYTES: Long = 500L * 1024 * 1024
 
+    /** Total size of the files under [folder]; 0 when it does not exist. */
     fun bytes(folder: Path): Long {
         if (!Files.isDirectory(folder)) return 0
         return Files.walk(folder).use { paths -> paths.filter(Files::isRegularFile).mapToLong(Files::size).sum() }
     }
 
+    /** True when a set created at [createdAt] has outlived [RETENTION]; a set with no date is kept. */
     fun expired(createdAt: Instant?, now: Instant): Boolean = createdAt != null && createdAt.plus(RETENTION).isBefore(now)
 
+    /** Removes [folder] with everything in it; does nothing when it does not exist. */
     fun delete(folder: Path) {
         if (!Files.isDirectory(folder)) return
         Files.walk(folder).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach(Files::delete) }

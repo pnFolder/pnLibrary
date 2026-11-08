@@ -13,12 +13,14 @@ internal class BukkitDiagnosticTestErrors(
 ) {
     private val logger get() = library.logging.logger(plugin, "diagnostic-test")
 
+    /** Logs one error with a fresh id, to try the diagnostics pipeline. */
     fun unique(report: (String) -> Unit) {
         val id = UUID.randomUUID().toString().substring(0, 8)
         logger.error("Unique diagnostic test error [$id]", IllegalStateException("Generated unique failure [$id]"))
         report("Создана уникальная тестовая ошибка: $id")
     }
 
+    /** Logs the same error [requested] times (default and maximum are bounded) to try error grouping. */
     fun repeated(report: (String) -> Unit, requested: Int?) {
         val count = requested?.coerceIn(1, MAX_REPEATS) ?: DEFAULT_REPEATS
         val logger = logger
@@ -26,6 +28,7 @@ internal class BukkitDiagnosticTestErrors(
         report("Одинаковая тестовая ошибка вызвана $count раз.")
     }
 
+    /** Logs an error with a cause chain, to try how causes are shown. */
     fun chained(report: (String) -> Unit) {
         val root = IllegalArgumentException("Invalid test database response")
         val database = SQLException("Test query execution failed", root)

@@ -59,6 +59,7 @@ internal class JdbcCurrencyStorage(
         }
     }
 
+    /** Locks the affected accounts, evaluates [request] and writes balances and the ledger row. */
     private fun applyMutation(
         connection: Connection,
         currency: CurrencyKey,
@@ -97,6 +98,7 @@ internal class JdbcCurrencyStorage(
         }
     }
 
+    /** True for serialization failure, deadlock and constraint violation SQL states. */
     private fun isConflict(error: SQLException): Boolean {
         val state = error.sqlState ?: return false
         return state == "40001" || state == "40P01" || state.startsWith("23")
@@ -128,6 +130,7 @@ internal class JdbcCurrencyStorage(
         worker.close()
     }
 
+    /** Creates the tables once per storage instance, on first use. */
     private fun ensureSchema() {
         if (initialized) return
         synchronized(schemaLock) {
@@ -142,11 +145,13 @@ internal class JdbcCurrencyStorage(
         }
     }
 
+    /** Borrows a pooled connection for [operation] and returns it afterwards. */
     private fun <T> connection(operation: (Connection) -> T): T {
         ensureSchema()
         return dataSource.connection.use(operation)
     }
 
+    /** Runs [operation] in one transaction with [isolation]; rolls back on failure and restores connection settings. */
     private fun <T> committed(connection: Connection, isolation: Int, operation: () -> T): T {
         val previous = ConnectionSettings.capture(connection)
         connection.autoCommit = false
@@ -161,6 +166,7 @@ internal class JdbcCurrencyStorage(
         }
     }
 
+    /** Runs [operation] on the storage worker pool so JDBC never blocks the caller. */
     private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
 
     private companion object {
@@ -170,12 +176,14 @@ internal class JdbcCurrencyStorage(
 
 /** Transaction settings of a borrowed connection, put back before it returns to the caller's pool. */
 private class ConnectionSettings(private val autoCommit: Boolean, private val isolation: Int) {
+    /** Reapplies the captured settings; failures are ignored because the connection is being returned. */
     fun restore(connection: Connection) {
         runCatchingNonFatal { connection.autoCommit = autoCommit }
         runCatchingNonFatal { connection.transactionIsolation = isolation }
     }
 
     companion object {
+        /** Reads the current settings of [connection]. */
         fun capture(connection: Connection) = ConnectionSettings(connection.autoCommit, connection.transactionIsolation)
     }
 }

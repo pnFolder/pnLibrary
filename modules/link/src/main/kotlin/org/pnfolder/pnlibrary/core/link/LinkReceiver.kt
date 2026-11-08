@@ -19,6 +19,7 @@ class LinkReceiver(
     private val executor: RemoteExecutor? = null,
     private val data: DataHandler? = null,
 ) {
+    /** Whether the link has a key; without one nothing is accepted. */
     val enabled: Boolean get() = link.enabled
 
     /** Handles [message] from [server]; returns true when it was a valid message. */

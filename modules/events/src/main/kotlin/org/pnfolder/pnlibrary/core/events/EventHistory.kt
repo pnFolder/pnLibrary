@@ -47,6 +47,7 @@ class EventHistory(
         if (file != null && retentionDays > 0) runCatchingNonFatal { load(file) }
     }
 
+    /** Counts one call of [eventType] for today and this hour, and writes the file later if enough time passed. */
     fun record(eventType: String, denied: Boolean) {
         if (retentionDays <= 0) return
         val now = LocalDateTime.now(zone())
@@ -181,6 +182,7 @@ class EventHistory(
     }
 
     private companion object {
+        /** The first line of the history file, which names its format version. */
         const val HEADER = "# pnLibrary event history v1"
         const val MAX_HOURLY_DAYS = 30
         const val NL = '\n'

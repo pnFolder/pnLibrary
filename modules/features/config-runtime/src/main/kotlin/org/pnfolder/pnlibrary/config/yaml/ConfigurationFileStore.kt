@@ -14,8 +14,10 @@ internal class ConfigurationFileStore(
     private val file: File,
     private val validator: (String) -> Unit,
 ) {
+    /** Converts line endings to a single newline and ends the text with exactly one newline. */
     fun normalize(content: String): String = content.replace("\r\n", "\n").trimEnd() + "\n"
 
+    /** Replaces the file with [content] atomically, after the validator accepted it as a temporary file. */
     fun write(content: String) {
         val normalized = normalize(content)
         val temporary = Files.createTempFile(file.absoluteFile.parentFile.toPath(), "${file.name}.", ".tmp")

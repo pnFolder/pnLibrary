@@ -9,6 +9,7 @@ abstract class TrackingPlatformCommandAdapter : PlatformCommandAdapter {
     private val closed = AtomicBoolean(false)
     private val registrations = LinkedHashSet<TrackedRegistration>()
 
+    /** Registers [command] natively so that native calls reach [dispatcher]. */
     protected abstract fun registerNative(
         owner: Any,
         command: CommandDefinition,

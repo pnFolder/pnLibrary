@@ -19,6 +19,7 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
+/** Checks command registration, execution, tab completion and cleanup on BungeeCord. */
 class BungeeCommandAdapterTest {
     @Test
     fun `native callbacks translate sender execution and suggestions`() {

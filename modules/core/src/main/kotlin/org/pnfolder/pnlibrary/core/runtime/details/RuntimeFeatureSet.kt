@@ -19,6 +19,7 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Path
 
+/** Creates the feature services of the library runtime (services, configs, updates and so on). */
 internal class RuntimeFeatureSet(
     platform: PlatformRuntimeContext,
     dataFolder: Path,

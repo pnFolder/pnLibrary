@@ -27,6 +27,7 @@ internal class UpdateReminders(
 ) : AutoCloseable {
     private var timer: TaskHandle? = null
 
+    /** Begins the periodic reminder for administrators. */
     fun start(): UpdateReminders = apply {
         val active = library() ?: return@apply
         timer = active.runtimeTaskScope().schedule(
@@ -43,6 +44,7 @@ internal class UpdateReminders(
         )
     }
 
+    /** Whether [player] is an operator or holds a permission that allows update notices. */
     fun canSeeUpdates(player: Player): Boolean = player.isOp || player.hasPermission("*") ||
         player.hasPermission("pnlibrary.admin") || player.hasPermission("pnlibrary.updates.notify")
 

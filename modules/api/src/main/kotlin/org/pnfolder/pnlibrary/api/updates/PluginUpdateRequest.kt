@@ -119,6 +119,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             }
         }
 
+        /** Sets the GitHub repository (owner and name) releases are read from. */
         fun repository(owner: String, name: String): Builder = apply {
             require(owner.matches(REPOSITORY_PART) && name.matches(REPOSITORY_PART)) {
                 "Invalid GitHub repository: $owner/$name"
@@ -173,16 +174,19 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }
 
+        /** Sets the range of pnLibrary API versions the plugin build supports. */
         fun supportedApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
+        /** Selects the release file with exactly this name, for the given Java range. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null): Builder = apply {
             require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
 
+        /** Selects release files whose name matches [regex], for the given Java range. */
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -191,6 +195,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
 
+        /** Selects release files matching [regex] on one [platform], for the given Java range. */
         @JvmOverloads
         fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -211,6 +216,7 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     companion object {
         private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
 
+        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

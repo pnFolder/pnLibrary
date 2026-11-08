@@ -55,6 +55,7 @@ internal class BungeeLibraryPlayer private constructor(
     companion object {
         private val LEGACY = LegacyComponentSerializer.legacySection()
 
+        /** Wraps [player] as a portable [LibraryPlayer]. */
         @JvmStatic
         fun of(player: ProxiedPlayer): LibraryPlayer = BungeeLibraryPlayer(player)
     }

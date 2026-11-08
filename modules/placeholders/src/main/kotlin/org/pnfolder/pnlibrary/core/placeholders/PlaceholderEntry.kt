@@ -76,10 +76,12 @@ class PlaceholderEntry<T : Any>(
         cache.clear()
     }
 
+    /** Sets what runs once when the entry is closed, so the hub can forget it. */
     fun whenClosed(callback: () -> Unit) {
         closeCallback = callback
     }
 
+    /** Reads the value for [request] from the cache or the resolver; a missing value becomes the fallback. */
     fun resolve(request: PlaceholderRequest): CompletionStage<T?> {
         if (!isEnabled) return CompletableFuture.completedFuture(fallback)
 
@@ -95,6 +97,7 @@ class PlaceholderEntry<T : Any>(
         }
     }
 
+    /** Changes the value on behalf of [consumer] and clears the cache; fails when the placeholder is read-only or [consumer] may not. */
     fun update(consumer: PluginId, request: PlaceholderRequest, value: String): T? {
         check(updateAccess.allows(owner, consumer)) {
             "Plugin $consumer cannot update ${owner.value}:${key.value}"
@@ -106,6 +109,7 @@ class PlaceholderEntry<T : Any>(
     /** What this placeholder was asked to publish outside, for the administrator's list. */
     val publishedAs: List<PlaceholderPublication> get() = synchronized(publishedNames) { publishedNames.toList() }
 
+    /** Publishes the placeholder to an outside system, now if its adapter is present and when it arrives otherwise. */
     fun publish(publication: PlaceholderPublication) {
         synchronized(publishedNames) { publishedNames += publication }
         val binding = PlaceholderPublicationBinding(publication, owner, key.value, ::published)
@@ -135,12 +139,14 @@ class PlaceholderEntry<T : Any>(
         return publishedFormat?.invoke(answer, request) ?: answer
     }
 
+    /** Publishes through [adapter] every publication that asked for it. */
     fun attach(adapter: PlaceholderAdapter) {
         publicationBindings.toList()
             .filter { binding -> binding.adapterId == adapter.id.lowercase(Locale.ROOT) }
             .forEach { binding -> binding.attach(adapter) }
     }
 
+    /** Withdraws every publication that went through the adapter [adapterId]. */
     fun detach(adapterId: String) {
         publicationBindings.toList()
             .filter { binding -> binding.adapterId == adapterId.lowercase(Locale.ROOT) }
@@ -188,6 +194,7 @@ private data class CachedPlaceholderValue<T>(
     val value: T?,
     val writtenAtMillis: Long,
 ) {
+    /** Whether the value is older than the policy allows. */
     fun expired(policy: PlaceholderCachePolicy): Boolean =
         System.currentTimeMillis() - writtenAtMillis >= policy.expireAfterWrite.toMillis()
 }

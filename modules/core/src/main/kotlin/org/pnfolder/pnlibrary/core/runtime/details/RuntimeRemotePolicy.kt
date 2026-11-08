@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Validates the remote policy the library applies to itself. */
 internal object RuntimeRemotePolicy {
     fun validated(policy: RemotePolicySettings): RemotePolicySettings {
         require(policy.onDeny == DenyAction.DISABLE_PLUGIN) {

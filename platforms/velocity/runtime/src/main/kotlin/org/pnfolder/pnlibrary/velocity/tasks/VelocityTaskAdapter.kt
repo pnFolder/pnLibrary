@@ -119,6 +119,7 @@ internal class VelocityTaskAdapter internal constructor(
         },
     )
 
+    /** A native handle that removes itself from [handles] once it is cancelled or its one-shot task has run. */
     private inner class TrackedHandle(
         private val delegate: PlatformTaskHandle,
     ) : PlatformTaskHandle {
@@ -137,6 +138,7 @@ internal class VelocityTaskAdapter internal constructor(
             return true
         }
 
+        /** Stops tracking the task without cancelling it. */
         fun release() {
             handles.remove(this)
         }

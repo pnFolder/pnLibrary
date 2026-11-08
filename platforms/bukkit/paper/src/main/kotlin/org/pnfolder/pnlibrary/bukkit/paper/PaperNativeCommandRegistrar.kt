@@ -31,6 +31,7 @@ class PaperNativeCommandRegistrar(
     private val plugin: Plugin,
     private val fallback: NativeCommandRegistrar<CommandSender>,
 ) : NativeCommandRegistrar<CommandSender> {
+    /** One registered command with the handlers needed to publish it either natively or through the fallback. */
     private class Entry(
         val owner: Plugin?,
         val command: CommandDefinition,

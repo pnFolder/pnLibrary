@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
 
+/** Menu screens for library settings. */
 internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     private fun pauseFootnote(registered: Int, unregistered: Int): List<String> = buildList {
         add("")

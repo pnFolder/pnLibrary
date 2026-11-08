@@ -54,5 +54,6 @@ public enum BootstrapPlatform {
      * @return {@code plugin.yml}, {@code bungee.yml} or {@code velocity-plugin.json} */
     public String descriptor() { return descriptor; }
 
+    /** Whether {@code fileName} is a universal pnLibrary jar. */
     static boolean isUniversal(String fileName) { return fileName != null && UNIVERSAL.matcher(fileName).matches(); }
 }

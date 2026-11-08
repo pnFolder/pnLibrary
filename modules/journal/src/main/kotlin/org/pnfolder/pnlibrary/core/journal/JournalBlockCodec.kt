@@ -27,6 +27,7 @@ object JournalBlockCodec {
     private const val HEADER_BYTES = 8
     private const val MAX_PAYLOAD_BYTES = 16 * 1024 * 1024
 
+    /** Packs [records] into one checksummed block that can be appended to a segment file. */
     fun encode(records: List<JournalRecord>): ByteArray {
         val raw = ByteArrayOutputStream()
         GZIPOutputStream(raw).use { gzip ->

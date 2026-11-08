@@ -20,6 +20,7 @@ data class UploadReceipt(
     val expiresEpochSeconds: Long,
     val backend: String,
 ) {
+    /** Whether the provider gave a token that deletes the upload. */
     fun canDelete(): Boolean = deleteToken.isNotBlank()
 
     override fun toString(): String = link.toString()

@@ -73,6 +73,7 @@ data class Observation(
     val errorMessage: String?,
 ) {
     companion object {
+        /** Creates an observation from [request] stamped with [timestamp] (epoch milliseconds). */
         @JvmStatic
         @JvmOverloads
         fun from(request: ObservationRequest, timestamp: Long = System.currentTimeMillis()): Observation = Observation(

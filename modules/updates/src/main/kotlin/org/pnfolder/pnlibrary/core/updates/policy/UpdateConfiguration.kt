@@ -15,17 +15,21 @@ internal data class UpdateConfiguration(
     val library: LibraryPolicy = LibraryPolicy(),
     val pluginAutomaticDownload: Boolean = true,
 ) {
+    /** Channel and automatic-download choice for the library itself. */
     data class LibraryPolicy(
         val channel: UpdateChannel = UpdateChannel.DEV,
         val automaticDownload: Boolean = true,
     )
+    /** How often the release catalog is checked. */
     data class Checks(val interval: Duration = UpdateDefaults.CHECK_INTERVAL)
+    /** Limits and timeouts for artifact downloads. */
     data class Downloads(
         val allowManagedPlugins: Boolean = UpdateDefaults.ALLOW_MANAGED_PLUGINS,
         val connectTimeout: Duration = UpdateDefaults.CONNECT_TIMEOUT,
         val readTimeout: Duration = UpdateDefaults.READ_TIMEOUT,
         val maxArtifactBytes: Long = UpdateDefaults.MAX_ARTIFACT_BYTES,
     )
+    /** Rules for what may be installed. */
     data class Installation(
         val allowNewPlugins: Boolean = false,
         val requireSha256: Boolean = UpdateDefaults.REQUIRE_SHA256,

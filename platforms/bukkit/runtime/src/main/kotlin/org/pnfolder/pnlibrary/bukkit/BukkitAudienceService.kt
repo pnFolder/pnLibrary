@@ -36,6 +36,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     /** Whether the native Adventure transport is still available for new deliveries. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
+    /** Wraps an online Bukkit [player] for the library API. */
     fun player(player: Player): LibraryPlayer =
         BukkitLibraryPlayer(player, this)
 

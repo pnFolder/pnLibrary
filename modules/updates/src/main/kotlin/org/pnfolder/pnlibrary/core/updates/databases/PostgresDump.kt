@@ -16,6 +16,7 @@ import java.util.zip.GZIPOutputStream
  * consistent read-only transaction. Views, functions, triggers and other schemas are not copied.
  */
 internal class PostgresDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 1024) {
+    /** Writes the tables matching [only] (all when empty) to [target], failing past [maximumBytes]. */
     fun write(connection: Connection, only: List<String>, target: Path) {
         connection.autoCommit = false
         connection.createStatement().use { it.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY") }
@@ -78,6 +79,7 @@ internal class PostgresDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 
     }
 
     companion object {
+        /** First line of every copy; the restore refuses a file without it. */
         const val HEADER = "-- pnlibrary-pg 1"
         private const val FETCH_ROWS = 1000
         private const val ROWS_PER_INSERT = 200

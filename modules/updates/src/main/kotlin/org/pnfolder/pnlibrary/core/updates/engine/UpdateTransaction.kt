@@ -110,12 +110,16 @@ internal class UpdateTransaction(
     /** Returns transactions waiting for post-restart product-version confirmation. */
     fun awaitingHealth(): List<PendingTransaction> = health.awaiting()
 
+    /** Rollbacks that were applied and still wait for a health check. */
     internal fun awaitingRollbackHealth(): List<PendingTransaction> = health.awaitingRollback()
 
+    /** Records the health result of the rollback journal at [path]. */
     internal fun completeRollbackHealth(path: Path, healthy: Boolean) = health.completeRollback(path, healthy)
 
+    /** Whether no unhealthy update transaction involves [products]. */
     internal fun automaticUpdatesHealthy(products: Set<String>): Boolean = health.automaticUpdatesHealthy(products)
 
+    /** Transactions whose health check failed. */
     internal fun failedHealthChecks(): List<PendingTransaction> = health.failed()
 
     /** Recovers an interrupted transaction, rolling back unsafe publication states. */
@@ -215,8 +219,10 @@ internal class UpdateTransaction(
 
     private fun publishingCopy(target: Path): Path = target.resolveSibling("${target.fileName}.publishing")
 
+    /** Loads the journal at [path]. */
     internal fun readJournal(path: Path): TransactionJournal = journals.load(path)
 
+    /** Saved-set journals that were applied but not yet installed or restored. */
     internal fun pendingInstallations(): List<Path> = journals.journals().filter { path ->
         val journal = journals.load(path)
         journal.purpose in SAVED_SET_PURPOSES && (
@@ -225,17 +231,20 @@ internal class UpdateTransaction(
             )
     }
 
+    /** The committed journal of [purpose] that belongs to [parent], if any. */
     internal fun appliedChildJournal(parent: UUID, purpose: String): Path? = journals.journals().firstOrNull { path ->
         val journal = journals.load(path)
         journal.parentTransaction == parent.toString() && journal.purpose == purpose && journal.state == TransactionState.COMMITTED
     }
 
+    /** Rolls back an internal installation transaction. */
     internal fun revertInstallation(path: Path) {
         val journal = journals.load(path)
         require(journal.purpose in INTERNAL_PURPOSES) { "Not an internal installation transaction" }
         rollbackInternal(path, journal)
     }
 
+    /** Remembers that [operation] was applied for the journal at [path]. */
     internal fun markInstalled(path: Path, operation: String) {
         require(operation in INTERNAL_PURPOSES)
         val journal = journals.load(path)

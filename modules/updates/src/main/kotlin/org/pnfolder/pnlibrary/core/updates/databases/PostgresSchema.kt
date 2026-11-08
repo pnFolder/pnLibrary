@@ -1,11 +1,14 @@
 package org.pnfolder.pnlibrary.core.updates.databases
 
 import java.sql.Connection
+import java.sql.ResultSet
 
 /** Reads the shape of the tables of the current schema from the system catalogs and writes it as statements. */
 internal class PostgresSchema(private val connection: Connection) {
+    /** A table column; [generated] columns are computed by the server and are not copied. */
     class Column(val name: String, val generated: Boolean)
 
+    /** Names of the base tables of the current schema. */
     fun tables(): List<String> = strings(
         "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' ORDER BY 1",
     )
@@ -49,6 +52,7 @@ internal class PostgresSchema(private val connection: Connection) {
         }
     }
 
+    /** The columns of [table] in order. */
     fun columns(table: String): List<Column> = connection.prepareStatement(
         "SELECT a.attname, a.attgenerated <> '' FROM pg_attribute a WHERE a.attrelid = ?::regclass AND a.attnum > 0 AND NOT a.attisdropped ORDER BY a.attnum",
     ).use { statement ->
@@ -75,7 +79,7 @@ internal class PostgresSchema(private val connection: Connection) {
         return "CREATE TABLE $regclass (${(columns + constraints).joinToString(", ")})"
     }
 
-    private fun columnDefinition(rows: java.sql.ResultSet): String {
+    private fun columnDefinition(rows: ResultSet): String {
         val definition = StringBuilder(PostgresSyntax.identifier(rows.getString(1))).append(' ').append(rows.getString(2))
         val default = rows.getString(4)
         when {
@@ -88,6 +92,7 @@ internal class PostgresSchema(private val connection: Connection) {
         return definition.toString()
     }
 
+    /** `ALTER TABLE` statements that add the foreign keys of [table]; they run after every table exists. */
     fun foreignKeys(table: String): List<String> {
         val regclass = PostgresSyntax.identifier(table)
         return constraints(regclass, "contype = 'f'").map { "ALTER TABLE $regclass ADD CONSTRAINT ${PostgresSyntax.identifier(it.first)} ${it.second}" }

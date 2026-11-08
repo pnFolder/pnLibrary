@@ -58,6 +58,7 @@ public final class LibraryLoader {
         return loader != null && libraries != null && loader.load(libraries);
     }
 
+    /** The libraries of an optional group, or {@code null} for an unknown id; {@code javaFeature} picks the compiler. */
     static Library[] librariesFor(String id, int javaFeature) {
         switch (id) {
             case "mysql":
@@ -73,6 +74,7 @@ public final class LibraryLoader {
         }
     }
 
+    /** The running Java feature version (8, 11, 17, ...); 8 when it cannot be read. */
     static int javaFeature() {
         String version = System.getProperty("java.specification.version", "8");
         String feature = version.startsWith("1.") ? version.substring(2) : version;

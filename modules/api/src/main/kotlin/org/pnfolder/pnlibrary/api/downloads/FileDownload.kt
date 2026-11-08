@@ -32,6 +32,7 @@ class FileDownload internal constructor(builder: Builder) {
         internal var destination = DownloadDestination.DATA_FOLDER
         internal var relativePath = ""
 
+        /** Sets whether a failed download stops the whole batch. */
         fun required(value: Boolean): Builder = apply { required = value }
 
         /** Enables or disables ordinary automatic downloading. */
@@ -40,6 +41,7 @@ class FileDownload internal constructor(builder: Builder) {
         /** Enables or disables mandatory automatic downloading. */
         fun forceAutomaticDownload(value: Boolean): Builder = apply { forceAutomatic = value }
 
+        /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply { source.url(value) }
 
         /** Restricts the source to [value]. */
@@ -49,6 +51,7 @@ class FileDownload internal constructor(builder: Builder) {
         @JvmOverloads
         fun java(minimum: Int, maximum: Int? = null): Builder = apply { source.java(minimum, maximum) }
 
+        /** Sets the expected size and SHA-256 checksum the downloaded file must match. */
         fun integrity(size: Long, sha256: String): Builder = apply { source.integrity(size, sha256) }
 
         /** Selects the destination root and confined relative path. */

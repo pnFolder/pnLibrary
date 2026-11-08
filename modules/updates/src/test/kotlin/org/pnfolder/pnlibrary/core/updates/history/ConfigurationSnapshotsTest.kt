@@ -61,6 +61,17 @@ class ConfigurationSnapshotsTest {
         assertThrows(IllegalArgumentException::class.java) { UpdateConfigurationBackup(data, listOf("../outside.yml")) }
     }
 
+    @Test
+    fun `a failed capture leaves no half-written snapshot folder`() {
+        val (_, data) = fixture()
+        val store = ConfigurationSnapshots(directory.resolve("snapshots"), directory.resolve("plugins"), maximumTotalBytes = 4)
+        Files.writeString(data.resolve("a.yml"), "123")
+        Files.writeString(data.resolve("b.yml"), "456")
+        val selection = UpdateConfigurationBackup(data, listOf("a.yml", "b.yml"))
+        assertThrows(IllegalArgumentException::class.java) { store.capture(UUID.randomUUID(), mapOf(ProductId.of("example") to selection)) }
+        Files.list(directory.resolve("snapshots")).use { assertEquals(0, it.count()) }
+    }
+
     private fun fixture(): Pair<ConfigurationSnapshots, Path> {
         val plugins = directory.resolve("plugins")
         val data = plugins.resolve("example").also(Files::createDirectories)

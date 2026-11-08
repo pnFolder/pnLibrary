@@ -8,6 +8,7 @@ class PlaceholderEntryLookup(
     private val entries: Map<String, PlaceholderEntry<*>>,
     private val systemNamespace: PluginId,
 ) {
+    /** The entry found, or null, with the values taken from the pattern's parameters. */
     data class Match(
         val entry: PlaceholderEntry<*>?,
         val parameters: Map<String, String>,

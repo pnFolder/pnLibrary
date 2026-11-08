@@ -8,8 +8,10 @@ import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
 
+/** Plugin list filter in the updates screen. */
 internal enum class Filter(val title: String) { ALL("Плагины"), UPDATES("Обновления"), PROBLEMS("Проблемы") }
 
+/** Menu screens for plugin updates and problems. */
 internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     private val policy = PluginPolicyScreens(session, routes)
 

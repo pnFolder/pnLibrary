@@ -6,10 +6,12 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import java.util.UUID
 
+/** Creates the Bukkit inventory behind a menu; replaced in tests. */
 internal fun interface MenuInventories {
     fun create(menu: Menu, holder: InventoryHolder): Inventory
 }
 
+/** Creates real server inventories. */
 internal object NativeMenuInventories : MenuInventories {
     @Suppress("DEPRECATION")
     override fun create(menu: Menu, holder: InventoryHolder): Inventory =
@@ -24,6 +26,7 @@ internal object NativeMenuInventories : MenuInventories {
 internal class MenuHolder(val id: UUID) : InventoryHolder {
     private var inventory: Inventory? = null
 
+    /** Remembers the inventory created for this holder. */
     fun bind(inventory: Inventory) {
         this.inventory = inventory
     }

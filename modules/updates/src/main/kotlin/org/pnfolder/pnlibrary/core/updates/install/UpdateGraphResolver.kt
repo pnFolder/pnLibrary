@@ -28,6 +28,7 @@ internal class UpdateGraphResolver(
     private val freezes: FreezeStore,
     private val overrides: UpdatePolicyOverrides? = null,
 ) {
+    /** Resolves one plan for [registrations]; an empty list gives an empty plan. */
     fun resolve(
         registrations: List<RegisteredUpdate>,
         refreshMode: RefreshMode = RefreshMode.CACHED,
@@ -49,9 +50,11 @@ internal class UpdateGraphResolver(
         )
     }
 
+    /** The channel of [registration]: an administrator's override, the library's own setting, or what the plugin asked for. */
     fun channelFor(registration: RegisteredUpdate): UpdateChannel =
         channelFor(registration.descriptor.id, registration.request.channel)
 
+    /** The channel of [product], or [fallback] when nothing overrides it. */
     fun channelFor(product: ProductId, fallback: UpdateChannel): UpdateChannel =
         overrides?.channel(product.value)
             ?: if (product.value == PnLibraryIdentity.PRODUCT_ID) configuration.library.channel

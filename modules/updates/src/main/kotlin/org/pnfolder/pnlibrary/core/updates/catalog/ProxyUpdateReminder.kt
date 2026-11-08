@@ -9,6 +9,7 @@ import java.util.UUID
 object ProxyUpdateReminder {
     val INTERVAL_SECONDS: Long = UpdateDefaults.REMINDER_INTERVAL.seconds
 
+    /** Whether the sender may see update reminders. */
     fun canSee(hasPermission: (String) -> Boolean): Boolean = hasPermission("pnlibrary.admin") || hasPermission("pnlibrary.updates.notify")
 
     /** Sends the notice to [player] when an update is available or waits for a restart; sends nothing otherwise. */

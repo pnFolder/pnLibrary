@@ -33,6 +33,7 @@ internal class JdbcHistoryQuery(
         }
     }
 
+    /** Translates the filters of [query] into a parameterized SELECT without limit and offset values. */
     private fun statement(currency: CurrencyKey, query: CurrencyHistoryQuery): SqlStatement {
         val clauses = mutableListOf("currency_id = ?")
         val parameters = mutableListOf<Any>(currency.toString())
@@ -71,6 +72,7 @@ internal class JdbcHistoryQuery(
         )
     }
 
+    /** SQL text with its positional parameters. */
     private data class SqlStatement(
         val sql: String,
         val parameters: List<Any>,

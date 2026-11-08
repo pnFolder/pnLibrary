@@ -18,9 +18,12 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
+/** Result of resolving a command line against the command tree. */
 internal sealed class CommandRoute {
+    /** Resolved command that can be run. */
     data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
 
+    /** Resolution failure with the nodes reached so far. */
     data class Problem(val error: CommandError, val nodes: List<CommandNode>) : CommandRoute()
 }
 

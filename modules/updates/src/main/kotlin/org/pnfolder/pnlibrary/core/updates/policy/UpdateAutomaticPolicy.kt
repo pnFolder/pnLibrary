@@ -11,6 +11,7 @@ internal class UpdateAutomaticPolicy(
     private val overrides: UpdatePolicyOverrides? = null,
     private val registrations: () -> List<RegisteredUpdate>,
 ) {
+    /** Whether the plan may be installed without an administrator. */
     fun allows(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->

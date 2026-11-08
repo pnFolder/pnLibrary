@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.databases
 
 /** Quoting for the statements a copy of a PostgreSQL database is made of. */
 internal object PostgresSyntax {
+    /** [name] quoted as a PostgreSQL identifier. */
     fun identifier(name: String): String = "\"" + name.replace("\"", "\"\"") + "\""
 
     /**
@@ -22,5 +23,6 @@ internal object PostgresSyntax {
         append('\'')
     }
 
+    /** Binary [value] as a hex literal. */
     fun bytes(value: ByteArray): String = "'\\x" + value.joinToString("") { "%02x".format(it) } + "'"
 }

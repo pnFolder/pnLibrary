@@ -27,9 +27,11 @@ internal class BukkitCommandReplies(
     fun routes(reply: Reply): UpdateCatalogRoutes =
         BukkitControlCommand.ROUTES.copy(interactive = reply.supportsInteraction, ascii = reply.isConsole)
 
+    /** Sends one notice with [text] and an optional [detail] line. */
     fun say(reply: Reply, tone: ChatTone, text: String, detail: String? = null) =
         notices(reply, listOf(ChatNotice(tone, text, detail)))
 
+    /** Sends several notices in one message. */
     fun notices(reply: Reply, notices: List<ChatNotice>) =
         UpdateCatalogView.notices(notices, routes(reply)).forEach(reply::send)
 

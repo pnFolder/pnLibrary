@@ -39,6 +39,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
     private val aliases = ConcurrentHashMap<Pair<PluginId, String>, CurrencyKey>()
     private val closed = AtomicBoolean(false)
 
+    /** Creates the per-plugin view of this registry; call once per plugin that registers or resolves currencies. */
     fun scope(owner: PluginId, placeholders: PlaceholderService): CurrencyService = Scope(owner, placeholders)
 
     override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration =
@@ -68,6 +69,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         aliases.clear()
     }
 
+    /** Validates names and aliases, then publishes the entry atomically under the registry lock. */
     private fun install(
         owner: PluginId,
         name: String,
@@ -92,6 +94,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         return entry
     }
 
+    /** Registry view of one plugin: its own registrations plus the currencies whose access policy admits it. */
     private inner class Scope(private val owner: PluginId, private val placeholders: PlaceholderService) : CurrencyService {
         private val owned = ConcurrentHashMap.newKeySet<CurrencyKey>()
         private val scopeClosed = AtomicBoolean(false)
@@ -153,6 +156,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         private fun checkOpen() = check(!scopeClosed.get()) { "Currencies for $owner are closed" }
     }
 
+    /** One registered currency: wraps the provider with state, capability checks and amount normalization. */
     private inner class Entry(
         override val key: CurrencyKey,
         private val provider: CurrencyProvider,
@@ -168,15 +172,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             enabled.get() -> CurrencyRegistrationState.ACTIVE
             else -> CurrencyRegistrationState.DISABLED
         }
-        override val capabilities = if (provider is CurrencyCapabilitySource) provider.declaredCapabilities else buildSet {
-            add(CurrencyCapability.BALANCE)
-            if (provider is CurrencyDeposits) add(CurrencyCapability.DEPOSIT)
-            if (provider is CurrencyWithdrawals) add(CurrencyCapability.WITHDRAW)
-            if (provider is CurrencyBalanceMutation) add(CurrencyCapability.SET_BALANCE)
-            if (provider is CurrencyReset) add(CurrencyCapability.RESET)
-            if (provider is CurrencyTransfers) add(CurrencyCapability.TRANSFER)
-            if (provider is CurrencyFormatting) add(CurrencyCapability.FORMATTING)
-        }
+        override val capabilities = capabilitiesOf(provider)
 
         override fun balance(playerId: UUID): CompletionStage<BigDecimal> = availableValue {
             provider.balance(CurrencyAccount(playerId)).thenApply(descriptor::normalize)
@@ -228,10 +224,12 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             attachments.clear()
             if (provider is AutoCloseable) runCatchingNonFatal(provider::close)
         }
+        /** Ties [registration] (for example a placeholder) to this entry so it is closed together with it. */
         fun attach(registration: AutoCloseable) {
             attachments += registration
         }
 
+        /** Runs an amount-based mutation after state, capability and amount validation. */
         private fun amountOperation(
             capability: CurrencyCapability,
             amount: BigDecimal,
@@ -243,6 +241,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
             if (!accepts(amount)) return invalidAmount()
             return safeResult { operation(descriptor.normalize(amount)) }
         }
+        /** Runs a mutation without an amount after state and capability validation. */
         private fun resultOperation(
             capability: CurrencyCapability,
             operation: () -> CompletionStage<CurrencyResult>,
@@ -271,6 +270,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
                 failed("Currency $key failed", error)
             }
         }
+        /** Converts provider exceptions, thrown or asynchronous, into a failed [CurrencyResult]. */
         private fun safeResult(operation: () -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> = try {
             operation().exceptionally(CurrencyResult::failed)
         } catch (error: Throwable) {
@@ -278,6 +278,7 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         }
     }
 
+    /** Resolves `owner:name` or a bare name, which belongs to [consumer]. */
     private fun parseReference(consumer: PluginId, reference: String): CurrencyKey {
         val separator = reference.indexOf(':')
         return if (separator < 0) {

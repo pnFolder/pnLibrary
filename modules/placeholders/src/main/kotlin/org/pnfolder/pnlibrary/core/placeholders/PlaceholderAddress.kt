@@ -18,6 +18,7 @@ data class PlaceholderAddress(val plugin: String, val module: String, val name: 
     fun forPlaceholderApi(prefix: String) = "${prefix}_$module~$name"
 
     companion object {
+        /** The module of a plugin that has no modules. */
         const val DEFAULT_MODULE = "main"
         private val PART = Regex("[a-z0-9][a-z0-9_-]*")
         private val NAME = Regex("[a-zA-Z0-9_.{}-]+")

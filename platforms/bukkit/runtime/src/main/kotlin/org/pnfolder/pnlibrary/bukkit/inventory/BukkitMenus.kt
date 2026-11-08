@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.UUID
 
+/** Opens, tracks and closes the menus of every plugin; one instance serves the whole library. */
 internal class BukkitMenus(
     private val host: Plugin,
     private val tasks: TaskScope,

@@ -72,6 +72,7 @@ class PlaceholderDefinitionBuilder<T : Any>(
         }
     }
 
+    /** Registers the placeholder with the hub; fails when it has no resolver or its address is taken. */
     fun install(): PlaceholderRegistration<T> {
         val entry = PlaceholderEntry(
             owner = owner,

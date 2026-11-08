@@ -11,6 +11,7 @@ import java.time.Instant
 import java.util.ArrayDeque
 import java.util.LinkedHashMap
 
+/** Bounded in-memory buffer of logged incidents that collapses repeated occurrences of the same problem. */
 internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
     internal data class CaptureResult(val emitOriginal: Boolean, val summary: String? = null)
 

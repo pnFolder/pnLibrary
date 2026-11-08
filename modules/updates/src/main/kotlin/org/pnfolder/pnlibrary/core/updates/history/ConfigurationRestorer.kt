@@ -19,8 +19,12 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.util.UUID
 import kotlin.streams.toList
 
-/** Offline-only restoration engine. Runtime commands must queue work, never call this on live files. */
+/**
+ * Offline-only restoration engine. Runtime commands must queue work, never call this on live files.
+ * Every restore is journaled, so one interrupted by a crash is rolled back to the state kept before it.
+ */
 internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapshots, private val directory: Path) {
+    /** The progress of one restore, saved after each step; [state] says how far it got. */
     data class Journal(val id: String, val source: String, val before: String, var state: String, val operation: String? = null)
     private val gson = Gson()
 

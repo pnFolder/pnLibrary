@@ -9,6 +9,7 @@ class PlaceholderAddressIndex {
     /** Adds [entry] under [address]; returns `false` when the address is taken. */
     fun add(address: PlaceholderAddress, entry: PlaceholderEntry<*>): Boolean = entries.putIfAbsent(address, entry) == null
 
+    /** Removes [entry] from [address]; a newer entry registered there is left alone. */
     fun remove(address: PlaceholderAddress, entry: PlaceholderEntry<*>) {
         entries.remove(address, entry)
     }

@@ -59,6 +59,7 @@ internal class UpdateCatalogSettingsCommands(
             actor -> library.updates.setChannel(product, channel, actor) }
     }
 
+    /** `automatic` command: toggles automatic downloads. */
     fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
         change(context, "Автозагрузка", { if (it.automaticDownload) "включена" else "выключена" }, if (enabled) "включена" else "выключена") { product, actor ->

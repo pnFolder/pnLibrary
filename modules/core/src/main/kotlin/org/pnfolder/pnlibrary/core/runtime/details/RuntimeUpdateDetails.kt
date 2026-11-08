@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 
+/** Renders update registrations as maps for the diagnostics report. */
 internal object RuntimeUpdateDetails {
     fun registration(value: UpdateRegistration): Map<String, Any?> {
         val snapshot = value.snapshot

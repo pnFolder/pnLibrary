@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
+/** Wraps platform logging: records warnings and errors into the incident buffer and the journal while passing output through. */
 internal class DiagnosticCapture(
     private val ownership: PlatformOwnership,
     private val native: PlatformLogging,

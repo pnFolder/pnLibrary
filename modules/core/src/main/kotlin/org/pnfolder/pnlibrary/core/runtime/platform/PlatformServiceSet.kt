@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
+/** Services built on top of platform adapters: commands, audiences and tasks. */
 internal class PlatformServiceSet(
     commandAdapter: PlatformCommandAdapter,
     audienceAdapter: PlatformAudienceAdapter,

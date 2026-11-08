@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.spi.platform.ProxyBackend
 internal class BungeeDiagnosticDetailsCollector(
     private val plugin: Plugin,
 ) {
+    /** Adds proxy plugins, backend servers and player pings to [snapshot]; sensitive values only when [includeSensitive]. */
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
         DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
             val proxy = plugin.proxy

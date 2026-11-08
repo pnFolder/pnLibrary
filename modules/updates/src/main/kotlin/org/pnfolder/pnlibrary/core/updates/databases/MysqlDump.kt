@@ -15,12 +15,13 @@ import java.util.zip.GZIPOutputStream
  * table definition, then its rows. All tables are read in one consistent transaction, so rows match each other.
  */
 internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 1024) {
+    /** Writes the tables matching [only] (all when empty) to [target], failing past [maximumBytes]. */
     fun write(connection: Connection, only: List<String>, target: Path) {
         connection.autoCommit = false
         connection.createStatement().use { it.execute("START TRANSACTION WITH CONSISTENT SNAPSHOT") }
         try {
             BufferedWriter(OutputStreamWriter(GZIPOutputStream(Files.newOutputStream(target)), UTF_8)).use { out ->
-                out.write("-- pnlibrary-db 1\n")
+                out.write(HEADER + "\n")
                 tables(connection).filter { TableMask.matches(only, it) }.forEach { table -> dumpTable(connection, table, out, target) }
             }
         } finally {
@@ -82,12 +83,13 @@ internal class MysqlDump(private val maximumBytes: Long = 2L * 1024 * 1024 * 102
     }
 
     companion object {
+        /** First line of every copy; the restore refuses a file without it. */
         const val HEADER = "-- pnlibrary-db 1"
 
-        const val FETCH_ROWS = 1000
-        const val ROWS_PER_INSERT = 200
-        val BINARY_TYPES = setOf(Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB)
-        val NUMBER_TYPES = setOf(
+        private const val FETCH_ROWS = 1000
+        private const val ROWS_PER_INSERT = 200
+        private val BINARY_TYPES = setOf(Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB)
+        private val NUMBER_TYPES = setOf(
             Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.FLOAT, Types.REAL, Types.DOUBLE,
             Types.DECIMAL, Types.NUMERIC,
         )

@@ -19,6 +19,7 @@ internal class JdbcConnections(
     private val timeouts: Map<String, String>,
     private val library: OptionalLibrary = OptionalLibrary(libraryId, driverClass, JdbcConnections::class.java.classLoader),
 ) {
+    /** Loads the driver if needed and connects; the caller closes the connection. */
     fun open(connection: DatabaseConnection): Connection {
         check(library.ensure()) { "Не удалось загрузить драйвер базы данных: проверьте доступ сервера в интернет и повторите" }
         val properties = Properties().apply {
@@ -37,6 +38,7 @@ internal class JdbcConnections(
             "mysql", "org.mariadb.jdbc.Driver", "jdbc:mariadb://", mapOf("connectTimeout" to "10000", "socketTimeout" to "600000"),
         )
 
+        /** PostgreSQL's driver. */
         fun postgres() = JdbcConnections(
             "postgres", "org.postgresql.Driver", "jdbc:postgresql://", mapOf("connectTimeout" to "10", "socketTimeout" to "600"),
         )

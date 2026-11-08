@@ -214,15 +214,7 @@ class PlaceholderHub(
         values[reference]?.let { return CompletableFuture.completedFuture(format(consumer, it, pieces.drop(1), playerId, values)) }
         val (entry, params) = find(consumer, reference)
         if (entry == null) {
-            val external = adapters.values.asSequence()
-                .filter { adapter ->
-                    adapter.state == PlaceholderAdapterState.AVAILABLE ||
-                        adapter.state == PlaceholderAdapterState.REGISTERED
-                }
-                .mapNotNull { adapter ->
-                    runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull()
-                }
-                .firstOrNull()
+            val external = resolveExternally(playerId, reference)
             if (external == null) report("Placeholder {$reference} is not registered (asked by $consumer)")
             return CompletableFuture.completedFuture(external)
         }
@@ -240,6 +232,12 @@ class PlaceholderHub(
                 null
             }
     }
+
+    private fun resolveExternally(playerId: UUID?, reference: String): Any? =
+        adapters.values.asSequence()
+            .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
+            .mapNotNull { adapter -> runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull() }
+            .firstOrNull()
 
     private fun updateFor(
         consumer: PluginId,

@@ -4,7 +4,15 @@ import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 import java.lang.reflect.Type
 
-/** Selected implementation and its serialized discriminator identity. */
+/**
+ * Selected implementation and its serialized discriminator identity.
+ *
+ * @property owner plugin that published the type, or `null` for a type declared by annotation
+ * @property implementation concrete class created for this declaration
+ * @property name canonical discriminator value
+ * @property aliases additional accepted discriminator values
+ * @property priority tie-breaker when several declarations match
+ */
 internal data class ResolvedConfigType(
     val owner: String?,
     val implementation: Class<*>,
@@ -58,6 +66,7 @@ internal class ConfigPolymorphicResolver(
             (rawType.isAnnotationPresent(ConfigTypes::class.java) || annotations.any { it is ConfigTypes })
     }
 
+    /** The declaration used to write an [implementation] of [baseType]. */
     fun encodingType(
         baseType: Class<*>,
         annotations: List<Annotation>,
@@ -69,6 +78,7 @@ internal class ConfigPolymorphicResolver(
             "Configuration implementation ${implementation.name} is not declared by ${baseType.name}",
         )
 
+    /** The implementation class selected by discriminator [value] found at [path]; fails when unknown or ambiguous. */
     fun decodingType(
         baseType: Class<*>,
         annotations: List<Annotation>,

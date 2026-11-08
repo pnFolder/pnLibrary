@@ -17,6 +17,7 @@ import java.time.Duration
  */
 internal class FoliaSchedulerBridge(private val plugin: Plugin) {
 
+    /** Schedules [request] on the matching Folia scheduler; the returned handle goes to [cancel]. */
     fun schedule(request: PlatformTaskRequest): Any {
         val native = when (request.executionKind) {
             TaskExecution.Kind.ASYNC -> scheduleAsync(request)
@@ -26,6 +27,7 @@ internal class FoliaSchedulerBridge(private val plugin: Plugin) {
         return checkNotNull(native) { "Folia did not schedule the task: the player has already left" }
     }
 
+    /** Withdraws a task returned by [schedule]. */
     fun cancel(task: Any) = Folia.cancel(task)
 
     private fun scheduleAsync(request: PlatformTaskRequest): Any? {

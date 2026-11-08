@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.inventory.Inventory
 
+/** Passes inventory events that belong to pnLibrary menus to their sessions; does nothing else. */
 internal class MenuListener(private val sessions: MenuSessions) : Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)

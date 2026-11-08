@@ -9,11 +9,13 @@ import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 
 /** Publishes the portable player join and quit events from Velocity's native ones. */
 internal class VelocityPlayerEvents(private val library: PnLibrary) {
+    /** Publishes the portable join event once the player is logged in. */
     @Subscribe(order = PostOrder.LAST)
     fun onPostLogin(event: PostLoginEvent) {
         PlayerLifecyclePublisher.joined(library, event.player.uniqueId, event.player.username)
     }
 
+    /** Publishes the portable quit event when the player leaves the proxy. */
     @Subscribe(order = PostOrder.LAST)
     fun onDisconnect(event: DisconnectEvent) {
         PlayerLifecyclePublisher.left(library, event.player.uniqueId, event.player.username)

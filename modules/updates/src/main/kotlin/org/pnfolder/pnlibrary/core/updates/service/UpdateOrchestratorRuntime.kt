@@ -148,6 +148,7 @@ internal class UpdateOrchestratorRuntime(
         if (!closed.get()) runCatchingNonFatal { logging.log(this, if (report.healthy) LogLevel.INFO else LogLevel.WARNING, report.message) }
     }
 
+    /** One page of history entries, read off the calling thread. */
     fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = readAsync {
         require(page > 0) { "Page must be positive" }
         val normalized = product?.let { ProductId.of(it).value }
@@ -159,10 +160,12 @@ internal class UpdateOrchestratorRuntime(
         }.let { Collections.unmodifiableList(it) }
     }
 
+    /** Number of history entries, optionally for one product. */
     fun historyCount(product: String?): CompletionStage<Int> = readAsync {
         journal.count(product?.let { ProductId.of(it).value })
     }
 
+    /** Runs a blocking read on the update executor. */
     fun <T> readAsync(action: () -> T): CompletionStage<T> {
         val result = CompletableFuture<T>()
         pendingReads.add(result)

@@ -33,6 +33,7 @@ import org.pnfolder.pnlibrary.core.text.CachedComponents
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
+/** Creates the scoped resources of one module and rolls back already created ones if a later step fails. */
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,

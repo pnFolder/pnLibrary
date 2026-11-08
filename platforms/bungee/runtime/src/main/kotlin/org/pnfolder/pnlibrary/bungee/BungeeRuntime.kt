@@ -26,6 +26,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var networkTask: ScheduledTask? = null
     private var reminderTask: ScheduledTask? = null
 
+    /** Opens the runtime, player events, game-server link and administrator reminders; undoes everything on failure. */
     fun start() {
         try {
             open()
@@ -97,6 +98,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         }
     }
 
+    /** Cancels tasks, unregisters listeners and the link channel, then closes the host. Safe to call again. */
     fun stop() {
         networkTask?.cancel()
         reminderTask?.cancel()

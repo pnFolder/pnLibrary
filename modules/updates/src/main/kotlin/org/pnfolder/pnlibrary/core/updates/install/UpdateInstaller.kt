@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
+import org.pnfolder.pnlibrary.core.updates.engine.PendingTransaction
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateProcessSession
@@ -30,7 +31,10 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 
-/** Stages update files and verifies a staged transaction after the next server start. */
+/**
+ * Stages update files together with their safety copies, and verifies a staged transaction after the next server
+ * start. Also lists, prunes and applies the saved rollback sets.
+ */
 internal class UpdateInstaller(
     platform: PlatformIdentity,
     dataFolder: Path,
@@ -60,6 +64,7 @@ internal class UpdateInstaller(
         requireSha256 = configuration.installation.requireSha256,
     )
 
+    /** Finishes or rolls back transactions a crash interrupted, then drops sets past their retention. */
     fun recoverInterruptedTransactions() {
         transaction.recoverAll()
         pruneBackups()
@@ -139,6 +144,7 @@ internal class UpdateInstaller(
         )
     }
 
+    /** Saves exports, databases and configurations of the changed plugins, then downloads and prepares the plan for restart. */
     fun stage(snapshot: UpdatePlanSnapshot, registrations: List<RegisteredUpdate>) {
         require(transaction.awaitingHealth().isEmpty() &&
             transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
@@ -165,6 +171,7 @@ internal class UpdateInstaller(
         warnIfLarge()
     }
 
+    /** The saved rollback sets with the configurations and databases kept for each. */
     fun backups(): List<UpdateBackup> = transaction.rollbackCandidates().map { path ->
         val journal = TransactionJournal.load(path)
         val files = journal.configurationSnapshot
@@ -177,12 +184,14 @@ internal class UpdateInstaller(
                 journal.planId?.let { databases.items(UUID.fromString(it)) }.orEmpty())
     }
 
+    /** Prepares a rollback to the newest saved set. */
     fun rollbackLatest(): UpdatePlanSnapshot {
         val candidate = transaction.latestRollbackCandidate()
             ?: error("Нет сохранённого набора JAR для отката")
         return rollback(UUID.fromString(TransactionJournal.load(candidate).id))
     }
 
+    /** Prepares a rollback to set [id] for the next restart, putting configurations back too when asked. */
     fun rollback(id: UUID, restoreConfigurations: Boolean = false): UpdatePlanSnapshot {
         require(transaction.awaitingHealth().isEmpty() &&
             transaction.awaitingRollbackHealth().isEmpty()) { "A prepared change is still awaiting restart verification" }
@@ -207,52 +216,75 @@ internal class UpdateInstaller(
         return snapshot
     }
 
+    /** After a restart, compares the versions that loaded with those a prepared set expected and reports the outcome. */
     fun reconcilePending(
         registrations: List<RegisteredUpdate>,
         reportHealth: (UpdateHealthReport) -> Unit,
     ) = reconcileVersions(registrations.associate { it.product to it.version }, reportHealth)
 
-    internal fun reconcileVersions(installedVersions: Map<String, String>, reportHealth: (UpdateHealthReport) -> Unit, recoveredFailuresOnly: Boolean = false) {
-        val recovered = transaction.failedHealthChecks().filter { pending ->
-            pending.unknownProducts.isEmpty() && pending.expectedVersions.all { (product, expected) -> installedVersions[product] == expected }
-        }
-        val pendingChecks = ((if (recoveredFailuresOnly) emptyList() else transaction.awaitingHealth() + transaction.awaitingRollbackHealth()) + recovered)
-            .filter { it.preparedSession != UpdateProcessSession.id }
-            .map { it to transaction.readJournal(it.journal) }
-            .sortedBy { it.second.createdAt?.let(Instant::parse) ?: Instant.MIN }
-        pendingChecks.forEach { (pending, source) ->
-            val mismatches = pending.expectedVersions.filter { (product, expected) ->
-                installedVersions[product] != expected
-            }
+    /** Reports every set that waits for verification, oldest first, and closes it as healthy or failed. */
+    internal fun reconcileVersions(
+        installedVersions: Map<String, String>,
+        reportHealth: (UpdateHealthReport) -> Unit,
+        recoveredFailuresOnly: Boolean = false,
+    ) {
+        pendingChecks(installedVersions, recoveredFailuresOnly).forEach { (pending, source) ->
+            val mismatches = pending.expectedVersions.filter { (product, expected) -> installedVersions[product] != expected }
             val healthy = mismatches.isEmpty() && pending.unknownProducts.isEmpty()
-            val details = mismatches.entries.map { (product, expected) ->
-                "$product: ожидалась $expected, загружена ${installedVersions[product] ?: "не загружена"}"
-            } + pending.unknownProducts.map { "$it: ожидаемая версия не записана в старом журнале" }
-            val changes = source.artifacts.mapNotNull { artifact ->
-                val previous = artifact.previousVersion?.let(SemanticVersion::tryParse)
-                val updated = artifact.expectedVersion?.let(SemanticVersion::tryParse)
-                when {
-                    pending.rollback && previous != null && updated != null -> ProductChange(ProductId.of(artifact.component), updated, previous)
-                    !pending.rollback && updated != null && (previous != null || !artifact.targetExisted) -> ProductChange(ProductId.of(artifact.component),
-                        previous, updated)
-                    else -> null
-                }
-            }
-            val outcome = if (healthy) "Подтверждены загруженные версии: ${pending.expectedVersions.entries.joinToString { "${it.key}=${it.value}" }}"
-                else "Версии после перезапуска не подтвердились: ${details.joinToString()}"
             val id = UUID.fromString(source.id)
-            reportHealth(UpdateHealthReport(id, source.planId?.let(UUID::fromString) ?: id, changes, healthy, pending.rollback, "Набор $id. $outcome"))
+            val message = "Набор $id. " + outcome(pending, mismatches, installedVersions, healthy)
+            reportHealth(UpdateHealthReport(id, source.planId?.let(UUID::fromString) ?: id, healthChanges(pending, source), healthy, pending.rollback, message))
             if (pending.rollback) transaction.completeRollbackHealth(pending.journal, healthy)
             else transaction.completeHealth(pending.journal, healthy)
         }
     }
 
+    private fun pendingChecks(installedVersions: Map<String, String>, recoveredFailuresOnly: Boolean) = run {
+        val recovered = transaction.failedHealthChecks().filter { pending ->
+            pending.unknownProducts.isEmpty() && pending.expectedVersions.all { (product, expected) -> installedVersions[product] == expected }
+        }
+        val awaiting = if (recoveredFailuresOnly) emptyList() else transaction.awaitingHealth() + transaction.awaitingRollbackHealth()
+        (awaiting + recovered)
+            .filter { it.preparedSession != UpdateProcessSession.id }
+            .map { it to transaction.readJournal(it.journal) }
+            .sortedBy { it.second.createdAt?.let(Instant::parse) ?: Instant.MIN }
+    }
+
+    private fun outcome(
+        pending: PendingTransaction,
+        mismatches: Map<String, String>,
+        installedVersions: Map<String, String>,
+        healthy: Boolean,
+    ): String {
+        if (healthy) return "Подтверждены загруженные версии: ${pending.expectedVersions.entries.joinToString { "${it.key}=${it.value}" }}"
+        val details = mismatches.entries.map { (product, expected) ->
+            "$product: ожидалась $expected, загружена ${installedVersions[product] ?: "не загружена"}"
+        } + pending.unknownProducts.map { "$it: ожидаемая версия не записана в старом журнале" }
+        return "Версии после перезапуска не подтвердились: ${details.joinToString()}"
+    }
+
+    private fun healthChanges(pending: PendingTransaction, source: TransactionJournal): List<ProductChange> =
+        source.artifacts.mapNotNull { artifact ->
+            val previous = artifact.previousVersion?.let(SemanticVersion::tryParse)
+            val updated = artifact.expectedVersion?.let(SemanticVersion::tryParse)
+            val product = ProductId.of(artifact.component)
+            when {
+                pending.rollback && previous != null && updated != null -> ProductChange(product, updated, previous)
+                !pending.rollback && updated != null && (previous != null || !artifact.targetExisted) ->
+                    ProductChange(product, previous, updated)
+                else -> null
+            }
+        }
+
+    /** Closes sets whose check failed earlier but whose expected versions are loaded now. */
     fun reconcileRecoveredFailures(registrations: List<RegisteredUpdate>, reportHealth: (UpdateHealthReport) -> Unit) =
         reconcileVersions(registrations.associate { it.product to it.version }, reportHealth, recoveredFailuresOnly = true)
 
+    /** True when nothing waits for verification and none of [products] has a failed check, so automatic updates may go on. */
     fun automaticUpdatesHealthy(products: Set<ProductId>): Boolean = transaction.awaitingHealth().isEmpty() &&
         transaction.awaitingRollbackHealth().isEmpty() && transaction.automaticUpdatesHealthy(products.map { it.value }.toSet())
 
+    /** True when a prepared set expects a product that has not registered yet, so verification must wait. */
     fun awaitingRegistrations(registrations: List<RegisteredUpdate>): Boolean {
         val installed = registrations.map { it.product }.toSet()
         return (transaction.awaitingHealth() + transaction.awaitingRollbackHealth())

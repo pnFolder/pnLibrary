@@ -20,6 +20,7 @@ internal class SqlScriptRestore(
     private val setup: List<String> = emptyList(),
     private val teardown: List<String> = emptyList(),
 ) {
+    /** Runs the statements of [source] on [connection]; [teardown] runs even when a statement fails. */
     fun read(connection: Connection, source: Path) {
         connection.autoCommit = true
         connection.createStatement().use { statement ->
