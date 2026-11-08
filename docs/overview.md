@@ -34,17 +34,19 @@ val context = registration.registerModule("main")      // ModuleContext моду
 | Метрики | bStats и другие провайдеры | [metrics.md](metrics.md) |
 | Валюта | Vault, PlayerPoints | [currency.md](currency.md) |
 | Локализация | названия предметов и сущностей Minecraft | [localization.md](localization.md) |
+| Хранилища | какие файлы библиотека держит на диске | [storage.md](storage.md) |
+| Сеть | прокси, ключ связи, группы серверов | [network.md](network.md) |
 | Кулдауны, чат, меню, предметы | общие инструменты (меню и предметы только Bukkit) | пакеты `api.cooldowns`, `api.chat`, `platforms/bukkit` |
 | Расширения | свои модули поверх библиотеки | [expansions.md](expansions.md) |
 
 ## Как работают обновления
 
-1. **Установка.** Bootstrap-плагин (`modules/bootstrap`) скачивает pnLibrary с GitHub и кладёт её в `plugins/`.
+1. **Установка.** Bootstrap-плагин (`modules/bootstrap`) скачивает `universal.jar` с GitHub и кладёт его в `plugins/`; можно и вручную (есть ещё `universal-full` без загрузок при старте).
 2. **Проверка.** Сразу при старте и затем каждые 6 часов
    библиотека читает каталоги `releases.json` самой себя и зарегистрированных плагинов. Выключить проверки нельзя.
 3. **Канал.** Берётся самый новый релиз, который разрешает канал: `stable` < `rc` < `beta` < `alpha` < `dev`.
    Канал pnLibrary и плагина меняется командой
-   `/pn updates set <плагин> channel <канал>`; плагин может задать свой в `PluginUpdateRequest`.
+   `/pn updates set <плагин> channel <канал>` (пока доступен только `dev`); плагин может задать свой в `PluginUpdateRequest`.
 4. **Подготовка.** Файл скачивается, сверяется SHA-256, кладётся в транзакцию. Jar не заменяется на ходу.
 5. **Применение.** Только при следующем запуске сервера; сервер сам не перезапускается.
 6. **Откат и журнал.** Резервные копии и история действий хранятся; `/pn updates history`.

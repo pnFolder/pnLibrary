@@ -41,7 +41,7 @@ internal sealed class ResolutionResult {
     ) : ResolutionResult()
 }
 
-/** Deterministic API, channel, freeze, and dependency resolver for pnUpdate. */
+/** Deterministic API, channel, pause, and dependency resolver for the managed components. */
 internal class UpdateResolver(private val libraryComponent: ProductId) {
     /** Resolves all installed products and candidate releases as one atomic ecosystem. */
     @JvmOverloads

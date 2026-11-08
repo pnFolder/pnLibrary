@@ -10,7 +10,6 @@ import java.util.logging.Level
 
 /** What bStats needs to know about a Bukkit server; the sending itself is shared by every platform. */
 internal object BukkitBStats {
-    /** Opens the sender for [plugin], which is reported under the bStats [serviceId]. */
     fun open(plugin: Plugin, serviceId: Int): BStatsClient = BStatsClient(
         platform = "bukkit",
         serviceId = serviceId,

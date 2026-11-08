@@ -5,6 +5,7 @@ import java.util.Collections
 
 /** Anything [ItemSpec] has no field for: flags, custom model data, persistent data. Runs last, on the created item. */
 fun interface ItemCustomizer {
+    /** Changes [item] in place. */
     fun apply(item: ItemStack)
 }
 

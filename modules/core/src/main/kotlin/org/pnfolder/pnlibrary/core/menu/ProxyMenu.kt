@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.core.link.Link
 import java.util.UUID
 import java.util.concurrent.Executors
 
+/** Every permission that opens a page of the menu. */
 object MenuPermissions {
     val ALL = listOf(
         "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",

@@ -135,7 +135,7 @@ internal class UpdateInstaller(
         if (total < BackupStorage.LARGE_BYTES) return
         warn(
             "Резервные копии занимают ${BackupItemText.size(total)}. Старше ${BackupStorage.RETENTION.toDays()} дней удаляются сами; " +
-                "копии плагинов лежат в updates/exports; ненужные можно удалить командой /pn update backups delete <id>.",
+                "копии плагинов лежат в updates/exports; ненужные можно удалить командой /pn updates backups delete <id>.",
         )
     }
 

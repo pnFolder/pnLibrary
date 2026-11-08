@@ -112,7 +112,6 @@ internal class UpdateOrchestratorRuntime(
         catch (error: RejectedExecutionException) { if (!closed.get()) throw error }
     }
 
-    /** Records components that appeared, disappeared or changed since the previous start. */
     /** Records a change an administrator made to one component's settings and remembers it for the next start. */
     fun recordSettingsChange(registration: RegisteredUpdate, message: String, actor: UpdateActor) {
         runCatchingNonFatal {

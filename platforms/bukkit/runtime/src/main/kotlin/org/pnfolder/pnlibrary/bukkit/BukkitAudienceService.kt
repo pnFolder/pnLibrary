@@ -63,7 +63,6 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         send(player, message, true)
     }
 
-    /** Tries Adventure delivery before switching to the sticky legacy fallback. */
     private fun send(player: Player, message: Component, actionBar: Boolean) {
         val provider = audiences
         if (!fallbackOnly.get() && (player is Audience || provider != null)) {
@@ -89,7 +88,6 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         if (actionBar) sendLegacyActionBar(player, legacy) else player.sendMessage(legacy)
     }
 
-    /** Uses optional Spigot action-bar APIs, falling back to ordinary chat. */
     private fun sendLegacyActionBar(player: Player, message: String) {
         runCatchingNonFatal {
             val chatType = Class.forName("net.md_5.bungee.api.ChatMessageType").getField("ACTION_BAR").get(null)

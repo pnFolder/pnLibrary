@@ -46,4 +46,5 @@ fun interface DataHandler {
     fun handle(call: DataCall, reply: (Boolean, String) -> Unit)
 }
 
+/** Why a data request failed; its message is shown to the player or logged. */
 class DataException(message: String) : RuntimeException(message)

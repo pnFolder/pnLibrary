@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
+/** Names of the calls the menu sends to another server over the link. */
 object MenuCalls {
     const val VERSION = "version"
     const val SNAPSHOTS = "snapshots"

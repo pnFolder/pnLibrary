@@ -43,10 +43,6 @@ class UpdateCatalogCommands(
     private val settings = UpdateCatalogSettingsCommands(library, ::ready, ::routesFor, deliver, onSaved)
 
     /**
-     * A setting that was just saved: [setting] names it, for example "Канал", [from] is what it was and [to] what it
-     * is now, both as short words such as "stable" or "включена".
-     */
-    /**
      * A setting that was changed from a player or console command.
      *
      * @property product product whose setting changed

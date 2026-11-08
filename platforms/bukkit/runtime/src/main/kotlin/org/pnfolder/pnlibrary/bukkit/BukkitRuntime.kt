@@ -56,7 +56,6 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
         host = null
     }
 
-    /** Registers Bukkit-only services and the native platform view on the running runtime. */
     private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, audienceService: BukkitAudienceService) {
         val menuService = BukkitMenus(plugin, runtime.library.runtimeTaskScope())
         runtime.registerService(ServerInfo::class.java, adapter.serverInfo)

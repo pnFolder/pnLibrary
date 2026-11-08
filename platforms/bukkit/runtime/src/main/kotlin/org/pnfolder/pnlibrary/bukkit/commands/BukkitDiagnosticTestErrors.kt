@@ -19,7 +19,6 @@ internal class BukkitDiagnosticTestErrors(
         report("Создана уникальная тестовая ошибка: $id")
     }
 
-    /** Emits the same failure repeatedly to exercise deduplication. */
     fun repeated(report: (String) -> Unit, requested: Int?) {
         val count = requested?.coerceIn(1, MAX_REPEATS) ?: DEFAULT_REPEATS
         val logger = logger
@@ -27,7 +26,6 @@ internal class BukkitDiagnosticTestErrors(
         report("Одинаковая тестовая ошибка вызвана $count раз.")
     }
 
-    /** Emits a nested failure to exercise cause-chain reporting. */
     fun chained(report: (String) -> Unit) {
         val root = IllegalArgumentException("Invalid test database response")
         val database = SQLException("Test query execution failed", root)

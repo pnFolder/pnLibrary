@@ -29,11 +29,27 @@
    library.getPlugins().register(this)
        .updates("Владелец", "РепозиторийПлагина", updater -> updater
            .channel(UpdateChannel.STABLE)
-           .artifact("(?i)^MyPlugin-[0-9].*\.jar$", 8));
+           .artifact("(?i)^MyPlugin-[0-9].*\\.jar$", 8));
    ```
 
    Если основная ветка называется не `main`, добавьте `.branch("master")`; если папка не `.pnlibrary`, добавьте
    `.catalogPath("updates")`.
+
+## Резервные копии перед обновлением
+
+Библиотека копирует перед обновлением только то, что плагин назвал сам (`PluginUpdateRequest.builder()`):
+
+```kotlin
+.configurationBackup(dataFolder.toPath(), "config.yml", "messages.yml")
+.backup(BackupKind.DATABASE, "Кланы", dataFolder.toPath(), "clans.db")          // файловая база (SQLite, H2)
+.backupExport(BackupKind.DATABASE, "Кланы", "clans.sql") { file -> dump(file) } // своя выгрузка, откат её не возвращает
+```
+
+Базы MySQL/MariaDB, PostgreSQL и MongoDB библиотека копирует сама по аннотациям в классе настроек:
+`@field:BackupDatabase(DatabaseKind.MYSQL, "Кланы", tables = ["clans", "log_*"])` на поле с подключением,
+`@field:DatabaseField(DatabaseRole.HOST)` для полей с другими именами, `@field:BackupTable` для имени таблицы из конфига.
+Несколько баз в одном классе: у `@DatabaseField` и `@BackupTable` указывайте `database = "имя базы"`. Пароль помечайте
+`@field:ConfigSecret`. Драйвер скачивается при первой копии. Подробности: [docs/updates.md](../docs/updates.md), раздел 5.
 
 ## Что лежит в `.pnlibrary`
 

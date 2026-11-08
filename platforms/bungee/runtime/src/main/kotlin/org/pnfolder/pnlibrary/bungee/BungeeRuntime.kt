@@ -53,7 +53,6 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         remindAdministrators(started)
     }
 
-    /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
     /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
     private fun remindAdministrators(started: PnLibraryRuntimeHost) {
         reminderTask = plugin.proxy.scheduler.schedule(
@@ -67,6 +66,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         )
     }
 
+    /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
     private fun connectLink(started: PnLibraryRuntimeHost) {
         val proxyLink = ProxyLink(
             library = started.library,

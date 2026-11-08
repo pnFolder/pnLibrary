@@ -13,12 +13,14 @@ modules/api, modules/common, features/*-api      публичный контра
 platforms/*/api                                  контракты конкретной платформы (меню, предметы, ...)
       ▲
       │ реализует
-modules/core ──────────► modules/runtime-spi     рантайм: обновления, журнал, команды, метрики, отчёты
+modules/core + внутренние модули ► modules/runtime-spi
+                                                 рантайм: команды, метрики, отчёты, сборка частей;
+                                                 link, placeholders, events, upload, journal, updates вынесены в свои модули
       ▲                        ▲
       │                        │ реализует
 platforms/*/runtime                              адаптеры платформ: команды, задачи, логи, игроки
       ▲
-distribution                                     итоговые jar-файлы, в том числе universal
+distribution                                     итоговые jar-файлы: bukkit, bungeecord, velocity, universal, universal-full
 ```
 
 Плагин видит только интерфейсы и модели. Где лежит реализация, он не знает, и она может меняться, не ломая его.
@@ -80,6 +82,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `modules/runtime-spi` | контракт адаптера платформы и общие части адаптеров |
 | `modules/core` | реализация рантайма |
 | `modules/updates` | обновления: каталог релизов, выбор версий, установка, откат; от `core` не зависит, `core` подключает её и передаёт тему консоли |
+| `modules/link`, `placeholders`, `events`, `upload`, `journal` | внутренние модули, вынесенные из `core`: связь серверов, плейсхолдеры, шина событий, загрузка отчётов, журнал `/pn events`. Пакеты сохранили имена `org.pnfolder.pnlibrary.core.<имя>`; в `apiCheck` не входят |
 | `modules/console` | карточки и деревья для консоли (Java, без зависимостей) |
 | `modules/features/config-*` | типизированные YAML-конфиги: API и реализация, см. [configuration.md](configuration.md) |
 | `modules/features/currency-*` | валюта: API и реализация хранилищ, см. [currency.md](currency.md) |
@@ -88,6 +91,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `platforms/bukkit/runtime` | адаптер Bukkit, Spigot, Paper и Folia и реализации контрактов выше |
 | `platforms/bukkit/paper` | регистрация команд через Brigadier на Paper (Java 21) |
 | `platforms/bukkit/localization` | реализация `minecraft-localization-api` для Bukkit: перевод и поиск материалов, зачарований, существ и т.д. (`BukkitLocaleTranslations`); входит в Bukkit- и universal-JAR, плагинам подключается как `compileOnly` |
+| `platforms/loader` | Java 8 загрузчик: при старте скачивает Kotlin и Adventure (Libby) для лёгкого `universal`, при `universal-full` ничего не качает |
 | `modules/bootstrap` | общая часть встраиваемого установщика: версии, релиз GitHub, проверка и установка `universal.jar` |
 | `platforms/*/bootstrap` | вход установщика для Bukkit, BungeeCord и Velocity: плагин сам ставит pnLibrary и проверяет версию |
 | `platforms/bungee/api`, `platforms/velocity/api` | доступ к прокси-серверу платформы |
@@ -102,29 +106,25 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 
 | Пакет | За что отвечает |
 |---|---|
-| `core.runtime` | запуск рантайма (`PnLibraryLauncher`), жизненный цикл, `config.yml`, часовой пояс |
+| `core.runtime` | запуск рантайма (`PnLibraryLauncher`, корень сборки `PnLibraryImpl`), жизненный цикл, `config.yml`, часовой пояс |
 | `core.commands` | дерево команд, разбор аргументов, пять уровней ответа на ошибки |
 | `core.commands.events`, `.tasks`, `.groups`, `.proxy` | команды `/pn bus`, `/pn tasks`, группы серверов, `/pn servers` и управление прокси |
 | `core.menu` | меню `/pn gui`, платформенно-нейтральное; данные берёт у `MenuData` (свои или чужого сервера по связи) |
-| `core.link` | связь серверов через плагин-сообщения: подпись, доклады, запросы данных, удалённые действия |
+| `core.link` (модуль `link`) | связь серверов через плагин-сообщения: подпись, доклады, запросы данных, удалённые действия |
 | `core.stats` | счётчики сервера для `/pn stats` и меню |
-| `core.journal` | журнал событий `/pn events` и сводка ошибок при входе |
+| `core.journal` (модуль `journal`) | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
-| `core.upload` | загрузка зашифрованных отчётов |
-| `core.updates.catalog` | страницы и команды каталога обновлений |
-| `core.updates.service` | сервис обновлений и оркестратор |
-| `core.updates.policy` | каналы, автозагрузка, переопределения команд |
-| `core.updates.install` | подбор версий, подготовка, установка, офлайн-установщик |
-| `core.updates.history` | журнал обновлений, состояние, снимки конфигов |
-| `core.updates.engine` | каталоги релизов, загрузка, проверка, транзакции, пауза |
+| `core.upload` (модуль `upload`) | загрузка зашифрованных отчётов |
+| `core.updates.*` (модуль `updates`) | `catalog` команды и страницы, `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |
 | `core.plugin.module` | сборка модуля: ресурсы, метаданные, зависимости, расширения |
 | `core.remote` | политики |
-| `core.placeholders`, `core.events`, `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text` | реализации одноимённых сервисов API |
+| `core.placeholders`, `core.events` (свои модули), `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text`, `core.expansions` | реализации одноимённых сервисов API |
 | `core.ui` | цвета палитры для консоли |
-| `core.io`, `core.security`, `core.lifecycle` | текстовые файлы, шифрование, очистка ресурсов |
+| `core.security`, `core.cleanup`, `core.lifecycle` | шифрование, очистка ресурсов, связь рантайма с ресурсами |
+| `core.proxy` | сборка связи с прокси (`ProxyLink`) |
 
 ## Сообщения
 

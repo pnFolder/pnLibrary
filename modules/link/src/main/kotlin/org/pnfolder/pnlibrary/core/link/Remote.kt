@@ -51,7 +51,9 @@ data class RemoteRequest(
  */
 data class RemoteResult(val id: UUID, val origin: String, val ok: Boolean, val text: String, val sentAt: Instant)
 
+/** Fixed names used on the link. */
 object LinkNames {
+    /** The name under which the proxy is addressed. */
     const val PROXY = "proxy"
 
     /** The origin of a request made on the proxy itself. */

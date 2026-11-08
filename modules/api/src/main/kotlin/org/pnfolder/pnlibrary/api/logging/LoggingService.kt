@@ -20,16 +20,22 @@ enum class LogLevel {
     CRITICAL,
 }
 
+/** Creates plugin-bound loggers and console message boxes. */
 interface LoggingService {
 
+    /** Returns the logger called [name] that belongs to the plugin [owner]. */
     fun logger(owner: Any, name: String): PnLogger
 
+    /** Starts a startup summary block titled [title] for [owner]; nothing is printed until `show()`. */
     fun box(owner: Any, title: String): MessageBox
 
+    /** Starts a shutdown summary block titled [title] for [owner]. */
     fun shutdownBox(owner: Any, title: String): MessageBox
 
+    /** Same as [box] with the title `name version`. */
     fun box(owner: Any, name: String, version: String): MessageBox = box(owner, "$name $version")
 
+    /** Same as [shutdownBox] with the title `name version`. */
     fun shutdownBox(owner: Any, name: String, version: String): MessageBox =
         shutdownBox(owner, "$name $version")
 }
@@ -106,12 +112,16 @@ interface PnLogger {
  */
 interface MessageBox {
 
+    /** Adds a successful row. */
     fun ok(label: String, detail: String): MessageBox
 
+    /** Adds a row for something that works but needs attention. */
     fun warn(label: String, detail: String): MessageBox
 
+    /** Adds a row for a step that was skipped on purpose. */
     fun skip(label: String, detail: String): MessageBox
 
+    /** Adds a failed row; [error], when given, is kept in the diagnostic log buffer. */
     fun fail(label: String, detail: String, error: Throwable? = null): MessageBox
 
     /**

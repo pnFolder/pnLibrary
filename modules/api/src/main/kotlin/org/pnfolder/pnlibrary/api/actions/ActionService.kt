@@ -37,6 +37,7 @@ interface ActionService {
     /** Executes [actions] immediately and sequentially with [context]. */
     fun execute(context: ActionContext, actions: Iterable<Action>) = context.execute(actions)
 
+    /** Builds a context for [player] and [allPlayers] and executes [actions] with it; [values] become context values. */
     fun execute(
         player: LibraryPlayer,
         allPlayers: LibraryAudience,

@@ -145,7 +145,7 @@ bus.plugins(ShopPurchaseEvent::class.java)       // какие плагины с
 bus.listeners(PluginId.of("shop"), ModuleId.of("cart"))  // слушатели одного модуля
 ```
 
-В игре и в консоли то же самое показывает команда `/pn bus` (право `pnlibrary.events.bus`).
+В игре и в консоли то же самое показывает команда `/pn bus` (право `pnlibrary.events.bus`). Подкоманды: `listeners`, `plugin`, `top`, `calls`, `denied`, `slow`, `errors`, `history`, `day`, `range`, `trace`/`traces`, `export` (`csv`, `json`), `clear`.
 
 ## 9. История вызовов по дням
 

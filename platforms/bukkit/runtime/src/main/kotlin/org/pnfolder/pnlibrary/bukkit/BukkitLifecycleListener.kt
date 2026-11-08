@@ -52,7 +52,6 @@ internal class BukkitLifecycleListener(
         if (serverReady.get() && readyCallbacks.remove(task)) task.run()
     }
 
-    /** Registers lifecycle events and the optional modern server-load notification. */
     fun start(): BukkitLifecycleListener = apply {
         plugin.server.pluginManager.registerEvents(this, plugin)
         reminders.start()
@@ -111,7 +110,6 @@ internal class BukkitLifecycleListener(
         library?.plugins?.unregister(event.plugin)
     }
 
-    /** Drains queued readiness callbacks once. */
     private fun markServerReady() {
         if (!serverReady.compareAndSet(false, true)) return
         readyCallbacks.toList().forEach { runCatchingNonFatal(it::run) }

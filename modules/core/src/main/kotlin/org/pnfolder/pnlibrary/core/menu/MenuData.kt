@@ -23,14 +23,19 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 
+/** State of the pending update plan and what blocks it. */
 data class PlanInfo(val state: UpdateState, val hasChanges: Boolean, val blockers: List<String>)
 
+/** One plugin line of the plugin list. */
 data class PluginRow(val name: String, val version: String?, val modules: Int)
 
+/** What an event is for, how to use it, and which plugin owns it. */
 data class EventAbout(val purpose: String, val usage: String, val owner: OwnerInfo?)
 
+/** Name and permissions of the player who looks at the menu. */
 data class ViewerInfo(val name: String, val permissions: Set<String>)
 
+/** Kind of change the menu asks a proxy to make to server groups. */
 enum class GroupOp {
     CREATE,
 
@@ -52,6 +57,7 @@ enum class GroupOp {
     RESET,
 }
 
+/** One group change; [server] and [plugin] are set only for operations that need them. */
 data class GroupEdit(val op: GroupOp, val group: String, val server: String? = null, val plugin: String? = null)
 
 /**

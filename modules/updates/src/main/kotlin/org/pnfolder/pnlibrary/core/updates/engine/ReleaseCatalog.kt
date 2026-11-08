@@ -36,6 +36,7 @@ internal data class ReleaseCatalog(val product: String, val releases: List<Catal
  * @property version semantic release version
  * @property channel declared release maturity
  * @property description human-readable summary
+ * @property changelogUrl link to the list of changes, when published
  * @property publishedAt UTC publication instant
  * @property api supported pnLibrary API generations
  * @property artifacts platform-specific downloadable artifacts

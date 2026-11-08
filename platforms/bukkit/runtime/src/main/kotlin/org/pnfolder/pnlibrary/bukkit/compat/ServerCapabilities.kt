@@ -47,7 +47,6 @@ internal object ServerCapabilities {
         runCatching { Bukkit.getServer().javaClass.getMethod("getTPS") }.getOrNull()
     }
 
-    /** Whether the server reports its TPS (Paper and its forks). */
     val hasTPS: Boolean get() = tpsMethod != null
 
     /** The TPS over the last 1, 5 and 15 minutes, or `null` when the server does not report it. */
@@ -55,7 +54,6 @@ internal object ServerCapabilities {
         runCatching { method.invoke(Bukkit.getServer()) as? DoubleArray }.getOrNull()
     }
 
-    /** Returns whether [className] can be linked without initializing the class. */
     fun hasClass(className: String): Boolean =
         try {
             Class.forName(className, false, javaClass.classLoader)
@@ -66,7 +64,6 @@ internal object ServerCapabilities {
             false
         }
 
-    /** Returns whether [clazz] exposes a public method with the exact supplied parameter types. */
     fun hasMethod(clazz: Class<*>, methodName: String, vararg paramTypes: Class<*>): Boolean =
         try {
             clazz.getMethod(methodName, *paramTypes)

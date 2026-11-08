@@ -26,7 +26,6 @@ internal class CurrencyConfirmationStore {
             .also { pending[token] = it }
     }
 
-    /** Removes and returns the operation for [token], or null when unknown. */
     fun take(token: String): PendingOperation? = pending.remove(token.uppercase())
 
     fun discardExpired() {

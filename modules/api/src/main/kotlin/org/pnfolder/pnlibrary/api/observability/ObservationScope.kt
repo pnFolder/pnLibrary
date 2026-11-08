@@ -16,26 +16,32 @@ class ObservationScope internal constructor() {
     private val data = linkedMapOf<String, String>()
     private val files = mutableListOf<Path>()
 
+    /** Overrides the plugin name the observation is attributed to. */
     fun plugin(value: String): ObservationScope = apply {
         plugin = value
     }
 
+    /** Names the component that produced the observation. */
     fun source(value: String): ObservationScope = apply {
         source = value
     }
 
+    /** Sets the observation text. */
     fun message(value: String): ObservationScope = apply {
         message = value
     }
 
+    /** Sets the severity, `INFO` by default. */
     fun level(value: ObservationLevel): ObservationScope = apply {
         level = value
     }
 
+    /** Attaches key-value details; values are stored as text. */
     fun data(vararg values: Pair<String, Any?>): ObservationScope = apply {
         values.forEach { (key, value) -> data[key] = value?.toString() ?: "null" }
     }
 
+    /** Attaches files to include with the observation. */
     fun files(vararg paths: Path): ObservationScope = apply {
         files += paths
     }

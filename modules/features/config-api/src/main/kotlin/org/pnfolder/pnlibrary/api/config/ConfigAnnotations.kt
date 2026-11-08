@@ -205,27 +205,28 @@ enum class DatabaseKind {
 }
 
 /**
- * Marks a section with the connection to a database that pnLibrary copies before an update of this plugin and
- * can put back when the administrator rolls the update back.
+ * Declares a database that pnLibrary copies before an update of this plugin and can restore when the update is
+ * rolled back. Repeatable, so one class can describe several databases; their names must differ within a plugin.
  *
- * Put it on the field that holds the connection section, or on the configuration class itself when the connection
- * fields sit at the top of the file. Fields are found by their usual names (`host`, `port`, `database`, `user` or
- * `username`, `password`); when yours are called otherwise, mark each with [DatabaseField] and any name works. Mark the
- * password with [ConfigSecret] so reports hide it:
+ * Three placements are supported:
+ * - On a field holding a connection section (a nested class): that section's fields describe the connection.
+ * - On a scalar `String` field: the field is the database name, and the other connection fields of the same class
+ *   are tied to it by [DatabaseField] with the same [name].
+ * - On the configuration class itself, when the connection fields sit at the top of the file.
+ *
+ * Connection fields are found by their usual names (`host`, `port`, `database`, `user` or `username`, `password`);
+ * mark them with [DatabaseField] to use any name. Mark the password with [ConfigSecret] so reports hide it.
  * ```kotlin
- * @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы")
- * var storage = StorageSection()
+ * @field:BackupDatabase(DatabaseKind.POSTGRESQL, "Clans", tables = ["clans", "clan_members"])
+ * var clansDb = "clans"
+ * @field:DatabaseField(DatabaseRole.HOST, database = "Clans")
+ * var clansHost = "pg.local"
  * ```
- * By default every table (every collection in MongoDB) is copied. List the ones the plugin owns in [tables] to copy only
- * those, so a database shared with other plugins is left alone:
- * ```kotlin
- * @field:BackupDatabase(DatabaseKind.MYSQL, "Кланы", tables = ["clans", "clan_members"])
- * ```
- * Only tables are copied: triggers, procedures and views are not.
+ * Only tables (collections in MongoDB) are copied; triggers, procedures and views are not.
  *
  * @property kind the database server type
- * @property name short name the menu and commands show for this database
- * @property tables tables or collections to copy; `*` in a name stands for any text (`"log_*"`, for tables a plugin creates by date); empty means all
+ * @property name short name shown by the menu and commands; also the key that ties [DatabaseField] and [BackupTable] to it
+ * @property tables tables or collections to copy; `*` in a name matches any text (`"log_*"`); empty means all of them
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -234,10 +235,19 @@ annotation class BackupDatabase(val kind: DatabaseKind, val name: String, val ta
 
 /** What a field of a database connection section holds. */
 enum class DatabaseRole {
+    /** Server host name or address. */
     HOST,
+
+    /** Server port. */
     PORT,
+
+    /** Database (schema) name. */
     DATABASE,
+
+    /** Login of the account. */
     USER,
+
+    /** Password of the account; also mark the field with [ConfigSecret]. */
     PASSWORD,
 
     /** A full connection string such as `mongodb://user:pass@host/db`; when present it replaces host, port, user and password. */
@@ -245,25 +255,32 @@ enum class DatabaseRole {
 }
 
 /**
- * Says which part of the connection a field holds, so it can have any name. Use it inside a section marked with
- * [BackupDatabase]; fields without it are found by their usual names.
+ * Says which part of a connection a field holds, so the field can have any name. Use it next to [BackupDatabase];
+ * fields without it are found by their usual names.
+ *
+ * With several databases in one class, [database] names the [BackupDatabase.name] the field belongs to. A field
+ * without [database] is shared by all of them, and a field with it wins over a shared one.
  * ```kotlin
  * @field:DatabaseField(DatabaseRole.HOST)
  * var address = "localhost"
  * ```
+ *
+ * @property role which part of the connection the field holds
+ * @property database [BackupDatabase.name] this field belongs to; empty means every database of the class
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class DatabaseField(val role: DatabaseRole, val database: String = "")
 
 /**
- * Marks a text field of a section with [BackupDatabase] that holds the name of a table (or collection) to copy, for
- * plugins whose table names are set in the configuration. Several fields may carry it; with [BackupDatabase.tables]
- * both lists are joined.
+ * Marks a text field that holds the name of a table (or collection) to copy, for plugins whose table names are set
+ * in the configuration. Several fields may carry it; together with [BackupDatabase.tables] both lists are joined.
  * ```kotlin
  * @field:BackupTable
  * var table = "clans"
  * ```
+ *
+ * @property database [BackupDatabase.name] this table belongs to; empty means every database of the class
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
