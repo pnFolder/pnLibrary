@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.2",
+      "channel": "dev",
+      "description": "Политики компилируются без JDK: ECJ грузит Libby. Убран sha256 политики. Сбои среды не уходят в телеметрию.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.2.md",
+      "publishedAt": "2026-11-06T21:01:15Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.2-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.2/pnLibrary-0.1.0-dev.2-bukkit-java8.jar",
+          "sha256": "08e0712d9af4f777658aab80e86c0f1bce0d2f25f543c7b2a1c13c81478d3796",
+          "size": 8192440
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.2-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.2/pnLibrary-0.1.0-dev.2-bungeecord-java8.jar",
+          "sha256": "75921c749322afd27d022bd6f12a0c51a8a8a778ce3cb0f025d7891293338c2b",
+          "size": 7368889
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.2-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.2/pnLibrary-0.1.0-dev.2-velocity-java17.jar",
+          "sha256": "5abadecc893d91032b50b9c25a1244d47e2ae2e90860ba651099f35d82e076d6",
+          "size": 7394622
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.2-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.2/pnLibrary-0.1.0-dev.2-universal.jar",
+          "sha256": "8365dc434a36d9d488f5e4d14fb459f76ed87971340ec5cd9012bf81401dff81",
+          "size": 5466898
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.1",
       "channel": "dev",
       "description": "New core: layered api/core/platforms, link/events/journal/placeholders/upload modules, unified logger with CRITICAL level, proxy link rollback, more tests.",
