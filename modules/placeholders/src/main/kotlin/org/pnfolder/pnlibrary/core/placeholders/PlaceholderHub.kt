@@ -38,7 +38,7 @@ class PlaceholderHub(
     /** Receives the text of every problem worth the administrator's attention; each distinct one once. */
     private val issues: (String) -> Unit = {},
 ) : PlaceholderAdapterRegistry {
-    private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
+    private val entries = PlaceholderEntries()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
     private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
@@ -156,7 +156,7 @@ class PlaceholderHub(
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
                 val full = id(owner, key.value)
-                require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
+                require(entries.add(full, entry)) { "Placeholder $full is already registered" }
                 owned += full
                 val address = plugin?.let { PlaceholderAddress.of(it, module, key.value) }
                 if (address != null && !addresses.add(address, entry)) {

@@ -16,10 +16,8 @@ internal object PlayerHeads {
     private val modern by lazy { ModernProfileSetter.resolve(Reflection.Runtime) }
     private val legacy by lazy { LegacyProfileSetter.resolve(Reflection.Runtime) }
 
-    /** Finished heads by texture URL, most recently used last; callers get clones so nobody changes a shared stack. */
-    private val finished = object : LinkedHashMap<String, ItemStack>(64, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ItemStack>?): Boolean = size > FINISHED_CAPACITY
-    }
+    /** Finished heads by texture URL; callers get clones so nobody changes a shared stack. */
+    private val finished = CopyingCache<ItemStack>(FINISHED_CAPACITY) { it.clone() }
 
     /** Invalid textures produce an untextured head. [displayName] accepts legacy color codes. */
     @JvmStatic
@@ -37,12 +35,12 @@ internal object PlayerHeads {
 
     private fun textured(url: URL): ItemStack? {
         val key = url.toString()
-        synchronized(finished) { finished[key] }?.let { return it.clone() }
+        finished[key]?.let { return it }
         val head = playerHead()
         val meta = head.itemMeta as? SkullMeta ?: return null
         if (!applied(meta, url)) return null
         head.itemMeta = meta
-        synchronized(finished) { finished[key] = head.clone() }
+        finished[key] = head
         return head
     }
 

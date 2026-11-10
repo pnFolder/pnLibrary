@@ -2,12 +2,21 @@ package org.pnfolder.pnlibrary.core.placeholders
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicLong
 
 /** Resolves exact and patterned placeholder references across plugin namespaces. */
 class PlaceholderEntryLookup(
-    private val entries: Map<String, PlaceholderEntry<*>>,
+    private val entries: PlaceholderEntries,
     private val systemNamespace: PluginId,
 ) {
+    constructor(entries: Map<String, PlaceholderEntry<*>>, systemNamespace: PluginId) :
+        this(PlaceholderEntries.of(entries), systemNamespace)
+
+    private val scanned = AtomicLong()
+
+    /** How many pattern candidates searches have looked at so far; only tests read it. */
+    val candidatesScanned: Long get() = scanned.get()
+
     /** The entry found, or null, with the values taken from the pattern's parameters. */
     data class Match(
         val entry: PlaceholderEntry<*>?,
@@ -35,9 +44,9 @@ class PlaceholderEntryLookup(
     private fun bestPattern(namespace: PluginId, key: String): Match {
         var best: PlaceholderEntry<*>? = null
         var bestParameters = emptyMap<String, String>()
-        for (entry in entries.values) {
+        for (entry in entries.patternsOf(namespace)) {
+            scanned.incrementAndGet()
             val pattern = entry.pattern ?: continue
-            if (entry.owner != namespace) continue
             val parameters = pattern.match(key) ?: continue
             if (best == null || pattern.specificity > best.pattern!!.specificity) {
                 best = entry

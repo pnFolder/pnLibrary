@@ -77,7 +77,7 @@ class FileCurrencyStorageBatchTest {
     }
 
     private fun run(file: Path, queued: Boolean, writer: ((Path, (Path) -> Unit) -> Unit)? = null): String {
-        val storage = if (writer == null) FileCurrencyStorage(file, 100) else FileCurrencyStorage(file, 100, writer)
+        val storage = if (writer == null) FileCurrencyStorage(file, 100) else FileCurrencyStorage(file, 100, replaceFile = writer)
         storage.use {
             val futures = ArrayList<CompletableFuture<CurrencyTransaction>>()
             val log = StringBuilder()

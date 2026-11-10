@@ -1,8 +1,5 @@
 package org.pnfolder.pnlibrary.currency
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
@@ -35,13 +32,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class FileCurrencyStorage(
     private val file: Path,
     private val maximumTransactions: Int,
+    private val encoded: () -> Unit = {},
     private val replaceFile: (Path, (Path) -> Unit) -> Unit = { target, fill -> AtomicFiles.write(target, durable = true, fill) },
 ) : CurrencyStorage {
     private val worker = ManagedWorker("pnLibrary-currency-file")
     private val state = CurrencyLedgerState()
     private val jobs = ConcurrentLinkedQueue<Job>()
     private val drainScheduled = AtomicBoolean()
-    private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+    private val writer = CurrencyFileWriter(encoded)
 
     init {
         require(maximumTransactions in 100..1_000_000) { "maximumTransactions must be between 100 and 1000000" }
@@ -228,11 +226,8 @@ internal class FileCurrencyStorage(
     // after the rename can leave an empty file.
     private fun save() {
         require(!Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
-        val root = JsonObject()
-        root.add("balances", JsonObject().also { values -> state.balances.forEach { (key, value) -> values.addProperty(key, value.toPlainString()) } })
-        root.add("transactions", JsonArray().also { values -> state.transactions.forEach { values.add(CurrencyTransactionJson.encode(it)) } })
         replaceFile(file) { temporary ->
-            Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(root, it) }
+            Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { writer.write(it, state) }
         }
     }
 

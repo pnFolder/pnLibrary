@@ -10,11 +10,10 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 
 /** The placeholders of the library itself, `pnlibrary/main:*`, readable by every plugin. */
 class BuiltInPlaceholders(
-    private val entries: ConcurrentHashMap<String, PlaceholderEntry<*>>,
+    private val entries: PlaceholderEntries,
     private val addresses: PlaceholderAddressIndex,
     private val adapterLookup: (String) -> PlaceholderAdapter?,
 ) {
