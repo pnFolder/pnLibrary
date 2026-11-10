@@ -41,6 +41,7 @@ internal object UpdateAnnouncementRenderer {
                 .lastItem("Автозагрузка выключена; используйте /pn update <плагин>")
                 .blank()
         }
+        card.section("ПОДДЕРЖКА").lastItem("Вопросы, ошибки и идеи — пишите нам в Discord: ${PnLibraryIdentity.SUPPORT_URL}").blank()
         return card.status(result).build().render()
     }
 
