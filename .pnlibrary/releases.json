@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.4",
+      "channel": "dev",
+      "description": "Исправлен запуск на серверах со старым Adventure (Paper 1.16.5): MiniMessage необязателен. Vault не шумит до загрузки Essentials. Ссылка поддержки читается из библиотеки. Строка поддержки в уведомлении об обновлении.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.4.md",
+      "publishedAt": "2026-11-10T21:16:28Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.4-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.4/pnLibrary-0.1.0-dev.4-bukkit-java8.jar",
+          "sha256": "46908ed6ddd9c3c6a48aa3d50e85a98c11d714a7e35df8919e01198367a4c05c",
+          "size": 8510001
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.4-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.4/pnLibrary-0.1.0-dev.4-bungeecord-java8.jar",
+          "sha256": "aadd645d16483972d38fb56bf7491641047d01284d93ff083b722fbe48a24956",
+          "size": 7649529
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.4-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.4/pnLibrary-0.1.0-dev.4-velocity-java17.jar",
+          "sha256": "9bd91130137b5d870af2a962e67f3a60016941ebe9ddce49114ef472e26f2ec5",
+          "size": 7675335
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.4-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.4/pnLibrary-0.1.0-dev.4-universal.jar",
+          "sha256": "859b54149e53e44fd6f371e6257fc1fcb9a34ac7e0f53a6e360d10a769bdf5e5",
+          "size": 5791191
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.3",
       "channel": "dev",
       "description": "Копии баз только по нужным таблицам, ошибки не теряются молча, права связи проверяет получатель, ускорение журнала, валюты и плейсхолдеров, исправлен запуск лёгкого universal (MiniMessage).",
