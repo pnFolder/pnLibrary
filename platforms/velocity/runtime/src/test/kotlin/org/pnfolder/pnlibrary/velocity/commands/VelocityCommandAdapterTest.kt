@@ -20,6 +20,7 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
+/** Checks command registration, execution, tab completion and cleanup on Velocity. */
 class VelocityCommandAdapterTest {
     @Test
     fun `execution and asynchronous suggestions are transported without blocking`() {

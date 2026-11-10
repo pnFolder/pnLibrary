@@ -131,7 +131,7 @@ class EventDispatcher(
     private fun deliver(subscription: Subscription<out Event>, event: Event, steps: MutableList<EventTrace.Step>?) {
         val before = if (steps != null) tracer.resultText(event) else null
         if (subscription.ignoreDenied && !event.isAllowed) {
-            steps?.add(EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, true, false, 0, before, before))
+            steps?.add(stepOf(subscription, skipped = true, failed = false, nanos = 0, before = before, after = before))
             return
         }
         val started = System.nanoTime()
@@ -144,24 +144,28 @@ class EventDispatcher(
             subscription.failures.increment()
             // A broken listener is logged and skipped; a dying JVM (out of memory, stack overflow) is not ours to hide.
             Failures.rethrowIfFatal(error)
-            // A logger that throws must not cost the remaining listeners their turn.
-            runCatchingNonFatal {
-                errorLogger(
-                    subscription.scope.plugin,
-                    "[pnLibrary/events] Listener failed for ${event.javaClass.name}",
-                    error,
-                )
-            }
+            logFailure(subscription, event, error)
         } finally {
             val elapsed = System.nanoTime() - started
             subscription.totalNanos.add(elapsed)
             subscription.maxNanos.accumulateAndGet(elapsed, ::maxOf)
-            steps?.add(
-                EventTrace.Step(
-                    subscription.scope.plugin, subscription.scope.module, subscription.priority, false, failed,
-                    elapsed, before, tracer.resultText(event),
-                ),
-            )
+            steps?.add(stepOf(subscription, skipped = false, failed = failed, nanos = elapsed, before = before, after = tracer.resultText(event)))
+        }
+    }
+
+    private fun stepOf(
+        subscription: Subscription<out Event>,
+        skipped: Boolean,
+        failed: Boolean,
+        nanos: Long,
+        before: String?,
+        after: String?,
+    ) = EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, skipped, failed, nanos, before, after)
+
+    /** A logger that throws must not cost the remaining listeners their turn. */
+    private fun logFailure(subscription: Subscription<out Event>, event: Event, error: Throwable) {
+        runCatchingNonFatal {
+            errorLogger(subscription.scope.plugin, "[pnLibrary/events] Listener failed for ${event.javaClass.name}", error)
         }
     }
 
@@ -223,12 +227,14 @@ class EventDispatcher(
             synchronized(scopes) { if (scopes[pluginId] === this) scopes.remove(pluginId) }
         }
 
+        /** Closes the scope's subscriptions without taking the scope out of the dispatcher, which the caller does. */
         fun closeInternal() {
             if (!scopeClosed.compareAndSet(false, true)) return
             ownedSubscriptions.forEach { it.close() }
             ownedSubscriptions.clear()
         }
 
+        /** Forgets [subscription] after it closed itself. */
         fun remove(subscription: Subscription<out Event>) {
             ownedSubscriptions.remove(subscription)
         }

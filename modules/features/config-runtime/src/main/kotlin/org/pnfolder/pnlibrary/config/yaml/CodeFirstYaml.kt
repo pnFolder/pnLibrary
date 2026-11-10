@@ -18,9 +18,9 @@ import java.util.function.UnaryOperator
  * Loads typed YAML and synchronizes it with code-defined defaults.
  *
  * Missing keys and their comments are added recursively. Existing values,
- * ordering, comments, and extension keys are preserved. A `.bak` file is
- * created before synchronization, and the target is replaced atomically only
- * after successful decoding.
+ * ordering, comments, and extension keys are preserved. A `.before-sync-*.bak`
+ * copy is made before a rewrite when [ConfigOptions.backups] is on, and the target
+ * is replaced atomically only after successful decoding.
  *
  * ```kotlin
  * val config = CodeFirstYaml(file, Settings(), codec, logger).load().value
@@ -42,6 +42,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
 
+    /** Returns the loaded value or fails when the file is not loaded. */
     override fun get(): T = loadedValue ?: error("Configuration ${file.name} is not loaded")
 
     /**
@@ -76,8 +77,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 
     private fun createFromDefaults(defaultsYaml: String): ConfigLoadResult<T> {
         check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
-        fileStore.write(defaultsYaml)
         val value = decodeAndValidate(defaultsYaml)
+        fileStore.writeDecoded(defaultsYaml)
         loadedValue = value
         return ConfigLoadResult(value, YamlDefaultsMerger.paths(defaultsYaml), null)
     }
@@ -90,6 +91,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return ConfigLoadResult(value, emptyList(), null)
     }
 
+    /** Paths missing from the file and paths unknown to the code. */
     private class Differences(val missing: List<String>, val unknown: List<String>)
 
     /** The paths the file lacks and the paths the code does not know; fails when the policy forbids either. */
@@ -129,7 +131,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         syncResult: YamlDefaultsMerger.Result,
     ): ConfigLoadResult<T> {
         val backup = if (options.backups) fileStore.backup(original) else null
-        fileStore.write(synchronized)
+        fileStore.writeDecoded(synchronized)
         val removeUnknown = options.unknownValues == UnknownValuePolicy.REMOVE
         if (differences.missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${differences.missing.joinToString()}")
         if (differences.unknown.isNotEmpty() && removeUnknown) {
@@ -151,6 +153,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     @Synchronized
     override fun reload(): ConfigLoadResult<T> = load()
 
+    /** Saves the value that is currently loaded. */
     @Synchronized
     override fun save() = save(get())
 
@@ -162,10 +165,11 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
             options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw,
         )
         decodeAndValidate(encoded)
-        fileStore.write(encoded)
+        fileStore.writeDecoded(encoded)
         loadedValue = value
     }
 
+    /** Applies [updater] to the loaded value and saves the result. */
     @Synchronized
     override fun update(updater: UnaryOperator<T>): T {
         val updated = updater.apply(get())
@@ -173,8 +177,10 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return updated
     }
 
+    /** Runs the validator on the loaded value without writing anything. */
     override fun validate(): List<ConfigProblem> = validator.validate(get())
 
+    /** Writes the code defaults to the file and makes them the loaded value. */
     @Synchronized
     override fun resetToDefaults(): T {
         save(defaults)

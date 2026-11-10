@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
 import org.slf4j.Logger
 import java.nio.file.Path
@@ -31,6 +32,7 @@ internal class VelocityRuntime(
     private var linkListener: VelocityLinkListener? = null
     private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
+    private var reminderTask: ScheduledTask? = null
 
     /**
      * Starts the shared runtime when Velocity announces proxy initialization.
@@ -44,7 +46,7 @@ internal class VelocityRuntime(
             open()
         } catch (error: Throwable) {
             // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
-            runCatchingNonFatal(::close)
+            runCatchingNonFatal(::close).onFailure(error::addSuppressed)
             throw error
         }
     }
@@ -69,6 +71,14 @@ internal class VelocityRuntime(
         server.eventManager.register(owner, listener)
         playerEvents = listener
         connectLink(started)
+        remindAdministrators(started)
+    }
+
+    /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
+    private fun remindAdministrators(started: PnLibraryRuntimeHost) {
+        reminderTask = server.scheduler.buildTask(owner, Runnable {
+            server.allPlayers.filter { ProxyUpdateReminder.canSee(it::hasPermission) }.forEach { ProxyUpdateReminder.send(started.library, it.uniqueId) }
+        }).delay(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).repeat(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).schedule()
     }
 
     /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
@@ -85,6 +95,7 @@ internal class VelocityRuntime(
                     OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
                 }
             },
+            holds = { viewer, permission -> server.getPlayer(viewer).map { it.hasPermission(permission) }.orElse(false) },
             platformName = { "Velocity ${server.version.version}" },
             players = { server.playerCount },
             broadcast = { message -> server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } } },
@@ -111,17 +122,24 @@ internal class VelocityRuntime(
     fun onShutdown(event: ProxyShutdownEvent) = close()
 
     private fun close() {
-        playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
+        playerEvents?.let { release("player events") { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
+        reminderTask?.cancel()
+        reminderTask = null
         networkTask = null
-        linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
+        linkListener?.let { release("link listener") { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null
-        link?.let { runCatchingNonFatal(it::close) }
+        link?.let { release("link", it::close) }
         link = null
-        runCatchingNonFatal { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
+        release("link channel") { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
         val host = runtimeHost
         runtimeHost = null
         host?.close()
+    }
+
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { logger.error("Could not stop $part", it) }
     }
 }

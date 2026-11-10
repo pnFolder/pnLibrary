@@ -16,6 +16,8 @@ internal class ConfigRedaction(
     private val valuePatterns: List<Pattern>,
     private val redactor: DiagnosticRedactor,
 ) {
+    private val wildcardPaths: List<List<String>> = excludedPaths.filter { "*" in it.split('.') }.map { it.split('.') }
+
     /** Whether anything was asked to be hidden in this file. */
     val hasRequests: Boolean get() = excludedPaths.isNotEmpty() || keyPatterns.isNotEmpty() || valuePatterns.isNotEmpty()
 
@@ -30,7 +32,7 @@ internal class ConfigRedaction(
         for ((key, value) in data) {
             val path = if (parent.isEmpty()) key else "$parent.$key"
             result[key] = when {
-                path in excludedPaths -> EXCLUDED
+                isExcluded(path) -> EXCLUDED
                 matchesKeyPattern(key, path) -> SECRET_KEY
                 else -> hideRequestedValue(value, path)
             }
@@ -54,7 +56,7 @@ internal class ConfigRedaction(
         for ((key, value) in data.entries.take(MAX_ENTRIES_PER_MAP)) {
             val path = if (parent.isEmpty()) key else "$parent.$key"
             result[key] = when {
-                path in excludedPaths -> EXCLUDED
+                isExcluded(path) -> EXCLUDED
                 isBuiltInSecret(key, path) || matchesKeyPattern(key, path) -> SECRET_KEY
                 else -> redactValue(value, path, depth)
             }
@@ -71,6 +73,13 @@ internal class ConfigRedaction(
         null, is Number, is Boolean -> value
         else -> replaceValuePatterns(redactor.redact(value.toString()))
     }
+
+    /** A `*` segment in an excluded path stands for any key, so a secret inside the values of a map is found. */
+    private fun isExcluded(path: String): Boolean =
+        path in excludedPaths || wildcardPaths.any { pattern -> matches(pattern, path.split('.')) }
+
+    private fun matches(pattern: List<String>, segments: List<String>): Boolean =
+        pattern.size == segments.size && pattern.indices.all { pattern[it] == "*" || pattern[it] == segments[it] }
 
     private fun replaceValuePatterns(input: String): String = valuePatterns.fold(input) { text, pattern ->
         // A pattern that fails on this input hides the whole value: a report must never leak what it could not check.

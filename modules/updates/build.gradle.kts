@@ -80,12 +80,15 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
+    // Loaded through Libby the first time a MongoDB backup needs it; never packed.
+    compileOnly(libs.mongodb.driver.sync)
     implementation(libs.adventure.minimessage)
     implementation(libs.adventure.legacy)
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
     implementation(project(":modules:console"))
 
+    testImplementation(libs.mongodb.driver.sync)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.launcher)
@@ -93,7 +96,8 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    // Without a key (a local build) the artifacts are published unsigned.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
 
     coordinates(
         groupId = "io.github.pnfolder",

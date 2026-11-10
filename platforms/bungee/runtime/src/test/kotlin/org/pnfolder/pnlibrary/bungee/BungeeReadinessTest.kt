@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import java.io.File
 
+/** Checks that startup-dependent work waits until the Bungee adapter is marked ready. */
 class BungeeReadinessTest {
     @Test
     fun `startup callbacks wait for runtime publication and are released once`() {

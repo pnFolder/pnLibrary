@@ -6,7 +6,9 @@ import org.pnfolder.pnlibrary.api.events.ListenerInfo
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.LocalDate
 
+/** Menu screens for event bus overview, events and listeners. */
 internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
+    /** Filter applied to the event list. */
     private enum class BusFilter(val label: String, val keep: (EventInfo) -> Boolean) {
         ALL("все", { true }),
         LISTENED("со слушателями", { it.listeners > 0 }),
@@ -208,6 +210,7 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         data.setTracing(name, name !in data.tracedEvents())
     }
 
+    /** Search and paging state of the listener list. */
     private class ListenerQuery(
         val title: String,
         val back: (MenuViewer) -> Unit,

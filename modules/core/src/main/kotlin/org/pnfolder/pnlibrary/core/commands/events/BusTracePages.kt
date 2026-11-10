@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 
+/** Chat pages with event trace output. */
 internal class BusTracePages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 

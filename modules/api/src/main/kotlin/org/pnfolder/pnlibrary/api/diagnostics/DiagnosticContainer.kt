@@ -69,12 +69,15 @@ class DiagnosticContainer private constructor(builder: Builder) : DiagnosticsCon
             snapshotProvider = provider
         }
 
+        /** Adds a fixed value shown in the diagnostics under [name]. */
         fun value(name: String, v: Any?): Builder = apply { fixed[name] = v }
 
+        /** Adds the entries of a configuration object to the diagnostics. */
         fun configuration(config: DiagnosticConfiguration): Builder = apply {
             configurations.add(config)
         }
 
+        /** Adds the configuration file at [path] to the diagnostics. */
         fun configuration(path: String): Builder = apply {
             configurations.add(DiagnosticConfiguration.builder(path).build())
         }

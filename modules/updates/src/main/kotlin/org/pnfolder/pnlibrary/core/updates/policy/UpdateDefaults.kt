@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.updates.policy
 import java.time.Duration
 
 /**
- * Fixed update rules that administrators cannot change in `updates.yml`.
+ * Fixed update rules that administrators cannot change.
  *
  * Checks and warnings are never switched off by a file: an administrator pauses one plugin with a command
  * (`hold`), which always expires. Every number the update system relies on lives here, so it is found in one place.
@@ -12,8 +12,21 @@ object UpdateDefaults {
     /** How often the release catalogs are asked for new versions; the first check runs at startup. */
     val CHECK_INTERVAL: Duration = Duration.ofHours(6)
 
-    /** How long the same console message about an update is not repeated. */
-    val NOTIFICATION_REPEAT: Duration = Duration.ofHours(6)
+    /**
+     * How often administrators are reminded in the console and in chat about an update that is available or waits
+     * for a restart. The reminder uses the known state and never asks GitHub: the check above does that on its own
+     * schedule, and a release that disappeared there stops the reminders. Only a developer changes this value, between
+     * [MIN_REMINDER_INTERVAL] and [MAX_REMINDER_INTERVAL].
+     */
+    val REMINDER_INTERVAL: Duration = reminderInterval(Duration.ofHours(6))
+
+    val MIN_REMINDER_INTERVAL: Duration = Duration.ofMinutes(1)
+    val MAX_REMINDER_INTERVAL: Duration = Duration.ofHours(6)
+
+    private fun reminderInterval(value: Duration): Duration {
+        require(value >= Duration.ofMinutes(1) && value <= Duration.ofHours(6)) { "Reminder interval must be 1 minute to 6 hours" }
+        return value
+    }
 
     /** How long to wait for a connection while downloading an update file. */
     val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(10)

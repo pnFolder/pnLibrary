@@ -21,8 +21,10 @@ interface NativeCommandRegistrar<S> {
 
 /** Connects one native source type to the shared portable command dispatcher. */
 abstract class GenericPlatformCommandAdapter<S> : TrackingPlatformCommandAdapter() {
+    /** Native registration bridge of the platform. */
     protected abstract val registrar: NativeCommandRegistrar<S>
 
+    /** Builds the portable command context for one native invocation. */
     protected abstract fun context(
         source: S,
         alias: String,

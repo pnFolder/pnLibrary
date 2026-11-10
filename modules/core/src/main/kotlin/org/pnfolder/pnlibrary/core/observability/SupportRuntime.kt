@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.logging.DiagnosticCapture
@@ -89,6 +90,7 @@ internal class SupportRuntime(
         runtimeDiagnostics = runtimeDiagnostics,
     )
     private val persistRequested = AtomicBoolean(false)
+    private val internalFailures = FailureThrottle()
     private val reportInProgress = AtomicBoolean(false)
     private val reportsCreated = AtomicLong()
     private val reportsFailed = AtomicLong()
@@ -103,6 +105,7 @@ internal class SupportRuntime(
     }
 
     fun initialize(isRuntimeClosed: () -> Boolean) {
+        diagnostics.onInternalFailure = ::reportInternalFailure
         observations.configureReportFactory(::createObservabilityReport)
         logs.onChange { persistHistory() }
         diagnostics.onEventsChanged(::persistHistory)
@@ -197,7 +200,7 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
         worker.shutdownNow()
-        if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() }
+        if (persistRequested.getAndSet(false)) saveHistory()
         diagnostics.clear()
         service.close()
     }
@@ -210,7 +213,7 @@ internal class SupportRuntime(
         if (!persistRequested.compareAndSet(false, true)) return
         try {
             worker.schedule(
-                { if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() } },
+                { if (persistRequested.getAndSet(false)) saveHistory() },
                 HISTORY_FLUSH_DELAY_MS,
                 TimeUnit.MILLISECONDS,
             )
@@ -220,11 +223,21 @@ internal class SupportRuntime(
     }
 
     /** Logs a failed background job; a periodic task must not throw, or the executor cancels it. */
+    /** Console only: recording it would raise another diagnostic event and run the failing callback again. */
+    private fun reportInternalFailure(what: String, error: Throwable) {
+        if (!internalFailures.shouldReport("$what|${error.javaClass.name}")) return
+        capture.write(this, LogLevel.WARNING, what, error, record = false)
+    }
+
     private fun warnBackgroundFailure(job: String): (Throwable) -> Unit = { error ->
         capture.log(this, LogLevel.WARNING, "$job failed", error)
     }
 
-    // History writes stay silent: logging their failure would record a new incident and request another write.
+    /** A failed write is shown on the console only: recording it would add an incident and request another write. */
+    private fun saveHistory() {
+        runCatchingNonFatal { writeHistory() }.onFailure { reportInternalFailure("Diagnostic history could not be saved", it) }
+    }
+
     private fun writeHistory() {
         history.save(logs.snapshot(), diagnostics.eventSnapshot())
     }

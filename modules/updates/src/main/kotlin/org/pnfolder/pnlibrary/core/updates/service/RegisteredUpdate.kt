@@ -54,6 +54,7 @@ internal class RegisteredUpdate(
         checkForUpdates().thenCompose(stagePlan)
     }
 
+    /** The product as the resolver sees it installed. */
     fun installedProduct(providedApi: Int?) = InstalledProduct(
         descriptor.id,
         descriptor.version,
@@ -61,6 +62,7 @@ internal class RegisteredUpdate(
         providedApi,
     )
 
+    /** Converts a catalog release into a resolver release for this product. */
     fun releaseFrom(catalogRelease: CatalogRelease): ProductRelease = ProductRelease(
         product = descriptor.id,
         version = catalogRelease.version,
@@ -84,6 +86,7 @@ internal class RegisteredUpdate(
         changelogUrl = catalogRelease.changelogUrl?.toString(),
     )
 
+    /** Remembers the releases found for [channel] and updates the snapshot. */
     fun observe(releases: List<ProductRelease>, channel: UpdateChannel) {
         if (closed.get()) return
 
@@ -126,6 +129,7 @@ internal class RegisteredUpdate(
         if (closed.compareAndSet(false, true)) onClose(this)
     }
 
+    /** Marks the registration as closed so later results are ignored. */
     fun markClosed() {
         closed.set(true)
     }

@@ -83,8 +83,10 @@ interface ComponentService {
     /** Serializes each component independently with [defaultSerializerType]. */
     fun serializeAll(components: Iterable<Component>): List<String> = components.map(::serialize)
 
+    /** Parses [input] into a reusable template using the default serializer. */
     fun template(input: String): ComponentTemplate
 
+    /** Parses [input] into a reusable template; the serializer type is ignored. */
     fun template(input: String, type: ComponentSerializerType): ComponentTemplate = template(input)
 
     /** Replaces the active parsed-component cache policy. */

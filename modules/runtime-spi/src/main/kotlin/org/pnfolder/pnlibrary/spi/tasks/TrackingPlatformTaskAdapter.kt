@@ -14,6 +14,7 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
     private val closed = AtomicBoolean(false)
     private val handles = ConcurrentHashMap.newKeySet<TrackedHandle>()
 
+    /** Hands [request] to the native scheduler and returns its handle. */
     protected abstract fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle
 
     final override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
@@ -51,7 +52,7 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
             try {
                 handle.cancel()
             } catch (error: Throwable) {
-                if (failure == null) failure = error
+                failure?.addSuppressed(error) ?: run { failure = error }
             }
         }
         handles.clear()

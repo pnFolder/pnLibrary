@@ -16,6 +16,7 @@ private val FILTERS = listOf(
     Triple("info", "инфо", setOf(JournalLevel.INFO)),
 )
 
+/** Prints one page of the journal for the filter and page named in [arguments], or tells which level words exist. */
 fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: List<String>, root: String) {
     val word = arguments.getOrNull(0)?.lowercase(Locale.ROOT) ?: "all"
     val filter = FILTERS.firstOrNull { it.first == word || (word == "warn" && it.first == "warning") }
@@ -31,13 +32,7 @@ fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: 
     val page = (arguments.getOrNull(1)?.toIntOrNull() ?: 1).coerceIn(1, pages)
     val rows = groups.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE)
 
-    val lines = mutableListOf<Component>(
-        kit.blank(),
-        kit.blank(),
-        kit.header("События", kit.text("${groups.size} ${RussianText.plural(groups.size.toLong(), "запись", "записи", "записей")}", ChatPalette.LABEL)),
-        tabs(kit, everything, filter.first, root),
-        kit.blank(),
-    )
+    val lines = listHead(kit, groups.size, tabs(kit, everything, filter.first, root)).toMutableList()
     if (rows.isEmpty()) lines += kit.note("Здесь пока пусто.")
     rows.forEach { group ->
         lines += row(kit, group, sender.isConsole, root)
@@ -52,6 +47,14 @@ fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: 
     }
     lines.forEach(sender::send)
 }
+
+private fun listHead(kit: ChatKit, count: Int, tabs: Component): List<Component> = listOf(
+    kit.blank(),
+    kit.blank(),
+    kit.header("События", kit.text("$count ${RussianText.plural(count.toLong(), "запись", "записи", "записей")}", ChatPalette.LABEL)),
+    tabs,
+    kit.blank(),
+)
 
 /**
  * `Показать:` and one button per filter, such as `[ошибки 3]`. Every button has the same gray brackets; the open

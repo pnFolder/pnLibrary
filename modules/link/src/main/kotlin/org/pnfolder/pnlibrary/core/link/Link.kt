@@ -20,13 +20,18 @@ class Link(
     private val transport: LinkTransport? = null,
     private val uplink: ((ByteArray) -> Boolean)? = null,
 ) {
+    /** Whether the link has a key; without one nothing is sent or received. */
     val enabled: Boolean get() = key != null
+    /** Whether this link is the proxy's end, which can send to servers by name. */
     val onProxy: Boolean get() = transport != null
 
     /** On the proxy: the game servers heard from since it started. */
     val registry = LinkRegistry()
+    /** The remote requests this end made and has no answer to yet. */
     val replies = RemoteReplies()
+    /** The data questions this end asked and has no answer to yet. */
     val data = DataClient(key) { bytes -> uplink?.invoke(bytes) ?: false }
+    /** Sends update controls to other servers. */
     val control = RemoteControl(this)
 
     /** On a game server: the latest network map from the proxy, or null until one arrives. */
@@ -39,10 +44,12 @@ class Link(
     var calls: DataHandler? = null
         private set
 
+    /** Keeps the latest network map from the proxy, as received at [now]. */
     fun remember(report: NetworkReport, now: Instant = Instant.now()) {
         network = ReceivedNetwork(report, now)
     }
 
+    /** Sets what answers the data questions other servers ask of this one. */
     fun answerCallsWith(handler: DataHandler) {
         calls = handler
     }
@@ -56,6 +63,7 @@ class Link(
     fun send(target: String, message: ByteArray): Boolean =
         transport?.send(target, message) ?: uplink?.invoke(message) ?: false
 
+    /** A network map and when this server received it. */
     data class ReceivedNetwork(val report: NetworkReport, val receivedAt: Instant)
 
     companion object {

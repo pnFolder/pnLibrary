@@ -41,20 +41,28 @@ interface BukkitLocaleTranslations : LocaleTranslations {
     /** Translates [gameMode]; a convenience for `translate(BukkitTranslatables.GAME_MODE, gameMode)`. */
     fun translate(gameMode: GameMode): Translation = translate(BukkitTranslatables.GAME_MODE, gameMode)
 
+    /** Reverse-search index from localized item and block names to [Material]. */
     fun materials(): TranslationIndex<Material>
 
+    /** Reverse-search index from localized enchantment names to [Enchantment]. */
     fun enchantments(): TranslationIndex<Enchantment>
 
+    /** Reverse-search index from localized entity names to [EntityType]. */
     fun entities(): TranslationIndex<EntityType>
 
+    /** Reverse-search index from localized potion effect names to [PotionEffectType]. */
     fun effects(): TranslationIndex<PotionEffectType>
 
+    /** Reverse-search index from localized biome names to [Biome]. */
     fun biomes(): TranslationIndex<Biome>
 
+    /** Reverse-search index from localized dye color names to [DyeColor]. */
     fun colors(): TranslationIndex<DyeColor>
 
+    /** Reverse-search index from localized game mode names to [GameMode]. */
     fun gameModes(): TranslationIndex<GameMode>
 
+    /** Factory for wrapping neutral translation tables. */
     companion object {
         /** Wraps a neutral [translations] table, resolving its entries to Bukkit value types. */
         @JvmStatic
@@ -62,6 +70,7 @@ interface BukkitLocaleTranslations : LocaleTranslations {
     }
 }
 
+/** Delegates the neutral contract to [delegate] and builds each reverse index on first use, since most callers need one. */
 private class BukkitLocaleTranslationsAdapter(
     private val delegate: LocaleTranslations,
 ) : BukkitLocaleTranslations, LocaleTranslations by delegate {

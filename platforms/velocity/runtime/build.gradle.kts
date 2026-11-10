@@ -125,6 +125,7 @@ val generateVelocityDescriptor by tasks.registering {
             |    private final Path dataDirectory;
             |    private Object runtime;
             |
+            |    /** Receives the proxy services Velocity injects. */
             |    @Inject
             |    public PnLibraryVelocityPlugin(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
             |        this.server = server;
@@ -132,12 +133,16 @@ val generateVelocityDescriptor by tasks.registering {
             |        this.dataDirectory = dataDirectory;
             |    }
             |
+            |    /** Loads the runtime libraries, creates {@code VelocityRuntime} and starts it; a failure prints the startup card. */
             |    @Subscribe
             |    public void onInitialize(ProxyInitializeEvent event) throws Exception {
             |        LibrarySettings settings = LibrarySettings.DEFAULT;
             |        try {
             |            ClassLoader loader = getClass().getClassLoader();
-            |            LibraryLoader.load(new VelocityLibraryManager<>(logger, dataDirectory, server.getPluginManager(), this, settings.directoryFor(dataDirectory)), loader, settings, RuntimeLibraries.VELOCITY);
+            |            String libraries = settings.directoryFor(dataDirectory);
+            |            VelocityLibraryManager<?> manager =
+            |                new VelocityLibraryManager<>(logger, dataDirectory, server.getPluginManager(), this, libraries);
+            |            LibraryLoader.load(manager, loader, settings, RuntimeLibraries.VELOCITY);
             |            Class<?> type = Class.forName(RUNTIME, true, loader);
             |            Constructor<?> constructor = type.getConstructors()[0];
             |            runtime = constructor.newInstance(this, server, logger, dataDirectory);
@@ -148,6 +153,7 @@ val generateVelocityDescriptor by tasks.registering {
             |        }
             |    }
             |
+            |    /** Prints the startup failure card to the proxy console, or a one-line message if the card itself fails. */
             |    private void report(LibrarySettings settings, Throwable failure) {
             |        try {
             |            StartupFailure.report(ConsoleTheme.plain(),
@@ -158,6 +164,7 @@ val generateVelocityDescriptor by tasks.registering {
             |        }
             |    }
             |
+            |    /** Closes the runtime if it started. */
             |    @Subscribe
             |    public void onShutdown(ProxyShutdownEvent event) throws Exception {
             |        if (runtime != null) {
@@ -165,6 +172,7 @@ val generateVelocityDescriptor by tasks.registering {
             |        }
             |    }
             |
+            |    /** Calls the one-argument runtime method {@code name}; the runtime class is not visible at compile time. */
             |    private void invoke(String name, Object event) throws Exception {
             |        for (Method method : runtime.getClass().getMethods()) {
             |            if (method.getName().equals(name) && method.getParameterCount() == 1) {

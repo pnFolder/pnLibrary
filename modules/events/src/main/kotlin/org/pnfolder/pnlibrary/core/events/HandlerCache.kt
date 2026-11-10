@@ -31,6 +31,7 @@ class HandlerCache<S : Any>(
         }
     }
 
+    /** The handlers that receive an event of [type], cached until a handler of a related type changes. */
     fun handlersFor(type: Class<*>): List<S> {
         last?.let { if (it.type === type) return it.handlers }
         val before = generation.get()

@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import java.time.Instant
 
+/** Menu screens for the journal of recorded problems. */
 internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun journal(player: MenuViewer, level: String?, page: Int) {
         val title = "Журнал сервера" + (level?.let { " " + LEVELS.getValue(it) } ?: "")

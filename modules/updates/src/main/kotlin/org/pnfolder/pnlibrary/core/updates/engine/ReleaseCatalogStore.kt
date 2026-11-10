@@ -73,6 +73,7 @@ internal class ReleaseCatalogStore(private val root: Path) {
         }
     }
 
+    /** Where the cached body of the catalog at [uri] lives. */
     internal fun dataPath(uri: URI): Path = root.resolve(key(uri) + ".data")
     private fun digestPath(uri: URI): Path = root.resolve(key(uri) + ".sha256")
 

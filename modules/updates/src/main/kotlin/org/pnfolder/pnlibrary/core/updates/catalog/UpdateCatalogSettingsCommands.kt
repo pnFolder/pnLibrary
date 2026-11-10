@@ -59,10 +59,26 @@ internal class UpdateCatalogSettingsCommands(
             actor -> library.updates.setChannel(product, channel, actor) }
     }
 
+    /** `automatic` command: toggles automatic downloads. */
     fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
         change(context, "Автозагрузка", { if (it.automaticDownload) "включена" else "выключена" }, if (enabled) "включена" else "выключена") { product, actor ->
             library.updates.setAutomaticDownload(product, enabled, actor)
+        }
+    }
+
+    /** Turns automatic download on or off for all plugins at once, whatever was chosen for single ones. */
+    fun setAllAutomatic(context: CommandContext) {
+        val enabled = switch(context) ?: return
+        if (!ready(context)) return
+        val sender = context.sender
+        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        library.updates.setAutomaticDownloadForAllPlugins(enabled, actor).whenComplete { _, failure ->
+            deliver(Runnable {
+                val text = if (failure != null) generateSequence(failure) { it.cause }.last().message ?: "Не удалось изменить настройку."
+                else "Сохранено. Автозагрузка для всех плагинов: ${if (enabled) "включена" else "выключена"}."
+                sender.send(if (failure != null) catalogError(text) else Component.text(text, ChatPalette.OK))
+            })
         }
     }
 

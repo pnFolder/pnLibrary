@@ -33,10 +33,12 @@ import java.util.function.Consumer
 class PlaceholderHub(
     private val platform: PlatformIdentity,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
+    /** Receives the text and the exception of every unexpected failure while resolving; each distinct text once. */
+    private val failures: (String, Throwable) -> Unit = { _, _ -> },
     /** Receives the text of every problem worth the administrator's attention; each distinct one once. */
     private val issues: (String) -> Unit = {},
 ) : PlaceholderAdapterRegistry {
-    private val entries = ConcurrentHashMap<String, PlaceholderEntry<*>>()
+    private val entries = PlaceholderEntries()
     private val adapters = ConcurrentHashMap<String, PlaceholderAdapter>()
     private val formatterRegistry = PlaceholderFormatterRegistry()
     private val entryLookup = PlaceholderEntryLookup(entries, PluginId.of(SYSTEM_NAMESPACE))
@@ -62,6 +64,11 @@ class PlaceholderHub(
     /** Tells the administrator once about [message]. */
     fun report(message: String) {
         if (reported.size < MAXIMUM_REPORTED && reported.add(message)) issues(message)
+    }
+
+    /** Like [report], for a failure that carries its exception. */
+    private fun reportFailure(message: String, error: Throwable) {
+        if (reported.size < MAXIMUM_REPORTED && reported.add(message)) failures(message, error)
     }
 
     private fun find(consumer: PluginId, reference: String): PlaceholderEntryLookup.Match {
@@ -149,7 +156,7 @@ class PlaceholderHub(
             synchronized(mutationLock) {
                 check(!closed.get()) { "Placeholder scope $owner is closed" }
                 val full = id(owner, key.value)
-                require(entries.putIfAbsent(full, entry) == null) { "Placeholder $full is already registered" }
+                require(entries.add(full, entry)) { "Placeholder $full is already registered" }
                 owned += full
                 val address = plugin?.let { PlaceholderAddress.of(it, module, key.value) }
                 if (address != null && !addresses.add(address, entry)) {
@@ -214,15 +221,7 @@ class PlaceholderHub(
         values[reference]?.let { return CompletableFuture.completedFuture(format(consumer, it, pieces.drop(1), playerId, values)) }
         val (entry, params) = find(consumer, reference)
         if (entry == null) {
-            val external = adapters.values.asSequence()
-                .filter { adapter ->
-                    adapter.state == PlaceholderAdapterState.AVAILABLE ||
-                        adapter.state == PlaceholderAdapterState.REGISTERED
-                }
-                .mapNotNull { adapter ->
-                    runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull()
-                }
-                .firstOrNull()
+            val external = resolveExternally(playerId, reference)
             if (external == null) report("Placeholder {$reference} is not registered (asked by $consumer)")
             return CompletableFuture.completedFuture(external)
         }
@@ -236,10 +235,20 @@ class PlaceholderHub(
         return (entry as PlaceholderEntry<Any>).resolve(request)
             .thenApply { format(consumer, it, pipeline, playerId, values, request, entry.formats) }
             .exceptionally { error ->
-                report("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}")
+                reportFailure("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}", error.cause ?: error)
                 null
             }
     }
+
+    private fun resolveExternally(playerId: UUID?, reference: String): Any? =
+        adapters.values.asSequence()
+            .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
+            .mapNotNull { adapter ->
+                runCatchingNonFatal { adapter.resolve(playerId, reference) }
+                    .onFailure { reportFailure("Placeholder {$reference} failed in an outside placeholder system: ${it.message}", it) }
+                    .getOrNull()
+            }
+            .firstOrNull()
 
     private fun updateFor(
         consumer: PluginId,
@@ -262,9 +271,13 @@ class PlaceholderHub(
     }
 
     /** Lets every available outside system (PlaceholderAPI) replace what is left of its own tokens. */
-    private fun renderExternal(text: String, playerId: UUID?): String = adapters.values
+    private fun renderExternal(text: String, playerId: UUID?): String = if ('%' !in text) text else adapters.values
         .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
-        .fold(text) { current, adapter -> runCatchingNonFatal { adapter.render(playerId, current) }.getOrDefault(current) }
+        .fold(text) { current, adapter ->
+            runCatchingNonFatal { adapter.render(playerId, current) }
+                .onFailure { reportFailure("An outside placeholder system failed to render text: ${it.message}", it) }
+                .getOrDefault(current)
+        }
 
     private fun templateRenderer(consumer: PluginId) = PlaceholderTemplateRenderer(
         resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values).exceptionally { null } },

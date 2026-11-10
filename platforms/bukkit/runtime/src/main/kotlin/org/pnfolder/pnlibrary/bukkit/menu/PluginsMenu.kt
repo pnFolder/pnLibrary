@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.menu
 
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.ChatTone
@@ -40,7 +41,7 @@ internal class PluginsMenu(
         if (link.enabled) {
             val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
             menuData = executor
-            link.answerCallsWith(MenuDataServer(data, executor))
+            link.answerCallsWith(MenuDataServer(data, executor) { viewer, permission -> Bukkit.getPlayerExact(viewer)?.hasPermission(permission) == true })
         }
     }
 

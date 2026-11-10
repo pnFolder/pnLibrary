@@ -30,6 +30,7 @@ object OfflineUpdateInstaller {
         println("Applied $applied prepared component sets. Start the server to verify loaded versions.")
     }
 
+    /** Installs every prepared set found in [dataDirectory] and returns how many were applied. */
     internal fun apply(dataDirectory: Path): Int {
         val data = dataDirectory.toAbsolutePath().normalize()
         require(Files.isDirectory(data) && data.parent != null) { "Library data directory does not exist" }
@@ -45,36 +46,41 @@ object OfflineUpdateInstaller {
             require(pending.flatMap { it.artifacts }.map { it.target }.distinct().size == pending.sumOf { it.artifacts.size }) {
                 "Conflicting prepared component sets; resolve them before starting the server"
             }
-            pending.forEach { prepared ->
-                val child = transactions.appliedChildJournal(prepared.id, prepared.purpose) ?: run {
-                    val result = transactions.prepareForRestart(prepared.artifacts, purpose = prepared.purpose, parentTransaction = prepared.id)
-                    // This child commits disk publication, not server/plugin health.
-                    transactions.completeHealth(result.journal, true)
-                    result.journal
-                }
-                var restoredConfigurations: UUID? = null
-                try {
-                    restoredConfigurations = prepared.configurationSnapshot?.let { restorer.restore(it, prepared.id) }
-                    prepared.pendingFiles.zip(prepared.artifacts).forEach { (file, artifact) ->
-                        if (Files.exists(file)) {
-                            verifier.verify(file, artifact.specification.copy(fileName = file.fileName.toString()))
-                            Files.delete(file)
-                        }
-                    }
-                    transactions.markInstalled(prepared.journal, prepared.purpose)
-                } catch (error: Throwable) {
-                    restoredConfigurations?.let { runCatchingNonFatal { restorer.undo(it) }.onFailure(error::addSuppressed) }
-                    runCatchingNonFatal { transactions.revertInstallation(child) }.onFailure(error::addSuppressed)
-                    throw error
-                }
-            }
+            pending.forEach { install(it, transactions, verifier, restorer) }
             pending.size
         }
     }
 
+    /** Publishes one prepared set; on failure the configurations and JARs it touched are put back. */
+    private fun install(prepared: Prepared, transactions: UpdateTransaction, verifier: ArtifactVerifier, restorer: ConfigurationRestorer) {
+        val child = transactions.appliedChildJournal(prepared.id, prepared.purpose) ?: run {
+            val result = transactions.prepareForRestart(prepared.artifacts, purpose = prepared.purpose, parentTransaction = prepared.id)
+            // This child commits disk publication, not server/plugin health.
+            transactions.completeHealth(result.journal, true)
+            result.journal
+        }
+        var restoredConfigurations: UUID? = null
+        try {
+            restoredConfigurations = prepared.configurationSnapshot?.let { restorer.restore(it, prepared.id) }
+            prepared.pendingFiles.zip(prepared.artifacts).forEach { (file, artifact) ->
+                if (Files.exists(file)) {
+                    verifier.verify(file, artifact.specification.copy(fileName = file.fileName.toString()))
+                    Files.delete(file)
+                }
+            }
+            transactions.markInstalled(prepared.journal, prepared.purpose)
+        } catch (error: Throwable) {
+            restoredConfigurations?.let { runCatchingNonFatal { restorer.undo(it) }.onFailure(error::addSuppressed) }
+            runCatchingNonFatal { transactions.revertInstallation(child) }.onFailure(error::addSuppressed)
+            throw error
+        }
+    }
+
+    /** A set whose files are checked and ready to be published. */
     private data class Prepared(val id: UUID, val journal: Path, val purpose: String,
         val artifacts: List<TransactionArtifact>, val pendingFiles: List<Path>, val configurationSnapshot: UUID?)
 
+    /** Checks the journal and every artifact of a pending set before anything is touched. */
     private fun prepare(transactions: UpdateTransaction, verifier: ArtifactVerifier, snapshots: ConfigurationSnapshots, plugins: Path, path: Path): Prepared {
         val journal = transactions.readJournal(path)
         val restoring = journal.state == TransactionState.ROLLED_BACK

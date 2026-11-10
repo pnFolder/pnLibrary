@@ -66,7 +66,8 @@ tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    // Without a key (a local build) the artifacts are published unsigned.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-bootstrap", project.version.toString())
     pom {
         name.set("pnLibrary Bootstrap")

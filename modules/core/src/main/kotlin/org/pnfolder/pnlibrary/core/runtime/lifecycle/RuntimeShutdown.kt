@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.runtime.lifecycle
 
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 
+/** Ordered list of shutdown actions; all run even if some fail. */
 internal class RuntimeShutdown {
     private val actions = mutableListOf<() -> Unit>()
 

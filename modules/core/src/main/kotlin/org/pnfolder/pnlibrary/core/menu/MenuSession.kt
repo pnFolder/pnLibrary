@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 
+/** State of one open menu: viewer, data source and the current screen. */
 internal class MenuSession(
     val data: MenuData,
     val host: MenuHost,

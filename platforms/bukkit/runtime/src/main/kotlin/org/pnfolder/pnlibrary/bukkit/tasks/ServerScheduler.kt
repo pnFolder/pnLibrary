@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 internal class ServerScheduler(private val plugin: Plugin) {
     /** Work that is waiting and can still be withdrawn. */
     fun interface Scheduled {
+        /** Withdraws the work if it has not run yet. */
         fun cancel()
     }
 
@@ -29,12 +30,13 @@ internal class ServerScheduler(private val plugin: Plugin) {
         if (ServerCapabilities.isFolia) Folia.runGlobal(plugin, task) else Bukkit.getScheduler().runTask(plugin, task)
     }
 
-    // Folia refuses a delay of zero ticks for delayed and repeating work.
+    /** Runs [task] once after [delayTicks]. Folia refuses a delay of zero ticks, so it is raised to one. */
     fun later(delayTicks: Long, task: Runnable): Scheduled {
         if (!ServerCapabilities.isFolia) return Scheduled(Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks)::cancel)
         return foliaTask(Folia.runGlobalLater(plugin, delayTicks.coerceAtLeast(1), task))
     }
 
+    /** Runs [task] every [periodTicks] after [delayTicks]; on Folia both are raised to at least one tick. */
     fun repeat(delayTicks: Long, periodTicks: Long, task: Runnable): Scheduled {
         if (!ServerCapabilities.isFolia) return Scheduled(Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks)::cancel)
         return foliaTask(Folia.runGlobalRepeating(plugin, delayTicks.coerceAtLeast(1), periodTicks.coerceAtLeast(1), task))

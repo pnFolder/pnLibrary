@@ -30,6 +30,7 @@ interface PlaceholderValueStore {
     /** Atomically transforms the current value and returns the result. */
     fun update(parameter: String, playerId: UUID? = null, operator: UnaryOperator<String>): String
 
+    /** Adds [amount] to the numeric value of [parameter] (for [playerId], or globally when `null`) and returns the new value. */
     fun increment(parameter: String, amount: Long = 1, playerId: UUID? = null): String
 
     /** Subtracts [amount] from a numeric value and returns the result. */

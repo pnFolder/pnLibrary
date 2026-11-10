@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
+/** Derives the service owner key of a live module registration. */
 internal object ModuleServiceKeyFactory {
     fun create(registrationId: Long, nativePlugin: PluginId, module: ModuleId): PluginId {
         // The same plugin and module IDs may appear again after a reload. The registration ID

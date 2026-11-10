@@ -9,6 +9,7 @@ public final class LibraryLoadException extends RuntimeException {
     private final String library;
     private final int attempts;
 
+    /** Records the failed {@code library}, the number of {@code attempts} made and the last {@code cause}. */
     LibraryLoadException(Library library, int attempts, Throwable cause) {
         super("Failed to load library " + id(library) + " after " + attempts + " attempt(s)", cause);
         this.library = id(library);
@@ -19,10 +20,12 @@ public final class LibraryLoadException extends RuntimeException {
         return library.getGroupId() + ":" + library.getArtifactId() + ":" + library.getVersion();
     }
 
+    /** The library that failed, as {@code group:artifact:version}. */
     public String library() {
         return library;
     }
 
+    /** How many times the download was tried. */
     public int attempts() {
         return attempts;
     }

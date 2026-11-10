@@ -191,3 +191,97 @@ annotation class ConfigType(
     val aliases: Array<String> = [],
     val priority: Int = 0,
 )
+
+/** A kind of database pnLibrary can copy before an update and put back on a rollback. */
+enum class DatabaseKind {
+    /** MySQL and MariaDB. */
+    MYSQL,
+
+    /** MongoDB; documents are copied with their indexes, without a snapshot in time. */
+    MONGODB,
+
+    /** PostgreSQL; tables of the current schema are copied with indexes, constraints and sequences. */
+    POSTGRESQL,
+}
+
+/**
+ * Declares a database that pnLibrary copies before an update of this plugin and can restore when the update is
+ * rolled back. Repeatable, so one class can describe several databases; their names must differ within a plugin.
+ *
+ * Three placements are supported:
+ * - On a field holding a connection section (a nested class): that section's fields describe the connection.
+ * - On a scalar `String` field: the field is the database name, and the other connection fields of the same class
+ *   are tied to it by [DatabaseField] with the same [name].
+ * - On the configuration class itself, when the connection fields sit at the top of the file.
+ *
+ * Connection fields are found by their usual names (`host`, `port`, `database`, `user` or `username`, `password`);
+ * mark them with [DatabaseField] to use any name. Mark the password with [ConfigSecret] so reports hide it.
+ * ```kotlin
+ * @field:BackupDatabase(DatabaseKind.POSTGRESQL, "Clans", tables = ["clans", "clan_members"])
+ * var clansDb = "clans"
+ * @field:DatabaseField(DatabaseRole.HOST, database = "Clans")
+ * var clansHost = "pg.local"
+ * ```
+ * Only tables (collections in MongoDB) are copied; triggers, procedures and views are not.
+ *
+ * @property kind the database server type
+ * @property name short name shown by the menu and commands; also the key that ties [DatabaseField] and [BackupTable] to it
+ * @property tables tables or collections to copy; `*` in a name matches any text (`"log_*"`); empty means all of them
+ */
+@Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+@Repeatable
+annotation class BackupDatabase(val kind: DatabaseKind, val name: String, val tables: Array<String> = [])
+
+/** What a field of a database connection section holds. */
+enum class DatabaseRole {
+    /** Server host name or address. */
+    HOST,
+
+    /** Server port. */
+    PORT,
+
+    /** Database (schema) name. */
+    DATABASE,
+
+    /** Login of the account. */
+    USER,
+
+    /** Password of the account; also mark the field with [ConfigSecret]. */
+    PASSWORD,
+
+    /** A full connection string such as `mongodb://user:pass@host/db`; when present it replaces host, port, user and password. */
+    URI,
+}
+
+/**
+ * Says which part of a connection a field holds, so the field can have any name. Use it next to [BackupDatabase];
+ * fields without it are found by their usual names.
+ *
+ * With several databases in one class, [database] names the [BackupDatabase.name] the field belongs to. A field
+ * without [database] is shared by all of them, and a field with it wins over a shared one.
+ * ```kotlin
+ * @field:DatabaseField(DatabaseRole.HOST)
+ * var address = "localhost"
+ * ```
+ *
+ * @property role which part of the connection the field holds
+ * @property database [BackupDatabase.name] this field belongs to; empty means every database of the class
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DatabaseField(val role: DatabaseRole, val database: String = "")
+
+/**
+ * Marks a text field that holds the name of a table (or collection) to copy, for plugins whose table names are set
+ * in the configuration. Several fields may carry it; together with [BackupDatabase.tables] both lists are joined.
+ * ```kotlin
+ * @field:BackupTable
+ * var table = "clans"
+ * ```
+ *
+ * @property database [BackupDatabase.name] this table belongs to; empty means every database of the class
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class BackupTable(val database: String = "")

@@ -19,6 +19,7 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
 import java.util.UUID
 
+/** Checks how proxy senders and players are converted to portable audiences. */
 class BungeeAudienceAdapterTest {
     private val proxy = mock(ProxyServer::class.java)
     private val plugin = mock(Plugin::class.java).also { `when`(it.proxy).thenReturn(proxy) }

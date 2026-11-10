@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.core.link.LinkReceiver
 
 /** Takes the reports that game servers send on the pnLibrary link channel; messages from players are dropped. */
 internal class BungeeLinkListener(private val receiver: LinkReceiver) : Listener {
+    /** Cancels every message on the link channel and passes the ones from game servers to the receiver. */
     @EventHandler
     fun onMessage(event: PluginMessageEvent) {
         if (event.tag != LinkCodec.CHANNEL) return

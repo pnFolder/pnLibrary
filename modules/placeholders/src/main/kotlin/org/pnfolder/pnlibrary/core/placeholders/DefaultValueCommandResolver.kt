@@ -5,6 +5,7 @@ import java.util.UUID
 
 /** Parses the bracket-delimited `defaultValue_*` command surface published to PlaceholderAPI. */
 class DefaultValueCommandResolver(private val store: GlobalPlaceholderValueStore) {
+    /** Runs the command (for example `set_[name]_[value]`) and returns its text, or null when it is malformed or unknown. */
     fun resolve(command: String, playerId: UUID?): String? {
         val operation = command.substringBefore('_').lowercase()
         val arguments = command.substringAfter('_', "")

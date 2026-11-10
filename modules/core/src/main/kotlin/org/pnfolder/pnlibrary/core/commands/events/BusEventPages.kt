@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.chatPager
 
+/** Chat pages describing bus events. */
 internal class BusEventPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 

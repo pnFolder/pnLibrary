@@ -11,6 +11,7 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** One menu open for one player; ends when the player closes it, leaves or the owner plugin is disabled. */
 internal class BukkitMenuSession(
     val id: UUID,
     val owner: Plugin,
@@ -70,6 +71,7 @@ internal class BukkitMenuSession(
         }
     }
 
+    /** Whether [inventory] is the inventory this session displays. */
     fun isShownIn(inventory: Inventory): Boolean {
         val holder = inventory.holder as? MenuHolder ?: return false
         return inventory === this.inventory && holder.id == id

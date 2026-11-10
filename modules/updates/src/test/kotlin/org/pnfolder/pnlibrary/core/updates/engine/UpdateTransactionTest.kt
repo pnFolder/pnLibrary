@@ -20,6 +20,23 @@ class UpdateTransactionTest {
     @TempDir lateinit var directory: Path
 
     @Test
+    fun `corrupt journal is skipped with a warning and does not break other operations`() {
+        val root = directory.resolve("transactions")
+        val broken = root.resolve(UUID.randomUUID().toString()).also(Files::createDirectories).resolve("journal.json")
+        Files.write(broken, ByteArray(0))
+        val warnings = mutableListOf<String>()
+        val transaction = UpdateTransaction(root, ArtifactVerifier(1024), warn = { warnings += it })
+
+        assertEquals(emptyList<Any>(), transaction.recoverAll())
+        assertEquals(emptyList<Any>(), transaction.awaitingHealth())
+        assertEquals(emptyList<Any>(), transaction.awaitingRollbackHealth())
+        assertEquals(emptyList<Any>(), transaction.pendingInstallations())
+        assertEquals(emptyList<Any>(), transaction.failedHealthChecks())
+        assertTrue(transaction.automaticUpdatesHealthy(setOf("market")))
+        assertTrue(warnings.isNotEmpty() && warnings.all { it.contains("journal.json") }, warnings.toString())
+    }
+
+    @Test
     fun `verifier rejects checksum mismatches`() {
         val jar = artifact("market.jar", "market", "2.0.0", 4, byteArrayOf(1, 2, 3))
         val valid = specification(jar, "market", "2.0.0", 4)
@@ -253,6 +270,22 @@ class UpdateTransactionTest {
         transaction.rollback(transaction.rollbackCandidate(id))
         assertArrayEquals(byteArrayOf(9), Files.readAllBytes(target))
         assertThrows(Exception::class.java) { transaction.rollbackCandidate(UUID.randomUUID()) }
+    }
+
+    @Test
+    fun `an unreadable journal is reported and does not hide the other rollback sets`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val target = plugins.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
+        val root = directory.resolve("transactions")
+        val warnings = mutableListOf<String>()
+        val transaction = UpdateTransaction(root, ArtifactVerifier(1024 * 1024), plugins, warn = { warnings += it })
+        val source = artifact("first.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val saved = transaction.apply(listOf(TransactionArtifact(specification(source, "market", "2.0.0", 4), source, target))) { true }
+        Files.write(root.resolve(UUID.randomUUID().toString()).also(Files::createDirectories).resolve("journal.json"), ByteArray(0))
+
+        assertEquals(listOf(saved.journal), transaction.rollbackCandidates())
+        assertEquals(saved.journal, transaction.latestRollbackCandidate())
+        assertTrue(warnings.any { it.contains("journal.json") }, warnings.toString())
     }
 
     @Test

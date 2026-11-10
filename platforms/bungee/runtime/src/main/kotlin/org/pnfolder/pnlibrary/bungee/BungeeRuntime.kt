@@ -8,7 +8,9 @@ import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 
 /**
  * Owns the shared pnLibrary runtime for the BungeeCord plugin.
@@ -23,13 +25,15 @@ internal class BungeeRuntime(private val plugin: Plugin) {
     private var linkListener: BungeeLinkListener? = null
     private var link: ProxyLink? = null
     private var networkTask: ScheduledTask? = null
+    private var reminderTask: ScheduledTask? = null
 
+    /** Opens the runtime, player events, game-server link and administrator reminders; undoes everything on failure. */
     fun start() {
         try {
             open()
         } catch (error: Throwable) {
             // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
-            runCatchingNonFatal(::stop)
+            runCatchingNonFatal(::stop).onFailure(error::addSuppressed)
             throw error
         }
     }
@@ -48,6 +52,20 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         plugin.proxy.pluginManager.registerListener(plugin, listener)
         playerEvents = listener
         connectLink(started)
+        remindAdministrators(started)
+    }
+
+    /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
+    private fun remindAdministrators(started: PnLibraryRuntimeHost) {
+        reminderTask = plugin.proxy.scheduler.schedule(
+            plugin,
+            {
+                plugin.proxy.players.filter { ProxyUpdateReminder.canSee(it::hasPermission) }.forEach { ProxyUpdateReminder.send(started.library, it.uniqueId) }
+            },
+            ProxyUpdateReminder.INTERVAL_SECONDS,
+            ProxyUpdateReminder.INTERVAL_SECONDS,
+            TimeUnit.SECONDS,
+        )
     }
 
     /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
@@ -61,6 +79,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
                 server?.sendData(LinkCodec.CHANNEL, bytes, false) ?: false
             },
             describe = { owner -> (owner as? Plugin)?.description?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) } },
+            holds = { viewer, permission -> plugin.proxy.getPlayer(viewer)?.hasPermission(permission) == true },
             platformName = { "${plugin.proxy.name} ${plugin.proxy.version}" },
             players = { plugin.proxy.onlineCount },
             broadcast = { message -> plugin.proxy.servers.values.forEach { runCatchingNonFatal { it.sendData(LinkCodec.CHANNEL, message, false) } } },
@@ -81,17 +100,25 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         }
     }
 
+    /** Cancels tasks, unregisters listeners and the link channel, then closes the host. Safe to call again. */
     fun stop() {
         networkTask?.cancel()
+        reminderTask?.cancel()
+        reminderTask = null
         networkTask = null
-        linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
+        linkListener?.let { release("link listener") { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null
-        link?.let { runCatchingNonFatal(it::close) }
+        link?.let { release("link", it::close) }
         link = null
-        runCatchingNonFatal { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
-        playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
+        release("link channel") { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
+        playerEvents?.let { release("player events") { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null
         host?.close()
         host = null
+    }
+
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { plugin.logger.log(Level.SEVERE, "Could not stop $part", it) }
     }
 }

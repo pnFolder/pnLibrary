@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
 
 /** Shared validation at both the provider and persistence boundaries. */
 internal object CurrencyRequestValidation {
+    /** Returns the reason [request] is invalid for [descriptor], or null when it may proceed. */
     fun failure(descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): String? {
         val amountValid = descriptor.accepts(request.amount) && when (request.type) {
             CurrencyTransactionType.SET_BALANCE -> request.amount.signum() >= 0

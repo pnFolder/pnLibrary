@@ -16,7 +16,7 @@ internal object CurrencyMutationEngine {
     const val INSUFFICIENT_FUNDS = "Insufficient funds"
 
     /**
-     * A rejected transition preserves both balances. Storage implementations are
+     * Computes the new balances for [request] from the current ones. A rejected transition preserves both balances. Storage implementations are
      * responsible for descriptor normalization before reading and after committing.
      */
     fun evaluate(
@@ -58,6 +58,7 @@ internal object CurrencyMutationEngine {
         )
     }
 
+    /** Creates a rejection that leaves both balances unchanged. */
     private fun rejected(source: BigDecimal?, target: BigDecimal?, failure: String = INSUFFICIENT_FUNDS) = CurrencyMutation(
         status = CurrencyTransactionStatus.REJECTED,
         sourceBefore = source,
@@ -77,6 +78,7 @@ internal data class CurrencyMutation(
     val targetAfter: BigDecimal?,
     val failure: String? = null,
 ) {
+    /** True when the balances must be written. */
     val committed: Boolean get() = status == CurrencyTransactionStatus.COMMITTED
 
     /** The ledger record of this mutation, created when the storage has applied it. */

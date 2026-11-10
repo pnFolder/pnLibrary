@@ -64,6 +64,23 @@ class RemoteExecutorTest {
     }
 
     @Test
+    fun `an action that throws is logged as an error and refused`() {
+        val logger = mock(org.pnfolder.pnlibrary.api.logging.PnLogger::class.java)
+        val logging = mock(org.pnfolder.pnlibrary.api.logging.LoggingService::class.java)
+        val owner = Any()
+        `when`(logging.logger(owner, "link")).thenReturn(logger)
+        `when`(library.logging).thenReturn(logging)
+        `when`(library.owner).thenReturn(owner)
+        val failure = IllegalStateException("update service is down")
+        `when`(updates.get("shop")).thenThrow(failure)
+
+        run(request(action = RemoteAction.UPDATE))
+
+        org.mockito.Mockito.verify(logger).error(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(failure))
+        assertFalse(results.single().ok)
+    }
+
+    @Test
     fun `a request that was already carried out is refused`() {
         val same = request()
 

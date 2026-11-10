@@ -18,12 +18,18 @@ import java.util.concurrent.ExecutorService
  * It only reads the facts and carries out the actions of [MenuData]; it never draws anything. The server of the viewer
  * builds the menu from the answers.
  *
+ * Actions that change something, and commands, are allowed only when this server itself knows the viewer and says they
+ * hold the permission: what the asking server writes in the request is never taken as a right.
+ *
  * @param data the facts of this server
  * @param executor where the questions are answered, away from the thread that received them
+ * @param holds whether the player of that name, as this server sees them, has the permission; false for a player this
+ * server does not know
  */
 class MenuDataServer(
     private val data: MenuData,
     private val executor: Executor,
+    private val holds: (viewer: String, permission: String) -> Boolean,
 ) : DataHandler, AutoCloseable {
     override fun close() {
         (executor as? ExecutorService)?.shutdown()
@@ -43,10 +49,19 @@ class MenuDataServer(
         val args = runCatching { JsonParser.parseString(call.args).asJsonObject }.getOrDefault(JsonObject())
         val actor = UpdateActor(UpdateActor.Kind.INTEGRATION, "remote:${call.origin}", "${call.viewer.ifEmpty { "игрок" }} (${call.origin})")
         val ask = Question(call, args, actor, reply)
+        val needed = REQUIRED[call.method]
+        if (needed != null && !allowed(call.viewer, needed)) {
+            reply(false, "Не хватает права: $needed")
+            return
+        }
         if (updates(ask) || journalAndTasks(ask) || events(ask) || network(ask)) return
         reply(false, "Неизвестный запрос: ${call.method}")
     }
 
+    private fun allowed(viewer: String, permission: String): Boolean =
+        holds(viewer, permission) || holds(viewer, "pnlibrary.admin")
+
+    /** Pending confirmation of a data call awaiting the player's answer. */
     private class Question(val call: DataCall, val args: JsonObject, val actor: UpdateActor, val reply: (Boolean, String) -> Unit) {
         fun text(name: String): String? = args.get(name)?.takeIf { !it.isJsonNull }?.asString
 
@@ -85,6 +100,11 @@ class MenuDataServer(
                 done(data.setHeld(text("product").orEmpty(), duration, actor))
             }
             MenuCalls.ROLLBACK -> done(data.rollback(UUID.fromString(text("id")), args.get("restore")?.asBoolean == true, actor))
+            MenuCalls.RESTORE_DATABASE -> done(
+                data.restoreDatabase(UUID.fromString(text("id")), requireNotNull(text("product")), requireNotNull(text("name")), actor),
+            )
+            MenuCalls.EXTRACT_BACKUP -> data.extractBackup(UUID.fromString(text("id")), requireNotNull(text("product")), actor)
+                .whenComplete { value, error -> finish(reply, value, error) }
             else -> return@with false
         }
         true
@@ -139,7 +159,7 @@ class MenuDataServer(
                 give(data.editGroup(GroupEdit(op, text("group").orEmpty(), text("server"), text("plugin"))))
             }
             MenuCalls.COMMAND -> {
-                val permissions = args.getAsJsonArray("permissions")?.map { it.asString }?.toSet().orEmpty()
+                val permissions = MenuPermissions.ALL.filter { holds(call.viewer, it) }.toSet()
                 val viewer = ViewerInfo(call.viewer.ifEmpty { "игрок" }, permissions)
                 give(MenuCalls.encodeLines(data.command(viewer, text("line").orEmpty())))
             }
@@ -154,3 +174,19 @@ private fun finish(reply: (Boolean, String) -> Unit, value: Any?, error: Throwab
     if (error != null) reply(false, generateSequence(error) { it.cause }.last().let { it.message ?: it.javaClass.simpleName })
     else reply(true, MenuCalls.gson.toJson(value))
 }
+
+private val REQUIRED: Map<String, String> = mapOf(
+    MenuCalls.CHECK_ALL to "pnlibrary.updates.download",
+    MenuCalls.CHECK_ONE to "pnlibrary.updates.download",
+    MenuCalls.SET_AUTOMATIC to SETTINGS,
+    MenuCalls.SET_CHANNEL to SETTINGS,
+    MenuCalls.SET_HELD to SETTINGS,
+    MenuCalls.ROLLBACK to ROLLBACK,
+    MenuCalls.RESTORE_DATABASE to ROLLBACK,
+    MenuCalls.EXTRACT_BACKUP to ROLLBACK,
+    MenuCalls.RUN_TASK to TASKS,
+    MenuCalls.CANCEL_TASK to TASKS,
+    MenuCalls.SET_TRACING to BUS,
+    MenuCalls.CLEAR_TRACES to BUS,
+    MenuCalls.EDIT_GROUP to GROUPS_PERMISSION,
+)

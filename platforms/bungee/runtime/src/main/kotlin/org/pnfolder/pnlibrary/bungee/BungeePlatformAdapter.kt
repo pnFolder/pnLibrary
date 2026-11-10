@@ -25,6 +25,7 @@ import java.util.logging.Logger
 
 /** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
+    /** The pnLibrary plugin; internal work such as global tasks belongs to it. */
     val plugin: Plugin,
 ) : PlatformAdapter {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
@@ -87,7 +88,6 @@ internal class BungeePlatformAdapter(
         )
     }
 
-    /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
     override fun ownerDataFolder(owner: Any): Path? = plugins.find(owner)?.dataFolder?.toPath()
@@ -96,7 +96,6 @@ internal class BungeePlatformAdapter(
 
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
-    /** Collects typed proxy metadata without exposing individual player identities. */
     override fun snapshot(): PlatformSnapshot {
         val proxy = plugin.proxy
 

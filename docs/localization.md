@@ -30,10 +30,11 @@ val localization = module.localization
 localization.bukkitLocale(version, MinecraftLocale.RU_RU).thenAccept { bukkit ->
     sender.sendMessage(bukkit.translate(Material.DIAMOND_SWORD).text)   // «Алмазный меч»
 }
+```
 
 Из Java: `BukkitLocalization.locale(localization, version, MinecraftLocale.RU_RU)`. Нейтральную таблицу, загруженную через
-`localization.locale(...)`, можно обернуть вручную: `BukkitLocaleTranslations.wrap(table)`.
-```
+`localization.locale(...)`, можно обернуть вручную: `BukkitLocaleTranslations.wrap(table)`. Расширение `bukkitLocale`
+лежит в `org.pnfolder.pnlibrary.bukkit.localization`.
 
 `version` — это `MinecraftVersion` сервера. Языки задаются типом `MinecraftLocale` (опечатку в коде поймает компилятор); строку с кодом
 языка тоже можно передать. Загрузить сразу несколько языков с запасным:

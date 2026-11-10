@@ -18,7 +18,7 @@
 
 ## Установка на сервер
 
-Положите `pnLibrary-<версия>-universal.jar` в `plugins/` — один файл работает на Bukkit, BungeeCord и Velocity.
+Положите `pnLibrary-<версия>-universal.jar` в `plugins/` — один файл работает на Bukkit, BungeeCord и Velocity. Если у сервера нет доступа к репозиториям при старте, возьмите `pnLibrary-<версия>-universal-full.jar`.
 
 Команды (Bukkit):
 
@@ -37,11 +37,11 @@
 | `/pn money` | управление валютами плагинов |
 | `/pn stats` | почасовая статистика ошибок, задач и событий |
 | `/pn placeholders [test <адрес>]` | список и проверка плейсхолдеров |
-| `/pn bus`, `/pn tasks`, `/pn groups` | шина событий, задачи, группы серверов |
-| `/pn servers`, `/pn support` | серверы прокси, обращение в поддержку |
+| `/pn bus`, `/pn tasks` | шина событий, задачи плагинов |
+| `/pn servers`, `/pn support` | серверы сети, обращение в поддержку |
 | `/pn debug [all\|плагин]` | отчёт для поддержки |
 
-На BungeeCord и Velocity каталог доступен из консоли командой `/pn update`. Все команды обновлений и права описаны
+На BungeeCord и Velocity команда называется `/pnproxy` (коротко `/pnp`): каталог обновлений, `events`, `bus`, `tasks`, `stats`, `placeholders`, `debug`, `servers` и `groups` (группы серверов есть только на прокси). Все команды обновлений и права описаны
 в [docs/updates.md](docs/updates.md).
 
 Остальные права (по умолчанию у операторов):
@@ -53,6 +53,13 @@
 | `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
 | `pnlibrary.placeholders` | `/pn placeholders`: список и проверка плейсхолдеров |
 | `pnlibrary.debug` | `/pn debug` |
+| `pnlibrary.tasks` | `/pn tasks` |
+| `pnlibrary.events.bus` | `/pn bus` |
+| `pnlibrary.groups` | `/pnproxy groups` |
+| `pnlibrary.servers` | `/pn servers` |
+| `pnlibrary.currency.list` | список валют в `/pn money` |
+
+Права обновлений (`pnlibrary.updates.*`) описаны в [docs/updates.md](docs/updates.md).
 
 ## Подключение к плагину
 
@@ -65,6 +72,8 @@ dependencies {
 ```
 
 В `plugin.yml` плагина: `depend: [pnLibrary]`.
+
+Какие модули подключать и как собрать библиотеку локально, не публикуя, описано в [integration/README.md](integration/README.md).
 
 ```kotlin
 val library = PnLibraryProvider.get()
@@ -83,8 +92,9 @@ API состоит из интерфейсов, моделей и небольш
 ./gradlew :distribution:shadowUniversal  # distribution/build/libs/pnLibrary-<версия>-universal.jar
 ```
 
-`installAcceptanceToPaper` копирует сборку на тестовый сервер; путь задаётся свойством `pnlibrary.installDir`
-(например, в `~/.gradle/gradle.properties`).
+Кроме лёгкого `universal` (Kotlin и Adventure скачиваются при старте) есть `universal-full` (`shadowUniversalFull`):
+всё внутри, ничего не скачивается. Он лежит в релизе GitHub как ручная загрузка и в каталог обновлений не входит.
+Платформенные сборки: `shadowBukkit`, `shadowBungee`, `shadowVelocity`.
 
 ## Документация
 
@@ -101,13 +111,15 @@ API состоит из интерфейсов, моделей и небольш
 - [Проверки](docs/checks.md)
 - [Каталог релизов](docs/releases.md)
 - [Ручная проверка перед выпуском](docs/verification.html)
-- [Плейсхолдеры](docs/placeholders.md)
+- [Плейсхолдеры](docs/placeholders.md), [пример](docs/placeholders-example.md)
+- [Хранилища](docs/storage.md)
 - [Задачи](docs/tasks.md)
 - [Диагностика](docs/diagnostics.md)
 - [Метрики](docs/metrics.md)
 - [Валюта](docs/currency.md)
 - [Локализация Minecraft](docs/localization.md)
 - [Расширения](docs/expansions.md)
+- [Черновик API 2](docs/api2-draft.md)
 - [Удалённые политики](docs/remote-policies.md)
 - [Встраиваемый установщик для всех платформ](modules/bootstrap/README.md)
 - [Консольные карточки](modules/console/README.md)

@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.history
 
 import com.google.gson.Gson
 import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
@@ -18,8 +19,12 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.util.UUID
 import kotlin.streams.toList
 
-/** Offline-only restoration engine. Runtime commands must queue work, never call this on live files. */
+/**
+ * Offline-only restoration engine. Runtime commands must queue work, never call this on live files.
+ * Every restore is journaled, so one interrupted by a crash is rolled back to the state kept before it.
+ */
 internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapshots, private val directory: Path) {
+    /** The progress of one restore, saved after each step; [state] says how far it got. */
     data class Journal(val id: String, val source: String, val before: String, var state: String, val operation: String? = null)
     private val gson = Gson()
 
@@ -33,7 +38,10 @@ internal class ConfigurationRestorer(private val snapshots: ConfigurationSnapsho
         }
         val declarations = snapshot.files.groupBy { it.product }.map { (product, files) ->
             require(files.map { it.root }.distinct().size == 1) { "Component has conflicting configuration roots" }
-            ProductId.of(product) to UpdateConfigurationBackup(Paths.get(files.first().root), files.map { it.relative })
+            ProductId.of(product) to UpdateConfigurationBackup(
+                Paths.get(files.first().root), files.map { it.relative },
+                files.associate { it.relative to BackupLabel(it.backupKind, it.name.orEmpty()) },
+            )
         }.toMap()
         val before = requireNotNull(snapshots.capture(UUID.fromString(snapshot.planId), declarations))
         val id = UUID.randomUUID()

@@ -8,8 +8,6 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 /**
  * Writes and reads the signed messages of the link between a game server and the proxy.
@@ -19,16 +17,19 @@ import javax.crypto.spec.SecretKeySpec
  * sends bytes on the channel by hand cannot pose as a server.
  */
 object LinkCodec {
+    /** The plugin message channel the link uses between servers and the proxy. */
     const val CHANNEL = "pnlibrary:link"
 
     /** Longer lists are cut so the message stays under the plugin message limit. */
     const val MAX_PLUGINS = 150
 
+    /** The most plugins listed per server in a network map, before the map is cut further to fit the frame. */
     const val MAX_NETWORK_PLUGINS = 40
 
     /** A plugin message may not be larger than this. */
     const val MAX_FRAME_BYTES = 32_000
 
+    /** The most servers listed in a network map. */
     const val MAX_SERVERS = 30
 
     private const val MAX_GROUPS = 30
@@ -41,21 +42,22 @@ object LinkCodec {
     private const val CALL_VERSION = 5
     private const val CHUNK_VERSION = 6
     private const val MAX_RESULT_TEXT = 1_000
-    private const val MAC_ALGORITHM = "HmacSHA256"
     private const val MAC_BYTES = 32
     private const val MAX_TEXT = 200
     private val TOLERANCE: Duration = Duration.ofMinutes(2)
+    private val hmac: FrameSigner = CachedHmac()
 
+    /** Encodes and signs a server report with [key]. */
     fun encode(report: LinkReport, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(VERSION)
-        writeReport(out, report, MAX_PLUGINS)
+        ReportWire.write(out, report, MAX_PLUGINS)
     }
 
     /** Reads [message], or returns null when the signature, the version or the time is wrong. */
     fun decode(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): LinkReport? =
-        verified(message, key) { input ->
+        verified(message, key, hmac) { input ->
             if (input.readUnsignedByte() != VERSION) return@verified null
-            readReport(input).takeIf { fresh(it.sentAt, now) }
+            ReportWire.read(input).takeIf { fresh(it.sentAt, now) }
         }
 
     /**
@@ -86,13 +88,13 @@ object LinkCodec {
     private fun networkBytes(network: NetworkReport, key: ByteArray, pluginLimit: Int, itemLimit: Int, serverLimit: Int, groupLimit: Int): ByteArray =
         signed(key) { out ->
             out.writeByte(NETWORK_VERSION)
-            writeReport(out, network.proxy, pluginLimit)
+            ReportWire.write(out, network.proxy, pluginLimit)
             val servers = network.servers.take(serverLimit)
             out.writeInt(servers.size)
             servers.forEach {
                 out.writeUTF(it.name.take(MAX_TEXT))
                 out.writeBoolean(it.online)
-                writeReport(out, it.report, pluginLimit)
+                ReportWire.write(out, it.report, pluginLimit)
             }
             val groups = network.groups.take(groupLimit)
             out.writeInt(groups.size)
@@ -121,18 +123,19 @@ object LinkCodec {
 
     /** Reads a network map, or returns null when the signature, the version or the time is wrong. */
     fun decodeNetwork(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): NetworkReport? =
-        verified(message, key) { input ->
+        verified(message, key, hmac) { input ->
             if (input.readUnsignedByte() != NETWORK_VERSION) return@verified null
-            val proxy = readReport(input)
+            val proxy = ReportWire.read(input)
             if (!fresh(proxy.sentAt, now)) return@verified null
             val count = input.readInt().coerceIn(0, MAX_SERVERS)
-            val servers = List(count) { NetworkServer(input.readUTF(), input.readBoolean(), readReport(input)) }
+            val servers = List(count) { NetworkServer(input.readUTF(), input.readBoolean(), ReportWire.read(input)) }
             val groups = List(input.readInt().coerceIn(0, MAX_GROUPS)) {
                 ServerGroups.Group(input.readUTF(), readNames(input), readNames(input), unpair(readNames(input)), unpair(readNames(input)))
             }
             NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 
+    /** Encodes and signs a remote update request with [key]. */
     fun encodeRequest(request: RemoteRequest, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(REQUEST_VERSION)
         out.writeLong(request.id.mostSignificantBits)
@@ -147,19 +150,21 @@ object LinkCodec {
 
     /** Reads a remote request, or returns null when the signature, the version, the time or the action is wrong. */
     fun decodeRequest(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteRequest? =
-        verified(message, key) { input ->
-            if (input.readUnsignedByte() != REQUEST_VERSION) return@verified null
-            val id = UUID(input.readLong(), input.readLong())
-            val sentAt = Instant.ofEpochMilli(input.readLong())
-            if (!fresh(sentAt, now)) return@verified null
-            val target = input.readUTF()
-            val origin = input.readUTF()
-            val actor = input.readUTF()
-            val actionName = input.readUTF()
-            val action = RemoteAction.values().firstOrNull { it.name == actionName } ?: return@verified null
-            RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
-        }
+        verified(message, key, hmac) { input -> if (input.readUnsignedByte() == REQUEST_VERSION) readRequest(input, now) else null }
 
+    private fun readRequest(input: DataInputStream, now: Instant): RemoteRequest? {
+        val id = UUID(input.readLong(), input.readLong())
+        val sentAt = Instant.ofEpochMilli(input.readLong())
+        if (!fresh(sentAt, now)) return null
+        val target = input.readUTF()
+        val origin = input.readUTF()
+        val actor = input.readUTF()
+        val actionName = input.readUTF()
+        val action = RemoteAction.values().firstOrNull { it.name == actionName } ?: return null
+        return RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
+    }
+
+    /** Encodes and signs the answer to a remote request with [key]. */
     fun encodeResult(result: RemoteResult, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(RESULT_VERSION)
         out.writeLong(result.id.mostSignificantBits)
@@ -172,14 +177,16 @@ object LinkCodec {
 
     /** Reads the answer to a remote request, or returns null when the signature, the version or the time is wrong. */
     fun decodeResult(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteResult? =
-        verified(message, key) { input ->
-            if (input.readUnsignedByte() != RESULT_VERSION) return@verified null
-            val id = UUID(input.readLong(), input.readLong())
-            val sentAt = Instant.ofEpochMilli(input.readLong())
-            if (!fresh(sentAt, now)) return@verified null
-            RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
-        }
+        verified(message, key, hmac) { input -> if (input.readUnsignedByte() == RESULT_VERSION) readResult(input, now) else null }
 
+    private fun readResult(input: DataInputStream, now: Instant): RemoteResult? {
+        val id = UUID(input.readLong(), input.readLong())
+        val sentAt = Instant.ofEpochMilli(input.readLong())
+        if (!fresh(sentAt, now)) return null
+        return RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
+    }
+
+    /** Encodes and signs a data question with [key]. */
     fun encodeCall(call: DataCall, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CALL_VERSION)
         out.writeLong(call.id.mostSignificantBits)
@@ -196,19 +203,21 @@ object LinkCodec {
 
     /** Reads a question, or returns null when the signature, the version or the time is wrong. */
     fun decodeCall(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): DataCall? =
-        verified(message, key) { input ->
-            if (input.readUnsignedByte() != CALL_VERSION) return@verified null
-            val id = UUID(input.readLong(), input.readLong())
-            val sentAt = Instant.ofEpochMilli(input.readLong())
-            if (!fresh(sentAt, now)) return@verified null
-            val target = input.readUTF()
-            val origin = input.readUTF()
-            val viewer = input.readUTF()
-            val method = input.readUTF()
-            val args = String(ByteArray(input.readInt().coerceIn(0, MAX_FRAME_BYTES)).also { input.readFully(it) }, Charsets.UTF_8)
-            DataCall(id, target, origin, viewer, method, args, sentAt)
-        }
+        verified(message, key, hmac) { input -> if (input.readUnsignedByte() == CALL_VERSION) readCall(input, now) else null }
 
+    private fun readCall(input: DataInputStream, now: Instant): DataCall? {
+        val id = UUID(input.readLong(), input.readLong())
+        val sentAt = Instant.ofEpochMilli(input.readLong())
+        if (!fresh(sentAt, now)) return null
+        val target = input.readUTF()
+        val origin = input.readUTF()
+        val viewer = input.readUTF()
+        val method = input.readUTF()
+        val args = String(ByteArray(input.readInt().coerceIn(0, MAX_FRAME_BYTES)).also { input.readFully(it) }, Charsets.UTF_8)
+        return DataCall(id, target, origin, viewer, method, args, sentAt)
+    }
+
+    /** Encodes and signs one piece of an answer with [key]. */
     fun encodeChunk(chunk: DataChunk, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CHUNK_VERSION)
         out.writeLong(chunk.id.mostSignificantBits)
@@ -224,62 +233,50 @@ object LinkCodec {
 
     /** Reads one piece of an answer, or returns null when the signature, the version, the time or the numbers are wrong. */
     fun decodeChunk(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): DataChunk? =
-        verified(message, key) { input ->
-            if (input.readUnsignedByte() != CHUNK_VERSION) return@verified null
-            val id = UUID(input.readLong(), input.readLong())
-            val sentAt = Instant.ofEpochMilli(input.readLong())
-            if (!fresh(sentAt, now)) return@verified null
-            val to = input.readUTF()
-            val ok = input.readBoolean()
-            val index = input.readInt()
-            val count = input.readInt()
-            if (count !in 1..DataChunks.MAX_PIECES || index !in 0 until count) return@verified null
-            val bytes = ByteArray(input.readInt().coerceIn(0, DataChunks.PIECE)).also { input.readFully(it) }
-            DataChunk(id, to, ok, index, count, bytes, sentAt)
+        verified(message, key, hmac) { input -> if (input.readUnsignedByte() == CHUNK_VERSION) readChunk(input, now) else null }
+
+    private fun readChunk(input: DataInputStream, now: Instant): DataChunk? {
+        val id = UUID(input.readLong(), input.readLong())
+        val sentAt = Instant.ofEpochMilli(input.readLong())
+        if (!fresh(sentAt, now)) return null
+        val to = input.readUTF()
+        val ok = input.readBoolean()
+        val index = input.readInt()
+        val count = input.readInt()
+        if (count !in 1..DataChunks.MAX_PIECES || index !in 0 until count) return null
+        val bytes = ByteArray(input.readInt().coerceIn(0, DataChunks.PIECE)).also { input.readFully(it) }
+        return DataChunk(id, to, ok, index, count, bytes, sentAt)
+    }
+
+    /** Reads a message of any kind a server may send to the proxy, checking the signature once; null when anything is wrong. */
+    fun decodeFrame(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): LinkFrame? = decodeFrame(message, key, now, hmac)
+
+    internal fun decodeFrame(message: ByteArray, key: ByteArray, now: Instant, signer: FrameSigner): LinkFrame? =
+        verified(message, key, signer) { input ->
+            when (input.readUnsignedByte()) {
+                VERSION -> ReportWire.read(input).takeIf { fresh(it.sentAt, now) }?.let(LinkFrame::Report)
+                REQUEST_VERSION -> readRequest(input, now)?.let(LinkFrame::Request)
+                RESULT_VERSION -> readResult(input, now)?.let(LinkFrame::Result)
+                CALL_VERSION -> readCall(input, now)?.let(LinkFrame::Call)
+                CHUNK_VERSION -> readChunk(input, now)?.let(LinkFrame::Chunk)
+                else -> null
+            }
         }
 
     private fun fresh(sentAt: Instant, now: Instant): Boolean = Math.abs(Duration.between(sentAt, now).toMillis()) <= TOLERANCE.toMillis()
-
-    private fun writeReport(out: DataOutputStream, report: LinkReport, limit: Int) {
-        out.writeLong(report.sentAt.toEpochMilli())
-        out.writeUTF(report.platform.take(MAX_TEXT))
-        out.writeUTF(report.libraryVersion.take(MAX_TEXT))
-        out.writeInt(report.players)
-        val plugins = report.plugins.take(limit)
-        out.writeInt(plugins.size)
-        plugins.forEach {
-            out.writeUTF(it.product.take(MAX_TEXT))
-            out.writeUTF(it.version.take(MAX_TEXT))
-            out.writeUTF(it.latest.orEmpty().take(MAX_TEXT))
-            out.writeUTF(it.state.take(MAX_TEXT))
-        }
-    }
-
-    private fun readReport(input: DataInputStream): LinkReport {
-        val sentAt = Instant.ofEpochMilli(input.readLong())
-        val platform = input.readUTF()
-        val library = input.readUTF()
-        val players = input.readInt()
-        val count = input.readInt().coerceIn(0, MAX_PLUGINS)
-        val plugins = List(count) { LinkPlugin(input.readUTF(), input.readUTF(), input.readUTF().ifEmpty { null }, input.readUTF()) }
-        return LinkReport(platform, library, players, plugins, sentAt)
-    }
 
     private fun signed(key: ByteArray, write: (DataOutputStream) -> Unit): ByteArray {
         val body = ByteArrayOutputStream()
         DataOutputStream(body).use(write)
         val bytes = body.toByteArray()
-        return bytes + sign(bytes, key)
+        return bytes + hmac.sign(bytes, key)
     }
 
-    private fun <T> verified(message: ByteArray, key: ByteArray, read: (DataInputStream) -> T?): T? {
+    private fun <T> verified(message: ByteArray, key: ByteArray, signer: FrameSigner, read: (DataInputStream) -> T?): T? {
         if (message.size <= MAC_BYTES) return null
         val body = message.copyOfRange(0, message.size - MAC_BYTES)
         val mac = message.copyOfRange(message.size - MAC_BYTES, message.size)
-        if (!MessageDigest.isEqual(mac, sign(body, key))) return null
+        if (!MessageDigest.isEqual(mac, signer.sign(body, key))) return null
         return runCatching { DataInputStream(ByteArrayInputStream(body)).use(read) }.getOrNull()
     }
-
-    private fun sign(bytes: ByteArray, key: ByteArray): ByteArray =
-        Mac.getInstance(MAC_ALGORITHM).apply { init(SecretKeySpec(key, MAC_ALGORITHM)) }.doFinal(bytes)
 }

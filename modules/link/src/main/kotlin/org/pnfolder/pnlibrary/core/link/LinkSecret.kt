@@ -2,6 +2,8 @@ package org.pnfolder.pnlibrary.core.link
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.PosixFilePermissions
 import java.security.SecureRandom
 import java.util.Base64
 
@@ -12,6 +14,7 @@ import java.util.Base64
  * administrator copies the file from the proxy.
  */
 object LinkSecret {
+    /** The name of the key file in the pnLibrary folder. */
     const val FILE = "link.key"
     private const val KEY_BYTES = 32
 
@@ -38,6 +41,18 @@ object LinkSecret {
             Files.write(path, (Base64.getEncoder().encodeToString(key) + '\n').toByteArray(Charsets.UTF_8))
             key
         }.getOrNull()
+    }
+
+    // Owner-only from the first byte, so the key is never readable by others between creation and chmod.
+    private fun create(path: Path, content: ByteArray) {
+        val posix = path.fileSystem.supportedFileAttributeViews().contains("posix")
+        if (posix) {
+            val owner = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))
+            Files.createFile(path, owner)
+            Files.write(path, content, StandardOpenOption.WRITE)
+        } else {
+            Files.write(path, content, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        }
     }
 
     private const val BOM = "\uFEFF"

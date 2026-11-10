@@ -15,7 +15,9 @@ import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.lang.reflect.Array
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Level
 
 /**
  * Lifecycle-owned Adventure transport for Bukkit players.
@@ -32,10 +34,12 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     private val logger = plugin.logger
     private val pluginServer = plugin.server
     private val fallbackOnly = AtomicBoolean(audiences == null && !NATIVE_ADVENTURE)
+    private val reportedFailures = ConcurrentHashMap.newKeySet<String>()
 
     /** Whether the native Adventure transport is still available for new deliveries. */
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
+    /** Wraps an online Bukkit [player] for the library API. */
     fun player(player: Player): LibraryPlayer =
         BukkitLibraryPlayer(player, this)
 
@@ -63,7 +67,6 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         send(player, message, true)
     }
 
-    /** Tries Adventure delivery before switching to the sticky legacy fallback. */
     private fun send(player: Player, message: Component, actionBar: Boolean) {
         val provider = audiences
         if (!fallbackOnly.get() && (player is Audience || provider != null)) {
@@ -81,7 +84,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 Failures.rethrowIfFatal(error)
                 // A broken/incompatible platform bridge must not break the calling plugin.
                 if (fallbackOnly.compareAndSet(false, true)) {
-                    logger.warning("Adventure Bukkit transport failed (${error.javaClass.simpleName}); switched to legacy text fallback")
+                    logger.log(Level.SEVERE, "Adventure Bukkit transport failed; switched to legacy text fallback", error)
                 }
             }
         }
@@ -89,7 +92,6 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
         if (actionBar) sendLegacyActionBar(player, legacy) else player.sendMessage(legacy)
     }
 
-    /** Uses optional Spigot action-bar APIs, falling back to ordinary chat. */
     private fun sendLegacyActionBar(player: Player, message: String) {
         runCatchingNonFatal {
             val chatType = Class.forName("net.md_5.bungee.api.ChatMessageType").getField("ACTION_BAR").get(null)
@@ -105,7 +107,13 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
     /** Tries Adventure sound delivery, then the native Bukkit sound API. */
     internal fun playSound(player: Player, sound: Sound): Delivery {
         if (player is Audience && !fallbackOnly.get()) {
-            try { player.playSound(sound); return Delivery.Delivered } catch (error: Throwable) { Failures.rethrowIfFatal(error) }
+            try {
+                player.playSound(sound)
+                return Delivery.Delivered
+            } catch (error: Throwable) {
+                Failures.rethrowIfFatal(error)
+                reportOnce("sound", error)
+            }
         }
         val provider = audiences
         if (provider != null && !fallbackOnly.get()) {
@@ -114,6 +122,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 return Delivery.Delivered
             } catch (error: Throwable) {
                 Failures.rethrowIfFatal(error)
+                reportOnce("sound", error)
             }
         }
         return deliver { player.playSound(player.location, sound.name().asString(), sound.volume(), sound.pitch()) }
@@ -130,14 +139,20 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 return Delivery.Delivered
             } catch (error: Throwable) {
                 Failures.rethrowIfFatal(error)
+                reportOnce("title", error)
             }
         }
         return deliver { player.sendTitle(LEGACY.serialize(title.title()), LEGACY.serialize(title.subtitle())) }
     }
 
+    /** The legacy fallback still delivers, so one report per kind is enough to show the Adventure transport is broken. */
+    private fun reportOnce(kind: String, error: Throwable) {
+        if (reportedFailures.add(kind)) logger.log(Level.SEVERE, "Adventure $kind delivery failed; using the legacy fallback", error)
+    }
+
     /** Releases the underlying Adventure audience provider when one was created. */
     override fun close() {
-        runCatchingNonFatal { audiences?.close() }
+        runCatchingNonFatal { audiences?.close() }.onFailure { logger.log(Level.SEVERE, "Could not close the Adventure transport", it) }
     }
 
     private companion object {

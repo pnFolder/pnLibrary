@@ -33,6 +33,7 @@ import org.pnfolder.pnlibrary.core.text.CachedComponents
 import org.pnfolder.pnlibrary.core.text.ComponentCache
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
+/** Creates the scoped resources of one module and rolls back already created ones if a later step fails. */
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
@@ -78,13 +79,17 @@ internal class ModuleResourceFactory(
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
 
             // Resolve the live session on every capture, including after disable/restart.
-            errorReporter = ErrorPipeline(object : ErrorReporter {
-                override fun capture(error: TelemetryError) {
-                    metricsController?.sessionErrorReporter()?.capture(error)
-                }
+            val moduleLogger = logging.logger(owner, moduleId.value)
+            errorReporter = ErrorPipeline(
+                object : ErrorReporter {
+                    override fun capture(error: TelemetryError) {
+                        metricsController?.sessionErrorReporter()?.capture(error)
+                    }
 
-                override fun close() = Unit
-            })
+                    override fun close() = Unit
+                },
+                onForwardingFailure = { moduleLogger.warning("An error report could not be sent to the error tracker", it) },
+            )
             metricsController = ModuleMetrics(
                 owner,
                 metrics,

@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.console.ConsoleTheme
 
 /** Renders automatic update notifications with the same card used by console status. */
 internal object UpdateAnnouncementRenderer {
+    /** Builds the announcement shown to administrators. */
     fun render(
         snapshot: UpdatePlanSnapshot,
         theme: ConsoleTheme,

@@ -26,32 +26,39 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
         val product = request.product.orEmpty()
         try {
             when (request.action) {
-                RemoteAction.CHECK -> library.updates.checkNow(actor).whenComplete { plan, error ->
-                    reply(
-                        if (error != null) {
-                            result(request, false, "Проверка не удалась: ${message(error)}")
-                        } else {
-                            val count = plan.plan?.changes?.size ?: 0
-                            result(request, true, if (count == 0) "Всё актуально." else "Найдено обновлений: $count.")
-                        },
-                    )
-                }
+                RemoteAction.CHECK -> check(request, actor, reply)
                 RemoteAction.UPDATE -> update(request, product, actor, reply)
-                RemoteAction.AUTO_ON, RemoteAction.AUTO_OFF -> {
-                    val enabled = request.action == RemoteAction.AUTO_ON
-                    library.updates.setAutomaticDownload(product, enabled, actor).whenComplete { _, error ->
-                        reply(
-                            if (error != null) {
-                                result(request, false, "Не удалось изменить: ${message(error)}")
-                            } else {
-                                result(request, true, "Автозагрузка $product: ${if (enabled) "включена" else "выключена"}.")
-                            },
-                        )
-                    }
-                }
+                RemoteAction.AUTO_ON, RemoteAction.AUTO_OFF -> automatic(request, product, actor, reply)
             }
         } catch (error: Exception) {
+            library.logging.logger(library.owner, "link").error("Remote action ${request.action} from ${request.origin} failed", error)
             reply(result(request, false, message(error)))
+        }
+    }
+
+    private fun check(request: RemoteRequest, actor: UpdateActor, reply: (RemoteResult) -> Unit) {
+        library.updates.checkNow(actor).whenComplete { plan, error ->
+            reply(
+                if (error != null) {
+                    result(request, false, "Проверка не удалась: ${message(error)}")
+                } else {
+                    val count = plan.plan?.changes?.size ?: 0
+                    result(request, true, if (count == 0) "Всё актуально." else "Найдено обновлений: $count.")
+                },
+            )
+        }
+    }
+
+    private fun automatic(request: RemoteRequest, product: String, actor: UpdateActor, reply: (RemoteResult) -> Unit) {
+        val enabled = request.action == RemoteAction.AUTO_ON
+        library.updates.setAutomaticDownload(product, enabled, actor).whenComplete { _, error ->
+            reply(
+                if (error != null) {
+                    result(request, false, "Не удалось изменить: ${message(error)}")
+                } else {
+                    result(request, true, "Автозагрузка $product: ${if (enabled) "включена" else "выключена"}.")
+                },
+            )
         }
     }
 

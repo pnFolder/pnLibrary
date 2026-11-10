@@ -23,7 +23,7 @@ import net.md_5.bungee.api.CommandSender as NativeCommandSender
 /**
  * Registers portable commands with BungeeCord and owns their native registrations.
  *
- * Native tab completion is synchronous, so suggestions have a bounded one-second wait.
+ * Native tab completion is synchronous, so suggestions wait at most [PROXY_SUGGESTION_MILLIS].
  * Closing this adapter unregisters commands in reverse registration order.
  */
 internal class BungeeCommandAdapter internal constructor(
@@ -32,6 +32,7 @@ internal class BungeeCommandAdapter internal constructor(
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
 
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
+    /** Registers commands in the plugin manager of [plugin]'s proxy. */
     constructor(plugin: Plugin) : this(
         nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
         { sender -> requireNotNull(BungeeAudienceAdapter(plugin).sender(sender)) },
@@ -47,7 +48,6 @@ internal class BungeeCommandAdapter internal constructor(
         invokedAlias = alias,
         currentInput = arguments.lastOrNull().orEmpty(),
     )
-
 }
 
 /** Delegates portable command replies to the native audience bridge. */

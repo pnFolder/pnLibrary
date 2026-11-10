@@ -11,5 +11,6 @@ import java.util.concurrent.ConcurrentHashMap
 internal object MenuHeads {
     private val cache = ConcurrentHashMap<String, ItemStack>()
 
+    /** A copy of the player head for texture [hash]; textures are cached after the first lookup. */
     fun head(hash: String): ItemStack? = cache[hash]?.clone() ?: PlayerHeads.textured(hash)?.also { cache[hash] = it.clone() }
 }

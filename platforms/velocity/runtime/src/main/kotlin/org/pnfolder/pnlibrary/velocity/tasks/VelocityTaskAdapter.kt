@@ -103,7 +103,6 @@ internal class VelocityTaskAdapter internal constructor(
         failure?.let { throw it }
     }
 
-    /** Wraps a request callback so completed one-shot tasks can be untracked safely. */
     private fun PlatformTaskRequest.withLifecycle(
         reference: AtomicReference<TrackedHandle?>,
         completed: AtomicBoolean,
@@ -120,7 +119,7 @@ internal class VelocityTaskAdapter internal constructor(
         },
     )
 
-    /** Tracks a native handle and makes cancellation idempotent. */
+    /** A native handle that removes itself from [handles] once it is cancelled or its one-shot task has run. */
     private inner class TrackedHandle(
         private val delegate: PlatformTaskHandle,
     ) : PlatformTaskHandle {
@@ -139,7 +138,7 @@ internal class VelocityTaskAdapter internal constructor(
             return true
         }
 
-        /** Removes a completed one-shot task without cancelling its native handle. */
+        /** Stops tracking the task without cancelling it. */
         fun release() {
             handles.remove(this)
         }

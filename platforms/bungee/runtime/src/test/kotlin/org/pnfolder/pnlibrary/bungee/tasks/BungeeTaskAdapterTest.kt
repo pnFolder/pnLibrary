@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Checks task scheduling and lifecycle tracking on the BungeeCord scheduler. */
 class BungeeTaskAdapterTest {
     @Test
     fun `adapter forwards request and cancels native handle once`() {

@@ -12,6 +12,16 @@
 - Держать в корне репозитория папку `.pnlibrary` с `releases.json` и `changelogs/<версия>.md`.
 - При каждом выпуске менять оба: запись в `releases.json` и файл описания той же версии.
 
+## Резервные копии
+
+- Копируется только то, что плагин назвал: `PluginUpdateRequest.builder().configurationBackup(dir, файлы...)`,
+  `.backup(BackupKind, имя, dir, файлы...)` (все вызовы с одной папкой данных), `.backupExport(BackupKind, имя, файл) { path -> }`
+  (откат выгрузку не восстанавливает).
+- Базы MySQL/MariaDB, PostgreSQL, MongoDB: `@BackupDatabase(DatabaseKind, "имя", tables = [...])` на поле класса настроек
+  (`*` в имени таблицы разрешена), `@DatabaseField(DatabaseRole, database = "имя")` и `@BackupTable(database = "имя")`
+  для полей с другими именами и для нескольких баз в одном классе. Все аннотации с `@field:`. Пароль: `@field:ConfigSecret`.
+- Не придумывать других методов и аннотаций: сверять с `modules/api` и `docs/updates.md`.
+
 ## Правила `releases.json`
 
 - `schema` всегда `1`; `product` совпадает с id продукта плагина.

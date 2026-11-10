@@ -14,6 +14,7 @@ import kotlin.streams.toList
 internal class TransactionJournalRepository(
     private val root: Path,
     private val publicationRoot: Path,
+    private val warn: (String) -> Unit = {},
 ) {
     /** Lists every `journal.json` found in a direct child directory of the root. */
     fun journals(): List<Path> {
@@ -23,6 +24,16 @@ internal class TransactionJournalRepository(
                 .map { it.resolve("journal.json") }
                 .filter(Files::isRegularFile)
                 .toList()
+        }
+    }
+
+    /** Loads every readable journal; an empty, corrupt or foreign one is reported through the warning callback and skipped. */
+    fun loadAll(): List<Pair<Path, TransactionJournal>> = journals().mapNotNull { path ->
+        try {
+            path to load(path)
+        } catch (error: Exception) {
+            warn("Журнал обновления $path нечитаем и пропущен: ${error.message ?: error.javaClass.simpleName}")
+            null
         }
     }
 
@@ -64,8 +75,10 @@ internal class TransactionJournalRepository(
         require(targets.distinct().size == targets.size) { "Transaction contains duplicate targets" }
     }
 
+    /** Writes the journal durably. */
     fun save(path: Path, journal: TransactionJournal) = TransactionJournal.save(path, journal)
 
+    /** Moves the journal to [state] and persists it. */
     fun transition(path: Path, journal: TransactionJournal, state: TransactionState) {
         journal.state = state
         save(path, journal)
@@ -77,6 +90,15 @@ internal class TransactionJournalRepository(
             ((record.backupSha256 ?: record.prior?.sha256)?.let { digest(Paths.get(record.backup)) == it } ?: true))
     }
 
+    /** Like [hasRollbackData], but an unreadable backup file is reported through the warning callback and counts as missing. */
+    fun hasReadableRollbackData(path: Path, journal: TransactionJournal): Boolean = try {
+        hasRollbackData(journal)
+    } catch (error: java.io.IOException) {
+        warn("Резервные файлы набора $path нечитаемы: ${error.message ?: error.javaClass.simpleName}")
+        false
+    }
+
+    /** SHA-256 of the file at [path]. */
     fun digest(path: Path): String = Digests.sha256(path)
 
     /** Normalizes [path] and requires it to stay inside [allowedRoot]. */

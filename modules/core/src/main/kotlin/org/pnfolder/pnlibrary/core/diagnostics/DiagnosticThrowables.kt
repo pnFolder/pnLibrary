@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException
 /** Shared rules for grouping repeated failures: the significant cause, its origin frame, and a stable fingerprint. */
 internal object DiagnosticThrowables {
     private const val FINGERPRINT_BYTES = 8
+    private const val HEX_DIGITS = "0123456789abcdef"
     private val UUID_PATTERN = Regex("(?i)\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b")
     private val LONG_NUMBER_PATTERN = Regex("\\b\\d{4,}\\b")
     private val WHITESPACE_PATTERN = Regex("\\s+")
@@ -58,10 +59,14 @@ internal object DiagnosticThrowables {
             frame?.className.orEmpty(),
             frame?.methodName.orEmpty(),
         )).joinToString("\u0000")
-        return MessageDigest.getInstance("SHA-256")
-            .digest(source.toByteArray(StandardCharsets.UTF_8))
-            .take(FINGERPRINT_BYTES)
-            .joinToString("") { "%02x".format(it) }
+        val digest = MessageDigest.getInstance("SHA-256").digest(source.toByteArray(StandardCharsets.UTF_8))
+        val hex = CharArray(FINGERPRINT_BYTES * 2)
+        for (index in 0 until FINGERPRINT_BYTES) {
+            val value = digest[index].toInt() and 0xFF
+            hex[index * 2] = HEX_DIGITS[value ushr 4]
+            hex[index * 2 + 1] = HEX_DIGITS[value and 0x0F]
+        }
+        return String(hex)
     }
 
     private fun isApplicationFrame(frame: StackTraceElement): Boolean =

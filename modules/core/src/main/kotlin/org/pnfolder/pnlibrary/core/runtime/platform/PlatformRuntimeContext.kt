@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformShutdown
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
+/** All platform adapters the runtime needs, gathered in one place. */
 internal data class PlatformRuntimeContext(
     val identity: PlatformIdentity,
     val execution: PlatformExecution,

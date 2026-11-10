@@ -27,7 +27,9 @@ internal class UpdateGraphResolver(
     private val catalogs: ReleaseCatalogGateway,
     private val freezes: FreezeStore,
     private val overrides: UpdatePolicyOverrides? = null,
+    private val failure: (String, Throwable) -> Unit = { _, _ -> },
 ) {
+    /** Resolves one plan for [registrations]; an empty list gives an empty plan. */
     fun resolve(
         registrations: List<RegisteredUpdate>,
         refreshMode: RefreshMode = RefreshMode.CACHED,
@@ -42,16 +44,18 @@ internal class UpdateGraphResolver(
             releases = releases,
             channels = registrations.associate { it.descriptor.id to channelFor(it) },
             defaultChannel = UpdateChannel.STABLE,
-            frozen = frozenProducts(registrations),
+            frozen = frozenProducts(),
             platform = identity.type,
             javaFeature = JavaRuntime.feature,
             policy = resolverPolicy(),
         )
     }
 
+    /** The channel of [registration]: an administrator's override, the library's own setting, or what the plugin asked for. */
     fun channelFor(registration: RegisteredUpdate): UpdateChannel =
         channelFor(registration.descriptor.id, registration.request.channel)
 
+    /** The channel of [product], or [fallback] when nothing overrides it. */
     fun channelFor(product: ProductId, fallback: UpdateChannel): UpdateChannel =
         overrides?.channel(product.value)
             ?: if (product.value == PnLibraryIdentity.PRODUCT_ID) configuration.library.channel
@@ -83,12 +87,7 @@ internal class UpdateGraphResolver(
         }
     }
 
-    private fun frozenProducts(registrations: List<RegisteredUpdate>): Set<ProductId> {
-        val configuredFreezes = registrations.mapNotNull { registration ->
-            registration.descriptor.id.takeIf { registration.product in configuration.ignoredPlugins }
-        }
-        return (freezes.active().keys + configuredFreezes).toSet()
-    }
+    private fun frozenProducts(): Set<ProductId> = freezes.active().keys.toSet()
 
     private fun resolverPolicy() = ResolverPolicy(
         allowManagedInstalls = configuration.downloads.allowManagedPlugins &&
@@ -96,6 +95,7 @@ internal class UpdateGraphResolver(
         // An unreadable inventory makes external plugin dependencies count as missing,
         // so releases that need them are skipped instead of installed blindly.
         installedExternalPlugins = runCatchingNonFatal { inventory.installedPlugins() }
+            .onFailure { failure("Could not read the installed plugins; releases that need other plugins are skipped", it) }
             .getOrNull()
             .orEmpty()
             .keys,

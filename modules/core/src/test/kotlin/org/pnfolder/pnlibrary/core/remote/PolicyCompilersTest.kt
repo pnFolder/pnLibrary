@@ -36,7 +36,7 @@ class PolicyCompilersTest {
     }
 
     @Test
-    fun `a JRE where ECJ was not loaded is reported as a missing compiler`() {
+    fun `a JRE where ECJ cannot be loaded is reported as a missing compiler`() {
         val root = Files.createTempDirectory("pn-no-ecj")
         val bare = ClassLoader.getSystemClassLoader().parent
         val failure = assertThrows(IllegalStateException::class.java) {

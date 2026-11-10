@@ -152,7 +152,7 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
     }.fold(Component.empty()) { line, period -> line.append(period) }
 
     private fun holdText(until: Instant?): String =
-        if (until == null) "задана в updates.yml" else "до ${fullTime(until)} · ${RussianText.remaining(Duration.between(now, until))}"
+        if (until == null) "не задана" else "до ${fullTime(until)} · ${RussianText.remaining(Duration.between(now, until))}"
 
     /** `3d` as `3 д`, the way periods read everywhere else. */
     private fun periodLabel(period: String): String = period.dropLast(1) + when (period.last()) {

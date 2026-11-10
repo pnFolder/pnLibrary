@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.core.link.Link
 import java.util.UUID
 import java.util.concurrent.Executors
 
+/** Every permission that opens a page of the menu. */
 object MenuPermissions {
     val ALL = listOf(
         "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",
@@ -29,8 +30,15 @@ object ProxyMenu {
      * @param link the proxy's link, which keeps the server groups
      * @param control the proxy's `/pn`, which runs the chat commands behind the buttons
      * @param describe the plugin behind a registration owner, or null
+     * @param holds whether the player of that name, connected to this proxy, has the permission
      */
-    fun server(library: PnLibrary, link: Link, control: ProxyControlCommand, describe: (Any?) -> OwnerInfo?): MenuDataServer {
+    fun server(
+        library: PnLibrary,
+        link: Link,
+        control: ProxyControlCommand,
+        describe: (Any?) -> OwnerInfo?,
+        holds: (viewer: String, permission: String) -> Boolean,
+    ): MenuDataServer {
         val directory = object : PluginDirectory {
             override fun owner(owner: Any?): OwnerInfo? = describe(owner)
 
@@ -44,6 +52,6 @@ object ProxyMenu {
             control.run(viewerId, viewer.name, viewer.permissions::contains, line).map(ProxyCommandNames::rewrite)
         }
         val executor = Executors.newCachedThreadPool { task -> Thread(task, "pnlibrary-menu-data").apply { isDaemon = true } }
-        return MenuDataServer(LocalMenuData(library, directory, run, link.groups()), executor)
+        return MenuDataServer(LocalMenuData(library, directory, run, link.groups()), executor, holds)
     }
 }

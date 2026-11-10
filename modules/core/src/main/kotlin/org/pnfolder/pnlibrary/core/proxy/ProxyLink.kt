@@ -21,6 +21,8 @@ import java.nio.file.Path
  * @param folder the pnLibrary folder, where `link.key` and `groups.tsv` live
  * @param warn receives a problem with `link.key`
  * @param describe the plugin behind a registration owner, or null
+ * @param holds whether the player of that name, connected to this proxy, has the permission; menu actions asked
+ * by a game server run only for such a player
  * @param platformName the proxy software and its version, shown in the network map
  * @param players how many players are online on the whole proxy
  * @param broadcast sends the network map to every game server
@@ -31,13 +33,14 @@ class ProxyLink(
     warn: (String) -> Unit,
     transport: LinkTransport,
     describe: (Any?) -> OwnerInfo?,
+    holds: (viewer: String, permission: String) -> Boolean,
     platformName: () -> String,
     players: () -> Int,
     private val broadcast: (ByteArray) -> Unit,
 ) : AutoCloseable {
     private val link = Link(LinkSecret.readOrCreate(folder, warn), folder, transport)
     private val control = ProxyControlCommand(library, link)
-    private val data: MenuDataServer = ProxyMenu.server(library, link, control, describe)
+    private val data: MenuDataServer = ProxyMenu.server(library, link, control, describe, holds)
     private val publisher = if (link.enabled) NetworkPublisher(library, link, platformName, players) else null
 
     /** Hand it the messages the platform receives from game servers. */

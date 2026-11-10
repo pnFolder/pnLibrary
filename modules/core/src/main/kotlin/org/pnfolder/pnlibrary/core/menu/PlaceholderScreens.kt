@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu
 
+/** Menu screens for registered placeholders. */
 internal class PlaceholderScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** Every placeholder with its type, format and PlaceholderAPI names; checking a value stays in `/pn placeholders test`. */
     fun placeholders(player: MenuViewer, page: Int) {

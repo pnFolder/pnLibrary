@@ -11,6 +11,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
+/** Persists per-component update pauses and drops them once they expire. */
 internal class FreezeStore(
     private val path: Path,
     private val clock: Clock = Clock.systemUTC(),

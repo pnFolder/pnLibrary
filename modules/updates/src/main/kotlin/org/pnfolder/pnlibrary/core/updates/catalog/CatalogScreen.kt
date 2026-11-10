@@ -11,6 +11,7 @@ import java.time.ZoneId
 
 /** The plugin list, the server status card and the join notice: pages built from catalog rows. */
 internal class CatalogScreen(routes: UpdateCatalogRoutes, now: Instant, zone: ZoneId) : CatalogStyle(routes, now, zone) {
+    /** One page of the plugin list, optionally only those with pending updates. */
     fun catalog(snapshots: List<UpdateSnapshot>, page: Int, updatesOnly: Boolean): List<Component> {
         require(page > 0) { "Page must be positive" }
         val selected = snapshots.filter { !updatesOnly || it.state in CatalogLabels.PENDING }.sortedBy { it.product.lowercase() }
@@ -48,6 +49,7 @@ internal class CatalogScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
         return framed(result)
     }
 
+    /** The summary screen: key facts, counters and available actions. */
     fun status(facts: List<Pair<String, String>>, snapshots: List<UpdateSnapshot>, support: String?): List<Component> {
         val result = mutableListOf(header("Состояние", if (snapshots.isEmpty()) null else summary(snapshots)), blank())
         facts.forEach { (label, value) -> result += field(label, text(value, ChatPalette.TEXT)) }

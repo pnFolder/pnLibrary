@@ -17,24 +17,27 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.logging.Level
 
 /** Discovers optional economy plugins without linking their APIs on unsupported servers. */
 internal object BukkitCurrencyAdapters {
-    /** Loads the registered Vault economy service, or null when unavailable. */
     fun vault(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
         val type = Class.forName("net.milkbowl.vault.economy.Economy")
         @Suppress("UNCHECKED_CAST")
         val economy = plugin.server.servicesManager.load(type as Class<Any>) ?: return null
         ReflectiveVaultCurrency(economy)
+    }.onFailure {
+        // Without the Vault API there is simply nothing to connect.
+        if (it !is ClassNotFoundException) plugin.logger.log(Level.SEVERE, "Vault is installed but its economy could not be connected", it)
     }.getOrNull()
 
-    /** Resolves the enabled PlayerPoints plugin API, or null when unavailable. */
     fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null
         val api = target.javaClass.methods.firstOrNull { it.name == "getAPI" && it.parameterCount == 0 }
             ?.invoke(target) ?: return null
         ReflectivePlayerPointsCurrency(api)
-    }.getOrNull()
+    }.onFailure { plugin.logger.log(Level.SEVERE, "PlayerPoints is installed but its currency could not be connected", it) }
+        .getOrNull()
 }
 
 /** Adapts a Vault economy provider to the portable currency contracts. */
@@ -114,14 +117,12 @@ private class ReflectivePlayerPointsCurrency(private val api: Any) :
         else CurrencyResult.rejected(CurrencyRejectReason.PROVIDER_REJECTED, failure)
 }
 
-/** Converts numeric provider responses while rejecting non-numeric balances. */
 private fun decimal(value: Any?): BigDecimal = when (value) {
     is BigDecimal -> value
     is Number -> BigDecimal(value.toString())
     else -> error("Currency provider returned a non-numeric balance: $value")
 }
 
-/** Exposes a synchronous provider operation as a completed or failed stage. */
 private fun <T> completed(operation: () -> T): CompletionStage<T> = try {
     CompletableFuture.completedFuture(operation())
 } catch (error: Throwable) {

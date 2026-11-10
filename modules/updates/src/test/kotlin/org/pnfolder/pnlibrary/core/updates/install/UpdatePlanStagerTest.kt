@@ -63,7 +63,16 @@ class UpdatePlanStagerTest {
         assertEquals("2.0.0", journal.artifacts.single().expectedVersion)
     }
 
-    private fun stage(hash: String?, size: Long?) {
+    @Test
+    fun `refuses to download from a host outside the trusted list`() {
+        val error = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException::class.java) {
+            stage(digest(), bytes.size.toLong(), "https://evil.example.com/library-new.jar")
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(error.message!!.contains("evil.example.com"))
+        assertEquals(0, downloads)
+    }
+
+    private fun stage(hash: String?, size: Long?, url: String = "https://github.com/example/repo/releases/download/v2/library-new.jar") {
         val plugins = directory.resolve("plugins")
         val data = plugins.resolve("pnLibrary")
         Files.createDirectories(data)
@@ -76,7 +85,7 @@ class UpdatePlanStagerTest {
             }
         }
         val artifact = ArtifactDescriptor("library-new.jar", PlatformType.BUKKIT, 8, null,
-            size, hash, URI("https://github.com/example/repo/releases/download/v2/library-new.jar"))
+            size, hash, URI(url))
         val release = ProductRelease(product, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), artifacts = listOf(artifact))
         val plan = UpdatePlan(1, listOf(ProductChange(product, SemanticVersion.parse("1.0.0"), version)), listOf(release))
         val transaction = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
