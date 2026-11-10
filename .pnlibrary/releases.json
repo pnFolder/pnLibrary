@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.5",
+      "channel": "dev",
+      "description": "Исправлена ссылка на Discord поддержки.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.5.md",
+      "publishedAt": "2026-11-10T21:56:00Z",
+      "api": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.5-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.5/pnLibrary-0.1.0-dev.5-bukkit-java8.jar",
+          "sha256": "98377c2c9e81a226c114e042434497880877b8dc2f7f778a891e6e8b602b94b3",
+          "size": 8510003
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.5-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.5/pnLibrary-0.1.0-dev.5-bungeecord-java8.jar",
+          "sha256": "312e075bd63ab5f91a6e6ef619362a43d74d7aec693f80cbfa83293430d5ad3f",
+          "size": 7649530
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.5-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.5/pnLibrary-0.1.0-dev.5-velocity-java17.jar",
+          "sha256": "7eb6a200f5311ff8a4362a04f8d44de72672e7da10544297ac5072da5dcf9c2e",
+          "size": 7675337
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.5-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.5/pnLibrary-0.1.0-dev.5-universal.jar",
+          "sha256": "b4b575c0ad14feecf09aa17c7ca16652f238097f5d874c689fed4bacd030f522",
+          "size": 5791193
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.4",
       "channel": "dev",
       "description": "Исправлен запуск на серверах со старым Adventure (Paper 1.16.5): MiniMessage необязателен. Vault не шумит до загрузки Essentials. Ссылка поддержки читается из библиотеки. Строка поддержки в уведомлении об обновлении.",
