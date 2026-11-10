@@ -132,4 +132,19 @@ class DiagnosticCaptureTest {
         val failures = printed.filter { (level, error) -> level == LogLevel.ERROR && error is IllegalStateException }
         assertEquals(listOf("journal broke", "report broke"), failures.map { it.second?.message })
     }
+
+    @Test
+    fun `an error logged as text only still reaches the error report`() {
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) = Unit
+        }
+        val reported = mutableListOf<Pair<LogLevel, Throwable>>()
+        val capture = DiagnosticCapture(ownership, native, onError = { _, _, error -> reported += LogLevel.ERROR to error })
+
+        capture.log(this, LogLevel.ERROR, "text only", null)
+        capture.log(this, LogLevel.WARNING, "just a warning", null)
+
+        assertEquals(1, reported.size)
+        assertEquals("text only", reported.single().second.message)
+    }
 }

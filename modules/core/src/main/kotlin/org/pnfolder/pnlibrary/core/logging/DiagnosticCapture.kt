@@ -70,7 +70,8 @@ internal class DiagnosticCapture(
 
     private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
         if (includeJournal) guarded(owner, "journal") { journal?.invoke(owner, level, message, error) }
-        if (error != null && level >= LogLevel.ERROR) guarded(owner, "error report") { onError(owner, message, error) }
+        // An error logged as text only still has to reach the error tracker, which takes throwables.
+        if (level >= LogLevel.ERROR) guarded(owner, "error report") { onError(owner, message, error ?: LoggedError(message)) }
         return guarded(owner, "incident buffer") { incidents?.record(ownership, owner, level, message, error) }
     }
 
@@ -95,4 +96,7 @@ internal class DiagnosticCapture(
             if (previous == null) emitting.remove() else emitting.set(previous)
         }
     }
+
+    /** Stands in for the missing exception of an error logged as plain text. */
+    private class LoggedError(message: String) : RuntimeException(message)
 }
