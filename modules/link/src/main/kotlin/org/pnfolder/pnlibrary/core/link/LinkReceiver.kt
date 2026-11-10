@@ -26,27 +26,14 @@ class LinkReceiver(
     fun receive(server: String, fromServer: Boolean, message: ByteArray): Boolean {
         val key = link.key
         if (!fromServer || key == null) return false
-        LinkCodec.decode(message, key)?.let {
-            link.registry.accept(server, it)
-            return true
+        when (val frame = LinkCodec.decodeFrame(message, key) ?: return false) {
+            is LinkFrame.Report -> link.registry.accept(server, frame.report)
+            is LinkFrame.Request -> route(server, frame.request.copy(origin = server), key)
+            is LinkFrame.Result -> deliver(frame.result, key)
+            is LinkFrame.Call -> routeCall(server, frame.call.copy(origin = server), key)
+            is LinkFrame.Chunk -> if (frame.chunk.to == LinkNames.PROXY_ORIGIN) link.data.accept(frame.chunk) else link.send(frame.chunk.to, message)
         }
-        LinkCodec.decodeRequest(message, key)?.let {
-            route(server, it.copy(origin = server), key)
-            return true
-        }
-        LinkCodec.decodeResult(message, key)?.let {
-            deliver(it, key)
-            return true
-        }
-        LinkCodec.decodeCall(message, key)?.let {
-            routeCall(server, it.copy(origin = server), key)
-            return true
-        }
-        LinkCodec.decodeChunk(message, key)?.let {
-            if (it.to == LinkNames.PROXY_ORIGIN) link.data.accept(it) else link.send(it.to, message)
-            return true
-        }
-        return false
+        return true
     }
 
     private fun route(server: String, request: RemoteRequest, key: ByteArray) {

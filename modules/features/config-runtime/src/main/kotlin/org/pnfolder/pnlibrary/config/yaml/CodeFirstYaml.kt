@@ -77,8 +77,8 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
 
     private fun createFromDefaults(defaultsYaml: String): ConfigLoadResult<T> {
         check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
-        fileStore.write(defaultsYaml)
         val value = decodeAndValidate(defaultsYaml)
+        fileStore.writeDecoded(defaultsYaml)
         loadedValue = value
         return ConfigLoadResult(value, YamlDefaultsMerger.paths(defaultsYaml), null)
     }
@@ -131,7 +131,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         syncResult: YamlDefaultsMerger.Result,
     ): ConfigLoadResult<T> {
         val backup = if (options.backups) fileStore.backup(original) else null
-        fileStore.write(synchronized)
+        fileStore.writeDecoded(synchronized)
         val removeUnknown = options.unknownValues == UnknownValuePolicy.REMOVE
         if (differences.missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${differences.missing.joinToString()}")
         if (differences.unknown.isNotEmpty() && removeUnknown) {
@@ -165,7 +165,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
             options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw,
         )
         decodeAndValidate(encoded)
-        fileStore.write(encoded)
+        fileStore.writeDecoded(encoded)
         loadedValue = value
     }
 

@@ -271,7 +271,7 @@ class PlaceholderHub(
     }
 
     /** Lets every available outside system (PlaceholderAPI) replace what is left of its own tokens. */
-    private fun renderExternal(text: String, playerId: UUID?): String = adapters.values
+    private fun renderExternal(text: String, playerId: UUID?): String = if ('%' !in text) text else adapters.values
         .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
         .fold(text) { current, adapter ->
             runCatchingNonFatal { adapter.render(playerId, current) }

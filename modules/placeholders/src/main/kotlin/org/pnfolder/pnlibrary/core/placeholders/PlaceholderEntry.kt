@@ -15,7 +15,9 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -43,6 +45,10 @@ class PlaceholderEntry<T : Any>(
     private val cache = Collections.synchronizedMap(LinkedHashMap<String, CachedPlaceholderValue<T>>())
     private val publicationBindings = Collections.synchronizedList(mutableListOf<PlaceholderPublicationBinding>())
     private val publishedNames = mutableListOf<PlaceholderPublication>()
+    private val warming = ConcurrentHashMap.newKeySet<String>()
+
+    /** The key as a compiled pattern when it has braces, built once here instead of on every lookup. */
+    val pattern: PlaceholderPatternMatcher.Compiled? = PlaceholderPatternMatcher.compile(key.value)
     private val stale: MutableMap<String, Any> = Collections.synchronizedMap(
         object : LinkedHashMap<String, Any>() {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Any>) = size > MAXIMUM_STALE
@@ -119,24 +125,47 @@ class PlaceholderEntry<T : Any>(
 
     /**
      * The value for an outside system that wants an answer now. Waits at most [PlaceholderAdapter.WAIT_MILLIS_KEY] milliseconds
-     * (the caller says how long in the request values); when the value is late, the last known one is returned
-     * and the late result is kept for the next ask.
+     * (the caller says how long in the request values; zero never waits); when the value is late, the last known one
+     * is returned and the late result is kept for the next ask.
      */
     private fun published(request: PlaceholderRequest): Any? {
         val staleKey = request.playerId.toString() + request.parameters.toSortedMap()
+        val waitMillis = (request.values[PlaceholderAdapter.WAIT_MILLIS_KEY] as? Long) ?: DEFAULT_WAIT_MILLIS
+        val value = if (waitMillis <= 0) warmUp(request, staleKey) else await(request, staleKey, waitMillis)
+        val answer = value ?: stale[staleKey] ?: fallback
+        return publishedFormat?.invoke(answer, request) ?: answer
+    }
+
+    private fun await(request: PlaceholderRequest, staleKey: String, waitMillis: Long): Any? {
         val stage = resolve(request)
         stage.thenAccept { value -> if (value != null) stale[staleKey] = value }
-        val waitMillis = (request.values[PlaceholderAdapter.WAIT_MILLIS_KEY] as? Long) ?: DEFAULT_WAIT_MILLIS
-        val value: Any? = try {
-            if (waitMillis <= 0) stage.toCompletableFuture().getNow(null)
-            else stage.toCompletableFuture().get(waitMillis, TimeUnit.MILLISECONDS)
+        return try {
+            stage.toCompletableFuture().get(waitMillis, TimeUnit.MILLISECONDS)
         } catch (_: TimeoutException) {
             null
         } catch (_: ExecutionException) {
             null
         }
-        val answer = value ?: stale[staleKey] ?: fallback
-        return publishedFormat?.invoke(answer, request) ?: answer
+    }
+
+    /** Starts the resolution without waiting, unless one for the same key is already running; gives the value only if it is ready. */
+    private fun warmUp(request: PlaceholderRequest, staleKey: String): Any? {
+        if (!warming.add(staleKey)) return null
+        val stage = try {
+            resolve(request)
+        } catch (error: Throwable) {
+            warming.remove(staleKey)
+            throw error
+        }
+        stage.whenComplete { value, _ ->
+            if (value != null) stale[staleKey] = value
+            warming.remove(staleKey)
+        }
+        return try {
+            stage.toCompletableFuture().getNow(null)
+        } catch (_: CompletionException) {
+            null
+        }
     }
 
     /** Publishes through [adapter] every publication that asked for it. */

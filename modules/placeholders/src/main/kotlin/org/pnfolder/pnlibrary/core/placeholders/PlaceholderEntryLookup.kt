@@ -29,16 +29,22 @@ class PlaceholderEntryLookup(
             exact(systemNamespace, key)?.let { return Match(it, emptyMap()) }
         }
 
-        return entries.values
-            .asSequence()
-            .filter { entry -> entry.owner == namespace }
-            .mapNotNull { entry ->
-                PlaceholderPatternMatcher.match(entry.key.value, key)
-                    ?.let { parameters -> entry to parameters }
+        return bestPattern(namespace, key)
+    }
+
+    private fun bestPattern(namespace: PluginId, key: String): Match {
+        var best: PlaceholderEntry<*>? = null
+        var bestParameters = emptyMap<String, String>()
+        for (entry in entries.values) {
+            val pattern = entry.pattern ?: continue
+            if (entry.owner != namespace) continue
+            val parameters = pattern.match(key) ?: continue
+            if (best == null || pattern.specificity > best.pattern!!.specificity) {
+                best = entry
+                bestParameters = parameters
             }
-            .maxByOrNull { (entry, _) -> PlaceholderPatternMatcher.specificity(entry.key.value) }
-            ?.let { (entry, parameters) -> Match(entry, parameters) }
-            ?: Match(null, emptyMap())
+        }
+        return Match(best, bestParameters)
     }
 
     private fun exact(owner: PluginId, key: String): PlaceholderEntry<*>? =

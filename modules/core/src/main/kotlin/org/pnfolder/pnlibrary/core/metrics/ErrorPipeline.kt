@@ -67,8 +67,15 @@ internal class ErrorPipeline(
     )
 
     private fun redact(value: String?): String? = value
-        ?.replace(Regex("(?i)(Bearer\\s+)[A-Za-z0-9._~+/=-]+"), "$1[redacted]")
-        ?.replace(Regex("(?i)([?&](?:api_?key|token|secret)=)[^&\\s]+"), "$1[redacted]")
-        ?.replace(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"), "[uuid]")
-        ?.replace(Regex("(?i)(/home/|/Users/|C:\\\\Users\\\\)[^/\\\\\\s]+"), "$1[user]")
+        ?.replace(BEARER, "$1[redacted]")
+        ?.replace(QUERY_SECRET, "$1[redacted]")
+        ?.replace(UUID, "[uuid]")
+        ?.replace(HOME_FOLDER, "$1[user]")
+
+    private companion object {
+        val BEARER = Regex("(?i)(Bearer\\s+)[A-Za-z0-9._~+/=-]+")
+        val QUERY_SECRET = Regex("(?i)([?&](?:api_?key|token|secret)=)[^&\\s]+")
+        val UUID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+        val HOME_FOLDER = Regex("(?i)(/home/|/Users/|C:\\\\Users\\\\)[^/\\\\\\s]+")
+    }
 }

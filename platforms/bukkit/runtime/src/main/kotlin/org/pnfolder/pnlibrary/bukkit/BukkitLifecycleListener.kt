@@ -12,14 +12,11 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateReminders
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
-import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
@@ -96,16 +93,14 @@ internal class BukkitLifecycleListener(
 
     private fun showJournalNotice(player: Player) {
         val runtime = library ?: return
-        runtime.runtimeTaskScope().schedule(TaskSpec.builder()
-            .execution(TaskExecution.entity(player))
-            .delay(Duration.ofMillis(50))
-            .action task@{
-                val active = library ?: return@task
-                if (!player.isOnline) return@task
-                val audience = active.audiences.player(player.uniqueId) ?: return@task
-                active.journalJoinNotice().forEach(audience::sendMessage)
-            }
-            .build())
+        JoinNoticeDelivery(runtime.runtimeTaskScope()).deliver(
+            player,
+            build = { library?.journalJoinNotice().orEmpty() },
+            send = { lines ->
+                val audience = library?.audiences?.player(player.uniqueId)
+                if (audience != null) lines.forEach(audience::sendMessage)
+            },
+        )
     }
 
     /** Closing the plugin registration releases all its module commands and task scopes. */

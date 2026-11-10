@@ -65,7 +65,7 @@ internal class PlaceholderApiAdapter(
         if (!expansion.isRegistered) {
             check(expansion.register())
         }
-        require(expansion.handlers.putIfAbsent(externalName, Handler(owner, resolver)) == null) {
+        require(expansion.handlers.add(externalName, Handler(owner, resolver))) {
             "Placeholder %${namespace}_${externalName}% is already published"
         }
         return object : ExternalPlaceholderRegistration {
@@ -74,7 +74,7 @@ internal class PlaceholderApiAdapter(
     override fun close() {
                 if (!active.compareAndSet(true, false)) return
                 expansion.handlers.remove(externalName)
-                if (expansion.handlers.isEmpty()) {
+                if (expansion.handlers.isEmpty) {
                     expansion.unregister()
                     groups.remove(namespace, expansion)
                 }
@@ -92,7 +92,7 @@ internal class PlaceholderApiAdapter(
     private inner class Expansion(
         private val namespace: String,
     ) : PlaceholderExpansion() {
-        val handlers = ConcurrentHashMap<String, Handler>()
+        val handlers = PublishedNames<Handler>()
         override fun getIdentifier() = namespace
         override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { PnLibraryIdentity.NAME }
         override fun getVersion() = this@PlaceholderApiAdapter.plugin.description.version
@@ -101,7 +101,7 @@ internal class PlaceholderApiAdapter(
         override fun onRequest(player: OfflinePlayer?, params: String): String? {
             val wait = if (this@PlaceholderApiAdapter.plugin.server.isPrimaryThread) MAIN_THREAD_WAIT_MILLIS else OTHER_THREAD_WAIT_MILLIS
             val values = mapOf<String, Any?>(PlaceholderAdapter.WAIT_MILLIS_KEY to wait)
-            val (handler, parameters) = PublishedNames.find(handlers, params) ?: return null
+            val (handler, parameters) = handlers.find(params) ?: return null
             return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
         }
 
@@ -116,5 +116,6 @@ internal class PlaceholderApiAdapter(
     )
 }
 
-private const val MAIN_THREAD_WAIT_MILLIS = 50L
-private const val OTHER_THREAD_WAIT_MILLIS = 1000L
+/** The server thread never waits: a late value is answered from the last known one and warmed up for the next ask. */
+internal const val MAIN_THREAD_WAIT_MILLIS = 0L
+internal const val OTHER_THREAD_WAIT_MILLIS = 1000L

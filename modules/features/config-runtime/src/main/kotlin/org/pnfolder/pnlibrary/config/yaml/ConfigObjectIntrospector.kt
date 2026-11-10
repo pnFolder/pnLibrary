@@ -34,21 +34,8 @@ import java.util.TreeSet
 internal class ConfigObjectIntrospector(
     private val defaultNaming: ConfigNamingStrategy,
 ) {
-    /** Returns serializable fields in superclass-first, configured order. */
-    fun fields(type: Class<*>): List<Field> {
-        val hierarchy = generateSequence(type) { it.superclass }
-            .takeWhile { it != Any::class.java }
-            .toList()
-            .asReversed()
-        return hierarchy.flatMap { it.declaredFields.asList() }
-            .filterNot { field ->
-                field.isSynthetic || Modifier.isStatic(field.modifiers) ||
-                    Modifier.isTransient(field.modifiers) ||
-                    field.isAnnotationPresent(ConfigIgnore::class.java)
-            }
-            .sortedWith(compareBy<Field> { it.getAnnotation(ConfigOrder::class.java)?.value ?: 0 })
-            .onEach { it.isAccessible = true }
-    }
+    /** Returns serializable fields in superclass-first, configured order; read once per class, not per call. */
+    fun fields(type: Class<*>): List<Field> = FIELDS.get(type)
 
     /** The YAML key of [field]: `@ConfigKey` if present, otherwise the field name in the configured naming style. */
     fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)
@@ -202,7 +189,30 @@ internal class ConfigObjectIntrospector(
         }
     }
 
-    private companion object {
+    internal companion object {
+        /** How many classes had their declared fields read since start; tests use it to prove the cache works. */
+        val declaredFieldReads = java.util.concurrent.atomic.AtomicInteger()
+
+        private val FIELDS = object : ClassValue<List<Field>>() {
+            override fun computeValue(type: Class<*>): List<Field> = discover(type)
+        }
+
+        private fun discover(type: Class<*>): List<Field> {
+            val hierarchy = generateSequence(type) { it.superclass }
+                .takeWhile { it != Any::class.java }
+                .toList()
+                .asReversed()
+            return hierarchy.flatMap { declaredFieldReads.incrementAndGet(); it.declaredFields.asList() }
+                .filterNot { field ->
+                    field.isSynthetic || Modifier.isStatic(field.modifiers) ||
+                        Modifier.isTransient(field.modifiers) ||
+                        field.isAnnotationPresent(ConfigIgnore::class.java)
+                }
+                .sortedWith(compareBy<Field> { it.getAnnotation(ConfigOrder::class.java)?.value ?: 0 })
+                .onEach { it.isAccessible = true }
+                .let { java.util.Collections.unmodifiableList(it) }
+        }
+
         val LOWER_TO_UPPER_BOUNDARY = Regex("([a-z0-9])([A-Z])")
         val ACRONYM_BOUNDARY = Regex("([A-Z]+)([A-Z][a-z])")
         val WORD_SEPARATOR = Regex("[_\\-\\s]+")
