@@ -36,7 +36,7 @@ abstract class TrackingPlatformCommandAdapter : PlatformCommandAdapter {
             try {
                 registration.close()
             } catch (error: Throwable) {
-                if (failure == null) failure = error
+                failure?.addSuppressed(error) ?: run { failure = error }
             }
         }
         synchronized(registrations) { registrations.clear() }

@@ -50,3 +50,29 @@ DiagnosticRegistration reg = PnLibraryProvider.get().getDiagnostics().register("
 `Level.FINE`: деталь попадает в отчёт, а консоль остаётся чистой.
 
 Уровни (`LogLevel`): `DEBUG` (только в отчёт), `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `CRITICAL`. Записи видно в `/pn events` (фильтр по уровню, карточка со стеком, повторы сводятся в одну строку), в `/pn gui` и в отчёте поддержки. Внутри самой библиотеки (конфиги, обновления, загрузки, интеграции) пишет тот же логгер, поэтому её сбои попадают в тот же чёрный ящик.
+
+## Сообщить о проблеме
+
+Плагин записывает проблему в журнал наблюдений: что случилось (`message`), где (`plugin`, `source`), детали (`data`) и, если есть, исключение.
+
+```kotlin
+val observability = PnLibraryProvider.get().observability
+observability.capture {
+    plugin("pnMarket")
+    source("auction/expire")
+    level(ObservationLevel.ERROR)
+    message("Лот не возвращён владельцу")
+    data("lot" to lotId, "owner" to ownerId)
+    keepFor(Duration.ofDays(365))
+}
+observability.failure(error) { plugin("pnMarket"); source("auction/save") } // уровень ERROR, исключение записано
+```
+
+Срок хранения задаёт автор в коде через `keepFor(...)` (до 3650 дней), у каждой записи свой; игрок и админ его не меняют.
+Без `keepFor` срок зависит от уровня: `TRACE` 6 часов, `INFO` 7 дней, `NOTICE` и `WARNING` 30 дней, `ERROR` 90 дней,
+`CRITICAL` без срока. Указанный срок заменяет срок уровня и в большую, и в меньшую сторону. Всего хранится не больше 10 000 записей.
+
+В отчёте поддержки (`/pn debug`) записи лежат в `observability/observations.jsonl`, по строке на запись:
+`timeUtc` (когда случилось), `expiresUtc` (когда будет удалена, если срок задан), `plugin`, `source`, `level`, `message`,
+`data`, `errorType`. Сводка по плагинам, местам и уровням — в `observability/analytics.json`
+(`byPlugin`, `bySource`, `byLevel`, последние записи с `timestampUtc`). Записи `PnLogger` и `diagnostics.record` попадают туда же.

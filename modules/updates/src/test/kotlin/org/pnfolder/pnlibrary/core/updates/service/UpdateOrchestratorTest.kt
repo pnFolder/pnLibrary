@@ -332,6 +332,24 @@ class UpdateOrchestratorTest {
         } finally { orchestrator.close() }
     }
 
+    @Test
+    fun `a scheduled check that cannot save its result is reported instead of lost`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val reported = java.util.concurrent.LinkedBlockingQueue<Pair<String, Throwable>>()
+        val orchestrator = UpdateOrchestrator(
+            MANUAL, UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = {}, announcement = { error("announcement broke") },
+            unexpectedFailure = { message, error -> reported.add(message to error) },
+        )
+        try {
+            orchestrator.start()
+            val (message, error) = requireNotNull(reported.poll(5, TimeUnit.SECONDS))
+            assertEquals("Scheduled update check failed", message)
+            assertEquals("announcement broke", error.cause?.message ?: error.message)
+        } finally { orchestrator.close() }
+    }
+
     private fun plan(version: String): UpdatePlan {
         val id = ProductId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)

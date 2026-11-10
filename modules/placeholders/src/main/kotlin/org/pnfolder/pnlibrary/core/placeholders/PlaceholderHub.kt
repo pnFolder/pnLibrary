@@ -33,6 +33,8 @@ import java.util.function.Consumer
 class PlaceholderHub(
     private val platform: PlatformIdentity,
     private val valueStore: GlobalPlaceholderValueStore = GlobalPlaceholderValueStore(),
+    /** Receives the text and the exception of every unexpected failure while resolving; each distinct text once. */
+    private val failures: (String, Throwable) -> Unit = { _, _ -> },
     /** Receives the text of every problem worth the administrator's attention; each distinct one once. */
     private val issues: (String) -> Unit = {},
 ) : PlaceholderAdapterRegistry {
@@ -62,6 +64,11 @@ class PlaceholderHub(
     /** Tells the administrator once about [message]. */
     fun report(message: String) {
         if (reported.size < MAXIMUM_REPORTED && reported.add(message)) issues(message)
+    }
+
+    /** Like [report], for a failure that carries its exception. */
+    private fun reportFailure(message: String, error: Throwable) {
+        if (reported.size < MAXIMUM_REPORTED && reported.add(message)) failures(message, error)
     }
 
     private fun find(consumer: PluginId, reference: String): PlaceholderEntryLookup.Match {
@@ -228,7 +235,7 @@ class PlaceholderHub(
         return (entry as PlaceholderEntry<Any>).resolve(request)
             .thenApply { format(consumer, it, pipeline, playerId, values, request, entry.formats) }
             .exceptionally { error ->
-                report("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}")
+                reportFailure("Placeholder {$reference} failed: ${error.cause?.message ?: error.message}", error.cause ?: error)
                 null
             }
     }
@@ -236,7 +243,11 @@ class PlaceholderHub(
     private fun resolveExternally(playerId: UUID?, reference: String): Any? =
         adapters.values.asSequence()
             .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
-            .mapNotNull { adapter -> runCatchingNonFatal { adapter.resolve(playerId, reference) }.getOrNull() }
+            .mapNotNull { adapter ->
+                runCatchingNonFatal { adapter.resolve(playerId, reference) }
+                    .onFailure { reportFailure("Placeholder {$reference} failed in an outside placeholder system: ${it.message}", it) }
+                    .getOrNull()
+            }
             .firstOrNull()
 
     private fun updateFor(
@@ -262,7 +273,11 @@ class PlaceholderHub(
     /** Lets every available outside system (PlaceholderAPI) replace what is left of its own tokens. */
     private fun renderExternal(text: String, playerId: UUID?): String = adapters.values
         .filter { it.state == PlaceholderAdapterState.AVAILABLE || it.state == PlaceholderAdapterState.REGISTERED }
-        .fold(text) { current, adapter -> runCatchingNonFatal { adapter.render(playerId, current) }.getOrDefault(current) }
+        .fold(text) { current, adapter ->
+            runCatchingNonFatal { adapter.render(playerId, current) }
+                .onFailure { reportFailure("An outside placeholder system failed to render text: ${it.message}", it) }
+                .getOrDefault(current)
+        }
 
     private fun templateRenderer(consumer: PluginId) = PlaceholderTemplateRenderer(
         resolve = { expression, playerId, values -> resolveFor(consumer, expression, playerId, values).exceptionally { null } },

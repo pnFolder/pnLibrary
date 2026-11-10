@@ -35,6 +35,7 @@ internal class UpdateOrchestrator(
     private val beforeCheck: () -> Unit = {},
     private val automaticOverridesActive: () -> Boolean = { false },
     private val reminderInterval: Duration = UpdateDefaults.REMINDER_INTERVAL,
+    private val unexpectedFailure: (String, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -60,17 +61,24 @@ internal class UpdateOrchestrator(
     fun start() {
         if (closed.get() || !started.compareAndSet(false, true)) return
         executor.scheduleWithFixedDelay(
-            { checkNow(false, UpdateActor.SYSTEM).exceptionally { null } },
+            { scheduledCheck() },
             0,
             configuration.checks.interval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
         executor.scheduleWithFixedDelay(
-            { runCatchingNonFatal(::remind) },
+            { runCatchingNonFatal(::remind).onFailure { unexpectedFailure("Update reminder failed", it) } },
             reminderInterval.toMillis(),
             reminderInterval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
+    }
+
+    private fun scheduledCheck() {
+        checkNow(false, UpdateActor.SYSTEM).whenComplete { _, error ->
+            // A closed orchestrator rejects the check on purpose; any other failure means the state could not be saved.
+            if (error != null && !closed.get()) unexpectedFailure("Scheduled update check failed", error)
+        }
     }
 
     /**
@@ -162,7 +170,7 @@ internal class UpdateOrchestrator(
     fun registrationsChanged() {
         if (closed.get() || !started.get()) return
         try {
-            executor.execute { if (!closed.get()) checkNow(false, UpdateActor.SYSTEM) }
+            executor.execute { if (!closed.get()) scheduledCheck() }
         } catch (_: RejectedExecutionException) {
             // A concurrent executor shutdown is a normal lifecycle race. The owner
             // will close the orchestrator and no follow-up check is required.

@@ -71,4 +71,19 @@ class EventHistoryTest {
         }
         assertTrue(EventHistory(null, 30).export(json = false) == null)
     }
+
+    @Test
+    fun `a history that cannot be written is reported once`(@TempDir dir: Path) {
+        val blocker = dir.resolve("blocker")
+        Files.writeString(blocker, "a file where the folder should be")
+        val failures = mutableListOf<Throwable>()
+        val history = EventHistory(blocker.resolve("history.tsv"), 30, onFailure = { failures += it })
+
+        history.record("a.Buy", denied = false)
+        history.flush()
+        history.record("a.Buy", denied = false)
+        history.flush()
+
+        assertEquals(1, failures.size)
+    }
 }

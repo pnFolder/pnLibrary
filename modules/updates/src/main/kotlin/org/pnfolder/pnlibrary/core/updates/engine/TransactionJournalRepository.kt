@@ -90,6 +90,14 @@ internal class TransactionJournalRepository(
             ((record.backupSha256 ?: record.prior?.sha256)?.let { digest(Paths.get(record.backup)) == it } ?: true))
     }
 
+    /** Like [hasRollbackData], but an unreadable backup file is reported through the warning callback and counts as missing. */
+    fun hasReadableRollbackData(path: Path, journal: TransactionJournal): Boolean = try {
+        hasRollbackData(journal)
+    } catch (error: java.io.IOException) {
+        warn("Резервные файлы набора $path нечитаемы: ${error.message ?: error.javaClass.simpleName}")
+        false
+    }
+
     /** SHA-256 of the file at [path]. */
     fun digest(path: Path): String = Digests.sha256(path)
 

@@ -12,6 +12,14 @@ public final class org/pnfolder/pnlibrary/api/plugin/PluginId$Companion {
 	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
 }
 
+public final class org/pnfolder/pnlibrary/common/concurrent/FailureThrottle {
+	public static final field MAX_KEYS I
+	public fun <init> ()V
+	public fun <init> (JLkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (JLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun shouldReport (Ljava/lang/String;)Z
+}
+
 public final class org/pnfolder/pnlibrary/common/concurrent/ManagedWorker : java/lang/AutoCloseable {
 	public fun <init> (Ljava/lang/String;IILjava/time/Duration;)V
 	public synthetic fun <init> (Ljava/lang/String;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

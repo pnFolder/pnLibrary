@@ -5,6 +5,7 @@ import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
 import org.pnfolder.pnlibrary.api.observability.Observation
+import org.pnfolder.pnlibrary.api.observability.ObservationKeys
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
@@ -35,7 +36,14 @@ internal class ObservabilityRuntime(
     }
 
     override fun record(request: ObservationRequest): Observation = synchronized(recordLock) {
-        val observation = Observation.from(request, clock())
+        val timestamp = clock()
+        val keepFor = request.data[ObservationKeys.KEEP_FOR_MS]?.toLongOrNull()
+        val stored = Observation.from(request.copy(data = request.data - ObservationKeys.KEEP_FOR_MS), timestamp)
+        val observation = if (keepFor == null) {
+            stored
+        } else {
+            stored.copy(data = stored.data + (ObservationKeys.KEEP_UNTIL_MS to (timestamp + keepFor).toString()))
+        }
         request.files.forEach { file -> attachmentStore.save(observation.id, file) }
         journal.append(observation)
         observation

@@ -71,10 +71,11 @@ internal class UpdateOrchestratorRuntime(
         remoteResolver = { resolveGraph(RefreshMode.FORCE_REMOTE) },
         beforeCheck = { installer.reconcileRecoveredFailures(registrations(), ::recordHealth) },
         automaticOverridesActive = automaticOverridesActive,
+        unexpectedFailure = { message, error -> if (!closed.get()) logging.log(this, LogLevel.ERROR, message, error) },
         observeState = { snapshot, actor, operation ->
             runCatchingNonFatal { journal.record(snapshot, actor, operation) }.onFailure { error ->
                 // An observation failure must not turn an already staged transaction into a failed operation.
-                if (!closed.get()) runCatchingNonFatal { logging.log(this, LogLevel.WARNING, "Could not persist update observation", error) }
+                if (!closed.get()) runCatchingNonFatal { logging.log(this, LogLevel.ERROR, "Could not persist update observation", error) }
             }
         },
     ).also { created ->
@@ -104,7 +105,7 @@ internal class UpdateOrchestratorRuntime(
                 observeComponents(installed)
                 created.start()
             } catch (error: Exception) {
-                if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not verify restarted component versions; automatic checks were not started",
+                if (!closed.get()) logging.log(this, LogLevel.CRITICAL, "Could not verify restarted component versions; automatic checks were not started",
                     error)
             }
         }
@@ -122,7 +123,7 @@ internal class UpdateOrchestratorRuntime(
             val snapshot = registration.snapshot
             componentLedger.updateSettings(registration.product, snapshot.channel.name.lowercase(), snapshot.automaticDownload)
         }.onFailure { error ->
-            if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not record a settings change", error)
+            if (!closed.get()) logging.log(this, LogLevel.ERROR, "Could not record a settings change", error)
         }
     }
 
@@ -138,7 +139,7 @@ internal class UpdateOrchestratorRuntime(
                 verifiedByHealth.toSet(),
             )
         }.onFailure { error ->
-            if (!closed.get()) logging.log(this, LogLevel.WARNING, "Could not record component changes", error)
+            if (!closed.get()) logging.log(this, LogLevel.ERROR, "Could not record component changes", error)
         }
     }
 

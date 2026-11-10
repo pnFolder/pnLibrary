@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -12,9 +11,7 @@ internal class RollbackCatalog(
     private val journals: TransactionJournalRepository,
 ) {
     /** Returns the most recently modified rollback candidate, if any. */
-    fun latest(): Path? = journals.journals()
-        .filter { path -> runCatchingNonFatal { isCandidate(journals.load(path)) }.getOrDefault(false) }
-        .maxByOrNull { Files.getLastModifiedTime(it).toMillis() }
+    fun latest(): Path? = candidates().map { it.first }.maxByOrNull { Files.getLastModifiedTime(it).toMillis() }
 
     /** Resolves exactly one saved transaction; never substitutes the latest one. */
     fun resolve(id: UUID): Path {
@@ -27,14 +24,14 @@ internal class RollbackCatalog(
     }
 
     /** Lists validated rollback candidates, newest first, skipping incomplete or corrupt transactions. */
-    fun all(): List<Path> = journals.journals().filter { path ->
-        runCatchingNonFatal { isCandidate(journals.load(path)) }.getOrDefault(false)
-    }.sortedByDescending { path ->
-        journals.load(path).createdAt?.let(Instant::parse) ?: Instant.MIN
-    }
+    fun all(): List<Path> = candidates()
+        .sortedByDescending { (_, journal) -> journal.createdAt?.let(Instant::parse) ?: Instant.MIN }
+        .map { it.first }
 
-    private fun isCandidate(journal: TransactionJournal): Boolean =
-        journal.purpose in setOf(null, "STAGE") && journal.isRestorable() && journals.hasRollbackData(journal)
+    /** An unreadable journal is reported by the repository and skipped, so it cannot hide the other sets. */
+    private fun candidates() = journals.loadAll().filter { (path, journal) ->
+        journal.purpose in setOf(null, "STAGE") && journal.isRestorable() && journals.hasReadableRollbackData(path, journal)
+    }
 }
 
 /**

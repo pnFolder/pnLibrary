@@ -27,6 +27,7 @@ internal class UpdateGraphResolver(
     private val catalogs: ReleaseCatalogGateway,
     private val freezes: FreezeStore,
     private val overrides: UpdatePolicyOverrides? = null,
+    private val failure: (String, Throwable) -> Unit = { _, _ -> },
 ) {
     /** Resolves one plan for [registrations]; an empty list gives an empty plan. */
     fun resolve(
@@ -94,6 +95,7 @@ internal class UpdateGraphResolver(
         // An unreadable inventory makes external plugin dependencies count as missing,
         // so releases that need them are skipped instead of installed blindly.
         installedExternalPlugins = runCatchingNonFatal { inventory.installedPlugins() }
+            .onFailure { failure("Could not read the installed plugins; releases that need other plugins are skipped", it) }
             .getOrNull()
             .orEmpty()
             .keys,

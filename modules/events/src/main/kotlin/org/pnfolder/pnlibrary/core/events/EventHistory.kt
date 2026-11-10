@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.events
 
 import org.pnfolder.pnlibrary.api.events.EventDay
 import org.pnfolder.pnlibrary.api.events.EventHour
+import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
@@ -31,6 +32,7 @@ class EventHistory(
     private val zone: () -> ZoneId = { ZoneId.systemDefault() },
     private val clock: () -> Long = System::currentTimeMillis,
     private val flushEveryMillis: Long = 60_000,
+    private val onFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     private class Counts(var calls: Long = 0, var denied: Long = 0)
 
@@ -38,13 +40,14 @@ class EventHistory(
     private val hours = TreeMap<LocalDateTime, MutableMap<String, Counts>>()
     private val dirty = AtomicBoolean(false)
     private val lastFlush = AtomicLong(clock())
+    private val failureThrottle = FailureThrottle()
     private val worker = if (file != null && retentionDays > 0) ManagedWorker("pnLibrary-event-history") else null
 
     /** How many days are kept; `0` means the history is off. */
     val retention: Int get() = retentionDays
 
     init {
-        if (file != null && retentionDays > 0) runCatchingNonFatal { load(file) }
+        if (file != null && retentionDays > 0) runCatchingNonFatal { load(file) }.onFailure(::report)
     }
 
     /** Counts one call of [eventType] for today and this hour, and writes the file later if enough time passed. */
@@ -173,7 +176,15 @@ class EventHistory(
         runCatchingNonFatal {
             Files.createDirectories(target.parent)
             AtomicFiles.write(target, text.toByteArray(Charsets.UTF_8))
-        }.onFailure { dirty.set(true) }
+        }.onFailure {
+            dirty.set(true)
+            report(it)
+        }
+    }
+
+    /** A history that cannot be read or written is lost count by count, so the first failure of each kind is passed on. */
+    private fun report(error: Throwable) {
+        if (failureThrottle.shouldReport(error.javaClass.name)) onFailure(error)
     }
 
     override fun close() {

@@ -22,6 +22,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Level
 
 /** Bukkit lifecycle notifications kept separate from portable command registration. */
 internal class BukkitLifecycleListener(
@@ -66,6 +67,9 @@ internal class BukkitLifecycleListener(
                 EventExecutor { _, _ -> markServerReady() },
                 plugin,
             )
+        }.onFailure { error ->
+            // Servers without the event are expected; any other failure leaves readiness callbacks waiting.
+            if (error !is ClassNotFoundException) plugin.logger.log(Level.SEVERE, "Could not listen for server readiness", error)
         }
     }
 
@@ -112,7 +116,9 @@ internal class BukkitLifecycleListener(
 
     private fun markServerReady() {
         if (!serverReady.compareAndSet(false, true)) return
-        readyCallbacks.toList().forEach { runCatchingNonFatal(it::run) }
+        readyCallbacks.toList().forEach { callback ->
+            runCatchingNonFatal(callback::run).onFailure { plugin.logger.log(Level.SEVERE, "A startup task failed after the server became ready", it) }
+        }
         readyCallbacks.clear()
     }
 

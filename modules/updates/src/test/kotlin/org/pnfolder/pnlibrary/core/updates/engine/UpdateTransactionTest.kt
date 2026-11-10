@@ -273,6 +273,22 @@ class UpdateTransactionTest {
     }
 
     @Test
+    fun `an unreadable journal is reported and does not hide the other rollback sets`() {
+        val plugins = directory.resolve("plugins").also(Files::createDirectories)
+        val target = plugins.resolve("market.jar").also { Files.write(it, byteArrayOf(9)) }
+        val root = directory.resolve("transactions")
+        val warnings = mutableListOf<String>()
+        val transaction = UpdateTransaction(root, ArtifactVerifier(1024 * 1024), plugins, warn = { warnings += it })
+        val source = artifact("first.jar", "market", "2.0.0", 4, byteArrayOf(1))
+        val saved = transaction.apply(listOf(TransactionArtifact(specification(source, "market", "2.0.0", 4), source, target))) { true }
+        Files.write(root.resolve(UUID.randomUUID().toString()).also(Files::createDirectories).resolve("journal.json"), ByteArray(0))
+
+        assertEquals(listOf(saved.journal), transaction.rollbackCandidates())
+        assertEquals(saved.journal, transaction.latestRollbackCandidate())
+        assertTrue(warnings.any { it.contains("journal.json") }, warnings.toString())
+    }
+
+    @Test
     fun `tampered target is rejected before any rollback file is changed`() {
         val plugins = directory.resolve("plugins").also(Files::createDirectories)
         val targets = listOf("market", "auth").map { plugins.resolve("$it.jar").also { path -> Files.write(path, byteArrayOf(9)) } }

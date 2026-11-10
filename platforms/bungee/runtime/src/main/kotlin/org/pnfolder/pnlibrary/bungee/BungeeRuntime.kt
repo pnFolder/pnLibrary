@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.core.proxy.ProxyLink
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 
 /**
  * Owns the shared pnLibrary runtime for the BungeeCord plugin.
@@ -32,7 +33,7 @@ internal class BungeeRuntime(private val plugin: Plugin) {
             open()
         } catch (error: Throwable) {
             // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
-            runCatchingNonFatal(::stop)
+            runCatchingNonFatal(::stop).onFailure(error::addSuppressed)
             throw error
         }
     }
@@ -105,14 +106,19 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         reminderTask?.cancel()
         reminderTask = null
         networkTask = null
-        linkListener?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
+        linkListener?.let { release("link listener") { plugin.proxy.pluginManager.unregisterListener(it) } }
         linkListener = null
-        link?.let { runCatchingNonFatal(it::close) }
+        link?.let { release("link", it::close) }
         link = null
-        runCatchingNonFatal { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
-        playerEvents?.let { runCatchingNonFatal { plugin.proxy.pluginManager.unregisterListener(it) } }
+        release("link channel") { plugin.proxy.unregisterChannel(LinkCodec.CHANNEL) }
+        playerEvents?.let { release("player events") { plugin.proxy.pluginManager.unregisterListener(it) } }
         playerEvents = null
         host?.close()
         host = null
+    }
+
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { plugin.logger.log(Level.SEVERE, "Could not stop $part", it) }
     }
 }

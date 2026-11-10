@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
@@ -23,6 +24,7 @@ internal class RuntimeJournal(
     private val ownership: PlatformOwnership,
     startedAtMillis: Long,
     private val eventsCommand: String,
+    private val onWriteFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     val store = JournalStore(
         dataFolder.resolve("journal"),
@@ -35,6 +37,7 @@ internal class RuntimeJournal(
     val queries = JournalQueries(store, config, startedAtMillis, eventsCommand)
     private val worker = ManagedWorker("pnLibrary-journal")
     private val failures = AtomicLong()
+    private val writeFailureThrottle = FailureThrottle()
 
     fun record(owner: Any, level: LogLevel, message: String, error: Throwable?) {
         val record = JournalRecord(
@@ -47,7 +50,12 @@ internal class RuntimeJournal(
                 mapOf("exception" to it.javaClass.name, JournalRecord.STACKTRACE to JournalRecord.stackTraceOf(it))
             }.orEmpty(),
         )
-        worker.submit { store.append(record) }.exceptionally { failures.incrementAndGet(); null }
+        worker.submit { store.append(record) }.exceptionally { failure ->
+            failures.incrementAndGet()
+            val cause = failure.cause ?: failure
+            if (writeFailureThrottle.shouldReport(cause.javaClass.name)) onWriteFailure(cause)
+            null
+        }
     }
 
     /** The `/pn events` command over this journal. */

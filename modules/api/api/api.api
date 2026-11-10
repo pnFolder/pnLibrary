@@ -2537,6 +2537,12 @@ public final class org/pnfolder/pnlibrary/api/observability/Observation$Companio
 	public static synthetic fun from$default (Lorg/pnfolder/pnlibrary/api/observability/Observation$Companion;Lorg/pnfolder/pnlibrary/api/observability/ObservationRequest;JILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/observability/Observation;
 }
 
+public final class org/pnfolder/pnlibrary/api/observability/ObservationKeys {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/observability/ObservationKeys;
+	public static final field KEEP_FOR_MS Ljava/lang/String;
+	public static final field KEEP_UNTIL_MS Ljava/lang/String;
+}
+
 public final class org/pnfolder/pnlibrary/api/observability/ObservationLevel : java/lang/Enum {
 	public static final field CRITICAL Lorg/pnfolder/pnlibrary/api/observability/ObservationLevel;
 	public static final field ERROR Lorg/pnfolder/pnlibrary/api/observability/ObservationLevel;
@@ -2595,8 +2601,10 @@ public final class org/pnfolder/pnlibrary/api/observability/ObservationRequest {
 }
 
 public final class org/pnfolder/pnlibrary/api/observability/ObservationScope {
+	public static final field MAX_KEEP_DAYS J
 	public final fun data ([Lkotlin/Pair;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;
 	public final fun files ([Ljava/nio/file/Path;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;
+	public final fun keepFor (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;
 	public final fun level (Lorg/pnfolder/pnlibrary/api/observability/ObservationLevel;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;
 	public final fun message (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;
 	public final fun plugin (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/observability/ObservationScope;

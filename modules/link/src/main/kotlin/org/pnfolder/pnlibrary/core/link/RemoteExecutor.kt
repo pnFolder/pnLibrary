@@ -31,6 +31,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
                 RemoteAction.AUTO_ON, RemoteAction.AUTO_OFF -> automatic(request, product, actor, reply)
             }
         } catch (error: Exception) {
+            library.logging.logger(library.owner, "link").error("Remote action ${request.action} from ${request.origin} failed", error)
             reply(result(request, false, message(error)))
         }
     }

@@ -52,7 +52,7 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
             try {
                 handle.cancel()
             } catch (error: Throwable) {
-                if (failure == null) failure = error
+                failure?.addSuppressed(error) ?: run { failure = error }
             }
         }
         handles.clear()

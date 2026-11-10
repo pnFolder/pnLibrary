@@ -7,8 +7,10 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /** Currency feature entry point: owns the registry hub and storage factory and hands plugins their scoped service. */
-class CurrencyFeature : CurrencyRuntime {
-    private val hub = CurrencyHub()
+class CurrencyFeature(
+    report: (message: String, error: Throwable) -> Unit = { _, _ -> },
+) : CurrencyRuntime {
+    private val hub = CurrencyHub(report)
 
     override val providers: CurrencyProviderRegistry get() = hub
 

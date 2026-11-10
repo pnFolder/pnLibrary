@@ -10,9 +10,10 @@ internal class StatsRuntime(
     tasks: () -> List<TaskSnapshot>,
     events: () -> List<EventInfo>,
     journal: JournalStore,
+    onFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     private val collector = StatsCollector(tasks, events, journal)
-    private val recorder = StatsRecorder(collector, journal)
+    private val recorder = StatsRecorder(collector, journal, onFailure)
 
     @Volatile private var last: StatsSnapshot? = null
 

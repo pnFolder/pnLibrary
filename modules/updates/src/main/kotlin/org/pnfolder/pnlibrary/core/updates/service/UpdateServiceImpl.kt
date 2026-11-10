@@ -81,7 +81,9 @@ class UpdateServiceImpl(
         logging.log(this, LogLevel.WARNING, it)
     }
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
+    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides) { message, error ->
+        logging.log(this, LogLevel.ERROR, message, error)
+    }
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,
@@ -239,7 +241,7 @@ class UpdateServiceImpl(
                 runtime.recordSettingsChange(registration, description, actor)
                 // The setting is already persisted, so a failed recheck is reported but does not fail the change.
                 if (recheck) runCatchingNonFatal { orchestrator.checkNow(actor = actor) }.onFailure { error ->
-                    logging.log(this, LogLevel.WARNING, "Update recheck after a settings change failed", error)
+                    logging.log(this, LogLevel.ERROR, "Update recheck after a settings change failed", error)
                 }
             }
             result.complete(registration.snapshot)

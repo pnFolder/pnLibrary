@@ -33,6 +33,7 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -139,7 +140,9 @@ internal class BukkitPlatformAdapter(
     /** Disables dependents as they enable and switches [owner] off once the server has started. */
     override fun disableDependents(owner: Any): Boolean {
         if (owner !== plugin) return false
-        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }.isSuccess
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }
+            .onFailure { plugin.logger.log(Level.SEVERE, "Could not watch plugins that depend on pnLibrary", it) }
+            .isSuccess
     }
 
     /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */

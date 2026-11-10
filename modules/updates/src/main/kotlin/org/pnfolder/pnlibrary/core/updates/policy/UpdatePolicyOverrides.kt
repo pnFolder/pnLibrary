@@ -68,7 +68,9 @@ internal class UpdatePolicyOverrides(
             val root = JsonParser.parseString(TextFiles.read(file, UTF_8)).asJsonObject
             State(
                 channels = root.getAsJsonObject("channels")?.entrySet().orEmpty().mapNotNull { (product, value) ->
-                    runCatchingNonFatal { UpdateChannel.valueOf(value.asString) }.getOrNull()?.let { product to it }
+                    runCatchingNonFatal { UpdateChannel.valueOf(value.asString) }
+                        .onFailure { warning("Unknown update channel for $product in ${file.fileName}; the default is used") }
+                        .getOrNull()?.let { product to it }
                 }.toMap(),
                 automatic = root.getAsJsonObject("automatic")?.entrySet().orEmpty()
                     .associate { (product, value) -> product to value.asBoolean },

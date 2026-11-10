@@ -105,6 +105,31 @@ class DiagnosticCaptureTest {
         }
         val capture = DiagnosticCapture(ownership, native, journal = { _, _, _, _ -> error("journal") }) { _, _, _ -> error("metrics") }
         capture.log(this, LogLevel.ERROR, "failure", IllegalStateException())
-        assertEquals(1, printed)
+        // The line itself plus one report for each of the two broken stages.
+        assertEquals(3, printed)
+    }
+
+    @Test
+    fun `a stage that fails is reported once to the console and does not stop the other stages`() {
+        val buffer = DiagnosticLogBuffer()
+        val printed = mutableListOf<Pair<LogLevel, Throwable?>>()
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+                printed += level to error
+            }
+        }
+        var reports = 0
+        val capture = DiagnosticCapture(
+            ownership, native, buffer,
+            journal = { _, _, _, _ -> throw IllegalStateException("journal broke") },
+            onError = { _, _, _ -> reports++; throw IllegalStateException("report broke") },
+        )
+
+        repeat(2) { capture.log(this, LogLevel.ERROR, "command failed", IllegalArgumentException("boom")) }
+
+        assertEquals(2, reports)
+        assertEquals(2L, buffer.summary()["occurrenceCount"])
+        val failures = printed.filter { (level, error) -> level == LogLevel.ERROR && error is IllegalStateException }
+        assertEquals(listOf("journal broke", "report broke"), failures.map { it.second?.message })
     }
 }

@@ -79,13 +79,17 @@ internal class ModuleResourceFactory(
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
 
             // Resolve the live session on every capture, including after disable/restart.
-            errorReporter = ErrorPipeline(object : ErrorReporter {
-                override fun capture(error: TelemetryError) {
-                    metricsController?.sessionErrorReporter()?.capture(error)
-                }
+            val moduleLogger = logging.logger(owner, moduleId.value)
+            errorReporter = ErrorPipeline(
+                object : ErrorReporter {
+                    override fun capture(error: TelemetryError) {
+                        metricsController?.sessionErrorReporter()?.capture(error)
+                    }
 
-                override fun close() = Unit
-            })
+                    override fun close() = Unit
+                },
+                onForwardingFailure = { moduleLogger.warning("An error report could not be sent to the error tracker", it) },
+            )
             metricsController = ModuleMetrics(
                 owner,
                 metrics,

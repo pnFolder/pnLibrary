@@ -159,7 +159,7 @@ internal class JdbcCurrencyStorage(
         return try {
             operation().also { connection.commit() }
         } catch (error: Throwable) {
-            runCatchingNonFatal { connection.rollback() }
+            runCatchingNonFatal { connection.rollback() }.onFailure(error::addSuppressed)
             throw error
         } finally {
             previous.restore(connection)

@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.metrics
 
 import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -14,7 +15,9 @@ import java.util.concurrent.atomic.AtomicLong
 internal class ErrorPipeline(
     private val delegate: ErrorReporter? = null,
     private val maxStackFrames: Int = 80,
+    private val onForwardingFailure: (Throwable) -> Unit = {},
 ) : ErrorReporter {
+    private val failureThrottle = FailureThrottle()
     private val closed = AtomicBoolean(false)
     private val seen = ConcurrentHashMap.newKeySet<String>()
     private val captured = AtomicLong()
@@ -31,7 +34,10 @@ internal class ErrorPipeline(
         if (seen.add(fingerprint)) {
             forwarded.incrementAndGet()
             runCatchingNonFatal { delegate?.capture(safe) }
-                .onFailure { forwardingFailures.incrementAndGet() }
+                .onFailure { failure ->
+                    forwardingFailures.incrementAndGet()
+                    if (failureThrottle.shouldReport(failure.javaClass.name)) onForwardingFailure(failure)
+                }
         } else {
             deduplicated.incrementAndGet()
         }

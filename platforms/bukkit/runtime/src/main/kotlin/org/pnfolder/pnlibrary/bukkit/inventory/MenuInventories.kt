@@ -41,6 +41,7 @@ internal fun Inventory.anvilRenameText(): String? = try {
     (method?.invoke(this) as? String)?.takeIf(String::isNotBlank)
         ?: getItem(2)?.itemMeta?.displayName
         ?: getItem(0)?.itemMeta?.displayName
-} catch (_: Exception) {
-    null
+} catch (_: ReflectiveOperationException) {
+    // The accessor is missing on older servers; the item name is read instead.
+    getItem(2)?.itemMeta?.displayName ?: getItem(0)?.itemMeta?.displayName
 }

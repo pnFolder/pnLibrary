@@ -33,8 +33,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
-/** Registered currencies with their owners, aliases and visibility; [scope] gives one plugin its own view. */
-internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
+/**
+ * Registered currencies with their owners, aliases and visibility; [scope] gives one plugin its own view.
+ * A provider that throws is turned into a failed result for the caller and also passed to [report], so it is not lost.
+ */
+internal class CurrencyHub(
+    private val report: (message: String, error: Throwable) -> Unit = { _, _ -> },
+) : CurrencyProviderRegistry, AutoCloseable {
     private val entries = ConcurrentHashMap<CurrencyKey, Entry>()
     private val aliases = ConcurrentHashMap<Pair<PluginId, String>, CurrencyKey>()
     private val closed = AtomicBoolean(false)
@@ -220,10 +225,12 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
                 entries.remove(key, this)
                 registeredAliases.forEach { aliases.remove(key.owner to it, key) }
             }
-            attachments.toList().forEach { runCatchingNonFatal(it::close) }
+            attachments.toList().forEach { runCatchingNonFatal(it::close).onFailure(::reportCloseFailure) }
             attachments.clear()
-            if (provider is AutoCloseable) runCatchingNonFatal(provider::close)
+            if (provider is AutoCloseable) runCatchingNonFatal(provider::close).onFailure(::reportCloseFailure)
         }
+        private fun reportCloseFailure(error: Throwable) = report("Currency $key did not close cleanly", error)
+
         /** Ties [registration] (for example a placeholder) to this entry so it is closed together with it. */
         fun attach(registration: AutoCloseable) {
             attachments += registration
@@ -265,15 +272,22 @@ internal class CurrencyHub : CurrencyProviderRegistry, AutoCloseable {
         private fun <T> availableValue(operation: () -> CompletionStage<T>): CompletionStage<T> {
             if (state != CurrencyRegistrationState.ACTIVE) return failed("Currency $key is not active")
             return try {
-                operation()
+                operation().whenComplete { _, error ->
+                    if (error != null) report("Currency $key failed", error.cause ?: error)
+                }
             } catch (error: Throwable) {
+                report("Currency $key failed", error)
                 failed("Currency $key failed", error)
             }
         }
         /** Converts provider exceptions, thrown or asynchronous, into a failed [CurrencyResult]. */
         private fun safeResult(operation: () -> CompletionStage<CurrencyResult>): CompletionStage<CurrencyResult> = try {
-            operation().exceptionally(CurrencyResult::failed)
+            operation().exceptionally { error ->
+                report("Currency $key operation failed", error.cause ?: error)
+                CurrencyResult.failed(error)
+            }
         } catch (error: Throwable) {
+            report("Currency $key operation failed", error)
             CompletableFuture.completedFuture(CurrencyResult.failed(error))
         }
     }

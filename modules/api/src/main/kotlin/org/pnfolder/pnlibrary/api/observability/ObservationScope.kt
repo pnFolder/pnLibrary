@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.api.observability
 
 import java.nio.file.Path
+import java.time.Duration
 
 /**
  * Kotlin DSL used to assemble one [ObservationRequest].
@@ -15,6 +16,7 @@ class ObservationScope internal constructor() {
     private var level: ObservationLevel = ObservationLevel.INFO
     private val data = linkedMapOf<String, String>()
     private val files = mutableListOf<Path>()
+    private var keepFor: Duration? = null
 
     /** Overrides the plugin name the observation is attributed to. */
     fun plugin(value: String): ObservationScope = apply {
@@ -46,13 +48,37 @@ class ObservationScope internal constructor() {
         files += paths
     }
 
+    /**
+     * Keeps the observation for [duration] regardless of its level, at most [MAX_KEEP_DAYS] days.
+     *
+     * The period is set by the plugin author in code; without it retention follows the level.
+     */
+    fun keepFor(duration: Duration): ObservationScope = apply {
+        require(!duration.isNegative && !duration.isZero) { "Retention must be positive" }
+        require(duration <= Duration.ofDays(MAX_KEEP_DAYS)) { "Retention must not exceed $MAX_KEEP_DAYS days" }
+        keepFor = duration
+    }
+
     internal fun build(error: Throwable? = null): ObservationRequest = ObservationRequest(
         plugin = plugin,
         source = source,
         message = if (message == "Diagnostic observation" && error?.message != null) error.message!! else message,
         level = if (error == null) level else ObservationLevel.ERROR,
-        data = data.toMap(),
+        data = data.toMap() + listOfNotNull(keepFor?.let { ObservationKeys.KEEP_FOR_MS to it.toMillis().toString() }),
         files = files.toList(),
         error = error,
     )
+
+    private companion object {
+        const val MAX_KEEP_DAYS = 3650L
+    }
+}
+
+/** Reserved [Observation.data] keys used by the library for retention. */
+object ObservationKeys {
+    /** Request: how long to keep the observation, in milliseconds; replaced by [KEEP_UNTIL_MS] when stored. */
+    const val KEEP_FOR_MS: String = "pn.keepForMs"
+
+    /** Stored: epoch milliseconds after which the observation is dropped. */
+    const val KEEP_UNTIL_MS: String = "pn.keepUntilMs"
 }

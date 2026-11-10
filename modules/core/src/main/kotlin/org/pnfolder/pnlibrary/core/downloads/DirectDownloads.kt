@@ -68,10 +68,12 @@ internal class DirectDownloads(
         blocked = { reason -> logging.log(owner, LogLevel.WARNING, reason) },
         dependenciesStaged = { declarations ->
             runCatchingNonFatal { dependencyReporter.staged(owner, declarations) }
+                .onFailure { logging.log(owner, LogLevel.ERROR, "Could not report the staged dependencies", it) }
         },
         failed = { declarations, error ->
             val level = if (declarations.any(FileDownload::required)) LogLevel.ERROR else LogLevel.WARNING
             runCatchingNonFatal { dependencyReporter.failure(owner, error, level) }
+                .onFailure { logging.log(owner, LogLevel.ERROR, "Could not report the failed dependency download", it) }
         },
         remove = registrations::remove,
     ).also { registration ->

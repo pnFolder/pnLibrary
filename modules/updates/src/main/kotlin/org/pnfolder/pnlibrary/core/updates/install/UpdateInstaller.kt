@@ -176,7 +176,11 @@ internal class UpdateInstaller(
     fun backups(): List<UpdateBackup> = transaction.rollbackCandidates().map { path ->
         val journal = TransactionJournal.load(path)
         val files = journal.configurationSnapshot
-            ?.let { id -> runCatchingNonFatal { configurations.read(UUID.fromString(id)).files.filter { it.existed } }.getOrNull() }
+            ?.let { id ->
+                runCatchingNonFatal { configurations.read(UUID.fromString(id)).files.filter { it.existed } }
+                    .onFailure { warn("Копия настроек $id набора ${journal.id} нечитаема: ${it.message ?: it.javaClass.simpleName}") }
+                    .getOrNull()
+            }
             .orEmpty()
         UpdateBackup(UUID.fromString(journal.id), journal.createdAt?.let(Instant::parse), journal.planId?.let(UUID::fromString),
             journal.artifacts.map { UpdateBackupComponent(ProductId.of(it.component), it.expectedVersion, it.previousVersion) },

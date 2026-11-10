@@ -17,6 +17,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.logging.Level
 
 /** Discovers optional economy plugins without linking their APIs on unsupported servers. */
 internal object BukkitCurrencyAdapters {
@@ -25,6 +26,9 @@ internal object BukkitCurrencyAdapters {
         @Suppress("UNCHECKED_CAST")
         val economy = plugin.server.servicesManager.load(type as Class<Any>) ?: return null
         ReflectiveVaultCurrency(economy)
+    }.onFailure {
+        // Without the Vault API there is simply nothing to connect.
+        if (it !is ClassNotFoundException) plugin.logger.log(Level.SEVERE, "Vault is installed but its economy could not be connected", it)
     }.getOrNull()
 
     fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
@@ -32,7 +36,8 @@ internal object BukkitCurrencyAdapters {
         val api = target.javaClass.methods.firstOrNull { it.name == "getAPI" && it.parameterCount == 0 }
             ?.invoke(target) ?: return null
         ReflectivePlayerPointsCurrency(api)
-    }.getOrNull()
+    }.onFailure { plugin.logger.log(Level.SEVERE, "PlayerPoints is installed but its currency could not be connected", it) }
+        .getOrNull()
 }
 
 /** Adapts a Vault economy provider to the portable currency contracts. */

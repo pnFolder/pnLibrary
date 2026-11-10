@@ -54,6 +54,25 @@ class CurrencyHubTest {
         hub.close()
     }
 
+    @Test
+    fun `a provider that throws is reported to the owner as well as failing the call`() {
+        val reported = mutableListOf<Pair<String, Throwable>>()
+        val hub = CurrencyHub { message, error -> reported += message to error }
+        val owner = hub.scope(PluginId.of("owner"), placeholders())
+        val broken = object : CurrencyProvider, AutoCloseable {
+            override val descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN)
+            override fun balance(account: CurrencyAccount): CompletableFuture<BigDecimal> = error("balance broke")
+            override fun close() = error("close broke")
+        }
+        val registration = owner.register("coins", broken)
+
+        assertThrows(Exception::class.java) { registration.balance(java.util.UUID.randomUUID()).toCompletableFuture().get() }
+        registration.close()
+
+        assertEquals(listOf("balance broke", "close broke"), reported.map { it.second.message })
+        hub.close()
+    }
+
     private fun provider() = object : CurrencyProvider, AutoCloseable {
         override val descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN)
         override fun balance(account: CurrencyAccount) = CompletableFuture.completedFuture(BigDecimal.ZERO)

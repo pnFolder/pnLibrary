@@ -46,7 +46,7 @@ internal class VelocityRuntime(
             open()
         } catch (error: Throwable) {
             // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
-            runCatchingNonFatal(::close)
+            runCatchingNonFatal(::close).onFailure(error::addSuppressed)
             throw error
         }
     }
@@ -122,19 +122,24 @@ internal class VelocityRuntime(
     fun onShutdown(event: ProxyShutdownEvent) = close()
 
     private fun close() {
-        playerEvents?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
+        playerEvents?.let { release("player events") { server.eventManager.unregisterListener(owner, it) } }
         playerEvents = null
         networkTask?.cancel()
         reminderTask?.cancel()
         reminderTask = null
         networkTask = null
-        linkListener?.let { runCatchingNonFatal { server.eventManager.unregisterListener(owner, it) } }
+        linkListener?.let { release("link listener") { server.eventManager.unregisterListener(owner, it) } }
         linkListener = null
-        link?.let { runCatchingNonFatal(it::close) }
+        link?.let { release("link", it::close) }
         link = null
-        runCatchingNonFatal { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
+        release("link channel") { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
         val host = runtimeHost
         runtimeHost = null
         host?.close()
+    }
+
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { logger.error("Could not stop $part", it) }
     }
 }

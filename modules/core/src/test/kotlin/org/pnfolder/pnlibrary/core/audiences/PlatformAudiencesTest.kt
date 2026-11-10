@@ -57,6 +57,19 @@ class PlatformAudiencesTest {
         assertEquals("NowOnline:bar", calls.last())
     }
 
+    @Test
+    fun `a receiver that throws is reported once and the others still get the message`() {
+        val calls = mutableListOf<String>()
+        val failures = mutableListOf<Throwable>()
+        val service = PlatformAudiences(RecordingAdapter(Sender("console"), mutableListOf())) { failures += it }
+        val composite = service.combine(listOf(Sender("broken", calls = calls, failMessages = true), Sender("last", calls = calls)))
+
+        repeat(2) { composite.sendMessage(Component.text("hello")) }
+
+        assertEquals(1, failures.size)
+        assertEquals(listOf("broken:message", "last:message", "broken:message", "last:message"), calls)
+    }
+
     private open class Sender(
         override val name: String,
         private val console: Boolean = false,

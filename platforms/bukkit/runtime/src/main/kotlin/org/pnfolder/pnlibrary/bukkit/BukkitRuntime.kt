@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
+import java.util.logging.Level
 
 /**
  * Owns everything the Bukkit plugin starts: the shared runtime, Bukkit services and optional
@@ -44,16 +45,21 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     }
 
     fun stop() {
-        runCatchingNonFatal { link?.stop() }
+        release("link") { link?.stop() }
         link = null
-        runCatchingNonFatal { integrations?.stop() }
+        release("integrations") { integrations?.stop() }
         integrations = null
-        runCatchingNonFatal { menus?.close() }
+        release("menus") { menus?.close() }
         menus = null
-        runCatchingNonFatal { audiences?.close() }
+        release("audiences") { audiences?.close() }
         audiences = null
-        runCatchingNonFatal { host?.close() }
+        release("library") { host?.close() }
         host = null
+    }
+
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { plugin.logger.log(Level.SEVERE, "Could not stop $part", it) }
     }
 
     private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, audienceService: BukkitAudienceService) {

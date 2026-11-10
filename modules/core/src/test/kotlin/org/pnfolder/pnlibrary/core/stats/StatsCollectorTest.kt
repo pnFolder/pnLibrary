@@ -63,4 +63,15 @@ class StatsCollectorTest {
         assertEquals(1, history.single().errors24h)
         assertTrue(journal.read(levels = setOf(JournalLevel.INFO)).none { it.type == StatsSnapshot.RECORD_TYPE })
     }
+
+    @Test
+    fun `a snapshot that cannot be taken is reported and does not reach the caller`() {
+        val journal = journal()
+        val failures = mutableListOf<Throwable>()
+        val broken = StatsCollector({ throw IllegalStateException("tasks unavailable") }, { emptyList() }, journal)
+
+        StatsRecorder(broken, journal) { failures += it }.record()
+
+        assertEquals(listOf("tasks unavailable"), failures.map { it.message })
+    }
 }
