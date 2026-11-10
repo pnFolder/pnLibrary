@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyReset
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import java.lang.reflect.InvocationTargetException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
@@ -25,11 +26,22 @@ internal object BukkitCurrencyAdapters {
         val type = Class.forName("net.milkbowl.vault.economy.Economy")
         @Suppress("UNCHECKED_CAST")
         val economy = plugin.server.servicesManager.load(type as Class<Any>) ?: return null
-        ReflectiveVaultCurrency(economy)
+        vaultCurrency(economy)
     }.onFailure {
         // Without the Vault API there is simply nothing to connect.
         if (it !is ClassNotFoundException) plugin.logger.log(Level.SEVERE, "Vault is installed but its economy could not be connected", it)
     }.getOrNull()
+
+    /**
+     * Returns `null` while the economy plugin is still starting: Essentials registers its Vault provider
+     * before its settings load, so the first read fails with a NullPointerException. The caller retries on
+     * the next plugin or service event.
+     */
+    internal fun vaultCurrency(economy: Any): CurrencyProvider? = try {
+        ReflectiveVaultCurrency(economy)
+    } catch (failure: InvocationTargetException) {
+        if (failure.cause is NullPointerException) null else throw failure
+    }
 
     fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null
