@@ -35,6 +35,62 @@
    Если основная ветка называется не `main`, добавьте `.branch("master")`; если папка не `.pnlibrary`, добавьте
    `.catalogPath("updates")`.
 
+## Какие модули подключать
+
+Зависимость `pnlibrary-api` небольшая: контракт (интерфейсы и модели) без логики. Реализация живёт на сервере в JAR
+pnLibrary, поэтому в плагин она не попадает.
+
+| Модуль | Что даёт | Когда нужен |
+|---|---|---|
+| `pnlibrary-api` | логгер, наблюдения, плейсхолдеры, обновления, задачи, события, меню | всегда |
+| `pnlibrary-config-api` | аннотации конфигов (`@ConfigComment`, `@BackupDatabase` и другие) | приходит вместе с `pnlibrary-api` |
+| `pnlibrary-minecraft-localization-api` | локализация | приходит вместе с `pnlibrary-api` |
+| `pnlibrary-common` | общие помощники | приходит вместе с `pnlibrary-api` |
+| `pnlibrary-currency-api` | валюты | если плагин работает с валютой |
+| `pnlibrary-bukkit-api` | меню, предметы, визуальные сущности Bukkit | если плагин для Bukkit/Paper |
+| `pnlibrary-bungee-api`, `pnlibrary-velocity-api` | то же для прокси | если плагин для прокси |
+
+Посмотреть, что именно подтянулось в проект: `./gradlew dependencies --configuration compileClasspath`.
+
+Во время работы плагина нужен сам pnLibrary на сервере. Плагин с `depend: [pnLibrary]` без него не запустится.
+
+## Подключение без публикации (локально)
+
+Так можно собрать библиотеку у себя и подключить к плагину, ничего не публикуя. Нужен клон репозитория pnLibrary.
+
+1. В папке pnLibrary опубликуйте всё в локальный Maven (`~/.m2`). Версия любая, `0.1.0-local` не пересечётся с
+   настоящими. Подпись без ключа не нужна:
+
+   ```bash
+   ./gradlew publishToMavenLocal -Pversion=0.1.0-local
+   ```
+
+2. В плагине добавьте `mavenLocal()` первым:
+
+   ```kotlin
+   repositories {
+       mavenLocal()
+       mavenCentral()
+   }
+
+   dependencies {
+       compileOnly("io.github.pnfolder:pnlibrary-api:0.1.0-local")
+   }
+   ```
+
+3. Документация и исходники подтянутся сами: для каждого модуля публикуются `-sources.jar` и `-javadoc.jar`. В
+   IntelliJ после синхронизации Gradle работают Ctrl+Q (документация) и Ctrl+B (исходники). Если не появились,
+   нажмите «Download Sources and Documentation» в окне Gradle.
+4. Чтобы плагин запустился на тестовом сервере, соберите JAR библиотеки и положите его в `plugins`:
+
+   ```bash
+   ./gradlew -Pversion=0.1.0-local :distribution:shadowUniversal
+   ```
+
+   Файл появится в `distribution/build/libs`.
+
+После правок в pnLibrary повторите шаг 1, затем обновите проекты Gradle в плагине.
+
 ## Резервные копии перед обновлением
 
 Библиотека копирует перед обновлением только то, что плагин назвал сам (`PluginUpdateRequest.builder()`):

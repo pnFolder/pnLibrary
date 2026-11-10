@@ -73,6 +73,8 @@ dependencies {
 
 В `plugin.yml` плагина: `depend: [pnLibrary]`.
 
+Какие модули подключать и как собрать библиотеку локально, не публикуя, описано в [integration/README.md](integration/README.md).
+
 ```kotlin
 val library = PnLibraryProvider.get()
 val registration = library.plugins.register(this)
