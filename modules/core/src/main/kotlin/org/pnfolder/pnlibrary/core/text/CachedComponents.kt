@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.core.text
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -23,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong
 internal class CachedComponents(
     private val placeholders: PlaceholderService,
     private val sharedCache: ComponentCache,
+    private val mini: MiniText,
+    private val warn: (String) -> Unit,
 ) : ComponentService {
     private val serializers = ComponentSerializerType.values().associateWith(::serializerFor)
     private var cachePolicy = ComponentCachePolicy()
@@ -88,14 +89,15 @@ internal class CachedComponents(
         override val type = type
         override fun deserialize(input: String): Component = when (type) {
             ComponentSerializerType.ADAPTIVE -> adaptive(input)
-            ComponentSerializerType.MINI_MESSAGE -> MINI.deserialize(input)
+            ComponentSerializerType.MINI_MESSAGE -> mini.deserialize(input, warn)
             ComponentSerializerType.LEGACY_AMPERSAND -> AMP.deserialize(input)
             ComponentSerializerType.LEGACY_SECTION -> SECTION.deserialize(input)
             ComponentSerializerType.ADVENTURE_JSON -> GSON.deserialize(input)
             ComponentSerializerType.PLAIN_TEXT -> Component.text(input)
         }
         override fun serialize(component: Component): String = when (type) {
-            ComponentSerializerType.ADAPTIVE, ComponentSerializerType.MINI_MESSAGE -> MINI.serialize(component)
+            ComponentSerializerType.ADAPTIVE, ComponentSerializerType.MINI_MESSAGE ->
+                mini.serialize(component, warn, AMP::serialize)
             ComponentSerializerType.LEGACY_AMPERSAND -> AMP.serialize(component)
             ComponentSerializerType.LEGACY_SECTION -> SECTION.serialize(component)
             ComponentSerializerType.ADVENTURE_JSON -> GSON.serialize(component)
@@ -108,7 +110,7 @@ internal class CachedComponents(
         val trimmed = input.trimStart()
         if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && runCatchingNonFatal { GSON.deserialize(input) }.isSuccess)
             return GSON.deserialize(input)
-        return MINI.deserialize(toMiniMessage(input))
+        return mini.deserialize(toMiniMessage(input), warn)
     }
 
     private fun toMiniMessage(source: String): String {
@@ -119,11 +121,10 @@ internal class CachedComponents(
     }
 
     companion object {
-        private val MINI = MiniMessage.miniMessage()
-        private val AMP = LegacyComponentSerializer.legacyAmpersand()
-        private val SECTION = LegacyComponentSerializer.legacySection()
-        private val GSON = GsonComponentSerializer.gson()
-        private val PLAIN = PlainTextComponentSerializer.plainText()
+        private val AMP by lazy { LegacyComponentSerializer.legacyAmpersand() }
+        private val SECTION by lazy { LegacyComponentSerializer.legacySection() }
+        private val GSON by lazy { GsonComponentSerializer.gson() }
+        private val PLAIN by lazy { PlainTextComponentSerializer.plainText() }
         private val OLD_GRADIENT = Regex("<&?#([0-9a-fA-F]{6})>([^<]*)</&?#([0-9a-fA-F]{6})>")
         private val HEX = Regex("(?i)(?<!<)&?#([0-9a-f]{6})(?![^<]*>)")
         private val LEGACY = Regex("&([0-9a-fk-or])", RegexOption.IGNORE_CASE)

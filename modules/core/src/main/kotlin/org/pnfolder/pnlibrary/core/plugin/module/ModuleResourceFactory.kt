@@ -31,6 +31,7 @@ import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.CachedComponents
 import org.pnfolder.pnlibrary.core.text.ComponentCache
+import org.pnfolder.pnlibrary.core.text.MiniText
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
 /** Creates the scoped resources of one module and rolls back already created ones if a later step fails. */
@@ -48,6 +49,8 @@ internal class ModuleResourceFactory(
     private val directDownloads: DirectDownloads?,
     private val componentCache: ComponentCache,
 ) {
+    private val miniText = MiniText()
+
     fun create(
         owner: Any,
         moduleId: ModuleId,
@@ -115,7 +118,7 @@ internal class ModuleResourceFactory(
                 logger = logging.logger(owner, moduleId.value),
                 configs = configScope,
                 placeholders = placeholderScope,
-                components = CachedComponents(placeholderScope, componentCache),
+                components = CachedComponents(placeholderScope, componentCache, miniText, { moduleLogger.warning(it) }),
                 cooldowns = InMemoryCooldowns(),
                 currency = currencyScope,
                 metrics = metricsController,
