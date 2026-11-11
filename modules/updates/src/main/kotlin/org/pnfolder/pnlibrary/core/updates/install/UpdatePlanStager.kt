@@ -11,18 +11,12 @@ import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactDownloader
 import org.pnfolder.pnlibrary.core.updates.engine.ArtifactSpecification
 import org.pnfolder.pnlibrary.core.updates.engine.TransactionArtifact
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHosts
 import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
 import java.nio.file.Path
 import java.util.UUID
 
-/**
- * Where an installed component lives and where its update is placed for the next restart.
- * @property currentJar the jar now in use
- * @property updateDirectory folder the new jar is placed in
- * @property supportedApi API versions the component accepts, null when it does not say
- */
+/** Where an installed component lives and where its update is placed for the next restart. */
 internal data class InstalledUpdateTarget(
     val currentJar: Path,
     val updateDirectory: Path,
@@ -38,7 +32,6 @@ internal class UpdatePlanStager(
     private val maximumArtifactBytes: Long,
     private val requireSha256: Boolean = true,
 ) {
-    /** Downloads the artifacts of [plan] and hands them to the transaction as one set for the next restart. */
     fun stage(
         planId: UUID,
         plan: UpdatePlan,
@@ -59,14 +52,13 @@ internal class UpdatePlanStager(
         installedTarget: InstalledUpdateTarget?,
     ): TransactionArtifact {
         val release = plan.selected.single { it.product == change.product }
-        val artifact = selectArtifact(change, release, installedTarget?.currentJar?.fileName?.toString())
+        val artifact = selectArtifact(change, release)
         require(!requireSha256 || artifact.sha256 != null) {
             "Release artifact has no published SHA-256: ${artifact.file}"
         }
         val downloadUri = requireNotNull(artifact.downloadUri) {
             "Release artifact has no verified download URL: ${artifact.file}"
         }
-        TrustedHosts.requireDownload(downloadUri)
         val stagedFile = stagingDirectory.resolve(change.product.value).resolve(artifact.file)
         // The body goes straight to disk, so a large file never sits in memory.
         http.stream(downloadUri, maximumArtifactBytes) { input ->
@@ -95,20 +87,13 @@ internal class UpdatePlanStager(
         )
     }
 
-    /**
-     * Keeps the variant that is installed: a universal JAR (the one the bootstrap puts into `plugins`) is replaced by the
-     * newer universal one, a platform JAR by the platform one. A fresh install prefers the platform JAR, then the universal.
-     */
+    /** The artifact built exactly for [platform], or, when none is listed, one built for every platform. */
     private fun selectArtifact(
         change: ProductChange,
         release: ProductRelease,
-        installedFile: String?,
     ): ArtifactDescriptor {
         val candidates = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
-        val universalInstalled = installedFile?.endsWith("-universal.jar", ignoreCase = true) == true
-        val preferred = if (universalInstalled) PlatformType.UNIVERSAL else platform
-        return candidates.firstOrNull { it.platform == preferred }
-            ?: candidates.firstOrNull { it.platform == platform }
+        return candidates.firstOrNull { it.platform == platform }
             ?: candidates.firstOrNull()
             ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
     }

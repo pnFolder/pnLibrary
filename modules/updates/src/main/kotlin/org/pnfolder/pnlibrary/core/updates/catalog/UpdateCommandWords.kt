@@ -9,7 +9,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog
  */
 object UpdateCommandWords {
     /** The reserved words, in lower case. */
-    val RESERVED: Set<String> = setOf("confirm", "status", "rollback", "restart", "all")
+    val RESERVED: Set<String> = setOf("confirm", "status", "rollback", "restart")
 
     /** Whether [name] is one of the reserved words, ignoring case. */
     fun isReserved(name: String): Boolean = name.trim().lowercase() in RESERVED

@@ -9,7 +9,6 @@ import org.pnfolder.pnlibrary.core.link.NetworkReport
 import org.pnfolder.pnlibrary.core.link.RemoteAction
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 
-/** Menu screens for server groups and their members. */
 internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     private val comparer = ServerGroups { null }
 

@@ -23,7 +23,6 @@ class TranslationRequestDsl internal constructor() {
     /** Sets the optional fallback to a typed [locale]. */
     fun fallback(locale: MinecraftLocale) { fallback = locale.code }
 
-    /** Validates the collected settings and creates the request; fails when [version] was not set. */
     internal fun build(): TranslationRequest {
         // lateinit keeps the published field and accessors; this check replaces its generic failure message.
         require(::version.isInitialized) { "Minecraft version must be set" }

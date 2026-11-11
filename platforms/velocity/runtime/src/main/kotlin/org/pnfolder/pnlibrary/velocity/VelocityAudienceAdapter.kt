@@ -22,6 +22,7 @@ internal class VelocityAudienceAdapter(
     override fun player(uniqueId: UUID): LibraryPlayer? =
         server.getPlayer(uniqueId).orElse(null)?.let(VelocityLibraryPlayer::of)
 
+    /** Adapts a native Velocity command source when its type is supported. */
     override fun sender(native: Any): AudienceSender? = when (native) {
         is Player -> VelocityLibraryPlayer.of(native)
         is CommandSource -> wrap(native)
@@ -31,6 +32,7 @@ internal class VelocityAudienceAdapter(
     override fun onlinePlayers(): List<LibraryPlayer> =
         server.allPlayers.map(VelocityLibraryPlayer::of)
 
+    /** Creates a portable audience backed by [source]. */
     private fun wrap(source: CommandSource): AudienceSender = object : AudienceSender {
         override val id: String = source.toString()
         override val name: String = source.toString()

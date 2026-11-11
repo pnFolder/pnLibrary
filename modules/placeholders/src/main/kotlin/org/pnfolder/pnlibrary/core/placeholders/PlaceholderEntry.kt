@@ -15,9 +15,7 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -45,10 +43,6 @@ class PlaceholderEntry<T : Any>(
     private val cache = Collections.synchronizedMap(LinkedHashMap<String, CachedPlaceholderValue<T>>())
     private val publicationBindings = Collections.synchronizedList(mutableListOf<PlaceholderPublicationBinding>())
     private val publishedNames = mutableListOf<PlaceholderPublication>()
-    private val warming = ConcurrentHashMap.newKeySet<String>()
-
-    /** The key as a compiled pattern when it has braces, built once here instead of on every lookup. */
-    val pattern: PlaceholderPatternMatcher.Compiled? = PlaceholderPatternMatcher.compile(key.value)
     private val stale: MutableMap<String, Any> = Collections.synchronizedMap(
         object : LinkedHashMap<String, Any>() {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Any>) = size > MAXIMUM_STALE
@@ -82,12 +76,10 @@ class PlaceholderEntry<T : Any>(
         cache.clear()
     }
 
-    /** Sets what runs once when the entry is closed, so the hub can forget it. */
     fun whenClosed(callback: () -> Unit) {
         closeCallback = callback
     }
 
-    /** Reads the value for [request] from the cache or the resolver; a missing value becomes the fallback. */
     fun resolve(request: PlaceholderRequest): CompletionStage<T?> {
         if (!isEnabled) return CompletableFuture.completedFuture(fallback)
 
@@ -103,7 +95,6 @@ class PlaceholderEntry<T : Any>(
         }
     }
 
-    /** Changes the value on behalf of [consumer] and clears the cache; fails when the placeholder is read-only or [consumer] may not. */
     fun update(consumer: PluginId, request: PlaceholderRequest, value: String): T? {
         check(updateAccess.allows(owner, consumer)) {
             "Plugin $consumer cannot update ${owner.value}:${key.value}"
@@ -115,7 +106,6 @@ class PlaceholderEntry<T : Any>(
     /** What this placeholder was asked to publish outside, for the administrator's list. */
     val publishedAs: List<PlaceholderPublication> get() = synchronized(publishedNames) { publishedNames.toList() }
 
-    /** Publishes the placeholder to an outside system, now if its adapter is present and when it arrives otherwise. */
     fun publish(publication: PlaceholderPublication) {
         synchronized(publishedNames) { publishedNames += publication }
         val binding = PlaceholderPublicationBinding(publication, owner, key.value, ::published)
@@ -125,57 +115,32 @@ class PlaceholderEntry<T : Any>(
 
     /**
      * The value for an outside system that wants an answer now. Waits at most [PlaceholderAdapter.WAIT_MILLIS_KEY] milliseconds
-     * (the caller says how long in the request values; zero never waits); when the value is late, the last known one
-     * is returned and the late result is kept for the next ask.
+     * (the caller says how long in the request values); when the value is late, the last known one is returned
+     * and the late result is kept for the next ask.
      */
     private fun published(request: PlaceholderRequest): Any? {
         val staleKey = request.playerId.toString() + request.parameters.toSortedMap()
-        val waitMillis = (request.values[PlaceholderAdapter.WAIT_MILLIS_KEY] as? Long) ?: DEFAULT_WAIT_MILLIS
-        val value = if (waitMillis <= 0) warmUp(request, staleKey) else await(request, staleKey, waitMillis)
-        val answer = value ?: stale[staleKey] ?: fallback
-        return publishedFormat?.invoke(answer, request) ?: answer
-    }
-
-    private fun await(request: PlaceholderRequest, staleKey: String, waitMillis: Long): Any? {
         val stage = resolve(request)
         stage.thenAccept { value -> if (value != null) stale[staleKey] = value }
-        return try {
-            stage.toCompletableFuture().get(waitMillis, TimeUnit.MILLISECONDS)
+        val waitMillis = (request.values[PlaceholderAdapter.WAIT_MILLIS_KEY] as? Long) ?: DEFAULT_WAIT_MILLIS
+        val value: Any? = try {
+            if (waitMillis <= 0) stage.toCompletableFuture().getNow(null)
+            else stage.toCompletableFuture().get(waitMillis, TimeUnit.MILLISECONDS)
         } catch (_: TimeoutException) {
             null
         } catch (_: ExecutionException) {
             null
         }
+        val answer = value ?: stale[staleKey] ?: fallback
+        return publishedFormat?.invoke(answer, request) ?: answer
     }
 
-    /** Starts the resolution without waiting, unless one for the same key is already running; gives the value only if it is ready. */
-    private fun warmUp(request: PlaceholderRequest, staleKey: String): Any? {
-        if (!warming.add(staleKey)) return null
-        val stage = try {
-            resolve(request)
-        } catch (error: Throwable) {
-            warming.remove(staleKey)
-            throw error
-        }
-        stage.whenComplete { value, _ ->
-            if (value != null) stale[staleKey] = value
-            warming.remove(staleKey)
-        }
-        return try {
-            stage.toCompletableFuture().getNow(null)
-        } catch (_: CompletionException) {
-            null
-        }
-    }
-
-    /** Publishes through [adapter] every publication that asked for it. */
     fun attach(adapter: PlaceholderAdapter) {
         publicationBindings.toList()
             .filter { binding -> binding.adapterId == adapter.id.lowercase(Locale.ROOT) }
             .forEach { binding -> binding.attach(adapter) }
     }
 
-    /** Withdraws every publication that went through the adapter [adapterId]. */
     fun detach(adapterId: String) {
         publicationBindings.toList()
             .filter { binding -> binding.adapterId == adapterId.lowercase(Locale.ROOT) }
@@ -223,7 +188,6 @@ private data class CachedPlaceholderValue<T>(
     val value: T?,
     val writtenAtMillis: Long,
 ) {
-    /** Whether the value is older than the policy allows. */
     fun expired(policy: PlaceholderCachePolicy): Boolean =
         System.currentTimeMillis() - writtenAtMillis >= policy.expireAfterWrite.toMillis()
 }

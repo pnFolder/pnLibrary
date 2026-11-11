@@ -2,15 +2,10 @@ package org.pnfolder.pnlibrary.config.yaml
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.config.BackupDatabase
-import org.pnfolder.pnlibrary.api.config.BackupTable
 import org.pnfolder.pnlibrary.api.config.ConfigIgnore
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
 import org.pnfolder.pnlibrary.api.config.ConfigOrder
-import org.pnfolder.pnlibrary.api.config.DatabaseField
-import org.pnfolder.pnlibrary.api.config.DatabaseKind
-import org.pnfolder.pnlibrary.api.config.DatabaseRole
 
 class ConfigObjectIntrospectorTest {
     @Test
@@ -56,57 +51,5 @@ class ConfigObjectIntrospectorTest {
             @JvmField
             val staticValue: Int = 0
         }
-    }
-
-    @BackupDatabase(DatabaseKind.MYSQL, "Игроки", tables = ["players"])
-    @BackupDatabase(DatabaseKind.MYSQL, "Экономика")
-    class ThreeInOne {
-        @DatabaseField(DatabaseRole.USER)
-        var user = ""
-
-        @DatabaseField(DatabaseRole.DATABASE, database = "Игроки")
-        var playersSchema = ""
-
-        @DatabaseField(DatabaseRole.DATABASE, database = "Экономика")
-        var economySchema = ""
-
-        @BackupTable(database = "Экономика")
-        var accounts = ""
-    }
-
-    @Test
-    fun `one class can describe several databases and each field joins its own`() {
-        val paths = ConfigObjectIntrospector(ConfigNamingStrategy.AS_DECLARED).databasePaths(ThreeInOne::class.java)
-
-        assertEquals(listOf("Игроки", "Экономика"), paths.map { it.name })
-        assertEquals(mapOf(DatabaseRole.USER to "user", DatabaseRole.DATABASE to "playersSchema"), paths[0].keys)
-        assertEquals(mapOf(DatabaseRole.USER to "user", DatabaseRole.DATABASE to "economySchema"), paths[1].keys)
-        assertEquals(emptyList<String>(), paths[0].tableKeys)
-        assertEquals(listOf("accounts"), paths[1].tableKeys)
-    }
-
-    class OnTheFields {
-        @BackupDatabase(DatabaseKind.MYSQL, "Игроки")
-        var playersDb = ""
-
-        @DatabaseField(DatabaseRole.HOST, database = "Игроки")
-        var playersHost = ""
-
-        @BackupDatabase(DatabaseKind.POSTGRESQL, "Кланы", tables = ["clans"])
-        var clansDb = ""
-
-        @DatabaseField(DatabaseRole.HOST, database = "Кланы")
-        var clansHost = ""
-    }
-
-    @Test
-    fun `a database can be described on its fields alone with no annotation on the class`() {
-        val paths = ConfigObjectIntrospector(ConfigNamingStrategy.AS_DECLARED).databasePaths(OnTheFields::class.java)
-
-        assertEquals(listOf("Игроки", "Кланы"), paths.map { it.name })
-        assertEquals(listOf(DatabaseKind.MYSQL, DatabaseKind.POSTGRESQL), paths.map { it.kind })
-        assertEquals(mapOf(DatabaseRole.HOST to "playersHost", DatabaseRole.DATABASE to "playersDb"), paths[0].keys)
-        assertEquals(mapOf(DatabaseRole.HOST to "clansHost", DatabaseRole.DATABASE to "clansDb"), paths[1].keys)
-        assertEquals("", paths[0].path)
     }
 }

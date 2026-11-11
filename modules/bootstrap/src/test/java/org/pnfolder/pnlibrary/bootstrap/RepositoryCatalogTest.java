@@ -123,7 +123,6 @@ class RepositoryCatalogTest {
     void anIncompleteOrUnsafeArtifactIsIgnoredButTheVersionStays() {
         String[] entries = {
                 artifact("UNIVERSAL", "other.jar", SUM),
-                artifact("BUKKIT", "Vault.jar", SUM),
                 "{\"platform\":\"UNIVERSAL\",\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"http://example.org/a.jar\",\"sha256\":\"" + SUM + "\"}",
                 "{\"platform\":\"UNIVERSAL\",\"file\":\"pnLibrary-1.0.0-universal.jar\",\"url\":\"https://example.org/a.jar\",\"sha256\":\"short\"}",
                 artifact("UNIVERSAL", "pnLibrary-1.0.0-universal.jar", SUM, 99_999_999L, null),

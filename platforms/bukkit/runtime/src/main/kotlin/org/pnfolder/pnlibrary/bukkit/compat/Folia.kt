@@ -44,6 +44,7 @@ internal object Folia {
         entityType.getMethod("runAtFixedRate", Plugin::class.java, Consumer::class.java, Runnable::class.java, LONG, LONG)
     private val cancelTask = taskType.getMethod("cancel")
 
+    /** Whether the current thread owns the region of [entity]. */
     fun ownsRegionOf(entity: Entity): Boolean = ownedByCurrentRegion.call(null, entity) == true
 
     fun runAsync(plugin: Plugin, task: Runnable): Any? = asyncNow.call(asyncScheduler, plugin, consumer(task))
@@ -72,6 +73,7 @@ internal object Folia {
     fun runOnRepeating(entity: Entity, plugin: Plugin, delayTicks: Long, periodTicks: Long, task: Runnable, retired: Runnable? = null): Any? =
         entityRepeating.call(scheduler(entity), plugin, consumer(task), retired, delayTicks, periodTicks)
 
+    /** Cancels a task returned by one of the `run` functions. */
     fun cancel(task: Any) {
         cancelTask.call(task)
     }

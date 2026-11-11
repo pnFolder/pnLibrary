@@ -45,13 +45,8 @@ val generateIdentity by tasks.registering {
             |    const val ORGANIZATION = "$organization"
             |    const val DESCRIPTION = "$description"
             |    const val REPOSITORY = "$repository"
-            |    @JvmField val REPOSITORY_URL: String = runtimeValue("https://github.com/$repository")
-            |    /**
-            |     * Where to get help. Not `const` on purpose: a constant is copied into the bytecode of every plugin built against this API,
-            |     * so a new link would reach only rebuilt plugins. A plain field is read from the running library instead.
-            |     */
-            |    @JvmField val SUPPORT_URL: String = runtimeValue("$supportUrl")
-            |    private fun runtimeValue(value: String): String = value
+            |    const val REPOSITORY_URL = "https://github.com/$repository"
+            |    const val SUPPORT_URL = "$supportUrl"
             |    /** Single display string for platforms that accept one author. */
             |    const val AUTHOR = "${authors.joinToString(", ")}"
             |    /** Every author, in declaration order, for platforms that accept a list. */
@@ -85,8 +80,7 @@ dependencies {
 // through GitHub Releases and are intentionally not published to Maven Central.
 mavenPublishing {
     publishToMavenCentral()
-    // Without a key (a local build) the artifacts are published unsigned.
-    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
+    signAllPublications()
 
     coordinates(
         groupId = "io.github.pnfolder",

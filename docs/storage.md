@@ -6,9 +6,8 @@
 |---|---|---|---|
 | `config.yml` | настройки библиотеки | YAML | пользователь, при старте читается |
 | `downloads.yml` | общие настройки скачивания | YAML | пользователь |
-| `link.key`, `groups.tsv` | связь с прокси и группы серверов | base64, таблица | прокси; см. ниже |
 | `task-history.tsv` | завершённые задачи плагинов | таблица (`TsvRecords`), версия 3 | не чаще раза в 30 секунд и при остановке |
-| `event-history.tsv` | вызовы событий по дням и часам | своя таблица, первая строка `# pnLibrary event history v1` | не чаще раза в минуту и при остановке |
+| `event-history.tsv` | вызовы событий по дням и часам | таблица со строкой версии | не чаще раза в минуту и при остановке |
 | `event-history.csv`, `event-history.json` | выгрузка истории событий | CSV, JSON | только по кнопке выгрузки в меню или команде, не читается обратно |
 | `journal/*.pnj` | журнал сервера по уровням и дням | бинарный | по событию, старые удаляются |
 | `observability/observations.jsonl` | наблюдения за работой плагинов | JSON по строке | по событию |
@@ -17,7 +16,7 @@
 
 ## Единый формат таблиц
 
-Таблицы с записями (история задач и группы серверов) пишет один класс `TsvRecords` из `modules/common`:
+Таблицы с записями (история задач, дальше и история событий) пишет один класс `TsvRecords` из `modules/common`:
 
 - первая строка называет формат и версию, например `#pnlibrary-task-history 3`;
 - одна запись на строку, поля через табуляцию, табуляция, перенос строки и обратная косая внутри поля экранируются;
@@ -32,11 +31,18 @@
 - общий лимит размера и очистка старого для журнала, наблюдений и истории сессий;
 - одна страница в меню «Данные библиотеки»: что и сколько занимает, кнопка очистки каждой части.
 
-## link.key и groups.tsv
+## link.key
 
-Лежат в папке pnLibrary на прокси; `link.key` копируют на игровые серверы. Что это и как настроить: [network.md](network.md).
+Shared key of the link between a proxy and its game servers (`pnlibrary:link` plugin message channel). The proxy creates the file in its pnLibrary folder; copy it to the same folder on each game server and restart. A server reports its pnLibrary version, players and plugin update states every 30 seconds while a player is online; the proxy shows them in `/pn servers`. Reports are signed (HMAC-SHA256), so messages sent by players are ignored. The link only reports: nothing is run on a server.
 
-- `link.key` — общий секрет связи (канал `pnlibrary:link`), одна строка base64, не меньше 32 байт. Игровой сервер файл только читает.
-- `groups.tsv` — группы серверов, формат `#pnlibrary-groups 2`, поля через табуляцию: группа, вид записи (`group`, `server`,
-  `plugin`, `extra`, `skip`), затем сервер или плагин (у `extra` и `skip` — сервер и плагин). Файл можно править вручную,
-  но проще командами и меню.
+The proxy also sends every game server a signed map of the network every 30 seconds (its own report and the latest report of each server). A game server shows it in `/pn gui` under «Сеть»: pick the proxy or another server and see its plugins and update states. This is read-only.
+
+### Controlling another server
+
+From `/pn servers <name> check | update <plugin> | auto <plugin> on|off` (or the buttons in the «Сеть» menu) a server can ask another one to look for updates, download a plugin update or switch automatic download. The request is signed with `link.key`, goes through the proxy and is answered the same way. The person asking needs the matching permission on the server they ask from (`pnlibrary.updates.view`, `.download`, `.settings`); the receiving server trusts anyone who holds the key, so keep `link.key` private. Nothing else can be sent: no commands, no files. A request id is accepted once.
+
+## groups.tsv
+
+Группы серверов на прокси, рядом с `link.key`. Формат `#pnlibrary-groups 2`, одна запись на строку, поля через табуляцию: `group`,
+`server`, `plugin`, `extra` (группа, вид, сервер, плагин) и `skip`. Файл можно править вручную, но проще командами и меню, см.
+[Сеть и группы](network.md).

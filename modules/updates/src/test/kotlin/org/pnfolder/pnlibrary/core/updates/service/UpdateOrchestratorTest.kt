@@ -12,6 +12,9 @@ import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import java.nio.file.Path
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
@@ -20,8 +23,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class UpdateOrchestratorTest {
-    private val MANUAL = UpdateConfiguration(pluginAutomaticDownload = false, library = UpdateConfiguration.LibraryPolicy(automaticDownload = false))
-
     @TempDir lateinit var directory: Path
 
     @Test
@@ -68,7 +69,7 @@ class UpdateOrchestratorTest {
         assertTrue(entered.await(2, TimeUnit.SECONDS))
         val mutations = AtomicInteger()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) },
             stageAction = { mutations.incrementAndGet() }, announcement = {},
         )
@@ -101,7 +102,7 @@ class UpdateOrchestratorTest {
         var result: ResolutionResult = ResolutionResult.Ready(plan("2.0.0"))
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = {
                 calls.incrementAndGet(); entered.countDown(); release.await(2, TimeUnit.SECONDS); result
             },
@@ -132,26 +133,22 @@ class UpdateOrchestratorTest {
     }
 
     @Test
-    fun `an unchanged state is announced once and reminders repeat it until the release is gone`() {
+    fun `throttles identical announcements until repeat interval`() {
+        val clock = MutableClock(Instant.EPOCH)
         val announcements = mutableListOf<UpdatePlanSnapshot>()
         val executor = Executors.newSingleThreadScheduledExecutor()
-        var available = true
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
-            resolver = { ResolutionResult.Ready(if (available) plan("2.0.0") else UpdatePlan(1, emptyList(), emptyList())) },
-            stageAction = {}, announcement = announcements::add,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
+            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
+            stageAction = {}, announcement = announcements::add, clock = clock,
         )
         try {
             orchestrator.checkNow().toCompletableFuture().get()
             orchestrator.checkNow().toCompletableFuture().get()
             assertEquals(1, announcements.size)
-            orchestrator.remind()
-            assertEquals(2, announcements.size)
-            available = false
+            clock.instant = clock.instant.plusSeconds(6 * 60 * 60)
             orchestrator.checkNow().toCompletableFuture().get()
-            val afterGone = announcements.size
-            orchestrator.remind()
-            assertEquals(afterGone, announcements.size)
+            assertEquals(2, announcements.size)
         } finally { orchestrator.close() }
     }
 
@@ -159,7 +156,7 @@ class UpdateOrchestratorTest {
     fun `executor rejection completes check and stage futures instead of leaking`() {
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) },
             stageAction = {}, announcement = {},
         )
@@ -177,7 +174,7 @@ class UpdateOrchestratorTest {
         val executor = Executors.newSingleThreadScheduledExecutor()
         var rollbackRuns = 0
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) },
             stageAction = {}, announcement = {},
         )
@@ -202,7 +199,7 @@ class UpdateOrchestratorTest {
         val remoteCalls = AtomicInteger()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = {
                 cachedEntered.countDown()
                 cachedRelease.await(2, TimeUnit.SECONDS)
@@ -232,7 +229,7 @@ class UpdateOrchestratorTest {
     fun `failed remote check publishes durable failed snapshot with cause`() {
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { error("GitHub вернул HTTP 404") },
             stageAction = {}, announcement = {},
         )
@@ -255,7 +252,7 @@ class UpdateOrchestratorTest {
         val observations = mutableListOf<Pair<String, UpdateActor>>()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) }, stageAction = {}, announcement = {},
             observeState = { _, recordedActor, operation -> observations.add(operation to recordedActor) },
         )
@@ -294,7 +291,7 @@ class UpdateOrchestratorTest {
         val observations = mutableListOf<UpdatePlanSnapshot>()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("2.0.0")) },
             stageAction = { error("checksum mismatch") }, announcement = {},
             observeState = { snapshot, recordedActor, operation ->
@@ -317,7 +314,7 @@ class UpdateOrchestratorTest {
     fun `saved rollback can publish its own plan without an unrelated current plan`() {
         val executor = Executors.newSingleThreadScheduledExecutor()
         val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
+            UpdateConfiguration(), UpdateStateStore(directory), executor,
             resolver = { ResolutionResult.Ready(plan("3.0.0")) }, stageAction = {}, announcement = {},
         )
         val id = UUID.randomUUID()
@@ -332,29 +329,17 @@ class UpdateOrchestratorTest {
         } finally { orchestrator.close() }
     }
 
-    @Test
-    fun `a scheduled check that cannot save its result is reported instead of lost`() {
-        val executor = Executors.newSingleThreadScheduledExecutor()
-        val reported = java.util.concurrent.LinkedBlockingQueue<Pair<String, Throwable>>()
-        val orchestrator = UpdateOrchestrator(
-            MANUAL, UpdateStateStore(directory), executor,
-            resolver = { ResolutionResult.Ready(plan("2.0.0")) },
-            stageAction = {}, announcement = { error("announcement broke") },
-            unexpectedFailure = { message, error -> reported.add(message to error) },
-        )
-        try {
-            orchestrator.start()
-            val (message, error) = requireNotNull(reported.poll(5, TimeUnit.SECONDS))
-            assertEquals("Scheduled update check failed", message)
-            assertEquals("announcement broke", error.cause?.message ?: error.message)
-        } finally { orchestrator.close() }
-    }
-
     private fun plan(version: String): UpdatePlan {
         val id = ProductId.of("pnlibrary")
         val semantic = SemanticVersion.parse(version)
         return UpdatePlan(1, listOf(ProductChange(id, SemanticVersion.parse("1.0.0"), semantic)), listOf(
             ProductRelease(id, semantic, UpdateChannel.STABLE, ApiVersionRange(1, 1), providesApi = 1),
         ))
+    }
+
+    private class MutableClock(var instant: Instant) : Clock() {
+        override fun getZone(): ZoneId = ZoneId.of("UTC")
+        override fun withZone(zone: ZoneId): Clock = this
+        override fun instant(): Instant = instant
     }
 }

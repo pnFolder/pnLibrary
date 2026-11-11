@@ -40,16 +40,12 @@ fun deny(vararg plugins: String): AccessRule = AccessRule.Deny(plugins.toList())
 class AccessScope internal constructor() {
     internal var rule: AccessRule? = null
 
-    /** Every plugin may read. */
     fun allowAll() { rule = AccessRule.AllowAll }
 
-    /** Only the owner may read. */
     fun denyAll() { rule = AccessRule.DenyAll }
 
-    /** The owner and the listed plugins may read. */
     fun allowOnly(vararg plugins: String) { rule = AccessRule.AllowOnly(plugins.toList()) }
 
-    /** The owner and every plugin except the listed ones may read. */
     fun deny(vararg plugins: String) { rule = AccessRule.Deny(plugins.toList()) }
 }
 

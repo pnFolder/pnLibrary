@@ -17,7 +17,6 @@ internal class LinkTimeouts(threadName: String) {
         removeOnCancelPolicy = true
     }
 
-    /** Runs [action] once after [seconds]; cancel the returned future to drop it. */
     fun after(seconds: Long, action: () -> Unit): ScheduledFuture<*> = timer.schedule(Runnable { action() }, seconds, TimeUnit.SECONDS)
 
     private companion object {

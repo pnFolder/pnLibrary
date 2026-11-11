@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.spi.platform.ProxyBackend
 internal class VelocityDiagnosticDetailsCollector(
     private val server: ProxyServer,
 ) {
-    /** Adds proxy plugins, backend servers and player pings to [snapshot]; sensitive values only when [includeSensitive]. */
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
         DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
             val plugins = server.pluginManager.plugins

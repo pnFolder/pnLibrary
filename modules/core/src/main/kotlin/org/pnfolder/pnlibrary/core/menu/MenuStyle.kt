@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.menu
 
-/** Gradient color pair used for titles and highlights. */
 internal enum class Tone(val from: String, val to: String) {
     NORMAL("D19BFF", "F5C6FF"),
     GOOD("6EE7A0", "B8F5D2"),
@@ -9,7 +8,6 @@ internal enum class Tone(val from: String, val to: String) {
     MUTED("9AA4AD", "C9D0D6"),
 }
 
-/** One menu row: an item and an optional click handler. */
 internal class Row(val stack: ItemSpec, val click: MenuClickHandler? = null)
 
 internal fun section(texture: String?, material: String, label: String, description: String, vararg parameters: Pair<String, String>): ItemSpec =
@@ -64,7 +62,6 @@ internal fun icon(
     return ItemSpec(texture, material, alternative, Style.name(label, tone), lore)
 }
 
-/** Shared item builders and text styles for menu screens. */
 internal object Style {
     private val DIM = MenuColors.color("&#64546E")
     private val PLAIN = MenuColors.color("&#F7F2F7")
@@ -124,7 +121,6 @@ internal object Style {
     }
 }
 
-/** Item materials used as icons in menu screens. */
 internal object Icons {
     const val OVERVIEW = "35747010d84aa56483b75f6243d94f34c534603584b2cc68a45bf365840105fd"
     const val PLUGINS = "c16808126eec0cd41d6040e211985719272c388d32ecae795d47f7a9cee71113"

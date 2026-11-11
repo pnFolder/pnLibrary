@@ -9,7 +9,6 @@ class PlaceholderTemplateRenderer(
     private val resolve: (String, UUID?, Map<String, Any?>) -> CompletionStage<Any?>,
     private val format: (Any?, List<String>, UUID?, Map<String, Any?>) -> Any?,
 ) {
-    /** Fills the conditionals, `[local]` and `{ordinary}` expressions of [template] with [values] and resolved placeholders. */
     fun render(
         template: String,
         playerId: UUID?,

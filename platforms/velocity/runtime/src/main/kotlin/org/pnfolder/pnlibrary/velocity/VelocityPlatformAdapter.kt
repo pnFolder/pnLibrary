@@ -102,6 +102,7 @@ internal class VelocityPlatformAdapter(
     override fun installedPlugins(): Map<String, String> =
         plugins.versions()
 
+    /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
         val platformVersion = proxy.version
 

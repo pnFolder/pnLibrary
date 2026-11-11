@@ -6,9 +6,7 @@ import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 
 /** Native inventory access must run on the player's owning thread, including bulk cleanup. */
 internal interface MenuExecution {
-    /** Fails when the current thread may not touch [player]'s inventory. */
     fun requireOwner(player: Player)
-    /** Runs [action] on the thread that owns [player]. */
     fun execute(player: Player, action: () -> Unit)
 }
 

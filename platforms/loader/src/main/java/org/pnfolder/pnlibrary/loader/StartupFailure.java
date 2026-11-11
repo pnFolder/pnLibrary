@@ -21,7 +21,6 @@ public final class StartupFailure {
     private StartupFailure() {
     }
 
-    /** Builds the card for {@code error}: the reason, what to do and where to ask for help. */
     public static ConsoleCard card(ConsoleTheme theme, LibrarySettings settings, Path dataFolder, Throwable error) {
         Throwable cause = unwrap(error);
         ConsoleCard.Builder card = ConsoleCard.builder(theme, "ОШИБКА ЗАПУСКА")
@@ -69,7 +68,6 @@ public final class StartupFailure {
         card(theme, settings, dataFolder, error).send(sink);
     }
 
-    /** The repositories in the order they are tried, as one line. */
     private static String repositories(LibrarySettings settings) {
         List<String> all = new ArrayList<>(settings.repositories());
         if (settings.mavenCentral()) {

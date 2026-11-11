@@ -73,6 +73,7 @@ internal class BukkitUpdateFlow(
         )
     }
 
+    /** Shows the confirmation card for [action] with a fresh token and the command that redeems it. */
     private fun askToConfirm(
         native: CommandSender,
         reply: Reply,
@@ -152,6 +153,7 @@ internal class BukkitUpdateFlow(
         }
     }
 
+    /** Stages the requested product change or reports its current update state. */
     private fun handleUpdateCheck(sender: CommandSender, reply: Reply, registration: UpdateRegistration, result: UpdatePlanSnapshot) {
         val change = result.plan?.changes?.firstOrNull {
             it.product.value.equals(registration.snapshot.product, ignoreCase = true)
@@ -163,6 +165,7 @@ internal class BukkitUpdateFlow(
         stageUpdate(sender, reply, result, change)
     }
 
+    /** Downloads and validates the selected compatible update plan. */
     private fun stageUpdate(sender: CommandSender, reply: Reply, plan: UpdatePlanSnapshot, change: ProductChange) {
         val transition = "${change.product} v${change.from} » v${change.to}"
         replies.say(reply, ChatTone.PROGRESS, "Найдено $transition. Скачиваю и проверяю…")
@@ -179,6 +182,7 @@ internal class BukkitUpdateFlow(
 
     // --- rollback, restart and the confirmation ------------------------------------------------------------------
 
+    /** Asks to confirm a rollback of the whole current update plan. */
     fun rollbackUpdate(sender: CommandSender, reply: Reply) {
         if (!sender.hasPermission("pnlibrary.updates.rollback")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
@@ -193,8 +197,10 @@ internal class BukkitUpdateFlow(
         )
     }
 
+    /** Asks to confirm the restart that applies the staged plan. */
     fun restartUpdate(sender: CommandSender, reply: Reply) = restart.restartUpdate(sender, reply)
 
+    /** Withdraws a restart that is counting down or waiting for the server to empty. */
     fun cancelRestart(reply: Reply) = restart.cancelRestart(reply)
 
     /** Runs what [token] grants: a rollback of the plan, a rollback to a saved backup set, or the restart. */

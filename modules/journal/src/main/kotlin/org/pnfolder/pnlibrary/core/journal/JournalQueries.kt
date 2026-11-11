@@ -13,27 +13,10 @@ class JournalQueries(
     private val config: PnLibraryConfig,
     private val startedAtMillis: Long,
     private val eventsCommand: String,
-    private val clock: () -> Long = System::currentTimeMillis,
 ) {
-    private val noticeLock = Any()
-    private var noticeBuiltAt: Long? = null
-    private var notice: List<Component> = emptyList()
-
-    /**
-     * The lines shown to an administrator who joins, empty when the journal cannot be read. Several joins within
-     * [NOTICE_TTL_MILLIS] share one journal read, so a wave of administrators does not rescan the files.
-     */
-    fun joinNotice(): List<Component> = synchronized(noticeLock) {
-        val now = clock()
-        val builtAt = noticeBuiltAt
-        if (builtAt == null || now - builtAt >= NOTICE_TTL_MILLIS || now < builtAt) {
-            notice = buildJoinNotice(now)
-            noticeBuiltAt = now
-        }
-        notice
-    }
-
-    private fun buildJoinNotice(now: Long): List<Component> {
+    /** The lines shown to an administrator who joins, empty when the journal cannot be read. */
+    fun joinNotice(): List<Component> {
+        val now = System.currentTimeMillis()
         val since = now - Duration.ofHours(config.journalJoinNoticeHours.toLong()).toMillis()
         return runCatchingNonFatal {
             joinDigest(journal.read(sinceMillis = since, limit = SCAN), now, config.journalJoinNoticeHours, startedAtMillis, eventsCommand)
@@ -74,6 +57,5 @@ class JournalQueries(
     private companion object {
         const val SCAN = 5_000
         const val TIMES = 50
-        const val NOTICE_TTL_MILLIS = 45_000L
     }
 }

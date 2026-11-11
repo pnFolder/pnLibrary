@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.metrics
 
 import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.TelemetryError
-import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -15,9 +14,7 @@ import java.util.concurrent.atomic.AtomicLong
 internal class ErrorPipeline(
     private val delegate: ErrorReporter? = null,
     private val maxStackFrames: Int = 80,
-    private val onForwardingFailure: (Throwable) -> Unit = {},
 ) : ErrorReporter {
-    private val failureThrottle = FailureThrottle()
     private val closed = AtomicBoolean(false)
     private val seen = ConcurrentHashMap.newKeySet<String>()
     private val captured = AtomicLong()
@@ -34,10 +31,7 @@ internal class ErrorPipeline(
         if (seen.add(fingerprint)) {
             forwarded.incrementAndGet()
             runCatchingNonFatal { delegate?.capture(safe) }
-                .onFailure { failure ->
-                    forwardingFailures.incrementAndGet()
-                    if (failureThrottle.shouldReport(failure.javaClass.name)) onForwardingFailure(failure)
-                }
+                .onFailure { forwardingFailures.incrementAndGet() }
         } else {
             deduplicated.incrementAndGet()
         }
@@ -67,15 +61,8 @@ internal class ErrorPipeline(
     )
 
     private fun redact(value: String?): String? = value
-        ?.replace(BEARER, "$1[redacted]")
-        ?.replace(QUERY_SECRET, "$1[redacted]")
-        ?.replace(UUID, "[uuid]")
-        ?.replace(HOME_FOLDER, "$1[user]")
-
-    private companion object {
-        val BEARER = Regex("(?i)(Bearer\\s+)[A-Za-z0-9._~+/=-]+")
-        val QUERY_SECRET = Regex("(?i)([?&](?:api_?key|token|secret)=)[^&\\s]+")
-        val UUID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
-        val HOME_FOLDER = Regex("(?i)(/home/|/Users/|C:\\\\Users\\\\)[^/\\\\\\s]+")
-    }
+        ?.replace(Regex("(?i)(Bearer\\s+)[A-Za-z0-9._~+/=-]+"), "$1[redacted]")
+        ?.replace(Regex("(?i)([?&](?:api_?key|token|secret)=)[^&\\s]+"), "$1[redacted]")
+        ?.replace(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"), "[uuid]")
+        ?.replace(Regex("(?i)(/home/|/Users/|C:\\\\Users\\\\)[^/\\\\\\s]+"), "$1[user]")
 }

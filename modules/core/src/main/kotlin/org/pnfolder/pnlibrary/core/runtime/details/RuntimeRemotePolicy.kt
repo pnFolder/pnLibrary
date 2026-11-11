@@ -15,7 +15,6 @@ import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Validates the remote policy the library applies to itself. */
 internal object RuntimeRemotePolicy {
     fun validated(policy: RemotePolicySettings): RemotePolicySettings {
         require(policy.onDeny == DenyAction.DISABLE_PLUGIN) {
@@ -52,13 +51,8 @@ internal object RuntimeRemotePolicy {
         val startup = monitor.checkAtStartup(owner, metadata, policy, logger, policy.startupTimeout)
         if (startup == null) {
             // Falling back to disabling the owner is safe; only fatal JVM errors must not be swallowed here.
-            val guarded = runCatchingNonFatal { platform.disableDependents(owner) }
-                .onFailure { logger.error("Could not disable the plugins that depend on pnLibrary after the policy denied it", it) }
-                .getOrDefault(false)
-            if (!guarded) {
-                runCatchingNonFatal { platform.disableOwner(owner) }
-                    .onFailure { logger.critical("The policy denied pnLibrary but it could not be disabled", it) }
-            }
+            val guarded = runCatchingNonFatal { platform.disableDependents(owner) }.getOrDefault(false)
+            if (!guarded) runCatchingNonFatal { platform.disableOwner(owner) }
             throw PolicyDeniedException("${metadata.name} ${metadata.version}")
         }
         val started = AtomicBoolean(false)

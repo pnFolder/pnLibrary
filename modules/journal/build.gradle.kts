@@ -22,8 +22,7 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    // Without a key (a local build) the artifacts are published unsigned.
-    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
+    signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-journal", project.version.toString())
     pom {
         name.set("pnLibrary journal")

@@ -11,15 +11,16 @@ internal class UpdateAutomaticPolicy(
     private val overrides: UpdatePolicyOverrides? = null,
     private val registrations: () -> List<RegisteredUpdate>,
 ) {
-    /** Whether the plan may be installed without an administrator. */
     fun allows(snapshot: UpdatePlanSnapshot): Boolean {
         val changed = snapshot.plan?.changes?.map(ProductChange::product).orEmpty()
         return changed.all { component ->
             val chosen = overrides?.automatic(component.value)
             if (component.value == PnLibraryIdentity.PRODUCT_ID) chosen ?: configuration.library.automaticDownload
             else {
-                chosen ?: overrides?.allPlugins() ?: (configuration.pluginAutomaticDownload ||
-                    registrations().firstOrNull { it.descriptor.id == component }?.request?.automaticDownload == true)
+                component.value !in configuration.ignoredPlugins &&
+                    (chosen ?: (configuration.pluginAutomaticDownload ||
+                        registrations().firstOrNull { it.descriptor.id == component }
+                            ?.request?.automaticDownload == true))
             }
         }
     }

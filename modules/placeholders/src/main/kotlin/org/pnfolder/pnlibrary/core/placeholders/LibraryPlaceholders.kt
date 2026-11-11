@@ -9,7 +9,6 @@ class LibraryPlaceholders(
     private val pluginCount: () -> Int,
     private val statistics: () -> Map<String, Long>,
 ) {
-    /** Registers the library's placeholders: version, plugin count, uptime and the statistics. */
     fun register() {
         hub.library("version", String::class.java) { PnLibraryIdentity.VERSION }
         hub.library("plugins", Int::class.javaObjectType, pluginCount)

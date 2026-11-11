@@ -18,7 +18,6 @@ internal class HistoryScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
     /** What an event led to: a short label for the row and the full wording for its hover card. */
     private class Outcome(val label: String, val color: TextColor, val detail: String = label)
 
-    /** One page of history entries grouped by day. */
     fun history(entries: List<UpdateHistoryEntry>, page: Int, totalPages: Int?, product: String?): List<Component> {
         require(page > 0) { "Page must be positive" }
         val result = mutableListOf(header("История", product?.let { text(it, ChatPalette.SOFT) }))

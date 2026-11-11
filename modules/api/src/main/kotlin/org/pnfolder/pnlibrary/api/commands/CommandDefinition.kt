@@ -46,7 +46,6 @@ class CommandDefinition internal constructor(
     val aliases: Set<String> = Collections.unmodifiableSet(LinkedHashSet(aliases))
 
     companion object {
-        /** Starts a command builder for the root label [name]; the entry point for Java callers. */
         @JvmStatic
         fun builder(name: String): CommandBuilder = CommandBuilder(name)
     }
@@ -70,7 +69,6 @@ class CommandBuilder internal constructor(name: String) {
     private val children = mutableListOf<CommandNodeBuilder>()
     private val mounted = mutableListOf<CommandNode>()
 
-    /** Adds alternative root labels that run the same command. */
     fun aliases(vararg values: String): CommandBuilder = apply {
         values.forEach { value ->
             val alias = normalizeCommandName(value, "command alias", ALIAS_NAME)
@@ -174,17 +172,14 @@ class CommandBuilder internal constructor(name: String) {
     /** Restricts root availability using [rule]. */
     fun availableIf(rule: CommandAvailability): CommandBuilder = apply { availability = rule }
 
-    /** Adds a fixed-word subcommand configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun literal(name: String, configure: CommandNodeBuilder.() -> Unit): CommandBuilder =
         literal(name, Consumer { builder -> builder.configure() })
 
-    /** Adds a fixed-word subcommand configured by the Java [configure] callback. */
     fun literal(name: String, configure: Consumer<CommandNodeBuilder>): CommandBuilder = apply {
         children += CommandNodeBuilder(CommandNodeKind.LITERAL, name).also(configure::accept)
     }
 
-    /** Adds a typed argument node configured by the Kotlin receiver [configure]. */
     @JvmSynthetic
     fun <T : Any> argument(
         name: String,
@@ -192,7 +187,6 @@ class CommandBuilder internal constructor(name: String) {
         configure: CommandNodeBuilder.() -> Unit,
     ): CommandBuilder = argument(name, type, Consumer { builder -> builder.configure() })
 
-    /** Adds a typed argument node configured by the Java [configure] callback. */
     fun <T : Any> argument(
         name: String,
         type: ArgumentType<T>,
@@ -245,7 +239,6 @@ class CommandBuilder internal constructor(name: String) {
     }
 }
 
-/** Builds a [CommandDefinition] for the root label [name] with the Kotlin receiver [configure]. */
 @JvmSynthetic
 fun command(name: String, configure: CommandBuilder.() -> Unit): CommandDefinition =
     CommandDefinition.builder(name).apply(configure).build()

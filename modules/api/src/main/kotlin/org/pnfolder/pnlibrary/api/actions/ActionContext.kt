@@ -162,9 +162,7 @@ class ActionContext(
 
     /** Like [read], but returns [expression] itself, with its tokens replaced, when nothing matches. */
     override fun textOf(expression: String): String =
-        runCatchingNonFatal { read(expression) }
-            .onFailure { logger.error("Placeholder in '$expression' failed; the text is left as written", it) }
-            .getOrNull()?.toString() ?: format(expression)
+        runCatchingNonFatal { read(expression) }.getOrNull()?.toString() ?: format(expression)
 
     /**
      * Replaces the placeholders in plain [text], each kind in its own brackets, in one pass:
@@ -180,9 +178,7 @@ class ActionContext(
      * Unknown names stay as written, so a typo is visible instead of silently empty.
      */
     fun format(text: String): String = TOKEN.replace(text) { match ->
-        runCatchingNonFatal { valueOf(match) }
-            .onFailure { logger.error("Placeholder ${match.value} failed; it is left as written", it) }
-            .getOrNull()?.toString() ?: match.value
+        runCatchingNonFatal { valueOf(match) }.getOrNull()?.toString() ?: match.value
     }
 
     private fun valueOf(match: MatchResult): Any? {

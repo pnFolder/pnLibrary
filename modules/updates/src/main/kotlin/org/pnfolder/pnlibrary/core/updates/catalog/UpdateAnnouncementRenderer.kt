@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.console.ConsoleTheme
 
 /** Renders automatic update notifications with the same card used by console status. */
 internal object UpdateAnnouncementRenderer {
-    /** Builds the announcement shown to administrators. */
     fun render(
         snapshot: UpdatePlanSnapshot,
         theme: ConsoleTheme,
@@ -41,7 +40,6 @@ internal object UpdateAnnouncementRenderer {
                 .lastItem("Автозагрузка выключена; используйте /pn update <плагин>")
                 .blank()
         }
-        card.section("ПОДДЕРЖКА").lastItem("Вопросы, ошибки и идеи — пишите нам в Discord: ${PnLibraryIdentity.SUPPORT_URL}").blank()
         return card.status(result).build().render()
     }
 

@@ -93,7 +93,6 @@ internal class ManagedCurrencyProvider(
         if (ownsStorage) storage.close()
     }
 
-    /** Builds the rejected record returned when validation fails before storage is touched. */
     private fun rejectedTransaction(request: CurrencyTransactionRequest, failure: String) = CurrencyTransaction(
         id = UUID.randomUUID(),
         currency = key,
@@ -111,7 +110,6 @@ internal class ManagedCurrencyProvider(
         idempotencyKey = request.idempotencyKey,
     )
 
-    /** Submits a system-initiated transaction for the simple API operations and maps the outcome to a result. */
     private fun mutate(
         type: CurrencyTransactionType,
         amount: BigDecimal,
@@ -130,7 +128,6 @@ internal class ManagedCurrencyProvider(
         ),
     ).thenApply(::toResult)
 
-    /** Maps a stored transaction to the consumer-facing result. */
     private fun toResult(transaction: CurrencyTransaction): CurrencyResult = when (transaction.status) {
         CurrencyTransactionStatus.COMMITTED -> CurrencyResult.success(
             transaction.sourceBalanceBefore ?: transaction.targetBalanceBefore,
@@ -141,7 +138,6 @@ internal class ManagedCurrencyProvider(
             CurrencyResult.failed(IllegalStateException(transaction.failure ?: "Currency transaction failed"))
     }
 
-    /** Insufficient funds is reported distinctly; any other rejection is a provider rejection. */
     private fun rejectReason(transaction: CurrencyTransaction) =
         if (transaction.failure == CurrencyMutationEngine.INSUFFICIENT_FUNDS) {
             CurrencyRejectReason.INSUFFICIENT_FUNDS

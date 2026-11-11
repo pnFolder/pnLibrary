@@ -112,40 +112,6 @@ class ObservationPersistenceTest {
         }
     }
 
-    @Test
-    fun `author retention overrides level in both directions`() {
-        val day = 24L * 60 * 60 * 1000
-        var now = 0L
-        val runtime = ObservabilityRuntime(Files.createTempDirectory("observation-keep"), clock = { now })
-        runtime.capture {
-            message("short critical"); level(ObservationLevel.CRITICAL); keepFor(java.time.Duration.ofDays(2))
-        }
-        runtime.capture {
-            message("long info"); level(ObservationLevel.INFO); keepFor(java.time.Duration.ofDays(365))
-        }
-        runtime.capture { message("plain info") }
-
-        now = 10 * day
-        runtime.maintain()
-
-        assertEquals(listOf("long info"), runtime.recent().map { it.message })
-        assertEquals(365 * day, runtime.recent().single().data["pn.keepUntilMs"]!!.toLong())
-        assertTrue(runtime.recent().single().data.keys.none { it == "pn.keepForMs" })
-    }
-
-    @Test
-    fun `report journal has readable dates and expiry`() {
-        val root = Files.createTempDirectory("observation-report")
-        val runtime = ObservabilityRuntime(root, clock = { 0 })
-        runtime.capture { plugin("pnMarket"); source("auction"); message("lot lost"); keepFor(java.time.Duration.ofDays(1)) }
-
-        val line = String(runtime.reportSnapshot().journal, Charsets.UTF_8)
-
-        assertTrue(line.contains("\"timeUtc\":\"1970-01-01T00:00:00Z\""), line)
-        assertTrue(line.contains("\"expiresUtc\":\"1970-01-02T00:00:00Z\""), line)
-        assertTrue(line.contains("\"source\":\"auction\""), line)
-    }
-
     private object ObservationRuntimeFixture {
         fun openAfterThirtyDays(root: Path): ObservabilityRuntime = ObservabilityRuntime(
             root,

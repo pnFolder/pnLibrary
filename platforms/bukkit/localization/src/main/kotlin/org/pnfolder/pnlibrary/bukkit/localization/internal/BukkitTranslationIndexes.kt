@@ -36,7 +36,6 @@ internal object MaterialTranslatable : TranslatableType<Material> {
     override fun fallbackName(value: Material): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation keys of an [Enchantment]: the modern key, then the pre-1.13 one. */
 internal object EnchantmentTranslatable : TranslatableType<Enchantment> {
     override fun keysOf(value: Enchantment): List<String> {
         val modern = namespacedKey(value)?.substringAfter(':')
@@ -48,7 +47,6 @@ internal object EnchantmentTranslatable : TranslatableType<Enchantment> {
     override fun fallbackName(value: Enchantment): String = legacyName(value).lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation keys of an [EntityType]: the modern key, then the pre-1.13 one. */
 internal object EntityTranslatable : TranslatableType<EntityType> {
     override fun keysOf(value: EntityType): List<String> {
         val path = namespacedKey(value)?.substringAfter(':') ?: value.name.lowercase(Locale.ROOT)
@@ -60,7 +58,6 @@ internal object EntityTranslatable : TranslatableType<EntityType> {
     override fun fallbackName(value: EntityType): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation keys of a [PotionEffectType]: the modern key, then the pre-1.13 one. */
 internal object EffectTranslatable : TranslatableType<PotionEffectType> {
     override fun keysOf(value: PotionEffectType): List<String> {
         val modern = namespacedKey(value)?.substringAfter(':')
@@ -72,7 +69,6 @@ internal object EffectTranslatable : TranslatableType<PotionEffectType> {
     override fun fallbackName(value: PotionEffectType): String = effectName(value).lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation key of a [Biome]. */
 internal object BiomeTranslatable : TranslatableType<Biome> {
     override fun keysOf(value: Biome): List<String> {
         val path = namespacedKey(value)?.substringAfter(':') ?: value.name.lowercase(Locale.ROOT)
@@ -82,13 +78,11 @@ internal object BiomeTranslatable : TranslatableType<Biome> {
     override fun fallbackName(value: Biome): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation key of a [DyeColor]. */
 internal object ColorTranslatable : TranslatableType<DyeColor> {
     override fun keysOf(value: DyeColor): List<String> = listOf(TranslationCategory.COLOR.key(value.name.lowercase(Locale.ROOT)))
     override fun fallbackName(value: DyeColor): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
 }
 
-/** Translation key of a [GameMode]. */
 internal object GameModeTranslatable : TranslatableType<GameMode> {
     override fun keysOf(value: GameMode): List<String> = listOf(TranslationCategory.GAME_MODE.key(value.name.lowercase(Locale.ROOT)))
     override fun fallbackName(value: GameMode): String = value.name.lowercase(Locale.ROOT).replace('_', ' ')
@@ -96,51 +90,64 @@ internal object GameModeTranslatable : TranslatableType<GameMode> {
 
 // --- Reverse lookup: translated text -> Bukkit value ---
 
-/** Builds an index of the entries of [values] whose key starts with one of [prefixes]; [resolve] maps the last key segment to a value. */
-private fun <T> reverseIndex(
-    values: Map<String, String>,
-    layouts: KeyboardLayouts,
-    prefixes: List<String>,
-    resolve: (String) -> T?,
-): TranslationIndex<T> = TranslationIndex.of(
+internal fun bukkitMaterials(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Material> = TranslationIndex.of(
     values.asSequence()
-        .filter { (key, _) -> prefixes.any(key::startsWith) }
-        .map { (key, value) -> TranslationMatch(key, value, resolve(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .filter { (key, _) -> key.startsWith(TranslationCategory.ITEM.prefix()) || key.startsWith(TranslationCategory.BLOCK.prefix()) }
+        .map { (key, value) ->
+            TranslationMatch(key, value, Material.matchMaterial(key.substringAfterLast('.').uppercase(Locale.ROOT)))
+        }
         .toList(),
     layouts,
 )
 
-private fun prefixOf(category: TranslationCategory) = listOf(category.prefix())
+internal fun bukkitEnchantments(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Enchantment> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.ENCHANTMENT.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, enchantmentOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of item and block names. */
-internal fun bukkitMaterials(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Material> =
-    reverseIndex(values, layouts, listOf(TranslationCategory.ITEM.prefix(), TranslationCategory.BLOCK.prefix()), { Material.matchMaterial(it) })
+internal fun bukkitEntities(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<EntityType> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.ENTITY.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, entityOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of enchantment names. */
-internal fun bukkitEnchantments(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Enchantment> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.ENCHANTMENT), ::enchantmentOf)
+internal fun bukkitEffects(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<PotionEffectType> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.EFFECT.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, effectOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of entity names. */
-internal fun bukkitEntities(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<EntityType> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.ENTITY), ::entityOf)
+internal fun bukkitBiomes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Biome> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.BIOME.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, biomeOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of potion effect names. */
-internal fun bukkitEffects(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<PotionEffectType> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.EFFECT), ::effectOf)
+internal fun bukkitColors(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<DyeColor> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.COLOR.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, colorOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of biome names. */
-internal fun bukkitBiomes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<Biome> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.BIOME), ::biomeOf)
+internal fun bukkitGameModes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<GameMode> = TranslationIndex.of(
+    values.asSequence()
+        .filter { (key, _) -> key.startsWith(TranslationCategory.GAME_MODE.prefix()) }
+        .map { (key, value) -> TranslationMatch(key, value, gameModeOf(key.substringAfterLast('.').uppercase(Locale.ROOT))) }
+        .toList(),
+    layouts,
+)
 
-/** Reverse index of dye color names. */
-internal fun bukkitColors(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<DyeColor> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.COLOR), ::colorOf)
-
-/** Reverse index of game mode names. */
-internal fun bukkitGameModes(values: Map<String, String>, layouts: KeyboardLayouts): TranslationIndex<GameMode> =
-    reverseIndex(values, layouts, prefixOf(TranslationCategory.GAME_MODE), ::gameModeOf)
-
-/** Enchantment for a modern constant name, or null; tries the legacy alias and the namespaced key. */
 private fun enchantmentOf(modernName: String): Enchantment? {
     val legacy = ENCHANTMENT_ALIASES[modernName] ?: modernName
     val constant = staticField(Enchantment::class.java, legacy) as? Enchantment
@@ -149,12 +156,10 @@ private fun enchantmentOf(modernName: String): Enchantment? {
     }
 }
 
-/** Entity type whose constant or namespaced key equals [path], or null. */
 private fun entityOf(path: String): EntityType? = EntityType.values().firstOrNull {
     it.name.equals(path, true) || namespacedKey(it)?.equals(path.lowercase(Locale.ROOT), true) == true
 }
 
-/** Potion effect for a modern constant name, or null; tries the legacy alias and the namespaced key. */
 private fun effectOf(modernName: String): PotionEffectType? {
     val legacy = EFFECT_ALIASES[modernName] ?: modernName
     val constant = staticField(PotionEffectType::class.java, legacy) as? PotionEffectType
@@ -163,15 +168,12 @@ private fun effectOf(modernName: String): PotionEffectType? {
     }
 }
 
-/** Biome whose constant or namespaced key equals [path], or null. */
 private fun biomeOf(path: String): Biome? = Biome.values().firstOrNull {
     it.name.equals(path, true) || namespacedKey(it)?.equals(path.lowercase(Locale.ROOT), true) == true
 }
 
-/** Dye color named [path], or null. */
 private fun colorOf(path: String): DyeColor? = DyeColor.values().firstOrNull { it.name.equals(path, true) }
 
-/** Game mode named [path], or null. */
 private fun gameModeOf(path: String): GameMode? = GameMode.values().firstOrNull { it.name.equals(path, true) }
 
 // --- Reflection kept out of the public API files (enforced by SourceConventionsTest) ---

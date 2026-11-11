@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -25,21 +24,6 @@ class PlaceholderRegistrationLifecycleTest {
         assertTrue(registration.isClosed)
         assertFalse(service.contains("status"))
         assertThrows(IllegalStateException::class.java) { registration.enable() }
-    }
-
-    @Test
-    fun `a resolver that throws is reported with its exception once`() {
-        val failures = mutableListOf<Pair<String, Throwable>>()
-        val service = PlaceholderHub(TestPlatform, failures = { message, error -> failures += message to error })
-            .scope(PluginId.of("demo"), false)
-        service.register("broken", String::class.java) {
-            it.resolveAsync { java.util.concurrent.CompletableFuture.failedFuture(IllegalStateException("database is gone")) }
-        }
-
-        repeat(2) { service.resolve("broken").toCompletableFuture().join() }
-
-        assertEquals(1, failures.size)
-        assertEquals("database is gone", failures.single().second.message)
     }
 
     private object TestPlatform : PlatformAdapter {

@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit
 internal class BungeeTaskAdapter internal constructor(
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
 ) : TrackingPlatformTaskAdapter() {
-    /** Schedules on the asynchronous scheduler of [plugin]'s proxy. */
     constructor(plugin: Plugin) : this({ request ->
         val scheduler = plugin.proxy.scheduler
         val interval = request.interval

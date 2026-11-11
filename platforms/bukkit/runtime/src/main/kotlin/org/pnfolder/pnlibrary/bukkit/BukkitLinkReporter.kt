@@ -14,7 +14,6 @@ import org.pnfolder.pnlibrary.core.link.LinkReports
 import org.pnfolder.pnlibrary.core.link.LinkSecret
 import org.pnfolder.pnlibrary.core.link.RemoteExecutor
 import java.util.UUID
-import java.util.logging.Level
 
 /**
  * Sends this server's report to the proxy over the link channel, every half minute while a player is online.
@@ -29,7 +28,6 @@ internal class BukkitLinkReporter(
     private val scheduler: ServerScheduler,
 ) : PluginMessageListener {
     private var task: ServerScheduler.Scheduled? = null
-    private var reportFailing = false
     private val executor = RemoteExecutor(library)
 
     fun start() {
@@ -92,10 +90,6 @@ internal class BukkitLinkReporter(
         val platform = "${Bukkit.getName()} ${Bukkit.getBukkitVersion()}"
         runCatchingNonFatal {
             carrier.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encode(LinkReports.build(library, platform, players.size), key))
-        }.onSuccess { reportFailing = false }.onFailure {
-            // The report repeats every half minute; the first failure is enough until one succeeds again.
-            if (!reportFailing) plugin.logger.log(Level.SEVERE, "Could not send the status report to the proxy", it)
-            reportFailing = true
         }
     }
 

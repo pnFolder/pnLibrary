@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.Instant
 
-/** Chat page with the details of one task. */
 internal object TaskDetail {
     fun who(kit: ChatKit, task: TaskSnapshot): List<Component> {
         val lines = mutableListOf<Component>()

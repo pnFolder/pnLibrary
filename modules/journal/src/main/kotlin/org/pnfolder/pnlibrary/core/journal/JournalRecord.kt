@@ -36,17 +36,11 @@ data class JournalRecord(
 ) {
     /** Short id shared by repeats of the same event: same level, source, first message line and exception. */
     val fingerprint: String
-        get() = cachedFingerprint ?: computeFingerprint().also { cachedFingerprint = it }
-
-    // Benign race: a String is immutable, so two threads that compute it at once store equal values.
-    private var cachedFingerprint: String? = null
-
-    private fun computeFingerprint(): String {
-        val key = listOf(level.name, source, message.lineSequence().first().take(200), details["exception"].orEmpty())
-            .joinToString("\u0000")
-        val hex = Integer.toHexString(key.hashCode())
-        return if (hex.length >= 8) hex else "0".repeat(8 - hex.length) + hex
-    }
+        get() {
+            val key = listOf(level.name, source, message.lineSequence().first().take(200), details["exception"].orEmpty())
+                .joinToString("\u0000")
+            return "%08x".format(key.hashCode())
+        }
 
     companion object {
         /** Type of the hourly statistics records; they are not events, so reads without a type skip them. */

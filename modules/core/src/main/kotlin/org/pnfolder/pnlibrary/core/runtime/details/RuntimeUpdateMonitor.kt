@@ -8,7 +8,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Registers the library itself with the update service. */
 internal object RuntimeUpdateMonitor {
     data class Registration(
         val currentVersion: String,

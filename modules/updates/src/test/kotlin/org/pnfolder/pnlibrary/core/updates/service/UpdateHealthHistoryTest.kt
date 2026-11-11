@@ -7,8 +7,6 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
-import org.pnfolder.pnlibrary.core.updates.databases.DatabaseSources
 import org.pnfolder.pnlibrary.core.updates.engine.*
 import org.pnfolder.pnlibrary.core.updates.history.UpdateEventJournal
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
@@ -112,7 +110,6 @@ class UpdateHealthHistoryTest {
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray = error("health verification must not access the network")
         }
-        val databases = DatabaseBackups(data.resolve("updates/databases"), DatabaseSources())
-        return Fixture(data, plan, result.journal, transactions, UpdateInstaller(platform, data, UpdateConfiguration(), http, databases))
+        return Fixture(data, plan, result.journal, transactions, UpdateInstaller(platform, data, UpdateConfiguration(), http))
     }
 }

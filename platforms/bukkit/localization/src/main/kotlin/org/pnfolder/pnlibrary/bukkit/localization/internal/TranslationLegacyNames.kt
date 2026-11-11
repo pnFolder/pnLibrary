@@ -13,18 +13,15 @@ internal val ENCHANTMENT_ALIASES = mapOf(
     "FLAME" to "ARROW_FIRE", "INFINITY" to "ARROW_INFINITE",
 )
 
-/** Inverse of [ENCHANTMENT_ALIASES]: legacy constant to modern name. */
 internal val ENCHANTMENT_LEGACY_TO_MODERN: Map<String, String> =
     ENCHANTMENT_ALIASES.entries.associate { (modern, legacy) -> legacy to modern }
 
-/** Modern effect names to the legacy Bukkit constants. */
 internal val EFFECT_ALIASES = mapOf(
     "SLOWNESS" to "SLOW", "HASTE" to "FAST_DIGGING", "MINING_FATIGUE" to "SLOW_DIGGING",
     "STRENGTH" to "INCREASE_DAMAGE", "INSTANT_HEALTH" to "HEAL", "INSTANT_DAMAGE" to "HARM",
     "JUMP_BOOST" to "JUMP", "NAUSEA" to "CONFUSION", "RESISTANCE" to "DAMAGE_RESISTANCE",
 )
 
-/** Inverse of [EFFECT_ALIASES]: legacy constant to modern name. */
 internal val EFFECT_LEGACY_TO_MODERN: Map<String, String> =
     EFFECT_ALIASES.entries.associate { (modern, legacy) -> legacy to modern }
 
@@ -43,7 +40,6 @@ internal val ENCHANTMENT_LEGACY = mapOf(
     "mending" to "mending", "vanishing_curse" to "vanishing_curse",
 )
 
-/** Pre-1.13 effect key fragments by modern path. */
 internal val EFFECT_LEGACY = mapOf(
     "speed" to "moveSpeed", "slowness" to "moveSlowdown", "haste" to "digSpeed", "mining_fatigue" to "digSlowDown",
     "strength" to "damageBoost", "instant_health" to "heal", "instant_damage" to "harm", "jump_boost" to "jump",

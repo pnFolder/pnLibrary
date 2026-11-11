@@ -22,10 +22,12 @@ internal class BukkitAudienceAdapter(
 
     override fun player(uniqueId: UUID): LibraryPlayer? = Bukkit.getPlayer(uniqueId)?.let { BukkitLibraryPlayer(it, audiences) }
 
+    /** Wraps native Bukkit senders; unsupported objects return null. */
     override fun sender(native: Any): AudienceSender? = (native as? CommandSender)?.let(::wrap)
 
     override fun onlinePlayers(): List<LibraryPlayer> = Bukkit.getOnlinePlayers().map { BukkitLibraryPlayer(it, audiences) }
 
+    /** Uses the player transport where available, otherwise a legacy sender wrapper. */
     private fun wrap(sender: CommandSender): AudienceSender =
         if (sender is Player) BukkitLibraryPlayer(sender, audiences) else BukkitSenderAudience(sender)
 

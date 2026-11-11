@@ -1,17 +1,3 @@
-public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupDatabase : java/lang/annotation/Annotation {
-	public abstract fun kind ()Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-	public abstract fun name ()Ljava/lang/String;
-	public abstract fun tables ()[Ljava/lang/String;
-}
-
-public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupDatabase$Container : java/lang/annotation/Annotation {
-	public abstract fun value ()[Lorg/pnfolder/pnlibrary/api/config/BackupDatabase;
-}
-
-public abstract interface annotation class org/pnfolder/pnlibrary/api/config/BackupTable : java/lang/annotation/Annotation {
-	public abstract fun database ()Ljava/lang/String;
-}
-
 public final class org/pnfolder/pnlibrary/api/config/CommentPolicy : java/lang/Enum {
 	public static final field ADD_MISSING Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;
 	public static final field PRESERVE Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;
@@ -354,32 +340,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigValueVal
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigurationService {
 	public abstract fun scope (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
-}
-
-public abstract interface annotation class org/pnfolder/pnlibrary/api/config/DatabaseField : java/lang/annotation/Annotation {
-	public abstract fun database ()Ljava/lang/String;
-	public abstract fun role ()Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-}
-
-public final class org/pnfolder/pnlibrary/api/config/DatabaseKind : java/lang/Enum {
-	public static final field MONGODB Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-	public static final field MYSQL Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-	public static final field POSTGRESQL Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/DatabaseKind;
-}
-
-public final class org/pnfolder/pnlibrary/api/config/DatabaseRole : java/lang/Enum {
-	public static final field DATABASE Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static final field HOST Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static final field PASSWORD Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static final field PORT Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static final field URI Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static final field USER Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/DatabaseRole;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ManagedConfig : java/lang/AutoCloseable {

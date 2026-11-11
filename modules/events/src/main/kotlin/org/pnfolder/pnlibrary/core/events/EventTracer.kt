@@ -15,24 +15,20 @@ class EventTracer {
     /** Calls per traced type, so a type with a small capacity never pushes out the calls of another. */
     private val recorded = HashMap<Class<out Event>, ArrayDeque<EventTrace>>()
 
-    /** Starts recording calls of [eventType] and its subtypes, keeping the latest [capacity] of them. */
     fun enable(eventType: Class<out Event>, capacity: Int) {
         require(capacity in 1..1_000) { "Trace capacity must be between 1 and 1000" }
         synchronized(recorded) { traced = traced + (eventType to capacity) }
     }
 
-    /** Stops recording [eventType]; calls already recorded stay until [clear]. */
     fun disable(eventType: Class<out Event>) {
         synchronized(recorded) { traced = traced - eventType }
     }
 
-    /** The names of the traced event types, sorted. */
     fun tracedNames(): List<String> = traced.keys.map { it.name }.sorted()
 
     /** Every recorded call, oldest first. */
     fun traces(): List<EventTrace> = synchronized(recorded) { recorded.values.flatten() }.sortedBy { it.at }
 
-    /** Forgets every recorded call; tracing stays on. */
     fun clear() {
         synchronized(recorded) { recorded.clear() }
     }
@@ -44,10 +40,8 @@ class EventTracer {
         return current.keys.firstOrNull { it.isAssignableFrom(type) }
     }
 
-    /** The result of a resulted [event] as text, or null for a plain event. */
     fun resultText(event: Event): String? = (event as? ResultedEvent<*>)?.result?.toString()
 
-    /** Stores one call of [event] under [tracedAs], dropping the oldest calls above the capacity. */
     fun record(tracedAs: Class<out Event>, event: Event, steps: List<EventTrace.Step>, mode: DispatchMode) {
         val trace = EventTrace(event.eventName, event.isAllowed, resultText(event), steps, mode, Thread.currentThread().name, Instant.now())
         synchronized(recorded) {

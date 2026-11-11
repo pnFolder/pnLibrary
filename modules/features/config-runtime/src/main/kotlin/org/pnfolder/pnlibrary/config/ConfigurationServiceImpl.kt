@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
-import org.pnfolder.pnlibrary.config.yaml.DatabasePath
 import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
@@ -59,7 +58,6 @@ class ConfigurationServiceImpl(
         }
     }
 
-    /** Closes the scopes created for [owner] and forgets them. */
     override fun close(owner: Any) {
         synchronized(scopes) { scopes.remove(owner)?.values?.toList().orEmpty() }.forEach { it.close() }
     }
@@ -76,7 +74,6 @@ class ConfigurationServiceImpl(
     private fun ownerDirectory(owner: Any): Path =
         platform.ownerDataFolder(owner) ?: Paths.get("plugins", platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
 
-    /** One plugin's view of the service: its files, serializers and published types, all released on [close]. */
     private inner class Scope(
         private val owner: Any,
         private val pluginId: PluginId,
@@ -101,7 +98,14 @@ class ConfigurationServiceImpl(
         ): ManagedConfig<T> {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val relative = Paths.get(path).normalize()
-            val target = checkedTarget(path, relative)
+            require(!relative.isAbsolute && !relative.startsWith("..")) {
+                "Configuration path must stay inside the plugin directory"
+            }
+            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) {
+                "Configuration file must use .yml or .yaml"
+            }
+            val target = directory.resolve(relative).normalize()
+            require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
                 type = type,
@@ -128,21 +132,8 @@ class ConfigurationServiceImpl(
                 }
                 handles += owned
             }
-            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths, codec.databases))
+            announce(ManagedConfigFile(pluginId, directory, relative.toString().replace('\\', '/'), codec.secretPaths))
             return owned
-        }
-
-        /** The absolute file for [path]; rejects paths outside the plugin directory and other file extensions. */
-        private fun checkedTarget(path: String, relative: Path): Path {
-            require(!relative.isAbsolute && !relative.startsWith("..")) {
-                "Configuration path must stay inside the plugin directory"
-            }
-            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) {
-                "Configuration file must use .yml or .yaml"
-            }
-            val target = directory.resolve(relative).normalize()
-            require(target.startsWith(directory)) { "Configuration path escapes the plugin directory" }
-            return target
         }
 
         // Announcing feeds diagnostics only, so a failing listener is logged and the file still works.
@@ -234,7 +225,6 @@ class ConfigurationServiceImpl(
         }
     }
 
-    /** A dynamically published polymorphic type; stays visible to codecs until [close] or its scope closes. */
     private inner class TypeRegistration(
         override val owner: PluginId,
         override val baseType: Class<*>,
@@ -254,7 +244,6 @@ class ConfigurationServiceImpl(
         fun deactivate() { active = false }
     }
 
-    /** A managed file that remembers its path, so a scope can refuse to register it twice. */
     private class OwnedConfig<T>(val file: Path, private val delegate: ManagedConfig<T>) : ManagedConfig<T> by delegate
 }
 
@@ -278,16 +267,12 @@ private fun runAll(steps: List<() -> Unit>) {
 /**
  * A file registered through a configuration scope.
  *
- * @property pluginId plugin that registered the file
- * @property directory data folder of the plugin
  * @property path path relative to [directory], with `/` separators
  * @property secretPaths dotted paths of the `@ConfigSecret` fields
- * @property databases sections marked `@BackupDatabase`
  */
 class ManagedConfigFile(
     val pluginId: PluginId,
     val directory: Path,
     val path: String,
     val secretPaths: List<String>,
-    val databases: List<DatabasePath> = emptyList(),
 )

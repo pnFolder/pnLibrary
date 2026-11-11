@@ -8,8 +8,8 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
-import java.time.Duration
+import java.time.Clock
+import java.time.Instant
 import java.util.Collections
 import java.util.Optional
 import java.util.UUID
@@ -29,13 +29,12 @@ internal class UpdateOrchestrator(
     private val resolver: () -> ResolutionResult,
     private val stageAction: (UpdatePlanSnapshot) -> Unit,
     private val announcement: (UpdatePlanSnapshot) -> Unit,
+    private val clock: Clock = Clock.systemUTC(),
     private val automaticAllowed: (UpdatePlanSnapshot) -> Boolean = { true },
     private val remoteResolver: (() -> ResolutionResult)? = null,
     private val observeState: (UpdatePlanSnapshot, UpdateActor, String) -> Unit = { _, _, _ -> },
     private val beforeCheck: () -> Unit = {},
     private val automaticOverridesActive: () -> Boolean = { false },
-    private val reminderInterval: Duration = UpdateDefaults.REMINDER_INTERVAL,
-    private val unexpectedFailure: (String, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val lock = Any()
     private val closed = AtomicBoolean(false)
@@ -55,43 +54,19 @@ internal class UpdateOrchestrator(
     private var current: UpdatePlanSnapshot? = store.current()
     private val revision = java.util.concurrent.atomic.AtomicLong(current?.revision ?: 0L)
     private var announcedFingerprint: String? = null
+    private var announcedAt: Instant? = null
     private val sessionHistory = ArrayDeque<UpdatePlanSnapshot>()
 
-    /** Begins periodic checks. */
     fun start() {
         if (closed.get() || !started.compareAndSet(false, true)) return
         executor.scheduleWithFixedDelay(
-            { scheduledCheck() },
+            { checkNow(false, UpdateActor.SYSTEM).exceptionally { null } },
             0,
             configuration.checks.interval.toMillis(),
             TimeUnit.MILLISECONDS,
         )
-        executor.scheduleWithFixedDelay(
-            { runCatchingNonFatal(::remind).onFailure { unexpectedFailure("Update reminder failed", it) } },
-            reminderInterval.toMillis(),
-            reminderInterval.toMillis(),
-            TimeUnit.MILLISECONDS,
-        )
     }
 
-    private fun scheduledCheck() {
-        checkNow(false, UpdateActor.SYSTEM).whenComplete { _, error ->
-            // A closed orchestrator rejects the check on purpose; any other failure means the state could not be saved.
-            if (error != null && !closed.get()) unexpectedFailure("Scheduled update check failed", error)
-        }
-    }
-
-    /**
-     * Repeats the announcement of an update that is still waiting. It works on the state already known, so it never
-     * asks GitHub; once a check finds the release gone, the state is up to date and the reminders stop.
-     */
-    internal fun remind() {
-        val snapshot = synchronized(lock) { current } ?: return
-        if (closed.get()) return
-        if (snapshot.state == UpdateState.UPDATE_AVAILABLE || snapshot.state == UpdateState.UPDATE_STAGED) announcement(snapshot)
-    }
-
-    /** Checks for updates right away and returns the resulting plan. */
     fun checkNow(forceRemote: Boolean = true, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> = synchronized(lock) {
         check(!closed.get()) { "Update orchestrator is closed" }
         inFlight?.let { active ->
@@ -163,21 +138,19 @@ internal class UpdateOrchestrator(
         }
     }
 
-    /** The latest plan, if one exists. */
     fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.ofNullable(synchronized(lock) { current })
 
     /** Queues a fresh graph check after any currently running check has released the coalescing slot. */
     fun registrationsChanged() {
         if (closed.get() || !started.get()) return
         try {
-            executor.execute { if (!closed.get()) scheduledCheck() }
+            executor.execute { if (!closed.get()) checkNow(false, UpdateActor.SYSTEM) }
         } catch (_: RejectedExecutionException) {
             // A concurrent executor shutdown is a normal lifecycle race. The owner
             // will close the orchestrator and no follow-up check is required.
         }
     }
 
-    /** Downloads and prepares the plan with [planId]. */
     fun stage(planId: UUID, actor: UpdateActor = UpdateActor.UNKNOWN): CompletionStage<UpdatePlanSnapshot> {
         val promise = operationPromise()
         if (promise.isDone) return promise
@@ -201,12 +174,10 @@ internal class UpdateOrchestrator(
         return promise
     }
 
-    /** Recent plans, newest last. */
     fun history(): List<UpdatePlanSnapshot> = synchronized(lock) {
         Collections.unmodifiableList(ArrayList(sessionHistory))
     }
 
-    /** Runs [action] as a rollback and records the result. */
     fun rollback(actor: UpdateActor = UpdateActor.UNKNOWN, action: () -> Unit): CompletionStage<UpdatePlanSnapshot> = rollbackTo(actor) {
         val selected = synchronized(lock) { current } ?: error("No update plan is available for rollback")
         action()
@@ -214,7 +185,6 @@ internal class UpdateOrchestrator(
             "Предыдущие версии JAR подготовлены к следующему перезапуску.")
     }
 
-    /** Runs [action] as a rollback, optionally of the failure [failureId]. */
     fun rollbackTo(actor: UpdateActor, failureId: UUID? = null, action: () -> UpdatePlanSnapshot): CompletionStage<UpdatePlanSnapshot> {
         val promise = operationPromise()
         if (promise.isDone) return promise
@@ -269,9 +239,13 @@ internal class UpdateOrchestrator(
         observeState(snapshot, actor, operation)
         if (closed.get()) return
         val fingerprint = fingerprint(snapshot.state, snapshot.plan, snapshot.blockers)
-        if (fingerprint == announcedFingerprint) return
-        announcement(snapshot)
-        announcedFingerprint = fingerprint
+        val now = clock.instant()
+        val repeat = announcedAt?.let { !now.isBefore(it.plus(configuration.notifications.repeatInterval)) } ?: true
+        if (fingerprint != announcedFingerprint || repeat) {
+            announcement(snapshot)
+            announcedFingerprint = fingerprint
+            announcedAt = now
+        }
     }
 
     private fun observeFailure(planId: UUID, actor: UpdateActor, operation: String, error: Throwable) {

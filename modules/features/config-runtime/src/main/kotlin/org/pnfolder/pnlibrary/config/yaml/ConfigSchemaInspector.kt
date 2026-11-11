@@ -20,7 +20,6 @@ internal class ConfigSchemaInspector(
     private val introspector: ConfigObjectIntrospector,
     private val serializers: ConfigSerializerResolver,
 ) {
-    /** Dotted paths of every `@ConfigRequired` field of [rootType], including nested sections. */
     fun requiredPaths(rootType: Class<*>): Set<String> = requiredPaths(rootType, "")
 
     /** Builds comment and layout metadata used when rendering generated YAML. */
@@ -42,7 +41,6 @@ internal class ConfigSchemaInspector(
             )
         }
 
-    /** Checks the range, not-blank and pattern annotations of [value] and its nested sections. */
     fun validate(value: Any?, type: Class<*>): List<ConfigProblem> = buildList {
         validateObject(value, type, "", this)
     }

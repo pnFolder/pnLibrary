@@ -9,7 +9,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.core.plugin.HidingLifecycleBox
 
-/** Prints the startup and shutdown summary of a module and registers its placeholders on enable. */
 internal class ModuleLifecycleReporter(
     private val owner: Any,
     private val moduleId: ModuleId,

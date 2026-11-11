@@ -29,7 +29,22 @@ fun traceLine(kit: ChatKit, line: String): Pair<Component, Boolean> {
     FRAME.matchEntire(text)?.let { match ->
         val (className, method, location) = match.destructured
         val framework = FRAMEWORK.any { className.startsWith(it) }
-        return frameLine(kit, className, method, location, framework) to framework
+        val tip = kit.tooltip(
+            kit.text("$className.$method", if (framework) ChatPalette.FAINT else ChatPalette.TEXT),
+            kit.text(location, if (framework) ChatPalette.FAINT else ChatPalette.SOFT),
+        )
+        val component = if (framework) {
+            kit.text("    · ", ChatPalette.FAINT)
+                .append(kit.text("${className.substringAfterLast('.')}.$method", ChatPalette.FAINT))
+                .append(kit.text("  $location", ChatPalette.FAINT))
+        } else {
+            kit.text("    ▸ ", ChatPalette.ORANGE)
+                .append(kit.text(className.substringAfterLast('.'), ChatPalette.TEXT))
+                .append(kit.text(".", ChatPalette.FAINT))
+                .append(kit.text(method, ChatPalette.ACCENT))
+                .append(kit.text("  $location", ChatPalette.SOFT))
+        }
+        return component.hoverEvent(tip) to framework
     }
     HEAD.matchEntire(text)?.let { match ->
         val prefix = match.groupValues[1]
@@ -43,26 +58,6 @@ fun traceLine(kit: ChatKit, line: String): Pair<Component, Boolean> {
         return head to false
     }
     return kit.text("    $text", ChatPalette.FAINT) to false
-}
-
-/** A stack frame: the plugin's own frames are bright and the frames of the JDK and the server are dimmed. */
-private fun frameLine(kit: ChatKit, className: String, method: String, location: String, framework: Boolean): Component {
-    val tip = kit.tooltip(
-        kit.text("$className.$method", if (framework) ChatPalette.FAINT else ChatPalette.TEXT),
-        kit.text(location, if (framework) ChatPalette.FAINT else ChatPalette.SOFT),
-    )
-    val component = if (framework) {
-        kit.text("    · ", ChatPalette.FAINT)
-            .append(kit.text("${className.substringAfterLast('.')}.$method", ChatPalette.FAINT))
-            .append(kit.text("  $location", ChatPalette.FAINT))
-    } else {
-        kit.text("    ▸ ", ChatPalette.ORANGE)
-            .append(kit.text(className.substringAfterLast('.'), ChatPalette.TEXT))
-            .append(kit.text(".", ChatPalette.FAINT))
-            .append(kit.text(method, ChatPalette.ACCENT))
-            .append(kit.text("  $location", ChatPalette.SOFT))
-    }
-    return component.hoverEvent(tip)
 }
 
 /**

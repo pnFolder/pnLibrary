@@ -10,7 +10,7 @@ import java.time.Instant
 import java.util.concurrent.CompletionStage
 import javax.sql.DataSource
 
-/** Creates built-in storage backends (file keeps 100 000 transactions by default) and migrates currencies between them. */
+/** Creates built-in storage backends and coordinates portable snapshot migrations. */
 internal class BuiltInCurrencyStorage : CurrencyStorageFactory {
     override fun file(path: Path): CurrencyStorage = FileCurrencyStorage(path, 100_000)
     override fun file(path: Path, maximumTransactions: Int): CurrencyStorage = FileCurrencyStorage(path, maximumTransactions)

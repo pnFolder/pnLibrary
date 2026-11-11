@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.chatPager
 
-/** Chat pages with recent bus history. */
 internal class BusHistoryPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 

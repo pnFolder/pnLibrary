@@ -17,7 +17,6 @@ internal class UpdateInstallationLock private constructor(private val channel: F
     }
 
     companion object {
-        /** Takes the lock in [dataDirectory], failing if another process holds it. */
         fun acquire(dataDirectory: Path): UpdateInstallationLock {
             val path = UpdatePaths.inside(dataDirectory.resolve("updates/install.lock"), dataDirectory)
             Files.createDirectories(path.parent)

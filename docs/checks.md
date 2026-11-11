@@ -59,7 +59,6 @@ checks:
 | `regex matches` | `input`, `regex` |
 | `is object` | `input`, `object` (`INT`, `DOUBLE`, `UUID`) |
 | `chance` | `probability` (`25%` или `0.25`) |
-| `flag` | `name`, `equals` — значение именованного флага контекста |
 
 `!` перед типом переворачивает ответ: `type: '!has permission'`.
 

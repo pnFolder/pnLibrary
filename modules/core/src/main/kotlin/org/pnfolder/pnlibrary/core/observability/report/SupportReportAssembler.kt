@@ -130,13 +130,12 @@ internal class SupportReportAssembler(
         target: String,
         encrypted: Boolean,
     ) {
-        val used = mutableSetOf<String>()
         diagnostics.configurations(target).forEach { registered ->
             val root = registered.dataDirectory ?: dataFolder
             val directory = "plugins/${safePath(registered.plugin)}/configuration/"
             if (encrypted) {
                 val file = configurations.readProtectedFile(registered.configuration, root)
-                val path = unique(directory, safeConfigurationPath(file.path), used)
+                val path = safeConfigurationPath(file.path)
                 if (file.error == null) {
                     archive.bytes(directory + path, requireNotNull(file.content))
                 } else {
@@ -144,7 +143,7 @@ internal class SupportReportAssembler(
                 }
             } else {
                 val file = configurations.readRedactedFile(registered.configuration, root)
-                val path = unique(directory, safeConfigurationPath(file.path), used)
+                val path = safeConfigurationPath(file.path)
                 if (file.error == null) {
                     archive.text(directory + path, file.content)
                 } else {
@@ -152,15 +151,6 @@ internal class SupportReportAssembler(
                 }
             }
         }
-    }
-
-    /** Two names that differ only in replaced characters get `-2`, `-3`, ... before the extension so neither overwrites the other. */
-    private fun unique(directory: String, path: String, used: MutableSet<String>): String {
-        val dot = path.lastIndexOf('.').takeIf { it > path.lastIndexOf('/') + 1 } ?: path.length
-        var candidate = path
-        var number = 2
-        while (!used.add((directory + candidate).lowercase())) candidate = path.substring(0, dot) + "-" + number++ + path.substring(dot)
-        return candidate
     }
 
     private fun safePath(value: String): String = value

@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.LocalDate
 
-/** Menu screens listing recent event bus history. */
 internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun busDays(player: MenuViewer, event: String?, page: Int) {
         val back: (MenuViewer) -> Unit = if (event == null) { who -> routes.busHome(who) } else { who -> routes.busEvent(who, event) { routes.busHome(it) } }

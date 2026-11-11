@@ -113,7 +113,6 @@ internal data class TransactionJournal(
     companion object {
         private val gson = GsonBuilder().setPrettyPrinting().create()
 
-        /** Reads a journal written by [save]. */
         fun load(path: Path): TransactionJournal = Files.newBufferedReader(path, StandardCharsets.UTF_8).use {
             gson.fromJson(it, TransactionJournal::class.java)
         }

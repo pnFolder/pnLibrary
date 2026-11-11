@@ -12,7 +12,7 @@ internal object RemotePolicyFailureInterpreter {
         if (isNetwork(error)) return "Нет доступа к интернету: политику не удалось скачать"
         val message = error.message.orEmpty()
         if (isCompilerMissing(error)) {
-            return "На сервере нет компилятора Java (это JRE), а запасной скачать не удалось: проверьте интернет сервера и повторите"
+            return "На сервере нет компилятора Java (это JRE), а запасной не загрузился при старте: проверьте интернет и перезапустите сервер"
         }
         if (message.contains("compil", ignoreCase = true)) {
             return "Не удалось скомпилировать политику"

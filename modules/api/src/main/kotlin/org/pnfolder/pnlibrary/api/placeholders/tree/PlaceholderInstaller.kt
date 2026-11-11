@@ -15,7 +15,6 @@ internal class PlaceholderInstaller(
     private val service: PlaceholderService,
     private val moduleId: String,
 ) {
-    /** Registers the placeholder group with the platform. */
     fun install(group: GroupData) {
         val format = group.format.resolve(null)
         group.roots.forEach { walk(group, it, emptyList(), format, group.access, false) }

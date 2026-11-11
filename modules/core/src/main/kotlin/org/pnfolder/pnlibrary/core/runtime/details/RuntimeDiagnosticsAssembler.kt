@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import java.nio.file.Path
 
-/** Collects the runtime state of the library into a diagnostics report. */
 internal class RuntimeDiagnosticsAssembler(
     private val version: String,
     private val isClosed: () -> Boolean,

@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
 
-/** Metrics settings declared by a module: providers, enabled flag and extra configurers. */
 internal data class ModuleMetricsDefinition(
     val providers: List<MetricsProviderConfiguration> = emptyList(),
     val enabled: Boolean = false,

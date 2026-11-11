@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.journal
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.command
 
@@ -21,34 +20,35 @@ fun journalCommand(journal: JournalStore, root: String = "/pn events"): CommandD
     noPermissionMessage("Журнал событий доступен администраторам. Нужно право pnlibrary.events.view.")
     consoleBypassesPermission()
     // The router accepts only declared words, so every level, page and card id is declared here.
-    executes { showList(it, journal, root) }
+    executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
     listOf("all", "info", "warning", "error").forEach { level ->
         literal(level) {
-            executes { showList(it, journal, root) }
+            executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
             argument("page", ArgumentType.integer()) {
-                executes { showList(it, journal, root) }
+                executes { context -> list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root) }
             }
         }
     }
     literal("view") {
         argument("id", ArgumentType.string()) {
-            executes { showCard(it, journal, root, repeats = false, fullTrace = false) }
+            executes { context ->
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, root = root)
+            }
         }
     }
     literal("full") {
         argument("id", ArgumentType.string()) {
-            executes { showCard(it, journal, root, repeats = false, fullTrace = true) }
+            executes { context ->
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = false, fullTrace = true,
+                    root = root)
+            }
         }
     }
     literal("times") {
         argument("id", ArgumentType.string()) {
-            executes { showCard(it, journal, root, repeats = true, fullTrace = false) }
+            executes { context ->
+                card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats = true, root = root)
+            }
         }
     }
 }
-
-private fun showList(context: CommandContext, journal: JournalStore, root: String) =
-    list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root)
-
-private fun showCard(context: CommandContext, journal: JournalStore, root: String, repeats: Boolean, fullTrace: Boolean) =
-    card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats, fullTrace, root)

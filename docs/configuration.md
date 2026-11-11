@@ -29,15 +29,15 @@ val config = context.configs.yaml<Settings>("settings.yml") { Settings() }
 val settings = config.load().value   // создаёт файл при первом запуске
 ```
 
-Дальше: `config.get()` — текущее значение, `config.reload()` — перечитать файл, `config.save()` — записать, `config.update { … }` — изменить и сохранить.
+Дальше: `config.value` — текущее значение, `config.reload()` — перечитать файл, `config.save()` — записать.
 
-`context.configs` — это `ConfigScope` модуля. Из Java используйте `scope.yaml(path, Settings.class, Settings::new)`.
+Из Java используйте `scope.yaml(path, Settings.class, Settings::new)`.
 
 ## Проверка значений
 
 Работают два способа, их проблемы складываются в один `ConfigValidationException`:
 
-1. **Аннотации** на полях: `@ConfigRange`, `@ConfigNotBlank`, `@ConfigPattern`, `@ConfigRequired`. Остальные аннотации: `@ConfigComment`, `@ConfigKey`, `@ConfigIgnore`, `@ConfigAlias`, `@ConfigNewLine`, `@ConfigOrder`, `@ConfigDefaultOnInvalid`, `@ConfigSerializeWith`, `@ConfigPolymorphic`.
+1. **Аннотации** на полях: `@ConfigRange`, `@ConfigNotBlank`, `@ConfigPattern`, `@ConfigRequired`.
 2. **Программные правила** для условий, которые аннотациями не выразить:
 
 ```kotlin
@@ -57,8 +57,8 @@ val config = scope.yaml("settings.yml", ConfigOptions.DEFAULT, validator) { Sett
 | `unknownValues` | Что делать с ключами, которых нет в модели (по умолчанию оставить). |
 | `comments` | Синхронизация комментариев из кода. |
 | `backups` | Делать ли резервную копию перед перезаписью. |
-| `migrations` | Версионная цепочка миграций `ConfigMigrationPlan`. По умолчанию `ConfigSteps.NONE`; `withoutVersion()` отключает маркер. |
-| `naming` | Преобразование имён полей в ключи YAML: `AS_DECLARED`, `CAMEL_CASE`, `SNAKE_CASE`, `KEBAB_CASE`, `UPPER_SNAKE_CASE`. |
+| `migrations` | Версионная цепочка миграций `ConfigMigrationPlan`. По умолчанию `ConfigMigrationPlan.INITIAL`. |
+| `naming` | Преобразование имён полей в ключи YAML, например `KEBAB_CASE`. |
 
 Явное имя ключа задаёт `@ConfigKey` и всегда сильнее `naming`.
 
@@ -115,30 +115,3 @@ val registration = scope.type<Action, MessageAction>()
 ```
 
 Без `access` тип виден только владельцу. Закрытие `registration` убирает тип.
-
-## Секреты и отчёты поддержки
-
-Поле с паролем, токеном или вебхуком помечается `@field:ConfigSecret`: его значение скрывается в отчёте `/pn debug`,
-отдельной записи в `config.yml` не нужно. Остальное из настроек библиотеки: `privacy` (по умолчанию выключено) и
-список `excluded-paths` с путями вида `плагин/файл.yml:ключ`.
-
-## Резервные копии баз данных
-
-Если плагин хранит данные в MySQL/MariaDB, PostgreSQL или MongoDB, их можно копировать перед обновлением плагина и
-возвращать при откате. Это описывается аннотациями (`DatabaseKind`: `MYSQL`, `MONGODB`, `POSTGRESQL`):
-
-- `@BackupDatabase(kind, name, tables)` на поле с именем базы (или на поле-секции подключения, или на классе
-  конфигурации); повторяемая, имена баз в плагине различаются. В `tables` допустима маска `*` (`"log_*"`), пусто — все.
-- `@DatabaseField(role, database)` связывает поля `host`, `port`, `database`, `user`, `password` с базой, если их имена
-  нестандартные (`DatabaseRole`). Пароль помечайте `@ConfigSecret`.
-- `@BackupTable(database)` на поле с именем таблицы.
-
-```kotlin
-@field:BackupDatabase(DatabaseKind.POSTGRESQL, "Clans", tables = ["clans", "clan_members"])
-var clansDb = "clans"
-@field:DatabaseField(DatabaseRole.HOST, database = "Clans")
-var clansHost = "pg.local"
-```
-
-Копируются только таблицы (коллекции в MongoDB); триггеры, процедуры и представления нет. Подробности и меню
-копий: [updates.md](updates.md).

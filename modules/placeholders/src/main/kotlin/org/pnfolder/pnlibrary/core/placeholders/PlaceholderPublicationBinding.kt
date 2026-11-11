@@ -34,7 +34,6 @@ class PlaceholderPublicationBinding(
             else -> delegate?.state ?: PlaceholderAdapterState.UNAVAILABLE
         }
 
-    /** Publishes through [adapter] when it is the one this binding waits for; a failure marks the binding as failed. */
     @Synchronized
     fun attach(adapter: PlaceholderAdapter) {
         if (closed.get() || adapter.id.lowercase(Locale.ROOT) != adapterId) return
@@ -46,7 +45,6 @@ class PlaceholderPublicationBinding(
             .onFailure { publicationFailed = true }
     }
 
-    /** Withdraws the publication and clears a failure so the next adapter gets a fresh try. */
     @Synchronized
     fun detach() {
         closeDelegate()

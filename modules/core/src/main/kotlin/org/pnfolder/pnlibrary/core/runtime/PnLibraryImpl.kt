@@ -94,10 +94,7 @@ internal class PnLibraryImpl(
     }
 
     // Support and journal come first: every later part reports its failures through them.
-    private val journalRuntime = RuntimeJournal(
-        dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND,
-        onWriteFailure = ::reportJournalFailure,
-    )
+    private val journalRuntime = RuntimeJournal(dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND)
 
     // Written by init and close, read by error reports from any thread.
     @Volatile private var libraryMetrics: PluginMetrics? = null
@@ -126,11 +123,7 @@ internal class PnLibraryImpl(
     )
 
     private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
-        val reports = configFileDiagnostics(diagnostics)
-        set.configurations.fileListener = { file ->
-            val handles = listOfNotNull(reports(file), set.updates.databaseSources.register(file))
-            AutoCloseable { handles.forEach(AutoCloseable::close) }
-        }
+        set.configurations.fileListener = configFileDiagnostics(diagnostics)
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,
@@ -141,17 +134,11 @@ internal class PnLibraryImpl(
         taskHistoryFile = dataFolder.resolve("task-history.tsv"),
         errorLogger = support::recordRuntimeError,
         commandFeedback = standardCommandFeedback(config),
-        onAudienceFailure = { error ->
-            support.recordRuntimeError(owner, "[pnLibrary/audiences] A message could not be delivered to a player", error)
-        },
     )
     private val tasks = platformServices.tasks
     private val commands = platformServices.commands
     private val eventService = EventDispatcher(
-        EventHistory(
-            dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone },
-            onFailure = { support.recordRuntimeError(owner, "[pnLibrary/events] The event history could not be read or saved", it) },
-        ),
+        EventHistory(dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone }),
     ) { pluginId, message, error -> support.recordRuntimeError(owner, "[$pluginId] $message", error) }
     private val platformProvider = NativePlatform()
 
@@ -200,9 +187,7 @@ internal class PnLibraryImpl(
         commands = commands,
         journal = journalRuntime::summary,
     )
-    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journalRuntime.store) { error ->
-        support.recordRuntimeError(owner, "[pnLibrary/stats] Could not record statistics", error)
-    }
+    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journalRuntime.store)
     private val mountable = LinkedHashMap<String, CommandDefinition>()
 
     fun init() {
@@ -286,12 +271,6 @@ internal class PnLibraryImpl(
     override fun statsSnapshot() = stats.snapshot()
 
     override fun placeholderInfos() = features.placeholders.describe()
-
-    /** The journal cannot record its own failure, so the console and the error tracker get it directly. */
-    private fun reportJournalFailure(error: Throwable) {
-        platform.logging.console(owner, "[pnLibrary/journal] Could not write to the journal: ${error.javaClass.simpleName}: ${error.message}")
-        reportRuntimeError(owner, error)
-    }
 
     private fun reportRuntimeError(logOwner: Any, error: Throwable) {
         libraryMetrics?.errorReporter?.capture(

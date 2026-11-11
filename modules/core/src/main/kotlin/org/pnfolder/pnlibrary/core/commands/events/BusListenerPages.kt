@@ -13,7 +13,6 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-/** Chat pages describing bus listeners. */
 internal class BusListenerPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
@@ -92,7 +91,6 @@ internal class BusListenerPages(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
-    /** Running call counters of a listener group. */
     private class Totals(var calls: Long = 0, var denied: Long = 0)
 
     private fun callsSince(since: LocalDateTime): Map<String, Totals> {

@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu
 
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
-/** Menu screens with usage statistics. */
 internal class StatsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun stats(player: MenuViewer) {
         val now = data.stats()

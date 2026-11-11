@@ -11,18 +11,10 @@ import org.pnfolder.pnlibrary.api.config.MissingValuePolicy
  * section with four spaces must not get a second copy of every key in it.
  */
 internal object YamlDefaultsMerger {
-    /**
-     * Outcome of [merge].
-     *
-     * @property content the merged YAML text
-     * @property addedPaths dotted paths of the keys inserted from the defaults
-     * @property addedComments dotted paths of the keys that received a default comment
-     */
     data class Result(val content: String, val addedPaths: List<String>, val addedComments: List<String>) {
         val changed: Boolean get() = addedPaths.isNotEmpty() || addedComments.isNotEmpty()
     }
 
-    /** Adds to [existing] the keys of [defaults] allowed by [values] and the comments allowed by [comments]. */
     fun merge(
         existing: String,
         defaults: String,
@@ -41,7 +33,6 @@ internal object YamlDefaultsMerger {
         return Result(target.joinToString("\n").trimEnd() + "\n", added, commented)
     }
 
-    /** Dotted paths of every key in [yaml], parents before their children. */
     fun paths(yaml: String): List<String> {
         val lines = yaml.lines()
         return collect(lines, 0, lines.size, 0, emptyList()).map { it.dotted }

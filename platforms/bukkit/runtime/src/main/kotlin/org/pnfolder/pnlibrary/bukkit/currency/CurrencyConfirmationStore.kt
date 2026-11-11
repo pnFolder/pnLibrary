@@ -26,10 +26,9 @@ internal class CurrencyConfirmationStore {
             .also { pending[token] = it }
     }
 
-    /** Removes and returns the operation for [token]; `null` when unknown or already used. */
+    /** Removes and returns the operation for [token], or null when unknown. */
     fun take(token: String): PendingOperation? = pending.remove(token.uppercase())
 
-    /** Drops operations whose confirmation time has run out. */
     fun discardExpired() {
         val now = System.currentTimeMillis()
         pending.entries.removeIf { it.value.expiresAt < now }
@@ -43,7 +42,6 @@ internal class CurrencyConfirmationStore {
         error("Unable to allocate a currency confirmation code")
     }
 
-    /** A currency operation waiting for the player to type its confirmation code. */
     internal data class PendingOperation(
         val token: String,
         val expiresAt: Long,

@@ -4,13 +4,11 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
 import java.time.Instant
 import java.time.ZoneId
 
 /** Retained rollback sets with their age; paths and file contents are never shown. */
 internal class BackupsScreen(routes: UpdateCatalogRoutes, now: Instant, zone: ZoneId) : CatalogStyle(routes, now, zone) {
-    /** One page of backups matching [query]. */
     fun backups(all: List<UpdateBackup>, page: Int, query: BackupQuery = BackupQuery()): List<Component> {
         require(page > 0) { "Page must be positive" }
         val backups = query.apply(all)
@@ -73,7 +71,7 @@ internal class BackupsScreen(routes: UpdateCatalogRoutes, now: Instant, zone: Zo
         ) + backup.components.map { component ->
             hoverField("Вернёт", text("${component.product} ${component.backupVersion?.let(::version) ?: "?"}", ChatPalette.TEXT)
                 .append(text(" (сейчас ${component.updatedVersion?.let(::version) ?: "?"})", ChatPalette.SOFT)))
-        } + backup.items.map { hoverField("Сохранено", text(BackupItemText.describe(it), ChatPalette.TEXT)) }
+        } + hoverField("Конфигураций", text("${backup.configurationFiles}", ChatPalette.TEXT))
         var row = text("  ").append(text(restores, ChatPalette.TEXT))
             .append(text("  ")).append(text(backup.createdAt?.let(::age) ?: "дата не записана", ChatPalette.SOFT))
             .hoverEvent(tooltip(*card.toTypedArray()))

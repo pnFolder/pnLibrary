@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Contributor registrations and configuration declarations for one plugin. */
 internal class DiagnosticContributors(
     private val sanitizer: DiagnosticValueSanitizer,
-    private val onFailure: (what: String, error: Throwable) -> Unit = { _, _ -> },
 ) {
     private val contributors = ConcurrentHashMap<String, RegisteredContributor>()
 
@@ -72,9 +71,8 @@ internal class DiagnosticContributors(
                     }
                 }
             }
-        } catch (error: Exception) {
+        } catch (_: Exception) {
             // One malformed contributor must not prevent collection from the others.
-            onFailure("A diagnostics contributor of $plugin failed to list its configuration files", error)
         }
     }
 

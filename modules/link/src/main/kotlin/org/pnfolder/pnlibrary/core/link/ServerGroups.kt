@@ -91,7 +91,6 @@ class ServerGroups(private val file: () -> Path?) {
         val ok: Boolean get() = known != null && known.online && missing.isEmpty() && outdated.isEmpty()
     }
 
-    /** Every group in the file, sorted by name ignoring case. */
     fun all(): List<Group> {
         val servers = linkedMapOf<String, MutableSet<String>>()
         val plugins = linkedMapOf<String, MutableSet<String>>()
@@ -118,7 +117,6 @@ class ServerGroups(private val file: () -> Path?) {
     /** The group called [name], ignoring case, or null. */
     fun get(name: String): Group? = all().firstOrNull { it.name.equals(name, ignoreCase = true) }
 
-    /** The groups that [server] belongs to, ignoring case. */
     fun of(server: String): List<Group> = all().filter { group -> group.servers.any { it.equals(server, true) } }
 
     /** Makes an empty group; returns false when the name is taken, reserved or unfit. */

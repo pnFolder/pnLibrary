@@ -13,7 +13,6 @@ class PlaceholderFormatterRegistry {
     private val byAddress = ConcurrentHashMap<String, FormatterDefinition<*>>()
     private val systemOwner = PluginId.of(SYSTEM_NAMESPACE)
 
-    /** Registers the formatters every plugin can use without an owner prefix. */
     fun registerBuiltIns() {
         register(systemOwner, "upper", Any::class.java) { value, _, _ -> value.toString().uppercase(Locale.ROOT) }
         register(systemOwner, "lower", Any::class.java) { value, _, _ -> value.toString().lowercase(Locale.ROOT) }
@@ -42,7 +41,6 @@ class PlaceholderFormatterRegistry {
         register(systemOwner, "date", Any::class.java) { value, arguments, _ -> PlaceholderBuiltInFormatters.date(value, arguments) }
     }
 
-    /** Registers formatter [name] of [owner] for values of [type]; the name must be lower case letters, digits, `_` or `-`. */
     fun <T : Any> register(
         owner: PluginId,
         name: String,
@@ -63,13 +61,11 @@ class PlaceholderFormatterRegistry {
         byAddress[address.lowercase(Locale.ROOT)] = FormatterDefinition(owner, type, formatter)
     }
 
-    /** Removes every formatter and format address registered by [owner]. */
     fun removeOwnedBy(owner: PluginId) {
         formatters.entries.removeIf { (_, definition) -> definition.owner == owner }
         byAddress.entries.removeIf { (_, definition) -> definition.owner == owner }
     }
 
-    /** Applies the formatters of [pipeline] to [value] in order; [own] are the formats of the placeholder's entry. */
     fun format(
         consumer: PluginId,
         value: Any?,

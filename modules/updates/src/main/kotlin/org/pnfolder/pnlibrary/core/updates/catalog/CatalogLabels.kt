@@ -13,7 +13,6 @@ object CatalogLabels {
     /** States that need the administrator's attention. */
     val PROBLEMS: Set<UpdateState> = setOf(UpdateState.FAILED, UpdateState.BLOCKED, UpdateState.INCOMPATIBLE)
 
-    /** Color that marks [state] in lists. */
     fun stateColor(state: UpdateState): TextColor = when (state) {
         UpdateState.UP_TO_DATE -> ChatPalette.OK
         UpdateState.UPDATE_AVAILABLE -> ChatPalette.INFO
@@ -23,7 +22,6 @@ object CatalogLabels {
         UpdateState.CHECKING -> ChatPalette.LABEL
     }
 
-    /** Short user-facing name of [state]. */
     fun stateLabel(state: UpdateState): String = when (state) {
         UpdateState.UP_TO_DATE -> "актуально"
         UpdateState.UPDATE_AVAILABLE -> "доступно обновление"
@@ -45,7 +43,6 @@ object CatalogLabels {
         else -> stateLabel(state)
     }
 
-    /** User-facing name of a history [operation]. */
     fun operationLabel(operation: String): String = when (operation) {
         "CHECK" -> "проверка"
         "STAGE" -> "обновление"

@@ -2,12 +2,9 @@ package org.pnfolder.pnlibrary.core.updates.history
 
 import com.google.gson.Gson
 import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
-import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.UpdatePaths
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets.UTF_8
@@ -30,97 +27,54 @@ internal class ConfigurationSnapshots(
     private val pluginsDirectory: Path,
     private val maximumFileBytes: Long = 4L * 1024 * 1024,
     private val maximumTotalBytes: Long = 16L * 1024 * 1024,
-    private val maximumDataFileBytes: Long = 1024L * 1024 * 1024,
-    private val maximumDataTotalBytes: Long = 4L * 1024 * 1024 * 1024,
 ) {
-    /** One file of a snapshot: where it lives, and the saved copy ([blob]) with its size and checksum. */
     data class FileRecord(val product: String, val root: String, val relative: String, val existed: Boolean,
-        val blob: String?, val size: Long, val sha256: String?, val kind: String? = null, val name: String? = null) {
-        /** What the file holds; snapshots from older versions held configuration only. */
-        val backupKind: BackupKind get() = kind?.let(BackupKind::valueOf) ?: BackupKind.CONFIGURATION
-    }
-    /** The manifest of a snapshot: the plan it was taken for and its files. */
+        val blob: String?, val size: Long, val sha256: String?)
     data class Snapshot(val schema: Int, val id: String, val planId: String, val createdAt: String, val files: List<FileRecord>)
     private val gson = Gson()
 
-    init { require(maximumFileBytes > 0 && maximumTotalBytes > 0 && maximumDataFileBytes > 0 && maximumDataTotalBytes > 0) }
+    init { require(maximumFileBytes > 0 && maximumTotalBytes > 0) }
 
-    private fun fileLimit(kind: BackupKind) = if (kind == BackupKind.CONFIGURATION) maximumFileBytes else maximumDataFileBytes
-
-    /** Saves the selected files of [selections] for [planId]; returns the snapshot id, or null when nothing is selected. */
     fun capture(planId: UUID, selections: Map<ProductId, UpdateConfigurationBackup>): UUID? {
         if (selections.isEmpty()) return null
         require(selections.values.sumOf { it.files.size } <= 100) { "Configuration snapshot exceeds 100 files" }
-        val sources = selections.flatMap { (product, selection) ->
-            selection.files.map { relative -> Source(product, selection, relative, checkedSource(selection.root, relative)) }
-        }
-        require(sources.map { it.path }.distinct().size == sources.size) { "Configuration files overlap across components" }
+        val sources = selections.flatMap { (product, selection) -> selection.files.map { relative ->
+            Triple(product, selection, relative) to checkedSource(selection.root, relative)
+        } }
+        require(sources.map { it.second }.distinct().size == sources.size) { "Configuration files overlap across components" }
         val id = UUID.randomUUID()
         val target = directory.toAbsolutePath().normalize().resolve(id.toString())
         UpdatePaths.inside(target.resolve("manifest.json"), directory)
         Files.createDirectories(directory)
-        createPrivateDirectory(target)
-        try {
-            val snapshot = Snapshot(1, id.toString(), planId.toString(), Instant.now().toString(), copyAll(sources, target))
-            writeManifest(target, snapshot)
-        } catch (error: Throwable) {
-            runCatchingNonFatal { BackupStorage.delete(target) }.onFailure(error::addSuppressed)
-            throw error
-        }
-        return id
-    }
-
-    private class Source(val product: ProductId, val request: UpdateConfigurationBackup, val relative: String, val path: Path)
-
-    private fun createPrivateDirectory(target: Path) {
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
             Files.createDirectory(target, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")))
-        } else {
-            Files.createDirectory(target)
-        }
-    }
-
-    private fun copyAll(sources: List<Source>, target: Path): List<FileRecord> {
-        var configurationTotal = 0L
-        var dataTotal = 0L
-        return sources.mapIndexed { index, source ->
-            val label = source.request.labelOf(source.relative)
-            if (!Files.exists(source.path, LinkOption.NOFOLLOW_LINKS)) {
-                return@mapIndexed FileRecord(
-                    source.product.value, source.request.root.toString(), source.relative, false, null, 0, null,
-                    label.kind.name, label.name,
-                )
+        } else Files.createDirectory(target)
+        var total = 0L
+        val records = sources.mapIndexed { index, (selection, source) ->
+            val (product, request, relative) = selection
+            if (!Files.exists(source, LinkOption.NOFOLLOW_LINKS)) {
+                FileRecord(product.value, request.root.toString(), relative, false, null, 0, null)
+            } else {
+                val before = Files.readAttributes(source, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+                require(before.isRegularFile) { "Configuration selection must name a regular file" }
+                val limit = minOf(maximumFileBytes, maximumTotalBytes - total)
+                require(before.size() <= limit) { "Configuration snapshot exceeds size limit" }
+                val blob = index.toString().padStart(4, '0') + ".bin"
+                val (size, hash) = copyBounded(source, target.resolve(blob), limit)
+                val after = Files.readAttributes(source, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+                require(before.size() == after.size() && before.lastModifiedTime() == after.lastModifiedTime() && before.fileKey() == after.fileKey()) {
+                    "Configuration changed while being captured"
+                }
+                total += size
+                FileRecord(product.value, request.root.toString(), relative, true, blob, size, hash)
             }
-            val isConfiguration = label.kind == BackupKind.CONFIGURATION
-            val room = if (isConfiguration) maximumTotalBytes - configurationTotal else maximumDataTotalBytes - dataTotal
-            val blob = index.toString().padStart(4, '0') + ".bin"
-            val record = copyFile(source, label, blob, target, minOf(fileLimit(label.kind), room))
-            if (isConfiguration) configurationTotal += record.size else dataTotal += record.size
-            record
         }
-    }
-
-    /** Copies one existing file and fails when it changed while it was being read. */
-    private fun copyFile(source: Source, label: BackupLabel, blob: String, target: Path, limit: Long): FileRecord {
-        val before = Files.readAttributes(source.path, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
-        require(before.isRegularFile) { "Configuration selection must name a regular file" }
-        require(before.size() <= limit) { "Backup of ${source.relative} exceeds the size limit" }
-        val (size, hash) = copyBounded(source.path, target.resolve(blob), limit)
-        val after = Files.readAttributes(source.path, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
-        require(before.size() == after.size() && before.lastModifiedTime() == after.lastModifiedTime() && before.fileKey() == after.fileKey()) {
-            "Configuration changed while being captured"
-        }
-        return FileRecord(
-            source.product.value, source.request.root.toString(), source.relative, true, blob, size, hash,
-            label.kind.name, label.name,
-        )
-    }
-
-    private fun writeManifest(target: Path, snapshot: Snapshot) {
+        val snapshot = Snapshot(1, id.toString(), planId.toString(), Instant.now().toString(), records)
         val temporary = target.resolve("manifest.tmp")
         TextFiles.write(temporary, gson.toJson(snapshot), UTF_8)
         FileChannel.open(temporary, StandardOpenOption.WRITE).use { it.force(true) }
         AtomicFiles.move(temporary, target.resolve("manifest.json"), replaceExisting = false)
+        return id
     }
 
     /** Validates the complete manifest and every backup byte before any restoration may begin. */
@@ -135,21 +89,19 @@ internal class ConfigurationSnapshots(
         require(snapshot.files.isNotEmpty() && snapshot.files.size <= 100) { "Invalid configuration file count" }
         val sources = mutableSetOf<Path>()
         val blobs = mutableSetOf<String>()
-        var configurationTotal = 0L
-        var dataTotal = 0L
+        var total = 0L
         snapshot.files.forEach { file ->
             ProductId.of(file.product)
             val declaration = UpdateConfigurationBackup(Paths.get(file.root), listOf(file.relative))
             require(sources.add(checkedSource(declaration.root, declaration.files.single()))) { "Duplicate configuration target" }
-            val kind = file.backupKind
-            require(file.size in 0..fileLimit(kind)) { "Invalid backup size" }
-            if (kind == BackupKind.CONFIGURATION) configurationTotal += file.size else dataTotal += file.size
-            require(configurationTotal <= maximumTotalBytes && dataTotal <= maximumDataTotalBytes) { "Backup snapshot exceeds size limit" }
+            require(file.size in 0..maximumFileBytes) { "Invalid configuration size" }
+            total += file.size
+            require(total <= maximumTotalBytes) { "Configuration snapshot exceeds size limit" }
             if (file.existed) {
                 require(file.blob != null && file.blob.matches(Regex("[0-9]{4}\\.bin")) && blobs.add(file.blob)) { "Invalid configuration blob" }
                 val blob = UpdatePaths.inside(folder.resolve(file.blob), folder)
                 require(Files.isRegularFile(blob, LinkOption.NOFOLLOW_LINKS) && Files.size(blob) == file.size) { "Configuration backup size mismatch" }
-                require(hash(blob, fileLimit(kind)) == file.sha256) { "Configuration backup checksum mismatch" }
+                require(hash(blob) == file.sha256) { "Configuration backup checksum mismatch" }
             } else require(file.blob == null && file.sha256 == null && file.size == 0L) { "Invalid absent configuration record" }
         }
         return snapshot
@@ -161,7 +113,6 @@ internal class ConfigurationSnapshots(
         return UpdatePaths.inside(source, pluginsDirectory)
     }
 
-    /** The live path a [file] record would be restored to, checked to stay inside the plugins folder. */
     fun target(file: FileRecord): Path = checkedSource(Paths.get(file.root), file.relative)
 
     /** Copies a validated blob to a temporary file, checking its bytes again during the copy. */
@@ -195,7 +146,7 @@ internal class ConfigurationSnapshots(
         return count to hex(digest.digest())
     }
 
-    private fun hash(path: Path, limit: Long): String {
+    private fun hash(path: Path): String {
         val digest = MessageDigest.getInstance("SHA-256")
         Files.newInputStream(path, LinkOption.NOFOLLOW_LINKS).use { input ->
             val buffer = ByteArray(8192)
@@ -204,7 +155,7 @@ internal class ConfigurationSnapshots(
                 val read = input.read(buffer)
                 if (read < 0) break
                 total += read
-                require(total <= limit) { "Configuration backup exceeds size limit" }
+                require(total <= maximumFileBytes) { "Configuration backup exceeds size limit" }
                 digest.update(buffer, 0, read)
             }
         }

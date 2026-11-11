@@ -15,8 +15,6 @@ import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Level
 
 /**
  * Registers portable commands through Paper's Brigadier command API, falling back to [fallback], the classic
@@ -33,7 +31,6 @@ class PaperNativeCommandRegistrar(
     private val plugin: Plugin,
     private val fallback: NativeCommandRegistrar<CommandSender>,
 ) : NativeCommandRegistrar<CommandSender> {
-    /** One registered command with the handlers needed to publish it either natively or through the fallback. */
     private class Entry(
         val owner: Plugin?,
         val command: CommandDefinition,
@@ -42,7 +39,6 @@ class PaperNativeCommandRegistrar(
     ) {
         @Volatile var active = true
         @Volatile var fallbackRegistration: PlatformCommandRegistration? = null
-        val suggestionFailureReported = AtomicBoolean(false)
     }
 
     private val entries = CopyOnWriteArrayList<Entry>()
@@ -85,10 +81,9 @@ class PaperNativeCommandRegistrar(
             val meta = (entry.owner ?: plugin).pluginMeta
             registrar.register(meta, node, "pnLibrary portable command", entry.command.aliases.toList())
         } catch (error: Exception) {
-            plugin.logger.log(
-                Level.WARNING,
-                "Command /${entry.command.name} could not use Paper's command API; using the classic command map",
-                error,
+            plugin.logger.warning(
+                "Command /${entry.command.name} could not use Paper's command API " +
+                    "(${error.javaClass.simpleName}); using the classic command map",
             )
             entry.fallbackRegistration = fallback.register(entry.owner ?: plugin, entry.command, entry.execute, entry.suggest)
         }
@@ -122,12 +117,7 @@ class PaperNativeCommandRegistrar(
 
         override fun suggest(source: CommandSourceStack, input: String): CompletionStage<List<String>> {
             val line = CommandLine.of(input, keepTrailing = true)
-            return entry.suggest(source.sender, line.label, line.arguments.toTypedArray()).whenComplete { _, error ->
-                // Tab runs on every keystroke, so one report per command is enough.
-                if (error != null && entry.suggestionFailureReported.compareAndSet(false, true)) {
-                    plugin.logger.log(Level.SEVERE, "Tab completion of /${entry.command.name} failed", error)
-                }
-            }
+            return entry.suggest(source.sender, line.label, line.arguments.toTypedArray())
         }
     }
 }

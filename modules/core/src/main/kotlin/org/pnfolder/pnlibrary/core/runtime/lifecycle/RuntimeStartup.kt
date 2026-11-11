@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeUpdateMonitor
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
-/** Starts the library instance and registers it for updates. */
 internal object RuntimeStartup {
     data class Started(
         val library: PnLibrary,

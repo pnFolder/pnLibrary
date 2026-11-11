@@ -12,35 +12,30 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * The channel and automatic-download choices an administrator makes with commands or in the menu: one per component,
- * and one for all plugins together. They are kept until changed again and take precedence over the defaults.
+ * Per-component channel and automatic-download choices made at runtime, for example from `/pn updates settings`.
+ *
+ * `updates.yml` is hand-edited and commented, so it is never rewritten. Choices made through commands are kept
+ * here instead and take precedence over `updates.yml` until they are changed again.
  */
 internal class UpdatePolicyOverrides(
     private val file: Path,
     private val warning: (String) -> Unit = {},
 ) {
-    private data class State(
-        val channels: Map<String, UpdateChannel>,
-        val automatic: Map<String, Boolean>,
-        val allPlugins: Boolean? = null,
-    )
+    private data class State(val channels: Map<String, UpdateChannel>, val automatic: Map<String, Boolean>)
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     @Volatile
     private var state = load()
 
-    /** The channel chosen for [product] at runtime, or null when the default decides. */
+    /** The channel chosen for [product] at runtime, or null when `updates.yml` decides. */
     fun channel(product: String): UpdateChannel? = state.channels[product]
 
-    /** The automatic-download choice for [product] at runtime, or null when the default decides. */
+    /** The automatic-download choice for [product] at runtime, or null when `updates.yml` decides. */
     fun automatic(product: String): Boolean? = state.automatic[product]
 
-    /** The automatic-download choice for all plugins together, or null when none was made. */
-    fun allPlugins(): Boolean? = state.allPlugins
-
     /** Whether any component was switched to automatic download at runtime. */
-    fun anyAutomaticEnabled(): Boolean = state.allPlugins == true || state.automatic.values.any { it }
+    fun anyAutomaticEnabled(): Boolean = state.automatic.values.any { it }
 
     /** Remembers [channel] for [product], or forgets the choice when [channel] is null. */
     @Synchronized
@@ -55,26 +50,16 @@ internal class UpdatePolicyOverrides(
         save()
     }
 
-    /** Sets automatic download for every plugin and forgets the choices made for single ones; [libraryProduct] keeps its own. */
-    @Synchronized
-    fun setAllPlugins(enabled: Boolean, libraryProduct: String) {
-        state = state.copy(allPlugins = enabled, automatic = state.automatic.filterKeys { it == libraryProduct })
-        save()
-    }
-
     private fun load(): State {
         if (!Files.isRegularFile(file)) return State(emptyMap(), emptyMap())
         return try {
             val root = JsonParser.parseString(TextFiles.read(file, UTF_8)).asJsonObject
             State(
                 channels = root.getAsJsonObject("channels")?.entrySet().orEmpty().mapNotNull { (product, value) ->
-                    runCatchingNonFatal { UpdateChannel.valueOf(value.asString) }
-                        .onFailure { warning("Unknown update channel for $product in ${file.fileName}; the default is used") }
-                        .getOrNull()?.let { product to it }
+                    runCatchingNonFatal { UpdateChannel.valueOf(value.asString) }.getOrNull()?.let { product to it }
                 }.toMap(),
                 automatic = root.getAsJsonObject("automatic")?.entrySet().orEmpty()
                     .associate { (product, value) -> product to value.asBoolean },
-                allPlugins = root.get("allPlugins")?.takeIf { !it.isJsonNull }?.asBoolean,
             )
         } catch (error: Exception) {
             warning("Unreadable update settings ${file.fileName}: ${error.javaClass.simpleName}")
@@ -85,7 +70,6 @@ internal class UpdatePolicyOverrides(
     private fun save() {
         Files.createDirectories(file.parent)
         val json = JsonObject().apply {
-            state.allPlugins?.let { addProperty("allPlugins", it) }
             add("channels", JsonObject().also { node -> state.channels.toSortedMap().forEach { (p, c) -> node.addProperty(p, c.name) } })
             add("automatic", JsonObject().also { node -> state.automatic.toSortedMap().forEach { (p, a) -> node.addProperty(p, a) } })
         }

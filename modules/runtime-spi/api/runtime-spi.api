@@ -50,11 +50,6 @@ public final class org/pnfolder/pnlibrary/spi/commands/UnsupportedPlatformComman
 	public fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/commands/CommandDefinition;Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandRegistration;
 }
 
-public final class org/pnfolder/pnlibrary/spi/libraries/OptionalLibrary {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;)V
-	public final fun ensure ()Z
-}
-
 public final class org/pnfolder/pnlibrary/spi/metrics/NoopMetricsFactory : org/pnfolder/pnlibrary/spi/metrics/PlatformMetricsFactory {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/metrics/NoopMetricsFactory;
 	public fun open (Ljava/lang/Object;Ljava/util/Collection;)Lorg/pnfolder/pnlibrary/api/metrics/PluginMetrics;

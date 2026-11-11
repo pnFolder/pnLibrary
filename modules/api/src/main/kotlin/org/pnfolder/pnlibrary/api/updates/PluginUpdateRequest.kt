@@ -1,9 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.updates.backup.BackupExport
-import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
-import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
@@ -67,9 +64,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Explicit opt-in configuration backup; absent by default. */
     val configurationBackup: UpdateConfigurationBackup? = builder.configurationBackup
 
-    /** Copies the plugin makes itself before an update; kept with the backup set and restored by hand. */
-    val exports: List<BackupExport> = Collections.unmodifiableList(ArrayList(builder.exports))
-
     /** Returns the most specific artifact compatible with [javaFeature], or `null`. */
     fun artifactFor(javaFeature: Int): PluginUpdateArtifact? = artifacts
         .filter { it.supports(javaFeature) }
@@ -92,34 +86,12 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
         internal var configurationBackup: UpdateConfigurationBackup? = null
-        internal val exports = mutableListOf<BackupExport>()
-
-        /** Adds a copy that [export] writes to a file before updating, for data such as a MySQL database. A rollback does not restore it. */
-        fun backupExport(kind: BackupKind, name: String, fileName: String, export: (Path) -> Unit): Builder = apply {
-            require(exports.none { it.fileName == fileName }) { "Export file names must differ" }
-            exports += BackupExport(kind, name, fileName, export)
-        }
 
         /** Preserves only [files] relative to the component's own [dataDirectory] before updating. */
-        fun configurationBackup(dataDirectory: Path, vararg files: String): Builder =
-            backup(BackupKind.CONFIGURATION, "", dataDirectory, *files)
-
-        /**
-         * Preserves [files] of the component's own [dataDirectory] before updating, and says what they are: a
-         * [kind] such as [BackupKind.DATABASE] and a short [name] the menu and commands show. May be called
-         * several times, but every call must name the same [dataDirectory]; a file may be declared once.
-         */
-        fun backup(kind: BackupKind, name: String, dataDirectory: Path, vararg files: String): Builder = apply {
-            val previous = configurationBackup
-            val label = BackupLabel(kind, name)
-            val added = UpdateConfigurationBackup(dataDirectory, files.toList(), files.associate { it to label })
-            configurationBackup = if (previous == null) added else {
-                require(previous.root == added.root) { "All backups of one component must use the same data directory" }
-                UpdateConfigurationBackup(previous.root, previous.files + added.files, previous.labels + added.labels)
-            }
+        fun configurationBackup(dataDirectory: Path, vararg files: String): Builder = apply {
+            configurationBackup = UpdateConfigurationBackup(dataDirectory, files.toList())
         }
 
-        /** Sets the GitHub repository (owner and name) releases are read from. */
         fun repository(owner: String, name: String): Builder = apply {
             require(owner.matches(REPOSITORY_PART) && name.matches(REPOSITORY_PART)) {
                 "Invalid GitHub repository: $owner/$name"
@@ -174,19 +146,16 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         /** Enables or disables automatic verified downloads. */
         fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }
 
-        /** Sets the range of pnLibrary API versions the plugin build supports. */
         fun supportedApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
 
-        /** Selects the release file with exactly this name, for the given Java range. */
         @JvmOverloads
         fun exactArtifact(name: String, minimumJava: Int = 8, maximumJava: Int? = null): Builder = apply {
             require(name.isNotBlank()) { "Artifact name must not be blank" }
             artifact("^${Regex.escape(name)}$", minimumJava, maximumJava)
         }
 
-        /** Selects release files whose name matches [regex], for the given Java range. */
         @JvmOverloads
         fun artifact(regex: String, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -195,7 +164,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             artifacts += PluginUpdateArtifact(regex, minimumJava, maximumJava)
         }
 
-        /** Selects release files matching [regex] on one [platform], for the given Java range. */
         @JvmOverloads
         fun artifact(regex: String, platform: PlatformType, minimumJava: Int, maximumJava: Int? = null): Builder = apply {
             Regex(regex)
@@ -216,7 +184,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     companion object {
         private val REPOSITORY_PART = Regex("[A-Za-z0-9_.-]+")
 
-        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

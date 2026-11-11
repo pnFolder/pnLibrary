@@ -18,10 +18,8 @@ import java.util.function.Consumer
  * callback returns and rolls back partial resources if any integration fails to initialize.
  */
 interface PluginBuilder {
-    /** Declares one dependency of the plugin. */
     fun depends(dependency: PluginDependency): PluginBuilder
 
-    /** Declares several dependencies of the plugin. */
     fun depends(vararg dependencies: PluginDependency): PluginBuilder {
         dependencies.forEach(::depends)
         return this
@@ -61,7 +59,6 @@ interface PluginBuilder {
         return updates(builder.build())
     }
 
-    /** Declares dependencies with the dependency DSL. */
     fun dependencies(configure: Consumer<DependencyBuilder>): PluginBuilder {
         val builder = DependencyBuilder()
         configure.accept(builder)

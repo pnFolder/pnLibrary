@@ -19,7 +19,6 @@ class CooldownResult private constructor(
     companion object {
         private val ALLOWED = CooldownResult(true, Duration.ZERO)
 
-        /** Returns the shared result meaning no cooldown is active. */
         @JvmStatic
         fun allowed(): CooldownResult = ALLOWED
 

@@ -98,7 +98,6 @@ internal class ComponentLedger(
     }
 
     internal companion object {
-        /** Journal operation names written for component changes. */
         const val OPERATION_ADDED = "COMPONENT_ADDED"
         const val OPERATION_REMOVED = "COMPONENT_REMOVED"
         const val OPERATION_VERSION_CHANGED = "VERSION_CHANGED"

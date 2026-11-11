@@ -68,7 +68,6 @@ internal class DefaultMinecraftLocalization internal constructor(
     override fun load(request: TranslationRequest): CompletionStage<TranslationBundle> = load(request, refresh = false)
     override fun refresh(request: TranslationRequest): CompletionStage<TranslationBundle> = load(request, refresh = true)
 
-    /** Loads every requested locale plus the fallback in parallel; [refresh] skips the memory and disk caches. */
     private fun load(request: TranslationRequest, refresh: Boolean): CompletionStage<TranslationBundle> {
         ensureOpen()
         val requested = LinkedHashSet(request.locales)
@@ -80,7 +79,6 @@ internal class DefaultMinecraftLocalization internal constructor(
         }
     }
 
-    /** Returns the locale from memory or a shared in-flight download, starting one when needed. */
     private fun loadLocale(version: MinecraftVersion, locale: String, refresh: Boolean): CompletableFuture<LoadedLocale> {
         requireKnown(version)
         val normalized = try { TranslationRequest.normalizeLocale(locale) } catch (error: IllegalArgumentException) {
@@ -100,7 +98,6 @@ internal class DefaultMinecraftLocalization internal constructor(
         }
     }
 
-    /** Reads the locale from disk, else downloads it; on a failed refresh falls back to the stale disk copy. */
     private fun loadLocaleNow(key: CacheKey, refresh: Boolean): LoadedLocale {
         val path = store.translation(key.version.text, key.locale)
         if (!refresh) store.read(path, MAX_LANGUAGE_BYTES)?.let { bytes ->
@@ -124,14 +121,12 @@ internal class DefaultMinecraftLocalization internal constructor(
         }
     }
 
-    /** Parses [bytes] and keeps the result in the memory cache unless the service is closed. */
     private fun cache(key: CacheKey, bytes: ByteArray, metadata: TranslationMetadata): LoadedLocale {
         val loaded = LoadedLocale(key.locale, TranslationJsonCodec.parse(bytes), metadata, layouts)
         synchronized(memory) { if (!closed.get()) memory[key] = loaded }
         return loaded
     }
 
-    /** Returns the version manifest, re-downloading it after [manifestTtl]; [allowStale] tolerates a failed refresh. */
     @Synchronized
     private fun manifest(allowStale: Boolean): ByteArray? {
         val path = store.manifest()
@@ -155,13 +150,11 @@ internal class DefaultMinecraftLocalization internal constructor(
         }
     }
 
-    /** Runs [action] on the executor and returns its future. */
     private fun <T> async(action: () -> T): CompletableFuture<T> {
         ensureOpen()
         return submit(CompletableFuture(), action = action)
     }
 
-    /** Executes [action] on the executor and completes [promise]; [beforeCompletion] always runs first. */
     private fun <T> submit(
         promise: CompletableFuture<T>,
         beforeCompletion: () -> Unit = {},
@@ -198,12 +191,10 @@ internal class DefaultMinecraftLocalization internal constructor(
         return promise
     }
 
-    /** Throws a CLOSED [TranslationException] after [close]. */
     private fun ensureOpen() {
         if (closed.get()) throw closedError()
     }
 
-    /** Rejects the UNKNOWN version, which has no assets. */
     private fun requireKnown(version: MinecraftVersion) {
         if (!version.known) throw TranslationException(
             TranslationException.Reason.UNSUPPORTED_VERSION, "UNKNOWN Minecraft version is not supported",
@@ -221,13 +212,9 @@ internal class DefaultMinecraftLocalization internal constructor(
         if (ownsExecutor) executor.shutdownNow()
     }
 
-    /** Error given to callers after the service is closed. */
     private fun closedError() = TranslationException(TranslationException.Reason.CLOSED, "Minecraft localization service is closed")
-    /** Error given when a download is needed but no manifest was ever cached. */
     private fun offline() = TranslationException(TranslationException.Reason.OFFLINE, "No cached Minecraft manifest is available")
-    /** Already failed future carrying [error]. */
     private fun <T> failed(error: Throwable): CompletableFuture<T> = CompletableFuture<T>().also { it.completeExceptionally(error) }
-    /** Memory and in-flight cache key: one language file of one version. */
     private data class CacheKey(val version: MinecraftVersion, val locale: String)
 
     private companion object {
@@ -250,17 +237,14 @@ internal class LoadedLocale private constructor(
     override fun translate(key: String): Optional<String> = Optional.ofNullable(data.values[key])
     override fun translations(): Map<String, String> = data.values
     override fun keys(): TranslationIndex<String> = data.keys
-    /** Copy that reports a different origin, for example MEMORY when served from the cache. */
     fun withSource(source: TranslationSource) = LoadedLocale(locale, data, metadata.copy(source = source), layouts)
 
-    /** Shared immutable values with a lazily built key index, so copies by [withSource] reuse it. */
     private class LocaleData(values: Map<String, String>, layouts: KeyboardLayouts) {
         val values = Collections.unmodifiableMap(LinkedHashMap(values))
         val keys by lazy { TranslationSearchIndex.keys(this.values, layouts) }
     }
 }
 
-/** Bundle of the locales loaded for one request; the optional fallback fills keys missing from a locale. */
 private class DefaultTranslationBundle(
     override val version: MinecraftVersion,
     requested: Set<String>,
@@ -276,7 +260,6 @@ private class DefaultTranslationBundle(
     }
 }
 
-/** Locale view that asks [fallback] for keys the [primary] locale lacks. */
 private class FallbackLocale(
     private val primary: LoadedLocale,
     private val fallback: LoadedLocale,
