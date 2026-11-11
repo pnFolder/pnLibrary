@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.journal
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
-import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
@@ -70,72 +69,58 @@ fun joinDigest(
         .sortedByDescending { it.first().timeMillis }
     if (groups.isEmpty()) return emptyList()
 
-    val hasErrors = groups.any { it.first().level == JournalLevel.ERROR }
-    val ranked = rankByUrgency(groups, now, startedAtMillis)
-    val top = ranked.first()
-    val topReason = reasonOf(top, now, startedAtMillis)
-    val lines = mutableListOf<Component>(
-        kit.blank(),
-        kit.header("Журнал", kit.text("за последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL)),
-        summaryLine(kit, relevant.count { it.level == JournalLevel.ERROR }, relevant.count { it.level == JournalLevel.WARNING }),
-        strip(kit, relevant, now, windowHours, startedAtMillis),
-    )
-    ranked.take(MAX_NOTABLE).forEach { lines += notableLine(kit, it, reasonOf(it, now, startedAtMillis), root) }
-    lines += adviceLine(kit, top, topReason, hasErrors)
-    lines += kit.blank()
-    lines += digestActions(kit, root, hasErrors, topReason != Reason.PLAIN, top)
-    return lines
-}
+    val errors = groups.filter { it.first().level == JournalLevel.ERROR }
+    val warnings = groups.filter { it.first().level == JournalLevel.WARNING }
+    val errorCount = errors.sumOf { it.size }
+    val warningCount = warnings.sumOf { it.size }
 
-/** The buttons under the digest; the card button appears only when something is worth a closer look. */
-private fun digestActions(kit: ChatKit, root: String, hasErrors: Boolean, urgentReason: Boolean, top: List<JournalRecord>): Component {
-    val urgent = hasErrors || urgentReason
-    return kit.actions(
-        kit.button("открыть журнал", if (hasErrors) "$root error" else "$root warning", "Список событий", ChatPalette.ACCENT),
-        if (urgent) kit.button("подробнее", "$root view ${top.first().fingerprint}", "Карточка главного события", ChatPalette.ACCENT) else null,
-    ) ?: kit.blank()
-}
-
-/** Most urgent first; errors before warnings inside one reason. If nothing stands out, the newest error (or warning) leads. */
-private fun rankByUrgency(groups: List<List<JournalRecord>>, now: Long, startedAtMillis: Long): List<List<JournalRecord>> =
-    groups.sortedWith(
-        compareBy<List<JournalRecord>> { reasonOf(it, now, startedAtMillis).ordinal }
-            .thenBy { if (it.first().level == JournalLevel.ERROR) 0 else 1 },
-    )
-
-/** One piece of advice for the top event, or the calm note when nothing is urgent; nothing when only errors stand out plainly. */
-private fun adviceLine(kit: ChatKit, top: List<JournalRecord>, topReason: Reason, hasErrors: Boolean): List<Component> {
-    if (topReason == Reason.PLAIN) {
-        return if (hasErrors) emptyList() else listOf(kit.note("Ничего срочного. Загляните в журнал, когда будет время.", ChatPalette.FAINT))
+    fun reasonOf(group: List<JournalRecord>): Reason {
+        val first = group.last().timeMillis
+        return when {
+            first >= startedAtMillis - 1_000 && first <= startedAtMillis + STARTUP.toMillis() -> Reason.STARTUP
+            group.first().timeMillis >= now - JUST_NOW.toMillis() -> Reason.JUST_NOW
+            group.size >= RECURRING_FROM -> Reason.RECURRING
+            else -> Reason.PLAIN
+        }
     }
+
+    // Most urgent first; errors before warnings inside one reason. If nothing stands out, the newest error (or warning).
+    val ranked = groups.sortedWith(compareBy<List<JournalRecord>> { reasonOf(it).ordinal }
+        .thenBy { if (it.first().level == JournalLevel.ERROR) 0 else 1 })
+    val notable = ranked.take(MAX_NOTABLE)
+    val topReason = reasonOf(ranked.first())
     // An event that keeps repeating is a repeating problem even when its last repeat was a moment ago.
-    val reason = if (topReason == Reason.JUST_NOW && top.size >= RECURRING_FROM) Reason.RECURRING else topReason
-    return listOf(kit.note(reason.advice, ChatPalette.FAINT))
-}
+    val adviceReason = if (topReason == Reason.JUST_NOW && ranked.first().size >= RECURRING_FROM) Reason.RECURRING else topReason
 
-/** Why [group], newest first, deserves a look: it began at startup, just happened, or keeps coming back. */
-private fun reasonOf(group: List<JournalRecord>, now: Long, startedAtMillis: Long): Reason {
-    val first = group.last().timeMillis
-    return when {
-        first >= startedAtMillis - 1_000 && first <= startedAtMillis + STARTUP.toMillis() -> Reason.STARTUP
-        group.first().timeMillis >= now - JUST_NOW.toMillis() -> Reason.JUST_NOW
-        group.size >= RECURRING_FROM -> Reason.RECURRING
-        else -> Reason.PLAIN
-    }
-}
-
-/** `  ● 3 ошибки   ▲ 2 предупреждения`: only the kinds that occurred. */
-private fun summaryLine(kit: ChatKit, errorCount: Int, warningCount: Int): Component {
     val summary = mutableListOf<Component>()
-    if (errorCount > 0) {
+    if (errors.isNotEmpty()) {
         summary += kit.text(kit.glyph('●') + " $errorCount ", ChatPalette.DANGER)
             .append(kit.text(RussianText.plural(errorCount.toLong(), "ошибка", "ошибки", "ошибок"), ChatPalette.SOFT))
     }
-    if (warningCount > 0) {
+    if (warnings.isNotEmpty()) {
         summary += kit.text(kit.glyph('▲') + " $warningCount ", ChatPalette.WARN)
             .append(kit.text(RussianText.plural(warningCount.toLong(), "предупреждение", "предупреждения", "предупреждений"), ChatPalette.SOFT))
     }
-    return summary.drop(1).fold(kit.text("  ").append(summary.first())) { line, part -> line.append(kit.text("   ")).append(part) }
+
+    val lines = mutableListOf<Component>(
+        kit.blank(),
+        kit.header("Журнал", kit.text("за последние $windowHours ${RussianText.plural(windowHours.toLong(), "час", "часа", "часов")}", ChatPalette.LABEL)),
+        summary.drop(1).fold(kit.text("  ").append(summary.first())) { line, part -> line.append(kit.text("   ")).append(part) },
+        strip(kit, relevant, now, windowHours, startedAtMillis),
+    )
+    notable.forEach { lines += notableLine(kit, it, reasonOf(it), now, root) }
+    if (topReason == Reason.PLAIN) {
+        if (errors.isEmpty()) lines += kit.note("Ничего срочного. Загляните в журнал, когда будет время.", ChatPalette.FAINT)
+    } else {
+        lines += kit.note(adviceReason.advice, ChatPalette.FAINT)
+    }
+    lines += kit.blank()
+    val urgent = errors.isNotEmpty() || topReason != Reason.PLAIN
+    lines += kit.actions(
+        kit.button("открыть журнал", if (errors.isNotEmpty()) "$root error" else "$root warning", "Список событий", ChatPalette.ACCENT),
+        if (urgent) kit.button("подробнее", "$root view ${ranked.first().first().fingerprint}", "Карточка главного события", ChatPalette.ACCENT) else null,
+    ) ?: kit.blank()
+    return lines
 }
 
 private fun levelColor(level: JournalLevel): TextColor = when (level) {
@@ -224,7 +209,7 @@ private fun stripTipLines(
 }
 
 /** `  ● pnShop ×3 старт  Database is locked`, clickable to open the card; the reason word is dropped when plain. */
-private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason, root: String): Component {
+private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason, now: Long, root: String): Component {
     val record = group.first()
     val color = levelColor(record.level)
     val icon = if (record.level == JournalLevel.ERROR) '●' else '▲'
@@ -243,12 +228,7 @@ private fun notableLine(kit: ChatKit, group: List<JournalRecord>, reason: Reason
         line = line.append(kit.text(" ${reason.word}", reasonColor))
     }
     line = line.append(kit.text("  $message", ChatPalette.SOFT))
-    return line.clickEvent(ClickEvent.runCommand("$root view ${record.fingerprint}")).hoverEvent(notableTip(kit, group))
-}
-
-private fun notableTip(kit: ChatKit, group: List<JournalRecord>): HoverEvent<Component> {
-    val record = group.first()
-    return kit.tooltip(
+    val tip = mutableListOf<Component>(
         kit.text(record.source, ChatPalette.ACCENT),
         kit.text(record.message.lineSequence().first().take(120), ChatPalette.TEXT),
         kit.blank(),
@@ -260,4 +240,5 @@ private fun notableTip(kit: ChatKit, group: List<JournalRecord>): HoverEvent<Com
         kit.blank(),
         kit.text("Нажмите, чтобы открыть карточку", ChatPalette.FAINT),
     )
+    return line.clickEvent(ClickEvent.runCommand("$root view ${record.fingerprint}")).hoverEvent(kit.tooltip(*tip.toTypedArray()))
 }

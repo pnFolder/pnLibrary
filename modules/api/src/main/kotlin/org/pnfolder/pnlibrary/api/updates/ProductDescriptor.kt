@@ -47,7 +47,6 @@ class ProductDescriptor private constructor(
         internal var minimumJava: Int = 8
         internal var maximumJava: Int? = null
 
-        /** Sets the range of pnLibrary API versions the product supports. */
         fun pnLibraryApi(minimum: Int, maximum: Int): Builder = apply {
             supportedApi = ApiVersionRange(minimum, maximum)
         }
@@ -55,10 +54,8 @@ class ProductDescriptor private constructor(
         /** Parses and sets the installed semantic [value]. */
         fun version(value: String): Builder = apply { version = SemanticVersion.parse(value) }
 
-        /** Sets the update channel the product follows. */
         fun channel(value: UpdateChannel): Builder = apply { channel = value }
 
-        /** Sets the supported Java range; the maximum is open when `null`. */
         @JvmOverloads
         fun java(minimum: Int, maximum: Int? = null): Builder = apply {
             require(minimum >= 8) { "Minimum Java must be at least 8" }
@@ -72,7 +69,6 @@ class ProductDescriptor private constructor(
     }
 
     companion object {
-        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder =
             Builder()

@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-/** Builds the analytics section of the diagnostics report. */
 internal object RuntimeAnalytics {
     fun of(
         taskCount: Int,

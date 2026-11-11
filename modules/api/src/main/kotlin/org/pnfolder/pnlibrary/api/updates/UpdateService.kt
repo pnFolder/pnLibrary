@@ -89,15 +89,6 @@ interface UpdateService {
     fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("automatic download changes")
 
-    /**
-     * Turns automatic download on or off for every plugin at once, including plugins registered later. Choices made
-     * for single plugins are dropped, so the new value applies to all of them. Does not grant permissions.
-     */
-    fun setAutomaticDownloadForAllPlugins(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> =
-        CompletableFuture<List<UpdateSnapshot>>().also {
-            it.completeExceptionally(UnsupportedOperationException("Update service does not support automatic download changes"))
-        }
-
     /** Holds updates of [product] for seven days, or releases a hold. */
     fun setHeld(product: String, held: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         setHeld(product, if (held) Duration.ofDays(7) else null, actor)
@@ -122,31 +113,6 @@ interface UpdateService {
     fun backups(): CompletionStage<List<UpdateBackup>> = CompletableFuture<List<UpdateBackup>>().also {
         it.completeExceptionally(UnsupportedOperationException("Update service does not support saved rollback sets"))
     }
-
-    /** Permanently deletes one retained rollback set with its saved files. A set that a restart still verifies is refused. */
-    fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = CompletableFuture<Void?>().also {
-        it.completeExceptionally(UnsupportedOperationException("Update service does not support deleting saved rollback sets"))
-    }
-
-    /**
-     * Puts the database [name] of [product] back as it was in the retained set [transactionId]: the tables in the
-     * copy are replaced and rows written since are lost. The state it replaces is kept first. Runs at once, not at
-     * the next restart. Does not grant permissions.
-     */
-    fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
-        CompletableFuture<Void?>().also {
-            it.completeExceptionally(UnsupportedOperationException("Update service does not support restoring databases"))
-        }
-
-    /**
-     * Copies the saved databases and plugin exports of [product] from the retained set [transactionId] into a new
-     * folder under `plugins/pnLibrary/updates/handout`, for a plugin that cannot take them back itself, and returns
-     * the folder path. Does not grant permissions.
-     */
-    fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> =
-        CompletableFuture<String>().also {
-            it.completeExceptionally(UnsupportedOperationException("Update service does not support handing out saved files"))
-        }
 
     /** Prepares exactly [transactionId] for restart. Never substitutes another backup. */
     fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =

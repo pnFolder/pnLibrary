@@ -48,7 +48,6 @@ interface KeyboardLayouts : AutoCloseable {
     }
 }
 
-/** Mutable registry guarded by [lock]; readers use the volatile snapshot of [layouts] without locking. */
 private class KeyboardLayoutRegistry : KeyboardLayouts {
     private val lock = Any()
 

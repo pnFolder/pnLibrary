@@ -30,11 +30,7 @@ internal class CurrencyIntegration(
     }
 
     override fun close() {
-        registration?.let { active ->
-            runCatchingNonFatal(active::close).onFailure {
-                context.runtime.library.logging.logger(context.plugin, "pnLibrary").error("$pluginName currency did not close cleanly", it)
-            }
-        }
+        registration?.let { runCatchingNonFatal(it::close) }
         registration = null
     }
 }

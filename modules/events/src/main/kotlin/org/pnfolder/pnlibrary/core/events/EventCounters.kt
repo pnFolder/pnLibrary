@@ -17,7 +17,6 @@ class EventCounters(private val history: EventHistory?) {
 
     private val counters = ConcurrentHashMap<String, Counter>()
 
-    /** Counts one call of [event] and passes it to the history. */
     fun count(event: Event) {
         val name = event.javaClass.name
         val counter = counters[name] ?: counters.computeIfAbsent(name) { Counter(event.javaClass) }

@@ -7,7 +7,6 @@ import java.util.concurrent.ScheduledFuture
 
 /** Sends bytes to the game server called [server]; returns false when it cannot be reached. */
 fun interface LinkTransport {
-    /** Sends [message] to [server]; false when it cannot be reached. */
     fun send(server: String, message: ByteArray): Boolean
 }
 
@@ -29,7 +28,6 @@ class RemoteReplies {
         }
     }
 
-    /** Stops waiting for request [id], for a request that could not be sent. */
     fun cancel(id: UUID) {
         waiting.remove(id)?.timeout?.cancel(false)
     }

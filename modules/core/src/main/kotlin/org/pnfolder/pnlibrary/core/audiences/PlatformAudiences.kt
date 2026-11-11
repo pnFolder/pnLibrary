@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.time.Duration
@@ -19,10 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Resolves consoles, players and composite audiences through the platform adapter; returns empty results once closed. */
 internal class PlatformAudiences(
     private val adapter: PlatformAudienceAdapter,
-    private val onDeliveryFailure: (Throwable) -> Unit = {},
 ) : AudienceService, AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val failureThrottle = FailureThrottle()
 
     override fun console(): AudienceSender = if (closed.get()) CLOSED_CONSOLE else adapter.console()
     override fun player(uniqueId: UUID): LibraryPlayer? = if (closed.get()) null else adapter.player(uniqueId)
@@ -33,7 +30,7 @@ internal class PlatformAudiences(
     override fun combine(audiences: Iterable<LibraryAudience>): LibraryAudience = CompositeAudience(audiences)
     override fun close() { closed.set(true) }
 
-    private inner class DynamicAudience(private val receivers: () -> Iterable<LibraryAudience>) : LibraryAudience {
+    private class DynamicAudience(private val receivers: () -> Iterable<LibraryAudience>) : LibraryAudience {
         override fun sendMessage(text: Component) = CompositeAudience(receivers()).sendMessage(text)
         override fun actionBar(text: Component) = CompositeAudience(receivers()).actionBar(text)
         override fun playSound(sound: Sound) = CompositeAudience(receivers()).playSound(sound)
@@ -41,7 +38,7 @@ internal class PlatformAudiences(
             CompositeAudience(receivers()).showTitle(title, subtitle, fadeIn, stay, fadeOut)
     }
 
-    private inner class CompositeAudience(receivers: Iterable<LibraryAudience>) : LibraryAudience {
+    private class CompositeAudience(receivers: Iterable<LibraryAudience>) : LibraryAudience {
         private val receivers = receivers.filterDistinctByIdentity()
         override fun sendMessage(text: Component) = each { it.sendMessage(text) }
         override fun actionBar(text: Component) = each { it.actionBar(text) }
@@ -66,7 +63,6 @@ internal class PlatformAudiences(
                     operation(receiver)
                 } catch (error: Throwable) {
                     Failures.rethrowIfFatal(error)
-                    if (failureThrottle.shouldReport(error.javaClass.name)) onDeliveryFailure(error)
                 }
             }
         }

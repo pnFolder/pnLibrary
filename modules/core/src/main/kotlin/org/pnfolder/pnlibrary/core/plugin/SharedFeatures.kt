@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
-/** Library-wide features shared by all modules: placeholders, currency and expansions. */
 internal class SharedFeatures(
     val placeholders: PlaceholderHub,
     val currency: CurrencyRuntime,

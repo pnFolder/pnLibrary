@@ -1,23 +1,20 @@
 package org.pnfolder.pnlibrary.bukkit.item
 
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
+import java.lang.reflect.Field
 import java.net.URI
 import java.net.URL
 import java.util.Base64
+import java.util.UUID
 
 /** Creates player heads from a Minecraft texture hash, URL, or Base64 texture payload. */
 internal object PlayerHeads {
     private const val TEXTURES = "https://textures.minecraft.net/texture/"
-    private const val FINISHED_CAPACITY = 128
     private val textureUrl = Regex("https?://textures\\.minecraft\\.net/texture/[A-Za-z0-9]+")
     private val textureHash = Regex("[A-Fa-f0-9]{32,}")
-    private val modern by lazy { ModernProfileSetter.resolve(Reflection.Runtime) }
-    private val legacy by lazy { LegacyProfileSetter.resolve(Reflection.Runtime) }
-
-    /** Finished heads by texture URL; callers get clones so nobody changes a shared stack. */
-    private val finished = CopyingCache<ItemStack>(FINISHED_CAPACITY) { it.clone() }
 
     /** Invalid textures produce an untextured head. [displayName] accepts legacy color codes. */
     @JvmStatic
@@ -33,20 +30,14 @@ internal object PlayerHeads {
     /** A head wearing the skin published under texture [hash], or `null` when this server cannot apply skins. */
     fun textured(hash: String): ItemStack? = textured(URI(TEXTURES + hash).toURL())
 
+    // 1.18.1+ has the Bukkit profile API; older servers take an authlib GameProfile in a private field.
     private fun textured(url: URL): ItemStack? {
-        val key = url.toString()
-        finished[key]?.let { return it }
         val head = playerHead()
         val meta = head.itemMeta as? SkullMeta ?: return null
-        if (!applied(meta, url)) return null
+        if (!applyModernProfile(meta, url) && !applyLegacyProfile(meta, url)) return null
         head.itemMeta = meta
-        finished[key] = head
         return head
     }
-
-    // 1.18.1+ has the Bukkit profile API; older servers take an authlib GameProfile in a private field.
-    private fun applied(meta: SkullMeta, url: URL): Boolean =
-        modern?.let { tryProfile { it.apply(meta, url) } } == true || legacy?.let { tryProfile { it.apply(meta, url) } } == true
 
     /** Removes an optional Base64 prefix and returns null for unsupported texture values. */
     @JvmStatic
@@ -68,6 +59,34 @@ internal object PlayerHeads {
         return ItemStack(Material.matchMaterial("SKULL_ITEM") ?: Material.STONE, 1, 3.toShort())
     }
 
+    private fun applyModernProfile(meta: SkullMeta, url: URL): Boolean = tryProfile {
+        val id = profileId(url)
+        val profileType = Class.forName("org.bukkit.profile.PlayerProfile")
+        val texturesType = Class.forName("org.bukkit.profile.PlayerTextures")
+        val profile = Bukkit::class.java.getMethod("createPlayerProfile", UUID::class.java, String::class.java)
+            .invoke(null, id, profileName(id))
+        val textures = profileType.getMethod("getTextures").invoke(profile)
+        texturesType.getMethod("setSkin", URL::class.java).invoke(textures, url)
+        profileType.getMethod("setTextures", texturesType).invoke(profile, textures)
+        SkullMeta::class.java.getMethod("setOwnerProfile", profileType).invoke(meta, profile)
+    }
+
+    private fun applyLegacyProfile(meta: SkullMeta, url: URL): Boolean = tryProfile {
+        val id = profileId(url)
+        val profileType = Class.forName("com.mojang.authlib.GameProfile")
+        val profile = profileType.getConstructor(UUID::class.java, String::class.java)
+            .newInstance(id, profileName(id))
+        val properties = profileType.getMethod("getProperties").invoke(profile)
+        val propertyType = Class.forName("com.mojang.authlib.properties.Property")
+        val payload = "{\"textures\":{\"SKIN\":{\"url\":\"$url\"}}}"
+        val encoded = Base64.getEncoder().encodeToString(payload.toByteArray(Charsets.UTF_8))
+        val property = propertyType.getConstructor(String::class.java, String::class.java)
+            .newInstance("textures", encoded)
+        properties.javaClass.getMethod("put", Any::class.java, Any::class.java)
+            .invoke(properties, "textures", property)
+        profileField(meta.javaClass).apply { isAccessible = true }.set(meta, profile)
+    }
+
     /** Each server version supports one of the two profile APIs; a failure means "try the other one". */
     private inline fun tryProfile(action: () -> Unit): Boolean = try {
         action()
@@ -80,6 +99,18 @@ internal object PlayerHeads {
         false
     }
 
+    private fun profileField(type: Class<*>): Field {
+        var current: Class<*>? = type
+        while (current != null) {
+            try {
+                return current.getDeclaredField("profile")
+            } catch (_: NoSuchFieldException) {
+                current = current.superclass
+            }
+        }
+        throw NoSuchFieldException("profile")
+    }
+
     private fun skinUrl(value: String?): URL? {
         if (value == null) return null
         return when {
@@ -90,4 +121,6 @@ internal object PlayerHeads {
     }
 
     private fun decodeTexture(value: String): String = String(Base64.getDecoder().decode(value), Charsets.UTF_8)
+    private fun profileId(url: URL): UUID = UUID.nameUUIDFromBytes("pnLibrary:$url".toByteArray(Charsets.UTF_8))
+    private fun profileName(id: UUID): String = "pn" + id.toString().replace("-", "").take(14)
 }

@@ -26,8 +26,7 @@ public final class PnLibraryBungeePlugin extends Plugin {
     public void onEnable() {
         LibrarySettings settings = LibrarySettings.DEFAULT;
         try {
-            BungeeLibraryManager manager = new BungeeLibraryManager(this, settings.directoryFor(getDataFolder().toPath()));
-            LibraryLoader.load(manager, getClass().getClassLoader(), settings, RuntimeLibraries.BUNGEE);
+            LibraryLoader.load(new BungeeLibraryManager(this, settings.directoryFor(getDataFolder().toPath())), getClass().getClassLoader(), settings, RuntimeLibraries.BUNGEE);
             Class<?> type = Class.forName("org.pnfolder.pnlibrary.bungee.BungeeRuntime", true, getClass().getClassLoader());
             Constructor<?> constructor = type.getDeclaredConstructors()[0];
             runtime = constructor.newInstance(this);
@@ -37,7 +36,6 @@ public final class PnLibraryBungeePlugin extends Plugin {
         }
     }
 
-    /** Prints the startup failure card to the proxy console, or a one-line message if the card itself fails. */
     private void report(LibrarySettings settings, Throwable failure) {
         try {
             ConsoleTheme theme = new ConsoleTheme(ChatColor.DARK_RED.toString(), ChatColor.RED.toString(),
@@ -50,7 +48,6 @@ public final class PnLibraryBungeePlugin extends Plugin {
         }
     }
 
-    /** Stops the runtime if it was started; a failed stop is logged, not thrown. */
     @Override
     public void onDisable() {
         if (runtime == null) {

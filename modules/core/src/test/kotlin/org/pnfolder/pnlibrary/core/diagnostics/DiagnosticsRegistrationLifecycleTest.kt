@@ -47,21 +47,4 @@ class DiagnosticsRegistrationLifecycleTest {
         assertEquals(1L, before["occurrenceCount"])
         assertEquals(1, (before["occurrenceTimeline"] as List<*>).size)
     }
-
-    @Test
-    fun `a failing listener is reported and does not reject the event`() {
-        val registry = DiagnosticsRegistry()
-        val failures = mutableListOf<String>()
-        registry.onInternalFailure = { what, _ -> failures += what }
-        registry.onEventsChanged { throw IllegalStateException("disk full") }
-        registry.onActivityEvent { _, _, _, _, _, _, _ -> throw IllegalStateException("bridge broke") }
-
-        registry.record("demo", DiagnosticLevel.WARNING, "db", "slow", "Slow query", null, emptyMap())
-
-        assertEquals(1, (registry.eventSnapshot()["demo"] as List<*>).size)
-        assertEquals(
-            setOf("The diagnostic activity listener failed", "The diagnostic history callback failed"),
-            failures.toSet(),
-        )
-    }
 }

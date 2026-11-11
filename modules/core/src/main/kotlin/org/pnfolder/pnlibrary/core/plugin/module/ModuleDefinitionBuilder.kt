@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.api.plugin.PluginOptions
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import java.nio.file.Path
 import java.util.function.Consumer
 
@@ -97,15 +96,8 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
             .automaticDownload(source.automaticDownload)
             .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
             .also { target -> copyArtifactRules(source, target) }
-            .also { target -> source.configurationBackup?.let { copyBackups(it, target) } }
-            .also { target -> source.exports.forEach { target.backupExport(it.kind, it.name, it.fileName, it.export) } }
+            .also { target -> source.configurationBackup?.let { target.configurationBackup(it.root, *it.files.toTypedArray()) } }
             .build()
-    }
-
-    private fun copyBackups(source: UpdateConfigurationBackup, target: PluginUpdateRequest.Builder) {
-        source.files.groupBy(source::labelOf).forEach { (label, files) ->
-            target.backup(label.kind, label.name, source.root, *files.toTypedArray())
-        }
     }
 
     private fun copyArtifactRules(

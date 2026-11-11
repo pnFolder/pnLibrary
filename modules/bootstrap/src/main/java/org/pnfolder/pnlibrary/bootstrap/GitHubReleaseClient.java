@@ -13,7 +13,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-/** Minimal GitHub releases API client that works without any library on the classpath. */
 final class GitHubReleaseClient {
     private static final int JSON_LIMIT = 2 * 1024 * 1024;
     private final BootstrapOptions options;

@@ -1,19 +1,14 @@
 # Выпуск pnLibrary
 
 Полный выпуск запускается через Actions `release`: версия, описание и выбор Maven-публикации.
-Сборка проверяет все четыре платформенных JAR (bukkit, bungeecord, velocity, universal), затем создаёт
-`distribution/build/libs/release-manifest.json`, метаданные `*.jar.meta.json` рядом с JAR и `checksums.sha256`.
-После сборки отдельным шагом запускается `apiCheck`. Версия, канал, API и Java берутся из той же модели,
+Сборка проверяет все четыре основных JAR, затем создаёт `distribution/build/libs/release-manifest.json`,
+метаданные рядом с JAR и `checksums.sha256`. Версия, канал, API и Java берутся из той же модели,
 которая формирует встроенный `META-INF/pnlibrary/component.json`; размеры и хеши — из готовых файлов.
 
 `tools/release/update-catalog.ps1` переносит эти данные в `.pnlibrary/releases.json` и создаёт changelog.
-В каталог идут ровно четыре артефакта (bukkit, bungeecord, velocity, universal); `universal-full` в каталог не входит.
 Он проверяет хеши и согласованность метаданных, сохраняет историю и отклоняет перезапись существующей версии.
-Workflow коммитит каталог, changelog и версию перед тегом. Список GitHub assets берётся из `assets` в manifest:
-четыре платформенных JAR, `pnLibrary-<версия>-universal-full.jar`, `pnLibrary-updater-<версия>.jar`,
-`checksums.sha256` (суммы всех JAR, включая `universal-full` и updater) и `release-manifest.json`.
-Файлы `*.meta.json` нужны только скрипту каталога и в релиз не попадают. Релиз создаётся обычным,
-не pre-release, даже если в версии есть суффикс канала.
+Workflow коммитит каталог, changelog и версию перед тегом. Список GitHub assets тоже берётся из manifest:
+основные JAR, updater, метаданные и суммы.
 
 ## Обновление зависимостей
 
@@ -64,7 +59,7 @@ Maven публикует артефакты, настроенные в Gradle ч
 - Версию без суффикса (`0.1.0`) не выпускаем: она новее всех `-stable.N` и ломает порядок.
 - Канал пользователя принимает свой канал и более зрелые: `dev` видит всё, `stable` только `stable`.
 - Поле `channel` в каталоге должно совпадать со словом версии; тест `RepositoryLayoutTest` это проверяет.
-- Канал самой pnLibrary сейчас по умолчанию `dev` (`UpdateConfiguration.LibraryPolicy`); пока публикуется только `dev`, в командах выбора доступен только он (`ONLY_DEV` в `UpdateCatalogSettingsCommands`).
+- Канал самой pnLibrary сейчас зафиксирован в коде как `dev` (см. `TODO` в `UpdateSettings`).
 
 Пример каталога со всеми каналами: [integration/template/.pnlibrary/releases.json](../integration/template/.pnlibrary/releases.json)
 (заполненный образец для плагина, его changelog-файлы рядом в `changelogs/`).

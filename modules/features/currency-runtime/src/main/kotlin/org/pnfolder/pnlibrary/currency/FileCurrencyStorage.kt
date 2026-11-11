@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.currency
 
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
@@ -20,26 +23,19 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Single-writer JSON storage with group commit: transactions that wait together are applied one after another and saved
- * once. Each result is reported only after the file holding it has reached the disk.
- */
+/** Single-writer JSON storage: every change is kept in memory only after the whole file has been saved. */
 internal class FileCurrencyStorage(
     private val file: Path,
     private val maximumTransactions: Int,
-    private val encoded: () -> Unit = {},
-    private val replaceFile: (Path, (Path) -> Unit) -> Unit = { target, fill -> AtomicFiles.write(target, durable = true, fill) },
 ) : CurrencyStorage {
+    private val lock = Any()
     private val worker = ManagedWorker("pnLibrary-currency-file")
-    private val state = CurrencyLedgerState()
-    private val jobs = ConcurrentLinkedQueue<Job>()
-    private val drainScheduled = AtomicBoolean()
-    private val writer = CurrencyFileWriter(encoded)
+    private val balances = linkedMapOf<String, BigDecimal>()
+    private val transactions = mutableListOf<CurrencyTransaction>()
+    private val idempotency = hashMapOf<String, CurrencyTransaction>()
+    private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
 
     init {
         require(maximumTransactions in 100..1_000_000) { "maximumTransactions must be between 100 and 1000000" }
@@ -47,21 +43,29 @@ internal class FileCurrencyStorage(
     }
 
     override fun balance(currency: CurrencyKey, account: CurrencyAccount): CompletionStage<BigDecimal> = async {
-        state.balances[CurrencyLedgerState.accountKey(currency, account)] ?: BigDecimal.ZERO
+        synchronized(lock) { balances[accountKey(currency, account)] ?: BigDecimal.ZERO }
     }
 
     override fun transact(
         currency: CurrencyKey,
         descriptor: CurrencyDescriptor,
         request: CurrencyTransactionRequest,
-    ): CompletionStage<CurrencyTransaction> {
-        val job = Job.Transact(currency, descriptor, request)
-        enqueue(job)
-        return job.result
+    ): CompletionStage<CurrencyTransaction> = async {
+        synchronized(lock) {
+            request.idempotencyKey?.let { idempotency[idempotencyKey(currency, it)] }?.let { return@synchronized it }
+            atomically {
+                apply(currency, descriptor, request).also { transaction ->
+                    record(transaction)
+                    trimHistory()
+                }
+            }
+        }
     }
 
     override fun history(currency: CurrencyKey, query: CurrencyHistoryQuery): CompletionStage<CurrencyHistoryPage> = async {
-        val filtered = state.transactions.asReversed().filter { transaction -> matches(transaction, currency, query) }
+        val filtered = synchronized(lock) {
+            transactions.asReversed().filter { transaction -> matches(transaction, currency, query) }
+        }
         CurrencyHistoryPage(
             items = filtered.drop(query.offset).take(query.limit),
             offset = query.offset,
@@ -70,33 +74,37 @@ internal class FileCurrencyStorage(
     }
 
     override fun export(currency: CurrencyKey): CompletionStage<CurrencyStorageSnapshot> = async {
-        val prefix = "$currency|"
-        val exportedBalances = state.balances.entries.filter { it.key.startsWith(prefix) }.associate {
-            UUID.fromString(it.key.removePrefix(prefix)) to it.value
+        synchronized(lock) {
+            val prefix = "$currency|"
+            val exportedBalances = balances.entries.filter { it.key.startsWith(prefix) }.associate {
+                UUID.fromString(it.key.removePrefix(prefix)) to it.value
+            }
+            CurrencyStorageSnapshot(
+                currency = currency,
+                createdAt = Instant.now(),
+                balances = exportedBalances,
+                transactions = transactions.filter { it.currency == currency },
+            )
         }
-        CurrencyStorageSnapshot(
-            currency = currency,
-            createdAt = Instant.now(),
-            balances = exportedBalances,
-            transactions = state.transactions.filter { it.currency == currency },
-        )
     }
 
     override fun importSnapshot(snapshot: CurrencyStorageSnapshot, mode: CurrencyImportMode): CompletionStage<CurrencyImportResult> = async {
-        require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
-        replacingState {
-            if (mode == CurrencyImportMode.REPLACE) state.removeCurrency(snapshot.currency)
-            val accounts = importBalances(snapshot, mode)
-            val moved = importTransactions(snapshot)
-            state.trim(maximumTransactions)
-            CurrencyImportResult(
-                currency = snapshot.currency,
-                mode = mode,
-                importedAccounts = accounts.first,
-                skippedAccounts = accounts.second,
-                importedTransactions = moved.first,
-                skippedTransactions = moved.second,
-            )
+        synchronized(lock) {
+            require(snapshot.transactions.all { it.currency == snapshot.currency }) { "Snapshot contains transactions from another currency" }
+            atomically {
+                if (mode == CurrencyImportMode.REPLACE) removeCurrency(snapshot.currency)
+                val accounts = importBalances(snapshot, mode)
+                val moved = importTransactions(snapshot)
+                trimHistory()
+                CurrencyImportResult(
+                    currency = snapshot.currency,
+                    mode = mode,
+                    importedAccounts = accounts.first,
+                    skippedAccounts = accounts.second,
+                    importedTransactions = moved.first,
+                    skippedTransactions = moved.second,
+                )
+            }
         }
     }
 
@@ -105,11 +113,11 @@ internal class FileCurrencyStorage(
         var imported = 0
         var skipped = 0
         snapshot.balances.forEach { (accountId, balance) ->
-            val key = CurrencyLedgerState.accountKey(snapshot.currency, CurrencyAccount(accountId))
-            if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && state.balances.containsKey(key)) {
+            val key = accountKey(snapshot.currency, CurrencyAccount(accountId))
+            if (mode == CurrencyImportMode.MERGE_KEEP_TARGET && balances.containsKey(key)) {
                 skipped++
             } else {
-                state.balances[key] = balance
+                balances[key] = balance
                 imported++
             }
         }
@@ -120,13 +128,13 @@ internal class FileCurrencyStorage(
     private fun importTransactions(snapshot: CurrencyStorageSnapshot): Pair<Int, Int> {
         var imported = 0
         var skipped = 0
-        val ids = state.transactions.mapTo(hashSetOf()) { it.id }
+        val ids = transactions.mapTo(hashSetOf()) { it.id }
         snapshot.transactions.forEach { transaction ->
-            val duplicate = transaction.idempotencyKey?.let { state.hasIdempotencyKey(snapshot.currency, it) } == true
-            if (transaction.id in ids || duplicate) {
+            val duplicateKey = transaction.idempotencyKey?.let { idempotencyKey(snapshot.currency, it) }
+            if (transaction.id in ids || duplicateKey != null && duplicateKey in idempotency) {
                 skipped++
             } else {
-                state.record(transaction)
+                record(transaction)
                 ids += transaction.id
                 imported++
             }
@@ -138,100 +146,65 @@ internal class FileCurrencyStorage(
         worker.close()
     }
 
-    /** Reads balances and ledger from [file]; a missing file means an empty store. */
+    private fun apply(currency: CurrencyKey, descriptor: CurrencyDescriptor, request: CurrencyTransactionRequest): CurrencyTransaction {
+        val sourceKey = request.source?.let { accountKey(currency, it) }
+        val targetKey = request.target?.let { accountKey(currency, it) }
+        val sourceBefore = sourceKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
+        val targetBefore = targetKey?.let { balances[it] ?: BigDecimal.ZERO }?.let(descriptor::normalize)
+        val mutation = CurrencyMutationEngine.evaluate(request, sourceBefore, targetBefore, descriptor)
+        if (mutation.committed) {
+            sourceKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.sourceAfter)) }
+            targetKey?.let { balances[it] = descriptor.normalize(requireNotNull(mutation.targetAfter)) }
+        }
+        return mutation.transaction(currency, descriptor, request)
+    }
+
     private fun load() {
         if (!Files.exists(file)) return
         require(!Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
         val root = Files.newBufferedReader(file, StandardCharsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
-        root.getAsJsonObject("balances")?.entrySet()?.forEach { state.balances[it.key] = it.value.asString.toBigDecimal() }
+        root.getAsJsonObject("balances")?.entrySet()?.forEach { balances[it.key] = it.value.asString.toBigDecimal() }
         root.getAsJsonArray("transactions")?.forEach { element ->
-            state.record(CurrencyTransactionJson.decode(element.asJsonObject))
+            record(CurrencyTransactionJson.decode(element.asJsonObject))
         }
     }
 
     /** Applies [change] and saves; on any failure memory goes back to what the file still holds. */
-    private fun <T> replacingState(change: () -> T): T {
-        val before = state.copy()
+    private fun <T> atomically(change: () -> T): T {
+        val before = snapshotState()
         try {
             return change().also { save() }
         } catch (error: Throwable) {
-            state.restore(before)
+            restore(before)
             throw error
         }
     }
 
-    /** Queues [job] for the worker; one drain run takes everything that waits, so jobs keep their arrival order. */
-    private fun enqueue(job: Job) {
-        jobs.add(job)
-        if (!drainScheduled.compareAndSet(false, true)) return
-        try {
-            worker.submit(::drain).whenComplete { _, error -> if (error != null) failWaiting(error) }
-        } catch (error: Throwable) {
-            drainScheduled.set(false)
-            // A drain that already took the job will still answer it.
-            if (jobs.remove(job)) throw error
-        }
+    private fun record(transaction: CurrencyTransaction) {
+        transactions += transaction
+        transaction.idempotencyKey?.let { idempotency[idempotencyKey(transaction.currency, it)] = transaction }
     }
 
-    private fun drain() {
-        drainScheduled.set(false)
-        while (true) {
-            val first = jobs.poll() ?: return
-            if (first is Job.Other) {
-                first.run()
-                continue
-            }
-            val batch = arrayListOf(first as Job.Transact)
-            while (batch.size < MAXIMUM_BATCH && jobs.peek() is Job.Transact) batch += jobs.poll() as Job.Transact
-            commit(batch)
-        }
-    }
-
-    /** Applies [batch] in order and saves once; if that save fails, each transaction gets its own save so only the failing ones fail. */
-    private fun commit(batch: List<Job.Transact>) {
-        val undo = LedgerUndo()
-        val waiting = arrayListOf<Pair<Job.Transact, CurrencyTransaction>>()
-        val unsaved = hashSetOf<UUID>()
-        batch.forEach { job ->
-            val replay = state.replay(job.currency, job.request)
-            if (replay != null && replay.id !in unsaved) return@forEach job.finish(replay)
-            val mark = undo.mark()
-            val transaction = try {
-                replay ?: state.apply(job.currency, job.descriptor, job.request, maximumTransactions, undo)
-            } catch (error: Throwable) {
-                undo.revertTo(mark)
-                return@forEach job.fail(error)
-            }
-            unsaved += transaction.id
-            waiting += job to transaction
-        }
-        if (waiting.isEmpty()) return
-        try {
-            save()
-        } catch (error: Throwable) {
-            undo.revert()
-            if (waiting.size == 1) waiting.single().first.fail(error) else waiting.forEach { commit(listOf(it.first)) }
-            return
-        }
-        waiting.forEach { (job, transaction) -> job.finish(transaction) }
-    }
-
-    /** Fails everything still queued when the worker gives up, so no caller waits forever. */
-    private fun failWaiting(error: Throwable) {
-        drainScheduled.set(false)
-        while (true) (jobs.poll() ?: return).fail(error)
+    private fun trimHistory() {
+        val excess = transactions.size - maximumTransactions
+        if (excess <= 0) return
+        val evicted = transactions.subList(0, excess)
+        evicted.forEach { old -> old.idempotencyKey?.let { idempotency.remove(idempotencyKey(old.currency, it), old) } }
+        evicted.clear()
     }
 
     // Balances are money: the file must reach the disk before it replaces the previous one, or a power loss
     // after the rename can leave an empty file.
     private fun save() {
         require(!Files.isSymbolicLink(file)) { "Currency storage file must not be a symbolic link" }
-        replaceFile(file) { temporary ->
-            Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { writer.write(it, state) }
+        val root = JsonObject()
+        root.add("balances", JsonObject().also { values -> balances.forEach { (key, value) -> values.addProperty(key, value.toPlainString()) } })
+        root.add("transactions", JsonArray().also { values -> transactions.forEach { values.add(CurrencyTransactionJson.encode(it)) } })
+        AtomicFiles.write(file, durable = true) { temporary ->
+            Files.newBufferedWriter(temporary, StandardCharsets.UTF_8).use { gson.toJson(root, it) }
         }
     }
 
-    /** Applies every non-null filter of [query] with logical AND. */
     private fun matches(
         transaction: CurrencyTransaction,
         currency: CurrencyKey,
@@ -244,49 +217,37 @@ internal class FileCurrencyStorage(
         (query.from == null || !transaction.createdAt.isBefore(query.from)) &&
         (query.until == null || transaction.createdAt.isBefore(query.until))
 
-    /** Queues [operation] on the single storage worker so file access never blocks the caller. */
-    private fun <T> async(operation: () -> T): CompletionStage<T> {
-        val result = CompletableFuture<T>()
-        enqueue(Job.Other(
-            action = {
-                try {
-                    result.complete(operation())
-                } catch (error: Throwable) {
-                    result.completeExceptionally(error)
-                }
-            },
-            onFail = { error -> result.completeExceptionally(error) },
-        ))
-        return result
+    private fun snapshotState() = StorageState(
+        balances = LinkedHashMap(balances),
+        transactions = transactions.toList(),
+        idempotency = HashMap(idempotency),
+    )
+
+    private fun restore(state: StorageState) {
+        balances.clear()
+        balances.putAll(state.balances)
+        transactions.clear()
+        transactions.addAll(state.transactions)
+        idempotency.clear()
+        idempotency.putAll(state.idempotency)
     }
 
-    private sealed interface Job {
-        fun fail(error: Throwable)
+    private fun accountKey(currency: CurrencyKey, account: CurrencyAccount) = "$currency|${account.playerId}"
 
-        class Transact(
-            val currency: CurrencyKey,
-            val descriptor: CurrencyDescriptor,
-            val request: CurrencyTransactionRequest,
-        ) : Job {
-            val result = CompletableFuture<CurrencyTransaction>()
+    private fun idempotencyKey(currency: CurrencyKey, key: String) = "$currency|$key"
 
-            fun finish(transaction: CurrencyTransaction) {
-                result.complete(transaction)
-            }
-
-            override fun fail(error: Throwable) {
-                result.completeExceptionally(error)
-            }
-        }
-
-        class Other(private val action: () -> Unit, private val onFail: (Throwable) -> Unit) : Job {
-            fun run() = action()
-
-            override fun fail(error: Throwable) = onFail(error)
-        }
+    private fun removeCurrency(currency: CurrencyKey) {
+        val prefix = "$currency|"
+        balances.keys.removeIf { it.startsWith(prefix) }
+        transactions.removeIf { it.currency == currency }
+        idempotency.keys.removeIf { it.startsWith(prefix) }
     }
 
-    private companion object {
-        const val MAXIMUM_BATCH = 500
-    }
+    private fun <T> async(operation: () -> T): CompletionStage<T> = worker.submit(operation)
+
+    private data class StorageState(
+        val balances: Map<String, BigDecimal>,
+        val transactions: List<CurrencyTransaction>,
+        val idempotency: Map<String, CurrencyTransaction>,
+    )
 }

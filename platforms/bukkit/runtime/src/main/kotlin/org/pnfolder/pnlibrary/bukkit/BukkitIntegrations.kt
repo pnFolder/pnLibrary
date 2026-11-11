@@ -20,6 +20,7 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
     private var integrations: List<BukkitIntegration> = emptyList()
 
+    /** Creates the integrations for [runtime] and connects those already available. */
     fun start(runtime: PnLibraryRuntimeHost) {
         val context = IntegrationContext(plugin, runtime)
         integrations = listOf(

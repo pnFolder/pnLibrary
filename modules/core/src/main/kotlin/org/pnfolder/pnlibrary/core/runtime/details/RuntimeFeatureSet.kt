@@ -19,7 +19,6 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import java.nio.file.Path
 
-/** Creates the feature services of the library runtime (services, configs, updates and so on). */
 internal class RuntimeFeatureSet(
     platform: PlatformRuntimeContext,
     dataFolder: Path,
@@ -39,12 +38,10 @@ internal class RuntimeFeatureSet(
         logging, dataFolder, downloadConfiguration,
     )
     val placeholderValues = GlobalPlaceholderValueStore()
-    val placeholders: PlaceholderHub = PlaceholderHub(
-        platform.identity, placeholderValues,
-        issues = { problem -> logging.log(this, LogLevel.WARNING, problem) },
-        failures = { problem, error -> logging.log(this, LogLevel.ERROR, problem, error) },
-    )
-    val currency: CurrencyRuntime = CurrencyFeature { message, error -> logging.log(this, LogLevel.ERROR, message, error) }
+    val placeholders: PlaceholderHub = PlaceholderHub(platform.identity, placeholderValues) { problem ->
+        logging.log(this, LogLevel.WARNING, problem)
+    }
+    val currency: CurrencyRuntime = CurrencyFeature()
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
         logging.log(this, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)
     }

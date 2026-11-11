@@ -33,13 +33,6 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     private var activityListener: DiagnosticEventListener? = null
 
     /**
-     * Told what failed when a listener or a plugin's contributor throws. None of them may reject a diagnostic event,
-     * so the failure ends here instead of with the caller.
-     */
-    @Volatile
-    var onInternalFailure: (what: String, error: Throwable) -> Unit = { _, _ -> }
-
-    /**
      * Installs a best-effort callback invoked after an event changes.
      *
      * The runtime uses this hook to persist diagnostic history. Callback failures
@@ -112,9 +105,8 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     ) {
         try {
             activityListener?.onEvent(plugin, level, component, code, message, error, fields)
-        } catch (error: Exception) {
+        } catch (_: Exception) {
             // Compatibility listeners are observers and must never reject diagnostics.
-            onInternalFailure("The diagnostic activity listener failed", error)
         }
     }
 
@@ -218,25 +210,18 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
     )
 
     private fun stateOf(plugin: String) =
-        plugins.computeIfAbsent(sanitizer.key(plugin)) {
-            PluginState(limit, sanitizer) { what, error -> onInternalFailure(what, error) }
-        }
+        plugins.computeIfAbsent(sanitizer.key(plugin)) { PluginState(limit, sanitizer) }
 
     private fun notifyEventsChanged() {
         try {
             eventChangeListener?.invoke()
-        } catch (error: Exception) {
+        } catch (_: Exception) {
             // Persistence callbacks are best-effort and must not reject the event.
-            onInternalFailure("The diagnostic history callback failed", error)
         }
     }
 
-    private class PluginState(
-        eventLimit: Int,
-        sanitizer: DiagnosticValueSanitizer,
-        onFailure: (what: String, error: Throwable) -> Unit,
-    ) {
-        val contributors = DiagnosticContributors(sanitizer, onFailure)
+    private class PluginState(eventLimit: Int, sanitizer: DiagnosticValueSanitizer) {
+        val contributors = DiagnosticContributors(sanitizer)
         val statuses = DiagnosticStatusStore(sanitizer)
         val incidents = DiagnosticIncidentLog(eventLimit, sanitizer)
     }

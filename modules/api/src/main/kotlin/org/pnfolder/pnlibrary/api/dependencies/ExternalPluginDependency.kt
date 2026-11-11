@@ -41,28 +41,21 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal var verifyPluginId = true
         internal var verifyVersion = true
 
-        /** Sets the page where the administrator can download the plugin by hand. */
         fun downloadPage(url: String): Builder = apply {
             downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
         }
 
-        /** Sets a direct download with its expected size and SHA-256 checksum. */
         fun artifact(url: String, size: Long, sha256: String): Builder = apply {
             artifact = ExternalArtifact(URI.create(url), size, sha256)
         }
-        /** Sets a direct download URL without an integrity check. */
         fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
 
-        /** Sets whether the plugin refuses to start without this dependency. */
         fun required(value: Boolean): Builder = apply { required = value }
 
-        /** Sets the highest accepted plugin version, inclusive. */
         fun maximumVersion(value: String): Builder = apply { maximumInclusive = SemanticVersion.parse(value) }
 
-        /** Sets the upper version bound, exclusive. */
         fun maximumVersionExclusive(value: String): Builder = apply { maximumExclusive = SemanticVersion.parse(value) }
 
-        /** Sets how a missing or outdated plugin is downloaded. */
         fun downloadPolicy(value: DownloadPolicy): Builder = apply { downloadPolicy = value }
 
         /** Selects automatic or manual download policy. */

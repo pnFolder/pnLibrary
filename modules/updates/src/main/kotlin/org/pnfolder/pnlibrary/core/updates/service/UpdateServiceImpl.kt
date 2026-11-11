@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.core.updates.service
 
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
@@ -19,8 +18,6 @@ import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAnnouncementRenderer
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCommandWords
-import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
-import org.pnfolder.pnlibrary.core.updates.databases.DatabaseSources
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
 import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
@@ -60,9 +57,8 @@ class UpdateServiceImpl(
 ) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val registrations = UpdateRegistrationStore()
-    private val configuration = UpdateConfiguration()
-    init {
-        retireOldSettingsFile()
+    private val configuration = UpdateConfiguration.load(dataFolder.resolve("updates.yml")) {
+        logging.log(this, LogLevel.WARNING, it)
     }
     // Keep a manual `/pn update` responsive even when GitHub is unreachable.
     // The check can cover several registered products, so long per-request
@@ -72,18 +68,9 @@ class UpdateServiceImpl(
         logging.log(this, LogLevel.WARNING, it)
     }
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
-    /** Where plugins say their databases are; the configuration service fills it as files are registered. */
-    val databaseSources = DatabaseSources()
-    private val installer = UpdateInstaller(
-        identity, dataFolder, configuration, resources.downloadHttp,
-        DatabaseBackups(dataFolder.resolve("updates/databases"), databaseSources),
-    ) {
-        logging.log(this, LogLevel.WARNING, it)
-    }
+    private val installer = UpdateInstaller(identity, dataFolder, configuration, resources.downloadHttp)
     private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
-    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides) { message, error ->
-        logging.log(this, LogLevel.ERROR, message, error)
-    }
+    private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides)
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
         dataFolder = dataFolder,
@@ -101,18 +88,7 @@ class UpdateServiceImpl(
     )
     private val orchestrator get() = runtime.orchestrator
 
-    /** The settings file of older versions no longer does anything; it is kept aside so nothing is lost. */
-    private fun retireOldSettingsFile() {
-        val old = dataFolder.resolve("updates.yml")
-        if (!Files.isRegularFile(old)) return
-        val kept = dataFolder.resolve("updates.yml.old")
-        Files.move(old, kept, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
-        logging.log(
-            this, LogLevel.WARNING,
-            "updates.yml больше не используется: обновления настраиваются командой /pn update и в меню. Файл сохранён как ${kept.fileName}.",
-        )
-    }
-
+    /** Implements [UpdateService.register]. */
     override fun register(
         owner: Any,
         product: ProductDescriptor,
@@ -165,16 +141,27 @@ class UpdateServiceImpl(
         return registration
     }
 
+    /** Implements [UpdateService.all]. */
     override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
+    /** Implements [UpdateService.get]. */
     override fun get(product: String): UpdateRegistration? = registrations.find(product)
+    /** Implements [UpdateService.checkNow]. */
     override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
+    /** Implements [UpdateService.checkNow]. */
     override fun checkNow(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow(actor = actor)
+    /** Implements [UpdateService.currentPlan]. */
     override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
+    /** Implements [UpdateService.stage]. */
     override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
+    /** Implements [UpdateService.stage]. */
     override fun stage(planId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId, actor)
+    /** Implements [UpdateService.history]. */
     override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
+    /** Implements [UpdateService.historyPage]. */
     override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
+    /** Implements [UpdateService.historyCount]. */
     override fun historyCount(product: String?): CompletionStage<Int> = runtime.historyCount(product)
+    /** Implements [UpdateService.setChannel]. */
     override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         changeSetting(product, actor, recheck = true) { registration ->
             val before = registration.snapshot.channel
@@ -193,6 +180,7 @@ class UpdateServiceImpl(
             }
         }
 
+    /** Implements [UpdateService.setAutomaticDownload]. */
     override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         changeSetting(product, actor, recheck = false) { registration ->
             val before = registration.snapshot.automaticDownload
@@ -203,12 +191,7 @@ class UpdateServiceImpl(
             }
         }
 
-    override fun setAutomaticDownloadForAllPlugins(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> {
-        overrides.setAllPlugins(enabled, PnLibraryIdentity.PRODUCT_ID)
-        logging.log(this, LogLevel.INFO, "Автозагрузка обновлений плагинов: ${if (enabled) "включена" else "выключена"} для всех (${actor.name})")
-        return CompletableFuture.completedFuture(registrations.snapshot().map { it.snapshot })
-    }
-
+    /** Implements [UpdateService.setHeld]. */
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         changeSetting(product, actor, recheck = true) { registration ->
             val id = registration.descriptor.id
@@ -220,6 +203,7 @@ class UpdateServiceImpl(
             }
         }
 
+    /** Implements [UpdateService.heldUntil]. */
     override fun heldUntil(product: String): Instant? =
         registrations.find(product)?.let { freezes.active()[it.descriptor.id] }
 
@@ -241,7 +225,7 @@ class UpdateServiceImpl(
                 runtime.recordSettingsChange(registration, description, actor)
                 // The setting is already persisted, so a failed recheck is reported but does not fail the change.
                 if (recheck) runCatchingNonFatal { orchestrator.checkNow(actor = actor) }.onFailure { error ->
-                    logging.log(this, LogLevel.ERROR, "Update recheck after a settings change failed", error)
+                    logging.log(this, LogLevel.WARNING, "Update recheck after a settings change failed", error)
                 }
             }
             result.complete(registration.snapshot)
@@ -251,36 +235,23 @@ class UpdateServiceImpl(
         return result
     }
 
+    /** Implements [UpdateService.backups]. */
     override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
         Collections.unmodifiableList(installer.backups())
     }
-
-    override fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
-        runtime.readAsync {
-            installer.restoreDatabase(transactionId, product, name)
-            logging.log(this, LogLevel.WARNING, "База «$name» плагина $product возвращена из набора $transactionId (${actor.name})")
-            null
-        }
-
-    override fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> = runtime.readAsync {
-        val folder = installer.extractBackup(transactionId, product).toAbsolutePath().toString()
-        logging.log(this, LogLevel.INFO, "Файлы плагина $product из набора $transactionId выданы в $folder (${actor.name})")
-        folder
-    }
-
-    override fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {
-        installer.deleteBackup(transactionId)
-        logging.log(this, LogLevel.INFO, "Резервный набор $transactionId удалён (${actor.name})")
-        null
-    }
+    /** Implements [UpdateService.rollback]. */
     override fun rollback(): CompletionStage<UpdatePlanSnapshot> = rollback(UpdateActor.UNKNOWN)
+    /** Implements [UpdateService.rollback]. */
     override fun rollback(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollbackTo(actor) {
         installer.rollbackLatest()
     }
+    /** Implements [UpdateService.rollback]. */
     override fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId) }
+    /** Implements [UpdateService.rollback]. */
     override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
         orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId, restoreConfigurations) }
+    /** Implements [UpdateService.close]. */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         registrations.close()

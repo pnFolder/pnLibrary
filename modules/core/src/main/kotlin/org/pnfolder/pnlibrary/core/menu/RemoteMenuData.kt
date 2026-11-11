@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.menu
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
@@ -38,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
-/** Names of the calls the menu sends to another server over the link. */
 object MenuCalls {
     const val VERSION = "version"
     const val SNAPSHOTS = "snapshots"
@@ -55,8 +55,6 @@ object MenuCalls {
     const val SET_CHANNEL = "setChannel"
     const val SET_HELD = "setHeld"
     const val ROLLBACK = "rollback"
-    const val RESTORE_DATABASE = "restore-database"
-    const val EXTRACT_BACKUP = "extract-backup"
     const val JOURNAL_GROUPS = "journalGroups"
     const val JOURNAL_DETAIL = "journalDetail"
     const val TASKS = "tasks"
@@ -120,7 +118,6 @@ class RemoteMenuData(
     private val target: String,
     private val client: DataClient,
 ) : MenuData {
-    /** Cached remote response with the time it was received. */
     private class Remembered(val at: Long, val json: String)
 
     private val remembered = ConcurrentHashMap<String, Remembered>()
@@ -158,12 +155,6 @@ class RemoteMenuData(
 
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.SET_HELD, args("product" to product, "millis" to duration?.toMillis()), actor.name) }
-
-    override fun extractBackup(id: UUID, product: String, actor: UpdateActor): CompletionStage<String> =
-        later { ask<String>(MenuCalls.EXTRACT_BACKUP, args("id" to id.toString(), "product" to product), actor.name) }
-
-    override fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean> =
-        later { ask<Boolean>(MenuCalls.RESTORE_DATABASE, args("id" to id.toString(), "product" to product, "name" to name), actor.name) }
 
     override fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.ROLLBACK, args("id" to id.toString(), "restore" to restoreConfigurations), actor.name) }
@@ -215,7 +206,8 @@ class RemoteMenuData(
         ask(MenuCalls.EDIT_GROUP, args("op" to edit.op.name, "group" to edit.group, "server" to edit.server, "plugin" to edit.plugin))
 
     override fun command(viewer: ViewerInfo, line: String): List<Component> {
-        val lines = ask<List<String>>(MenuCalls.COMMAND, args("line" to line), viewer.name)
+        val permissions = JsonArray().also { array -> viewer.permissions.forEach { array.add(it) } }
+        val lines = ask<List<String>>(MenuCalls.COMMAND, args("line" to line).also { it.add("permissions", permissions) }, viewer.name)
         return MenuCalls.decodeLines(lines)
     }
 

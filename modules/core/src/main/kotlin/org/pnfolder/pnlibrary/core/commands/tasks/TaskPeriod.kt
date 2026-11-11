@@ -4,7 +4,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import java.time.Duration
 import java.time.Instant
 
-/** Age bucket of a finished task in the task list; [word] is the command argument. */
 enum class TaskPeriod(val word: String, val label: String) {
     TODAY("today", "сегодня"),
 

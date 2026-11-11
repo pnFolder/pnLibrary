@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit
 internal class StatsRecorder(
     private val collector: StatsCollector,
     private val journal: JournalStore,
-    private val onFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     private val executor = Executors.newSingleThreadScheduledExecutor { task ->
         Thread(task, "pnLibrary-stats").apply { isDaemon = true }
@@ -27,7 +26,7 @@ internal class StatsRecorder(
         executor.scheduleWithFixedDelay({ record() }, EVERY.toMinutes(), EVERY.toMinutes(), TimeUnit.MINUTES)
     }
 
-    /** Stores the current numbers; a failure goes to [onFailure] and never to the caller, so statistics cannot disturb the server. */
+    /** Stores the current numbers; a failure is swallowed because statistics must never disturb the server. */
     fun record() {
         runCatchingNonFatal {
             val snapshot = collector.collect()
@@ -41,7 +40,7 @@ internal class StatsRecorder(
                     details = snapshot.toDetails(),
                 ),
             )
-        }.onFailure(onFailure)
+        }
     }
 
     /** The stored snapshots of the last [days] days, newest first. */

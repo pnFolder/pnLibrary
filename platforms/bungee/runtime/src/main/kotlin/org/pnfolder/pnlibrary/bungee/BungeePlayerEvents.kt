@@ -10,13 +10,11 @@ import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
 
 /** Publishes the portable player join and quit events from BungeeCord's native ones. */
 internal class BungeePlayerEvents(private val library: PnLibrary) : Listener {
-    /** Publishes the portable join event once the player is logged in. */
     @EventHandler(priority = EventPriority.HIGHEST)
     fun onPostLogin(event: PostLoginEvent) {
         PlayerLifecyclePublisher.joined(library, event.player.uniqueId, event.player.name)
     }
 
-    /** Publishes the portable quit event when the player leaves the proxy. */
     @EventHandler(priority = EventPriority.HIGHEST)
     fun onDisconnect(event: PlayerDisconnectEvent) {
         PlayerLifecyclePublisher.left(library, event.player.uniqueId, event.player.name)

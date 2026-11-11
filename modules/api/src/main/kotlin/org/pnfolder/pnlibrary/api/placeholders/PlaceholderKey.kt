@@ -15,7 +15,6 @@ data class PlaceholderKey<T : Any>(val value: String, val type: Class<T>) {
     companion object {
         private val VALID_KEY = Regex("[a-z0-9_.{}-]+")
 
-        /** Creates a key named [value] whose values have the given [type]. */
         @JvmStatic
         fun <T : Any> of(value: String, type: Class<T>): PlaceholderKey<T> = PlaceholderKey(value, type)
     }

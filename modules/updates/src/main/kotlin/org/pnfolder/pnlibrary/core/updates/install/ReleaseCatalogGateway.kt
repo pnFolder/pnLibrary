@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Loads one release catalog through independent GitHub endpoints.
  *
- * The GitHub endpoints run concurrently; jsDelivr is the last resort. The caller itself does not occupy the
+ * All endpoint probes run concurrently. The caller itself does not occupy the
  * request executor, preventing the nested-executor starvation that previously
  * made update checks wait forever when several products were registered.
  */
@@ -26,38 +26,31 @@ internal class ReleaseCatalogGateway(
     private val http: TrustedHttpClient,
     private val requestExecutor: Executor,
 ) {
-    /**
-     * Returns the first catalog GitHub raw or the Contents API delivers. jsDelivr caches for hours and may
-     * serve a stale catalog, so it is asked only when both GitHub endpoints failed.
-     */
     fun load(source: CatalogSource, refreshMode: RefreshMode): ReleaseCatalog {
         val endpoints = CatalogEndpoints(source)
         val result = CompletableFuture<ReleaseCatalog>()
         val failures = Collections.synchronizedList(mutableListOf<String>())
-        val remaining = AtomicInteger(PRIMARY_ENDPOINT_COUNT)
+        val remaining = AtomicInteger(ENDPOINT_COUNT)
 
-        val fallback = {
-            submit("jsDelivr", result, failures, endpoints = endpoints) { client.load(endpoints.cdn, RefreshMode.FORCE_REMOTE).join() }
-        }
-        submit("raw", result, failures, { onAllFailed(remaining, fallback) }) {
+        submit("raw", result, failures, remaining, endpoints) {
             client.load(endpoints.raw, refreshMode).join()
         }
-        submit("api", result, failures, { onAllFailed(remaining, fallback) }) {
+        submit("api", result, failures, remaining, endpoints) {
             loadFromContentsApi(endpoints.api)
         }
-        return result.join()
-    }
+        submit("jsDelivr", result, failures, remaining, endpoints) {
+            client.load(endpoints.cdn, RefreshMode.FORCE_REMOTE).join()
+        }
 
-    private fun onAllFailed(remaining: AtomicInteger, fallback: () -> Unit) {
-        if (remaining.decrementAndGet() == 0) fallback()
+        return result.join()
     }
 
     private fun submit(
         label: String,
         result: CompletableFuture<ReleaseCatalog>,
         failures: MutableList<String>,
-        onFailure: (() -> Unit)? = null,
-        endpoints: CatalogEndpoints? = null,
+        remaining: AtomicInteger,
+        endpoints: CatalogEndpoints,
         request: () -> ReleaseCatalog,
     ) {
         CompletableFuture.supplyAsync(request, requestExecutor)
@@ -68,18 +61,16 @@ internal class ReleaseCatalogGateway(
                 }
 
                 failures += "$label: ${failureMessage(error)}"
-                if (onFailure != null) {
-                    onFailure()
-                    return@whenComplete
+                if (remaining.decrementAndGet() == 0) {
+                    result.completeExceptionally(
+                        IllegalStateException(
+                            "Release catalog not found at ${endpoints.raw}; check the repository branch " +
+                                "(PluginUpdateRequest.Builder.branch). " +
+                                "Tried GitHub raw, Contents API and jsDelivr: " + failures.joinToString("; "),
+                            error.cause ?: error,
+                        ),
+                    )
                 }
-                result.completeExceptionally(
-                    IllegalStateException(
-                        "Release catalog not found at ${endpoints?.raw}; check the repository branch " +
-                            "(PluginUpdateRequest.Builder.branch). " +
-                            "Tried GitHub raw, Contents API and jsDelivr: " + failures.joinToString("; "),
-                        error.cause ?: error,
-                    ),
-                )
             }
     }
 
@@ -109,7 +100,6 @@ internal class ReleaseCatalogGateway(
     }
 
     private companion object {
-        /** GitHub endpoints queried in parallel before jsDelivr is tried. */
-        const val PRIMARY_ENDPOINT_COUNT = 2
+        const val ENDPOINT_COUNT = 3
     }
 }

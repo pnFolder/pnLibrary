@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterCapabilities
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
@@ -60,11 +61,11 @@ internal class PlaceholderApiAdapter(
         val namespace = (publication.namespace ?: owner.value).lowercase(Locale.ROOT)
         val externalName = (publication.name ?: key.replace('.', '_')).lowercase(Locale.ROOT)
         require('_' !in namespace) { "PlaceholderAPI prefix '$namespace' must not contain '_'" }
-        val expansion = groups.computeIfAbsent(namespace) { Expansion(it, PlaceholderApiRequests(plugin.server::isPrimaryThread)) }
+        val expansion = groups.computeIfAbsent(namespace) { Expansion(it) }
         if (!expansion.isRegistered) {
             check(expansion.register())
         }
-        require(expansion.requests.handlers.add(externalName, PublishedHandler(owner, resolver))) {
+        require(expansion.handlers.putIfAbsent(externalName, Handler(owner, resolver)) == null) {
             "Placeholder %${namespace}_${externalName}% is already published"
         }
         return object : ExternalPlaceholderRegistration {
@@ -72,8 +73,8 @@ internal class PlaceholderApiAdapter(
             override val state: PlaceholderAdapterState get() = if (active.get()) PlaceholderAdapterState.REGISTERED else PlaceholderAdapterState.CLOSED
     override fun close() {
                 if (!active.compareAndSet(true, false)) return
-                expansion.requests.handlers.remove(externalName)
-                if (expansion.requests.handlers.isEmpty) {
+                expansion.handlers.remove(externalName)
+                if (expansion.handlers.isEmpty()) {
                     expansion.unregister()
                     groups.remove(namespace, expansion)
                 }
@@ -90,17 +91,30 @@ internal class PlaceholderApiAdapter(
     /** Groups published resolvers under one PlaceholderAPI namespace. */
     private inner class Expansion(
         private val namespace: String,
-        val requests: PlaceholderApiRequests,
     ) : PlaceholderExpansion() {
+        val handlers = ConcurrentHashMap<String, Handler>()
         override fun getIdentifier() = namespace
         override fun getAuthor() = this@PlaceholderApiAdapter.plugin.description.authors.joinToString(",").ifBlank { PnLibraryIdentity.NAME }
         override fun getVersion() = this@PlaceholderApiAdapter.plugin.description.version
         override fun persist() = true
-        override fun onRequest(player: OfflinePlayer?, params: String): String? = requests.answer(player?.uniqueId, params)
+        /** Finds the published name that fits [params] best and hands its parameters to the resolver. */
+        override fun onRequest(player: OfflinePlayer?, params: String): String? {
+            val wait = if (this@PlaceholderApiAdapter.plugin.server.isPrimaryThread) MAIN_THREAD_WAIT_MILLIS else OTHER_THREAD_WAIT_MILLIS
+            val values = mapOf<String, Any?>(PlaceholderAdapter.WAIT_MILLIS_KEY to wait)
+            val (handler, parameters) = PublishedNames.find(handlers, params) ?: return null
+            return answer(handler, PlaceholderRequest(handler.owner, handler.owner, player?.uniqueId, parameters, values))
+        }
+
+        private fun answer(handler: Handler, request: PlaceholderRequest): String? =
+            handler.resolver.resolve(request)?.toString()
     }
 
+    /** Associates a published resolver with its portable owner. */
+    private data class Handler(
+        val owner: PluginId,
+        val resolver: PlaceholderResolver<Any>,
+    )
 }
 
-/** The server thread never waits: a late value is answered from the last known one and warmed up for the next ask. */
-internal const val MAIN_THREAD_WAIT_MILLIS = 0L
-internal const val OTHER_THREAD_WAIT_MILLIS = 1000L
+private const val MAIN_THREAD_WAIT_MILLIS = 50L
+private const val OTHER_THREAD_WAIT_MILLIS = 1000L

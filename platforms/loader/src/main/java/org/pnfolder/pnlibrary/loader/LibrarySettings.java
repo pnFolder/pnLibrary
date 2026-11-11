@@ -18,7 +18,6 @@ import java.util.List;
  * SHA-256 recorded at build time, so a mirror cannot swap a library.
  */
 public final class LibrarySettings {
-    /** The settings the pnLibrary JAR uses. */
     public static final LibrarySettings DEFAULT = builder()
             // .repository("https://example.com/maven/")   // your own mirror, tried before Maven Central
             .fallback("https://maven-central.storage-download.googleapis.com/maven2/")
@@ -40,7 +39,6 @@ public final class LibrarySettings {
         this.attempts = builder.attempts;
     }
 
-    /** Starts a settings description with the defaults: server folder, Maven Central, three attempts. */
     public static Builder builder() {
         return new Builder();
     }
@@ -76,7 +74,6 @@ public final class LibrarySettings {
         return attempts;
     }
 
-    /** Collects {@link LibrarySettings} values; every method returns the builder. */
     public static final class Builder {
         private String directory = "libraries/pnlibrary";
         private boolean inServerFolder = true;
@@ -108,7 +105,6 @@ public final class LibrarySettings {
             return this;
         }
 
-        /** Adds a mirror tried after Maven Central. Call again for more; the order is kept. */
         public Builder fallback(String url) {
             fallbacks.add(requireUrl(url));
             return this;

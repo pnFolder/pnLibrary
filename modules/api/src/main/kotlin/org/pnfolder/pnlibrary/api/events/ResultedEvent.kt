@@ -47,11 +47,9 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
             private val ALLOWED = GenericResult(true)
             private val DENIED = GenericResult(false)
 
-            /** Returns the shared allowed result. */
             @JvmStatic
             fun allowed(): GenericResult = ALLOWED
 
-            /** Returns the shared denied result. */
             @JvmStatic
             fun denied(): GenericResult = DENIED
         }
@@ -79,7 +77,6 @@ abstract class ResultedEvent<R : ResultedEvent.Result> : Event() {
         companion object {
             private val ALLOWED = ComponentResult(true, null)
 
-            /** Returns the shared allowed result that carries no reason. */
             @JvmStatic
             fun allowed(): ComponentResult = ALLOWED
 

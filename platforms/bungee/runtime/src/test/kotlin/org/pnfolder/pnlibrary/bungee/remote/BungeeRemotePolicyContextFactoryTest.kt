@@ -11,7 +11,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 
-/** Checks the remote-policy context built from BungeeCord metadata. */
 class BungeeRemotePolicyContextFactoryTest {
     private val manager = mock(PluginManager::class.java)
     private val proxy = mock(ProxyServer::class.java).also {

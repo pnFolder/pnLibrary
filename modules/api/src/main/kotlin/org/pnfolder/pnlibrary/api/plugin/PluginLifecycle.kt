@@ -11,9 +11,7 @@ interface PluginLifecycle {
     /** Metadata rendered into lifecycle summaries. */
     val metadata: PluginMetadata
 
-    /** Starts the "plugin enabled" card; call `show()` on it when startup is done. */
     fun enabled(): MessageBox
 
-    /** Starts the "plugin disabled" card; call `show()` on it from `onDisable`. */
     fun disabled(): MessageBox
 }

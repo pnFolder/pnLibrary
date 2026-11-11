@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryConfigLoader
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 
-/** Creates the library instance and its update monitor, undoing partial work if startup fails. */
 internal object RuntimeBootstrapCoordinator {
     data class Started(
         val library: PnLibrary,

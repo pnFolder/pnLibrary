@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import java.time.Duration
 import java.util.function.Supplier
 
@@ -71,8 +70,6 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
                     .artifact("(?i)^MyPlugin-.*-java25\\.jar$", 25)
                     // .exactArtifact("MyPlugin.jar", 8)  // точное имя вместо шаблона
                     .configurationBackup(plugin.dataFolder.toPath(), "config.yml", "messages.yml")
-                    .backup(BackupKind.DATABASE, "Данные", plugin.dataFolder.toPath(), "data.db")   // файловая база
-                    // Базы MySQL/PostgreSQL/MongoDB помечаются в классе настроек: @field:BackupDatabase(DatabaseKind.MYSQL, "Данные")
             }
 
             // 5. Скачивание внешних файлов.

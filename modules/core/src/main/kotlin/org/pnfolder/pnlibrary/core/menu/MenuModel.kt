@@ -21,24 +21,18 @@ data class ItemSpec(
     val legacyData: Short = 0,
 )
 
-/** Mouse button and modifier of a menu click. */
 enum class ClickType { LEFT, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, MIDDLE, OTHER }
 
-/** A click a viewer made on a menu slot. */
 class MenuClick(val player: MenuViewer, val slot: Int, val click: ClickType)
 
-/** Reacts to a click on a menu button. */
 fun interface MenuClickHandler {
     fun handle(click: MenuClick)
 }
 
-/** A slot of a menu: the item shown and the handler for clicks, either may be null. */
 class MenuItem(val item: ItemSpec?, val handler: MenuClickHandler?)
 
-/** A finished chest menu that a viewer can open. */
 class Menu(val title: String, val rows: Int, val items: Map<Int, MenuItem>)
 
-/** Collects slots of a chest menu; create it with [Menus.chest]. */
 class MenuBuilder internal constructor(private val title: String) {
     private var rows = DEFAULT_ROWS
     private val items = linkedMapOf<Int, MenuItem>()
@@ -70,7 +64,6 @@ class MenuBuilder internal constructor(private val title: String) {
     }
 }
 
-/** Entry point for building menus. */
 object Menus {
     fun chest(title: String): MenuBuilder = MenuBuilder(title)
 }
@@ -101,10 +94,8 @@ interface MenuViewer {
     fun runCommand(command: String)
 }
 
-/** Name, version and authors of the plugin that owns something. */
 data class OwnerInfo(val name: String, val version: String?, val authors: List<String>)
 
-/** Finds the plugin behind an object, a class or a name. */
 interface PluginDirectory {
     /** The plugin that [owner] is, or null when it is not one. */
     fun owner(owner: Any?): OwnerInfo?
@@ -115,7 +106,6 @@ interface PluginDirectory {
     fun ownerOf(type: Class<*>?): OwnerInfo?
 }
 
-/** What a menu needs from the platform: threads, scheduling and plugin lookup. */
 interface MenuHost : PluginDirectory {
     fun sync(action: () -> Unit)
 

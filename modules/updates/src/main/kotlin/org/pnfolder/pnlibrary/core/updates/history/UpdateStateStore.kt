@@ -51,7 +51,6 @@ internal class UpdateStateStore(
     }
 
     @Synchronized
-    /** Writes [snapshot] as the current state and into the history, then trims the history. */
     fun save(snapshot: UpdatePlanSnapshot) {
         val bytes = encode(snapshot)
         writeAtomic(stateFile, bytes)
@@ -59,10 +58,8 @@ internal class UpdateStateStore(
         prune()
     }
 
-    /** The saved current state; an unreadable file is moved aside and null is returned. */
     fun current(): UpdatePlanSnapshot? = read(stateFile, quarantine = true)
 
-    /** Earlier states, newest first; unreadable ones are skipped. */
     fun history(): List<UpdatePlanSnapshot> = historyFiles().mapNotNull { read(it, quarantine = false) }
 
     private fun read(path: Path, quarantine: Boolean): UpdatePlanSnapshot? {

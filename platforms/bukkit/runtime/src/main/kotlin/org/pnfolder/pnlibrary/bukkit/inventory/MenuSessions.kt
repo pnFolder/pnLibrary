@@ -16,20 +16,16 @@ internal class MenuSessions {
     var isClosed = false
         private set
 
-    /** The menu open for [player], if any. */
     fun of(player: Player): BukkitMenuSession? = synchronized(lock) { byPlayer[player.uniqueId] }
 
-    /** Menus opened by [owner]. */
     fun of(owner: Plugin): List<BukkitMenuSession> = synchronized(lock) { byOwner[owner]?.toList().orEmpty() }
 
-    /** Tracks [session]; fails once the service is closed or the owner is disabled. */
     fun add(session: BukkitMenuSession) = synchronized(lock) {
         check(!isClosed && session.owner.isEnabled) { "Menu service or owner is disabled" }
         byPlayer[session.player.uniqueId] = session
         byOwner.getOrPut(session.owner) { linkedSetOf() }.add(session)
     }
 
-    /** Stops tracking [session]. */
     fun remove(session: BukkitMenuSession) = synchronized(lock) {
         byPlayer.remove(session.player.uniqueId, session)
         val owned = byOwner[session.owner] ?: return@synchronized

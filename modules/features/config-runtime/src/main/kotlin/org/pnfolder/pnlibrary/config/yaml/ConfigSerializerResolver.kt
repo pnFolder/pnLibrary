@@ -18,7 +18,6 @@ internal class ConfigSerializerResolver(
 ) {
     private val annotationInstances = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
 
-    /** The serializer for [type]: an annotation on the class, then an exact registration, then a supertype one. */
     @Suppress("UNCHECKED_CAST")
     fun forType(type: Class<*>): ConfigSerializer<Any>? {
         val annotated = type.getAnnotation(ConfigSerializeWith::class.java)
@@ -32,7 +31,6 @@ internal class ConfigSerializerResolver(
         return (annotated ?: exact ?: assignable) as? ConfigSerializer<Any>
     }
 
-    /** The serializer named by `@ConfigSerializeWith` on [field], or `null`. */
     @Suppress("UNCHECKED_CAST")
     fun forField(field: Field): ConfigSerializer<Any>? =
         field.getAnnotation(ConfigSerializeWith::class.java)
@@ -40,22 +38,23 @@ internal class ConfigSerializerResolver(
             ?.java
             ?.let(::annotationInstance) as? ConfigSerializer<Any>
 
-    /** The shared instance of the `@ConfigTextForm` parser [type]. */
     @Suppress("UNCHECKED_CAST")
-    fun textParser(type: Class<out ConfigTextParser<*>>): ConfigTextParser<Any> = helper(type) as ConfigTextParser<Any>
-
-    /** The shared instance of the `@ConfigNodeForm` rewriter [type]. */
-    fun nodeRewriter(type: Class<out ConfigNodeRewriter>): ConfigNodeRewriter = helper(type) as ConfigNodeRewriter
-
-    private val textParsers = mutableMapOf<Class<*>, Any>()
-
-    // A Kotlin `object` is used as it is; any other class needs a no-argument constructor.
-    private fun helper(type: Class<*>): Any = synchronized(textParsers) {
+    fun textParser(type: Class<out ConfigTextParser<*>>):
+        ConfigTextParser<Any> = synchronized(textParsers) {
         textParsers.getOrPut(type) {
             runCatchingNonFatal { type.getField("INSTANCE").get(null) }.getOrNull()
                 ?: type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
-        }
+        } as ConfigTextParser<Any>
     }
+
+    fun nodeRewriter(type: Class<out ConfigNodeRewriter>): ConfigNodeRewriter = synchronized(textParsers) {
+        textParsers.getOrPut(type) {
+            runCatchingNonFatal { type.getField("INSTANCE").get(null) }.getOrNull()
+                ?: type.getDeclaredConstructor().also { it.isAccessible = true }.newInstance()
+        } as ConfigNodeRewriter
+    }
+
+    private val textParsers = mutableMapOf<Class<*>, Any>()
 
     private fun annotationInstance(type: Class<out ConfigSerializer<*>>): ConfigSerializer<*> =
         synchronized(annotationInstances) {

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.engine
 
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.nio.file.Path
 import java.time.Instant
 
@@ -24,8 +25,9 @@ internal class TransactionHealth(
     }
 
     /** Returns transactions waiting for post-restart product-version confirmation. */
-    fun awaiting(): List<PendingTransaction> = journals.loadAll()
-        .mapNotNull { (path, journal) ->
+    fun awaiting(): List<PendingTransaction> = journals.journals()
+        .mapNotNull { path ->
+            val journal = runCatchingNonFatal { journals.load(path) }.getOrNull() ?: return@mapNotNull null
             if (journal.state != TransactionState.AWAITING_HEALTH || journal.purpose !in setOf(null, "STAGE")) return@mapNotNull null
             PendingTransaction(path, journal.artifacts.mapNotNull { artifact ->
                 artifact.expectedVersion?.let { artifact.component to it }
@@ -33,7 +35,8 @@ internal class TransactionHealth(
         }
 
     /** Returns requested rollbacks whose restored versions are not yet confirmed. */
-    fun awaitingRollback(): List<PendingTransaction> = journals.loadAll().mapNotNull { (path, journal) ->
+    fun awaitingRollback(): List<PendingTransaction> = journals.journals().mapNotNull { path ->
+        val journal = journals.load(path)
         if (journal.purpose !in setOf(null, "STAGE") || journal.state != TransactionState.ROLLED_BACK ||
             !journal.rollbackRequested || journal.rollbackHealthVerified) return@mapNotNull null
         PendingTransaction(path, journal.artifacts.mapNotNull { it.previousVersion?.let { version -> it.component to version } }.toMap(),
@@ -58,7 +61,8 @@ internal class TransactionHealth(
     /** Returns whether the latest health check of every product in [products] succeeded. */
     fun automaticUpdatesHealthy(products: Set<String>): Boolean {
         val latest = mutableMapOf<String, Pair<Instant, Boolean>>()
-        journals.loadAll().forEach { (_, journal) ->
+        journals.journals().forEach { path ->
+            val journal = journals.load(path)
             if (journal.purpose !in setOf(null, "STAGE")) return@forEach
             val checkedAt = journal.healthCheckedAt?.let(Instant::parse) ?: return@forEach
             journal.artifacts.filter { it.component in products }.forEach { artifact ->
@@ -71,7 +75,8 @@ internal class TransactionHealth(
     }
 
     /** Returns saved component sets whose last health check failed. */
-    fun failed(): List<PendingTransaction> = journals.loadAll().mapNotNull { (path, journal) ->
+    fun failed(): List<PendingTransaction> = journals.journals().mapNotNull { path ->
+        val journal = journals.load(path)
         if (journal.purpose !in setOf(null, "STAGE") || journal.state != TransactionState.FAILED || !journal.healthFailure) return@mapNotNull null
         val versions = journal.artifacts.associate { it.component to (if (journal.rollbackRequested) it.previousVersion else it.expectedVersion) }
         PendingTransaction(path, versions.mapNotNull { (product, version) -> version?.let { product to it } }.toMap(),

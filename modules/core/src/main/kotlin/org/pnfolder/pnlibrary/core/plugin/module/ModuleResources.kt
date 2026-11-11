@@ -18,7 +18,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.services.ServiceScope
 
-/** Per-module resources (tasks, events, services, config, placeholders and so on) closed together with the module. */
 internal class ModuleResources(
     val tasks: TaskScope,
     val events: EventScope,

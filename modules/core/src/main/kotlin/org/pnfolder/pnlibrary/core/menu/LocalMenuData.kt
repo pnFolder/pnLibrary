@@ -87,12 +87,6 @@ class LocalMenuData(
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
         library.updates.setHeld(product, duration, actor).thenApply { true }
 
-    override fun extractBackup(id: UUID, product: String, actor: UpdateActor): CompletionStage<String> =
-        library.updates.extractBackup(id, product, actor)
-
-    override fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.restoreDatabase(id, product, name, actor).thenApply { true }
-
     override fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean> =
         library.updates.rollback(id, restoreConfigurations, actor).thenApply { true }
 

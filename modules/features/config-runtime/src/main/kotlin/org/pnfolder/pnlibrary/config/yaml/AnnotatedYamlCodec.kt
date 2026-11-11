@@ -15,7 +15,6 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import org.yaml.snakeyaml.representer.Representer
-import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -59,9 +58,6 @@ internal class AnnotatedYamlCodec<T : Any>(
 
     /** Dotted paths of the `@ConfigSecret` fields, which diagnostic reports never show. */
     val secretPaths: List<String> = introspector.secretPaths(type)
-
-    /** The sections marked `@BackupDatabase`; the update system copies those databases. */
-    val databases: List<DatabasePath> = introspector.databasePaths(type)
     private val yaml = DumperOptions().apply {
         defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         isPrettyFlow = false
@@ -70,7 +66,6 @@ internal class AnnotatedYamlCodec<T : Any>(
         width = 120
     }.let { options -> Yaml(SafeConstructor(LoaderOptions()), Representer(options), options) }
 
-    /** Writes [value] as YAML with the comments, blank lines and file header declared by annotations. */
     override fun encode(value: T): String {
         val raw = yaml.dump(toYamlValue(value, type, "", emptyList(), value))
         val body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value))
@@ -95,7 +90,9 @@ internal class AnnotatedYamlCodec<T : Any>(
     }
 
     /** Evaluates declarative validation annotations without mutating [value]. */
-    fun validate(value: T): List<ConfigProblem> = schemaInspector.validate(value, type)
+    fun validate(value: T): List<ConfigProblem> {
+        return schemaInspector.validate(value, type)
+    }
 
     private fun toYamlValue(
         value: Any?, declaredType: Type = value?.javaClass ?: Any::class.java, path: String = "",
@@ -114,17 +111,17 @@ internal class AnnotatedYamlCodec<T : Any>(
             }
         }
         return when (value) {
-            null, is String, is Number, is Boolean -> value
-            is Enum<*> -> value.name
-            is Iterable<*> -> {
-                val elementType = (declaredType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-                value.mapIndexed { index, item -> toYamlValue(item, elementType, "$path[$index]", annotations) }
-            }
-            is Array<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
-            is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out ->
-                value.forEach { (k, v) -> out[toYamlValue(k)] = toYamlValue(v, path = "$path.$k") }
-            }
-            else -> objectYaml(value, path)
+        null, is String, is Number, is Boolean -> value
+        is Enum<*> -> value.name
+        is Iterable<*> -> {
+            val elementType = (declaredType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
+            value.mapIndexed { index, item -> toYamlValue(item, elementType, "$path[$index]", annotations) }
+        }
+        is Array<*> -> value.mapIndexed { index, item -> toYamlValue(item, path = "$path[$index]") }
+        is Map<*, *> -> linkedMapOf<Any?, Any?>().also { out -> value.forEach { (k, v) ->
+            out[toYamlValue(k)] = toYamlValue(v, path = "$path.$k")
+        } }
+        else -> objectYaml(value, path)
         }
     }
 
@@ -157,24 +154,23 @@ internal class AnnotatedYamlCodec<T : Any>(
                 )
                     ?: convert(resolved, field.genericType, current, path, field.annotations.toList())
             } catch (error: Exception) {
-                invalidValue(field, raw, current, path, error)
+                if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
+                    warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
+                    current
+                } else {
+                    val detail = if (field.type.isEnum) {
+                        val allowed = schemaInspector.enumDescription(field.type)
+                        " Allowed values: $allowed. Default: ${current ?: "null"}."
+                    } else ""
+                    if (error is LocatedConfigException || error.message.orEmpty().startsWith(INVALID_VALUE)) throw error
+                    throw IllegalArgumentException(
+                        "$INVALID_VALUE $path: ${shown(raw)}.$detail${reasonSuffix(error)}",
+                        error,
+                    )
+                }
             }
             field.set(target, converted)
         }
-    }
-
-    /** Returns [current] for a `@ConfigDefaultOnInvalid` field; otherwise throws an error that names [path] and the value. */
-    private fun invalidValue(field: Field, raw: Any?, current: Any?, path: String, error: Exception): Any? {
-        if (field.isAnnotationPresent(ConfigDefaultOnInvalid::class.java)) {
-            warning("Invalid value at $path (${raw ?: "null"}); using default ${current ?: "null"}")
-            return current
-        }
-        val detail = if (field.type.isEnum) {
-            val allowed = schemaInspector.enumDescription(field.type)
-            " Allowed values: $allowed. Default: ${current ?: "null"}."
-        } else ""
-        if (error is LocatedConfigException || error.message.orEmpty().startsWith(INVALID_VALUE)) throw error
-        throw IllegalArgumentException("$INVALID_VALUE $path: ${shown(raw)}.$detail${reasonSuffix(error)}", error)
     }
 
     private fun convert(
@@ -199,49 +195,39 @@ internal class AnnotatedYamlCodec<T : Any>(
         if (rawType == java.lang.Double.TYPE || rawType == java.lang.Double::class.java) return (value as Number).toDouble()
         if (rawType.isEnum) return rawType.enumConstants.firstOrNull { (it as Enum<*>).name.equals(value.toString(), true) }
             ?: throw IllegalArgumentException("Unknown ${rawType.simpleName} value: $value")
-        if (rawType.isArray && value is List<*>) return convertArray(rawType, value, path)
-        if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
-            return convertCollection(targetType, rawType, value, path, annotations)
-        }
-        if (Map::class.java.isAssignableFrom(rawType) && value is Map<*, *>) return convertMap(targetType, rawType, value, path)
-        if (value is Map<*, *>) return convertSection(rawType, value, current, path)
-        return value
-    }
-
-    private fun convertArray(rawType: Class<*>, value: List<*>, path: String): Any {
-        val component = rawType.componentType
-        return ReflectArray.newInstance(component, value.size).also { array ->
-            value.forEachIndexed { index, item -> ReflectArray.set(array, index, convert(item, component, path = "$path[$index]")) }
-        }
-    }
-
-    private fun convertCollection(
-        targetType: Type, rawType: Class<*>, value: List<*>, path: String, annotations: List<Annotation>,
-    ): Any {
-        val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-        val converted = value.mapIndexed { index, item ->
-            located("$path[$index]") { convert(item, elementType, path = "$path[$index]", annotations = annotations) }
-        }
-        return introspector.collection(rawType, converted, path)
-    }
-
-    private fun convertMap(targetType: Type, rawType: Class<*>, value: Map<*, *>, path: String): Any {
-        val arguments = (targetType as? ParameterizedType)?.actualTypeArguments
-        val keyType = arguments?.getOrNull(0) ?: String::class.java
-        val valueType = arguments?.getOrNull(1) ?: Any::class.java
-        val converted = linkedMapOf<Any?, Any?>().also { out ->
-            value.forEach { (key, item) ->
-                out[convert(key, keyType)] = located("$path.$key") { convert(item, valueType, path = "$path.$key") }
+        if (rawType.isArray && value is List<*>) {
+            val component = rawType.componentType
+            return ReflectArray.newInstance(component, value.size).also { array ->
+                value.forEachIndexed { index, item -> ReflectArray.set(array, index, convert(item, component, path = "$path[$index]")) }
             }
         }
-        return introspector.map(rawType, converted, path)
-    }
-
-    private fun convertSection(rawType: Class<*>, value: Map<*, *>, current: Any?, path: String): Any {
-        require(!rawType.isInterface && !Modifier.isAbstract(rawType.modifiers)) { "Type ${rawType.name} at $path is abstract; register a ConfigSerializer" }
-        val nested = current ?: introspector.instantiate(rawType, path)
-        populate(nested, rawType, value, path)
-        return nested
+        if (Collection::class.java.isAssignableFrom(rawType) && value is List<*>) {
+            val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
+            val converted = value.mapIndexed { index, item ->
+                located("$path[$index]") { convert(item, elementType, path = "$path[$index]", annotations = annotations) }
+            }
+            return introspector.collection(rawType, converted, path)
+        }
+        if (Map::class.java.isAssignableFrom(rawType) && value is Map<*, *>) {
+            val arguments = (targetType as? ParameterizedType)?.actualTypeArguments
+            val keyType = arguments?.getOrNull(0) ?: String::class.java
+            val valueType = arguments?.getOrNull(1) ?: Any::class.java
+            val converted = linkedMapOf<Any?, Any?>().also { out ->
+                value.forEach { (key, item) ->
+                    out[convert(key, keyType)] = located("$path.$key") { convert(item, valueType, path = "$path.$key") }
+                }
+            }
+            return introspector.map(rawType, converted, path)
+        }
+        if (value is Map<*, *>) {
+            require(!rawType.isInterface && !Modifier.isAbstract(rawType.modifiers)) {
+                "Type ${rawType.name} at $path is abstract; register a ConfigSerializer"
+            }
+            val nested = current ?: introspector.instantiate(rawType, path)
+            populate(nested, rawType, value, path)
+            return nested
+        }
+        return value
     }
 
     private fun polymorphic(value: Any, baseType: Class<*>, path: String, annotations: List<Annotation>): Any {
@@ -259,7 +245,9 @@ internal class AnnotatedYamlCodec<T : Any>(
             ?: error("Missing '$discriminator' for ${baseType.simpleName} at $path")
         val name = entry.value?.toString()?.trim().orEmpty()
         val implementation = polymorphicResolver.decodingType(baseType, annotations, name, path)
-        val body = node.filterKeys { it != entry.key }
+        val body = linkedMapOf<Any?, Any?>().also { result ->
+            node.forEach { (key, item) -> if (key != entry.key) result[key] = item }
+        }
         return introspector.instantiate(implementation, path).also { populate(it, implementation, body, path) }
     }
 

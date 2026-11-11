@@ -46,23 +46,6 @@ class TrackingPlatformCommandAdapterTest {
         }
     }
 
-    @Test
-    fun `close throws the first failure and keeps the others as suppressed`() {
-        val adapter = object : TrackingPlatformCommandAdapter() {
-            override fun registerNative(
-                owner: Any,
-                command: CommandDefinition,
-                dispatcher: PlatformCommandDispatcher,
-            ) = PlatformCommandRegistration { error("close failed for ${command.name}") }
-        }
-        adapter.register(Any(), CommandDefinition.builder("first").build(), dispatcher())
-        adapter.register(Any(), CommandDefinition.builder("second").build(), dispatcher())
-
-        val thrown = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException::class.java) { adapter.close() }
-
-        assertEquals(1, thrown.suppressed.size)
-    }
-
     private fun dispatcher() = object : PlatformCommandDispatcher {
         override fun execute(
             command: CommandDefinition,

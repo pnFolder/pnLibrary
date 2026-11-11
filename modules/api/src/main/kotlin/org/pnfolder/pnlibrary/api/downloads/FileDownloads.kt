@@ -53,7 +53,6 @@ class FileDownloads private constructor(builder: Builder) {
     }
 
     companion object {
-        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

@@ -8,7 +8,6 @@ import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.checks.Requirement
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 
-/** Action service of one module; builds action contexts from the module's own resources. */
 internal class ModuleActionService(
     private val resources: ModuleResources,
 ) : ActionService {

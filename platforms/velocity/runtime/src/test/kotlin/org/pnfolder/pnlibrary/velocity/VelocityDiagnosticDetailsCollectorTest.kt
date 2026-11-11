@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import java.net.InetSocketAddress
 import java.util.Optional
 
-/** Checks the Velocity facts collected for diagnostics. */
 class VelocityDiagnosticDetailsCollectorTest {
     @Test
     fun `p95 includes high latency in a small player population`() {

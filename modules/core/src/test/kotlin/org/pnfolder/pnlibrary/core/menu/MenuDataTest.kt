@@ -109,7 +109,7 @@ class MenuDataTest {
     }
 
     /** A server whose facts are canned, and whose answers travel through the real link code. */
-    private fun connected(vararg answers: Pair<String, Any?>, holds: (String, String) -> Boolean = { _, _ -> true }): RemoteMenuData {
+    private fun connected(vararg answers: Pair<String, Any?>): RemoteMenuData {
         val canned = answers.toMap()
         val seen = mutableListOf<String>()
         val data = Proxy.newProxyInstance(MenuData::class.java.classLoader, arrayOf(MenuData::class.java)) { _, method, args ->
@@ -122,7 +122,7 @@ class MenuDataTest {
                 else -> value
             }
         } as MenuData
-        val server = MenuDataServer(data, { it.run() }, holds)
+        val server = MenuDataServer(data) { it.run() }
         lateinit var client: DataClient
         client = DataClient(key) { bytes ->
             val call: DataCall = LinkCodec.decodeCall(bytes, key)!!
@@ -183,18 +183,5 @@ class MenuDataTest {
             val lines = remote.command(ViewerInfo("Admin", setOf("pnlibrary.admin")), "pn events full g1")
             assertEquals(listOf(Component.text("printed pn events full g1")), lines)
         }
-    }
-
-    @Test
-    fun `dangerous actions need a permission that this server confirms, not one the request claims`() {
-        val actor = UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin")
-        val denied = connected("rollback" to true, "command" to emptyList<String>(), holds = { _, _ -> false })
-        val error = org.junit.jupiter.api.Assertions.assertThrows(Exception::class.java) {
-            denied.rollback(UUID.randomUUID(), false, actor).toCompletableFuture().get()
-        }
-        assertTrue(generateSequence<Throwable>(error) { it.cause }.any { it.message?.contains("pnlibrary.updates.rollback") == true })
-
-        val granted = connected("rollback" to true, holds = { viewer, permission -> viewer == "Admin" && permission == "pnlibrary.updates.rollback" })
-        assertTrue(granted.rollback(UUID.randomUUID(), false, actor).toCompletableFuture().get())
     }
 }

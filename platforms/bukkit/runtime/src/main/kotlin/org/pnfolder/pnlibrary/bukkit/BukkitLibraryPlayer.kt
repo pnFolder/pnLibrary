@@ -46,6 +46,7 @@ internal class BukkitLibraryPlayer(
         audiences.sendActionBar(player, text)
     }
 
+    /** Plays a sound, falling back to the native Bukkit API where needed. */
     override fun playSound(sound: Sound): Delivery = audiences.playSound(player, sound)
 
     override fun showTitle(title: Component, subtitle: Component, fadeIn: Duration, stay: Duration, fadeOut: Duration): Delivery =

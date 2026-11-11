@@ -216,7 +216,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
     private fun actor(sender: CommandSender): UpdateActor =
         UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
 
-    internal companion object {
+    private companion object {
         val ROUTES = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check")
         val CONFIRMATION_TIME: Duration = Duration.ofSeconds(30)
         const val ADMIN = "pnlibrary.admin"

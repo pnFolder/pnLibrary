@@ -31,7 +31,6 @@ internal open class CatalogStyle(
     /** Whether this reader may change settings by clicking. */
     val clickable: Boolean = routes.interactive && routes.editable
 
-    /** Colored tag with the channel name. */
     fun channelTag(channel: UpdateChannel): Component =
         text(UpdateChannelLabels.channelName(channel), UpdateChannelLabels.channelColor(channel))
 
@@ -58,7 +57,6 @@ internal open class CatalogStyle(
     fun updateTarget(snapshot: UpdateSnapshot): String? =
         snapshot.latestVersion?.takeIf { it != snapshot.currentVersion && snapshot.state in CatalogLabels.PENDING }
 
-    /** Publication time of [version] if the snapshot knows it. */
     fun releasedAt(snapshot: UpdateSnapshot, version: String): Instant? =
         snapshot.availableReleases.firstOrNull { it.version == version }?.publishedAt
 
@@ -75,7 +73,6 @@ internal open class CatalogStyle(
         return if (elapsed.toDays() < AGE_DAYS) RussianText.ago(elapsed) else DAY_YEAR.format(at.atZone(zone))
     }
 
-    /** Heading for a history day: today, yesterday or the date. */
     fun dayLabel(day: LocalDate): String {
         val today = now.atZone(zone).toLocalDate()
         return when {
@@ -86,10 +83,8 @@ internal open class CatalogStyle(
         }
     }
 
-    /** Time of day in the display zone. */
     fun clock(at: Instant): String = CLOCK.format(at.atZone(zone))
 
-    /** Date and time in the display zone. */
     fun fullTime(at: Instant): String = FULL_TIME.format(at.atZone(zone))
 
     /** `[Изменения]` that opens the changelog, or the link itself for a reader that cannot click. */
@@ -97,7 +92,6 @@ internal open class CatalogStyle(
         if (!routes.interactive) text(" $link", ChatPalette.LABEL)
         else text(" ").append(linkButton("Изменения", link, "Открыть список изменений", ChatPalette.INFO))
 
-    /** Button that opens the support link. */
     fun supportButton(link: String): Component = linkButton("Поддержка", link, "Открыть поддержку pnFolder", ChatPalette.WARN)
 
     /** Previous and next page buttons around the page number; nothing for a single page. */
@@ -121,7 +115,6 @@ internal open class CatalogStyle(
         return if (offset >= size) emptyList() else drop(offset.toInt()).take(UpdateCatalogView.PAGE_SIZE)
     }
 
-    /** Number of pages for [total] items, at least one. */
     fun pageCount(total: Int): Int = maxOf(1, (total + UpdateCatalogView.PAGE_SIZE - 1) / UpdateCatalogView.PAGE_SIZE)
 
     companion object {

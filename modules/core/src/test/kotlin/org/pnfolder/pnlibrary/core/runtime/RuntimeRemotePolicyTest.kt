@@ -75,19 +75,6 @@ class RuntimeRemotePolicyTest {
     }
 
     @Test
-    fun `a denial that cannot disable the library is logged as critical`() {
-        val fixture = fixture(PlatformType.BUKKIT)
-        val failure = IllegalStateException("plugin manager is gone")
-        `when`(fixture.platform.disableDependents(fixture.owner)).thenThrow(failure)
-        `when`(fixture.platform.disableOwner(fixture.owner)).thenThrow(failure)
-
-        assertThrows(PolicyDeniedException::class.java) { fixture.start(policy("StuckPolicy", false)) }
-
-        verify(fixture.logger).error(anyString(), eq(failure))
-        verify(fixture.logger).critical(anyString(), eq(failure))
-    }
-
-    @Test
     fun `an allowed policy keeps the plugin running on all three platforms`() {
         for (type in listOf(PlatformType.BUKKIT, PlatformType.VELOCITY, PlatformType.BUNGEECORD)) {
             val fixture = fixture(type)
@@ -214,7 +201,6 @@ class RuntimeRemotePolicyTest {
         val library = mock(PnLibrary::class.java, withSettings().extraInterfaces(RuntimeResources::class.java))
         val platform = mock(PlatformAdapter::class.java)
         val tasks = mock(TaskScope::class.java)
-        val logger = mock(PnLogger::class.java)
         val ready = mutableListOf<Runnable>()
         var task: TaskSpec? = null
         var closed = false
@@ -225,7 +211,7 @@ class RuntimeRemotePolicyTest {
             `when`((library as RuntimeResources).runtimeTasks).thenReturn(tasks)
             val logging = mock(LoggingService::class.java)
             `when`(library.logging).thenReturn(logging)
-            `when`(logging.logger(owner, "remote-policy")).thenReturn(logger)
+            `when`(logging.logger(owner, "remote-policy")).thenReturn(mock(PnLogger::class.java))
             `when`(platform.type).thenReturn(type)
             `when`(platform.implementationName).thenReturn(type.name)
             `when`(platform.ownerDetails(owner)).thenReturn(mapOf("name" to "pnLibrary", "authors" to "pnFolder"))

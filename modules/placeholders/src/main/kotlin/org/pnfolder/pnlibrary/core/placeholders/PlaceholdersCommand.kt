@@ -44,7 +44,6 @@ private fun list(hub: PlaceholderHub, context: CommandContext, requested: Int) {
     context.sender.send(Component.text("Проверить: /pn placeholders test <адрес> [uuid игрока]", ChatPalette.FAINT))
 }
 
-/** One line of the placeholder list. */
 fun row(info: PlaceholderInfo): Component {
     val color = if (info.enabled) ChatPalette.TEXT else ChatPalette.FAINT
     val format = info.format?.let { " |$it" }.orEmpty()

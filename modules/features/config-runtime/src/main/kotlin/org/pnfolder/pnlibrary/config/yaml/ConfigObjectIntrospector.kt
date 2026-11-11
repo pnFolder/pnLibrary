@@ -1,15 +1,10 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-import org.pnfolder.pnlibrary.api.config.BackupDatabase
-import org.pnfolder.pnlibrary.api.config.BackupTable
 import org.pnfolder.pnlibrary.api.config.ConfigIgnore
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy
 import org.pnfolder.pnlibrary.api.config.ConfigOrder
 import org.pnfolder.pnlibrary.api.config.ConfigSecret
-import org.pnfolder.pnlibrary.api.config.DatabaseField
-import org.pnfolder.pnlibrary.api.config.DatabaseKind
-import org.pnfolder.pnlibrary.api.config.DatabaseRole
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
@@ -34,10 +29,22 @@ import java.util.TreeSet
 internal class ConfigObjectIntrospector(
     private val defaultNaming: ConfigNamingStrategy,
 ) {
-    /** Returns serializable fields in superclass-first, configured order; read once per class, not per call. */
-    fun fields(type: Class<*>): List<Field> = FIELDS.get(type)
+    /** Returns serializable fields in superclass-first, configured order. */
+    fun fields(type: Class<*>): List<Field> {
+        val hierarchy = generateSequence(type) { it.superclass }
+            .takeWhile { it != Any::class.java }
+            .toList()
+            .asReversed()
+        return hierarchy.flatMap { it.declaredFields.asList() }
+            .filterNot { field ->
+                field.isSynthetic || Modifier.isStatic(field.modifiers) ||
+                    Modifier.isTransient(field.modifiers) ||
+                    field.isAnnotationPresent(ConfigIgnore::class.java)
+            }
+            .sortedWith(compareBy<Field> { it.getAnnotation(ConfigOrder::class.java)?.value ?: 0 })
+            .onEach { it.isAccessible = true }
+    }
 
-    /** The YAML key of [field]: `@ConfigKey` if present, otherwise the field name in the configured naming style. */
     fun key(field: Field): String = field.getAnnotation(ConfigKey::class.java)
         ?.value
         ?.takeIf(String::isNotBlank)
@@ -54,62 +61,14 @@ internal class ConfigObjectIntrospector(
                 out += path
                 return@forEach
             }
-            collectNestedSecrets(field.genericType, path, depth, out)
+            val raw = rawClass(field.genericType)
+            val nested = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
+                !Collection::class.java.isAssignableFrom(raw) && !Map::class.java.isAssignableFrom(raw) &&
+                !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
+            if (nested) collectSecrets(raw, "$path.", depth + 1, out)
         }
     }
 
-    /** Lists add no segment to a report path; a map value adds its key, written `*` because it is only known at run time. */
-    private fun collectNestedSecrets(type: Type, path: String, depth: Int, out: MutableList<String>) {
-        val raw = rawClass(type)
-        val arguments = (type as? ParameterizedType)?.actualTypeArguments.orEmpty()
-        when {
-            Collection::class.java.isAssignableFrom(raw) ->
-                arguments.firstOrNull()?.let { collectNestedSecrets(it, path, depth + 1, out) }
-            Map::class.java.isAssignableFrom(raw) ->
-                arguments.getOrNull(1)?.let { collectNestedSecrets(it, "$path.*", depth + 1, out) }
-            isSection(raw) -> if (depth < 8) collectSecrets(raw, "$path.", depth + 1, out)
-        }
-    }
-
-    private fun isSection(raw: Class<*>): Boolean = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
-        !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
-
-    /** The databases marked `@BackupDatabase` in [type] (the class may carry several), with the dotted YAML path of each. */
-    fun databasePaths(type: Class<*>): List<DatabasePath> {
-        val root = type.getAnnotationsByType(BackupDatabase::class.java).map {
-            DatabasePath("", it.kind, it.name, roleKeys(type, it.name), it.tables.toList(), tableKeys(type, it.name))
-        }
-        val sections = fields(type).flatMap { field ->
-            field.getAnnotationsByType(BackupDatabase::class.java).map {
-                val section = rawClass(field.genericType)
-                if (isScalar(section)) {
-                    // On the field that holds the database name: the other fields of the class carry the same name.
-                    val keys = roleKeys(type, it.name) + (DatabaseRole.DATABASE to key(field))
-                    DatabasePath("", it.kind, it.name, keys, it.tables.toList(), tableKeys(type, it.name))
-                } else {
-                    DatabasePath(key(field), it.kind, it.name, roleKeys(section, it.name), it.tables.toList(), tableKeys(section, it.name))
-                }
-            }
-        }
-        return root + sections
-    }
-
-    /**
-     * The YAML key of each field that says which part of a connection it holds, whatever the field is called. A field
-     * with a `database` belongs to that database only and wins over a shared field without one.
-     */
-    private fun roleKeys(section: Class<*>, database: String): Map<DatabaseRole, String> = fields(section)
-        .mapNotNull { field ->
-            field.getAnnotation(DatabaseField::class.java)?.takeIf { it.database.isEmpty() || it.database == database }?.let { it to key(field) }
-        }
-        .sortedBy { it.first.database.isNotEmpty() }.associate { it.first.role to it.second }
-
-    /** The YAML keys of the fields marked `@BackupTable` in [section] for [database]. */
-    private fun tableKeys(section: Class<*>, database: String): List<String> = fields(section)
-        .filter { field -> field.getAnnotation(BackupTable::class.java)?.let { it.database.isEmpty() || it.database == database } == true }
-        .map(::key)
-
-    /** Reads the current value of [field] from [owner]. */
     fun read(field: Field, owner: Any): Any? = field.get(owner)
 
     /** Resolves the concrete raw class represented by [type], or [Any] if unknown. */
@@ -140,7 +99,6 @@ internal class ConfigObjectIntrospector(
         )
     }
 
-    /** Builds the collection of declared [type] holding [values]; an interface or abstract type gets a standard one. */
     @Suppress("UNCHECKED_CAST")
     fun collection(type: Class<*>, values: Collection<Any?>, path: String): Collection<Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) return when {
@@ -155,7 +113,6 @@ internal class ConfigObjectIntrospector(
         return collection
     }
 
-    /** Builds the map of declared [type] holding [values]; an interface or abstract type gets a standard one. */
     @Suppress("UNCHECKED_CAST")
     fun map(type: Class<*>, values: Map<Any?, Any?>, path: String): Map<Any?, Any?> {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) {
@@ -189,51 +146,9 @@ internal class ConfigObjectIntrospector(
         }
     }
 
-    internal companion object {
-        /** How many classes had their declared fields read since start; tests use it to prove the cache works. */
-        val declaredFieldReads = java.util.concurrent.atomic.AtomicInteger()
-
-        private val FIELDS = object : ClassValue<List<Field>>() {
-            override fun computeValue(type: Class<*>): List<Field> = discover(type)
-        }
-
-        private fun discover(type: Class<*>): List<Field> {
-            val hierarchy = generateSequence(type) { it.superclass }
-                .takeWhile { it != Any::class.java }
-                .toList()
-                .asReversed()
-            return hierarchy.flatMap { declaredFieldReads.incrementAndGet(); it.declaredFields.asList() }
-                .filterNot { field ->
-                    field.isSynthetic || Modifier.isStatic(field.modifiers) ||
-                        Modifier.isTransient(field.modifiers) ||
-                        field.isAnnotationPresent(ConfigIgnore::class.java)
-                }
-                .sortedWith(compareBy<Field> { it.getAnnotation(ConfigOrder::class.java)?.value ?: 0 })
-                .onEach { it.isAccessible = true }
-                .let { java.util.Collections.unmodifiableList(it) }
-        }
-
+    private companion object {
         val LOWER_TO_UPPER_BOUNDARY = Regex("([a-z0-9])([A-Z])")
         val ACRONYM_BOUNDARY = Regex("([A-Z]+)([A-Z][a-z])")
         val WORD_SEPARATOR = Regex("[_\\-\\s]+")
     }
 }
-
-/**
- * A section holding database connection details: where it is in the file, what kind it is and what it is called.
- *
- * @property path dotted path of the section; empty when the connection fields sit at the top of the file
- * @property kind database server type
- * @property name short name from `@BackupDatabase`
- * @property keys YAML key of the field that holds each part of the connection
- * @property tables table or collection names written in the annotation
- * @property tableKeys YAML keys of the fields that hold table names
- */
-class DatabasePath(
-    val path: String,
-    val kind: DatabaseKind,
-    val name: String,
-    val keys: Map<DatabaseRole, String> = emptyMap(),
-    val tables: List<String> = emptyList(),
-    val tableKeys: List<String> = emptyList(),
-)

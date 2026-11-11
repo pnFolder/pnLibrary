@@ -25,10 +25,8 @@ internal class ServerRestarter(private val plugin: Plugin, private val scheduler
     @Volatile
     private var waiting: ServerScheduler.Scheduled? = null
 
-    /** What [start] set up. */
     enum class Started { COUNTDOWN, WAITING_FOR_EMPTY }
 
-    /** Cancels any waiting restart, then begins the restart in the requested [mode]. */
     fun start(mode: Mode): Started {
         cancel()
         return when (mode) {

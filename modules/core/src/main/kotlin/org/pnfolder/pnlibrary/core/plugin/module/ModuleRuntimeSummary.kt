@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 
-/** Formats runtime facts of a module into short lines for the startup summary. */
 internal object ModuleRuntimeSummary {
     fun platform(metadata: PluginMetadata): String =
         if (metadata.platformImplementation.equals(metadata.platform.displayName, ignoreCase = true)) {

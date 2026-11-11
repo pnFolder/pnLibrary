@@ -21,7 +21,6 @@ fun wrap(text: String, width: Int): List<String> {
     return lines
 }
 
-/** The label and the color that mark records of [level]. */
 fun levelStyle(level: JournalLevel) = when (level) {
     JournalLevel.ERROR -> "ОШИБКА" to ChatPalette.DANGER
     JournalLevel.WARNING -> "ВНИМАНИЕ" to ChatPalette.WARN

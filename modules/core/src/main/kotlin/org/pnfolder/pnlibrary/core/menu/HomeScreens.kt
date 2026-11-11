@@ -6,7 +6,6 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 
-/** Menu home page with the main sections. */
 internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun home(player: MenuViewer) {
         val snapshots = snapshots()

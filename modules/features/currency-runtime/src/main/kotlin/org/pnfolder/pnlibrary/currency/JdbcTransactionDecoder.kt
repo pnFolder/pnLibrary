@@ -15,7 +15,6 @@ import java.util.UUID
 
 /** Maps a ledger row of [JdbcCurrencySchema] to a [CurrencyTransaction]. */
 internal class JdbcTransactionDecoder(private val gson: Gson) {
-    /** Reads the current row of [result]; the caller advances the cursor. */
     fun decode(result: ResultSet): CurrencyTransaction {
         val parts = result.getString("currency_id").split(':', limit = 2)
         fun account(column: String) = result.getString(column)?.let(UUID::fromString)?.let(::CurrencyAccount)

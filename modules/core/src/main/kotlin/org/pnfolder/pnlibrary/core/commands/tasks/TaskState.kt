@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.commands.tasks
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 
-/** Task filter of the task list; [word] is the command argument. */
 enum class TaskState(val word: String, val label: String) {
     ALL("all", "все"),
 

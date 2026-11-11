@@ -29,6 +29,7 @@ internal class CurrencyCommandExecutor(
     private val confirmations = CurrencyConfirmationStore()
     private val operations = CurrencyOperations(currencies, confirmations, scheduler)
 
+    /** Builds the currency command tree with capability-aware permissions and suggestions. */
     fun definition(): CommandDefinition = command("money") {
         executes(::executePortable)
         literal("list") {

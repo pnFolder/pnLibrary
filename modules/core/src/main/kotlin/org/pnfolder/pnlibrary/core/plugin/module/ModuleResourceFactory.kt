@@ -31,10 +31,8 @@ import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.CachedComponents
 import org.pnfolder.pnlibrary.core.text.ComponentCache
-import org.pnfolder.pnlibrary.core.text.MiniText
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 
-/** Creates the scoped resources of one module and rolls back already created ones if a later step fails. */
 internal class ModuleResourceFactory(
     private val events: EventService,
     private val tasks: TaskService,
@@ -49,8 +47,6 @@ internal class ModuleResourceFactory(
     private val directDownloads: DirectDownloads?,
     private val componentCache: ComponentCache,
 ) {
-    private val miniText = MiniText()
-
     fun create(
         owner: Any,
         moduleId: ModuleId,
@@ -82,17 +78,13 @@ internal class ModuleResourceFactory(
             serviceScope.register(CurrencyStorageFactory::class.java, currency.storages)
 
             // Resolve the live session on every capture, including after disable/restart.
-            val moduleLogger = logging.logger(owner, moduleId.value)
-            errorReporter = ErrorPipeline(
-                object : ErrorReporter {
-                    override fun capture(error: TelemetryError) {
-                        metricsController?.sessionErrorReporter()?.capture(error)
-                    }
+            errorReporter = ErrorPipeline(object : ErrorReporter {
+                override fun capture(error: TelemetryError) {
+                    metricsController?.sessionErrorReporter()?.capture(error)
+                }
 
-                    override fun close() = Unit
-                },
-                onForwardingFailure = { moduleLogger.warning("An error report could not be sent to the error tracker", it) },
-            )
+                override fun close() = Unit
+            })
             metricsController = ModuleMetrics(
                 owner,
                 metrics,
@@ -118,7 +110,7 @@ internal class ModuleResourceFactory(
                 logger = logging.logger(owner, moduleId.value),
                 configs = configScope,
                 placeholders = placeholderScope,
-                components = CachedComponents(placeholderScope, componentCache, miniText, { moduleLogger.warning(it) }),
+                components = CachedComponents(placeholderScope, componentCache),
                 cooldowns = InMemoryCooldowns(),
                 currency = currencyScope,
                 metrics = metricsController,

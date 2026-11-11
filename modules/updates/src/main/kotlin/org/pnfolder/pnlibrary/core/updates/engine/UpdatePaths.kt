@@ -6,7 +6,6 @@ import java.nio.file.Path
 
 /** Shared confinement checks for transaction targets and configuration snapshots. */
 internal object UpdatePaths {
-    /** Returns [path] normalized, failing if it escapes [allowedRoot]. */
     fun inside(path: Path, allowedRoot: Path): Path {
         val normalized = path.toAbsolutePath().normalize()
         val allowed = allowedRoot.toAbsolutePath().normalize()

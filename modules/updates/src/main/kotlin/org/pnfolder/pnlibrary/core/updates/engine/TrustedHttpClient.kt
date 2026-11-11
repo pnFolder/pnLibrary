@@ -18,7 +18,6 @@ open class TrustedHttpClient(
     private val readTimeout: Duration,
 ) {
 
-    /** Checks that [uri] is an allowed download address and returns it. */
     internal fun validate(uri: URI): URI {
         require(uri.scheme.equals("https", true)) { "Update URL must use HTTPS: $uri" }
         require(uri.userInfo == null && uri.fragment == null) { "Update URL contains forbidden components" }
@@ -52,7 +51,7 @@ open class TrustedHttpClient(
                 if (status in REDIRECT_CODES) {
                     if (redirect == MAX_REDIRECTS) error("Too many update redirects")
                     val location = connection.getHeaderField("Location") ?: error("Redirect has no Location")
-                    current = TrustedHosts.requireRedirect(validate(current.resolve(location)))
+                    current = validate(current.resolve(location))
                     return@repeat
                 }
                 require(status in 200..299) { "Update request failed with HTTP $status" }
@@ -69,7 +68,6 @@ open class TrustedHttpClient(
         error("Unreachable redirect state")
     }
 
-    /** Reads the stream, failing if it exceeds [maximumBytes]. */
     internal fun readBounded(input: InputStream, maximumBytes: Int): ByteArray {
         val output = ByteArrayOutputStream(minOf(maximumBytes, 8192))
         val buffer = ByteArray(8192)

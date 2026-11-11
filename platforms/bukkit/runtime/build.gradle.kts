@@ -54,8 +54,7 @@ tasks.named<ProcessResources>("processResources") {
 
 mavenPublishing {
     publishToMavenCentral()
-    // Without a key (a local build) the artifacts are published unsigned.
-    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
+    signAllPublications()
 
     coordinates(
         groupId = "io.github.pnfolder",

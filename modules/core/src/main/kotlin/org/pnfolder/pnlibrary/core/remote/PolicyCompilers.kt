@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.remote
 
-import org.pnfolder.pnlibrary.spi.libraries.OptionalLibrary
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import javax.tools.Diagnostic
@@ -10,8 +9,8 @@ import javax.tools.JavaFileObject
 import javax.tools.ToolProvider
 
 /**
- * Compiles a policy with the server's javac, or with ECJ when the server runs a JRE without a compiler.  The first time one is needed, the
- * loader downloads ECJ through Libby (see LibraryLoader); a server with javac downloads nothing.
+ * Compiles a policy with the server's javac, or with ECJ when the server runs a JRE without a compiler. The platform
+ * loader puts ECJ on the plugin classpath at start (see LibraryLoader), so it is only looked up here.
  */
 internal class PolicyCompilers(
     private val systemCompiler: () -> JavaCompiler? = ToolProvider::getSystemJavaCompiler,
@@ -27,10 +26,11 @@ internal class PolicyCompilers(
     }
 
     private fun ecj(): JavaCompiler {
-        check(OptionalLibrary("compiler", ECJ_COMPILER, ecjLoader).ensure()) {
-            "Java compiler is unavailable: the server runs a JRE and ECJ could not be downloaded"
+        val type = try {
+            Class.forName(ECJ_COMPILER, true, ecjLoader)
+        } catch (missing: ClassNotFoundException) {
+            throw IllegalStateException("Java compiler is unavailable: the server runs a JRE and ECJ was not loaded at start", missing)
         }
-        val type = Class.forName(ECJ_COMPILER, true, ecjLoader)
         return type.getDeclaredConstructor().newInstance() as JavaCompiler
     }
 

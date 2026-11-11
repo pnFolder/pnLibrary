@@ -11,13 +11,10 @@ interface PlaceholderBuilder<T : Any> {
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
 
-    /** Sets the callback that lets this placeholder be changed through the update API. */
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
 
-    /** Restricts which plugins may change this placeholder's value. */
     fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
 
-    /** Sets which plugins may read this placeholder. */
     fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
 
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
@@ -26,7 +23,6 @@ interface PlaceholderBuilder<T : Any> {
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
 
-    /** Value used when the resolver returns null. */
     fun fallback(value: T): PlaceholderBuilder<T>
 
     /**

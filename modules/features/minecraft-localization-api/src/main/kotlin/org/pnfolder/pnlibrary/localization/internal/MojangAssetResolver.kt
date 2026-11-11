@@ -34,17 +34,13 @@ internal class MojangAssetResolver(
     private val http: LocalizationHttpClient,
     private val store: VerifiedFileStore,
 ) {
-    /** Per-version asset metadata cache. */
     private val versionAssets = ConcurrentHashMap<MinecraftVersion, VersionAssets>()
-    /** Downloads and validates the current Mojang version manifest. */
     fun manifestBytes(): ByteArray = http.get(MANIFEST, MANIFEST_LIMIT).also(::validateManifest)
 
-    /** Throws [TranslationException] when [bytes] is not a usable version manifest. */
     fun validateManifest(bytes: ByteArray) {
         manifestEntries(bytes)
     }
 
-    /** Lists release versions of the manifest that this library knows, newest first. */
     fun versions(manifest: ByteArray): List<MinecraftVersion> {
         return manifestEntries(manifest)
             .mapNotNull { entry ->
@@ -55,14 +51,12 @@ internal class MojangAssetResolver(
             .sortedWith(compareByDescending<MinecraftVersion> { it.major }.thenByDescending { it.minor }.thenByDescending { it.patch })
     }
 
-    /** Lists locale ids published for [version]; `en_us` is always included because it ships in the client. */
     fun locales(version: MinecraftVersion, manifest: ByteArray): List<String> =
         (versionAssets(version, manifest).objects.keys.asSequence()
             .filter { it.startsWith("minecraft/lang/") && (it.endsWith(".json") || it.endsWith(".lang")) }
             .map { it.substringAfterLast('/').substringBeforeLast('.') } + sequenceOf("en_us"))
             .distinct().sorted().toList()
 
-    /** Downloads the language file of [locale], verifying size and SHA-1; falls back to the client jar when not in the index. */
     fun language(version: MinecraftVersion, locale: String, manifest: ByteArray): ResolvedLanguage {
         val assets = versionAssets(version, manifest)
         val reference = assets.objects["minecraft/lang/$locale.json"]
@@ -76,11 +70,9 @@ internal class MojangAssetResolver(
         return ResolvedLanguage(bytes, reference.hash)
     }
 
-    /** Version assets, resolved once per version and kept in memory. */
     private fun versionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets =
         versionAssets.computeIfAbsent(version) { resolveVersionAssets(it, manifest) }
 
-    /** Loads version metadata and the asset index, from the disk cache or the network. */
     private fun resolveVersionAssets(version: MinecraftVersion, manifest: ByteArray): VersionAssets {
         val versionEntry = manifestEntries(manifest)
             .firstOrNull { it.string("id") == version.text }
@@ -110,7 +102,6 @@ internal class MojangAssetResolver(
         return VersionAssets(versionJson, objects)
     }
 
-    /** Returns verified JSON from the disk cache, or downloads and caches it; a corrupt cache file is quarantined. */
     private fun cachedJson(
         path: Path,
         uri: URI,
@@ -120,7 +111,22 @@ internal class MojangAssetResolver(
         expectedSize: Long? = null,
         validator: (JsonObject) -> Unit,
     ): JsonObject {
-        fun decode(bytes: ByteArray) = decodeJson(bytes, name, expectedHash, expectedSize, validator)
+        fun decode(bytes: ByteArray): JsonObject {
+            if ((expectedSize != null && bytes.size.toLong() != expectedSize) ||
+                (expectedHash != null && store.sha1(bytes) != expectedHash)
+            ) throw TranslationException(
+                TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $name",
+            )
+            val parsed = parse(bytes, name)
+            try {
+                validator(parsed)
+            } catch (error: TranslationException) {
+                throw error
+            } catch (error: RuntimeException) {
+                throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft $name", error)
+            }
+            return parsed
+        }
         store.read(path, limit)?.let { bytes ->
             try {
                 return decode(bytes)
@@ -134,37 +140,11 @@ internal class MojangAssetResolver(
         return parsed
     }
 
-    /** Checks size and SHA-1 when known, parses [bytes] and runs [validator]; failures become [TranslationException]. */
-    private fun decodeJson(
-        bytes: ByteArray,
-        name: String,
-        expectedHash: String?,
-        expectedSize: Long?,
-        validator: (JsonObject) -> Unit,
-    ): JsonObject {
-        if ((expectedSize != null && bytes.size.toLong() != expectedSize) ||
-            (expectedHash != null && store.sha1(bytes) != expectedHash)
-        ) throw TranslationException(
-            TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $name",
-        )
-        val parsed = parse(bytes, name)
-        try {
-            validator(parsed)
-        } catch (error: TranslationException) {
-            throw error
-        } catch (error: RuntimeException) {
-            throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft $name", error)
-        }
-        return parsed
-    }
-
-    /** Requires an asset index with a URL. */
     private fun validateVersionMetadata(metadata: JsonObject) {
         val index = metadata.getAsJsonObject("assetIndex") ?: throw malformed("Version metadata has no asset index")
         if (index.string("url").isNullOrBlank()) throw malformed("Version metadata has no asset index URL")
     }
 
-    /** Requires every asset to have a hash and a non-negative size. */
     private fun validateAssetIndex(index: JsonObject) {
         val objects = index.getAsJsonObject("objects") ?: throw malformed("Asset index has no objects")
         objects.entrySet().forEach { (key, raw) ->
@@ -177,7 +157,6 @@ internal class MojangAssetResolver(
         }
     }
 
-    /** Fallback for locales absent from the asset index: downloads the client jar and extracts the language file. */
     private fun languageFromClient(version: MinecraftVersion, locale: String, metadata: JsonObject): ResolvedLanguage {
         val client = metadata.getAsJsonObject("downloads")?.getAsJsonObject("client")
             ?: throw unavailable(version, locale)
@@ -194,7 +173,16 @@ internal class MojangAssetResolver(
             if (downloaded != size.toLong() || store.sha1(temporary) != hash) throw TranslationException(
                 TranslationException.Reason.INTEGRITY, "Checksum or size mismatch for Minecraft $version client artifact",
             )
-            return extractLanguage(temporary, version, locale)
+            val names = listOf("assets/minecraft/lang/$locale.json", "assets/minecraft/lang/$locale.lang")
+            ZipFile(temporary.toFile()).use { zip ->
+                val entry = names.asSequence().mapNotNull(zip::getEntry).firstOrNull()
+                    ?: throw unavailable(version, locale)
+                if (entry.isDirectory || entry.size > LANGUAGE_LIMIT) throw TranslationException(
+                    TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
+                )
+                val bytes = readEntry(zip, entry)
+                return ResolvedLanguage(bytes, store.sha1(bytes))
+            }
         } catch (error: TranslationException) {
             throw error
         } catch (error: Exception) {
@@ -209,20 +197,6 @@ internal class MojangAssetResolver(
             } catch (_: Exception) {
                 temporary.toFile().deleteOnExit()
             }
-        }
-    }
-
-    /** Reads the language file of [locale] from the downloaded client archive. */
-    private fun extractLanguage(archive: Path, version: MinecraftVersion, locale: String): ResolvedLanguage {
-        val names = listOf("assets/minecraft/lang/$locale.json", "assets/minecraft/lang/$locale.lang")
-        ZipFile(archive.toFile()).use { zip ->
-            val entry = names.asSequence().mapNotNull(zip::getEntry).firstOrNull()
-                ?: throw unavailable(version, locale)
-            if (entry.isDirectory || entry.size > LANGUAGE_LIMIT) throw TranslationException(
-                TranslationException.Reason.INTEGRITY, "Minecraft language entry exceeds $LANGUAGE_LIMIT bytes",
-            )
-            val bytes = readEntry(zip, entry)
-            return ResolvedLanguage(bytes, store.sha1(bytes))
         }
     }
 
@@ -241,20 +215,17 @@ internal class MojangAssetResolver(
         output.toByteArray()
     }
 
-    /** Error for a version that does not publish [locale]. */
     private fun unavailable(version: MinecraftVersion, locale: String) = TranslationException(
         TranslationException.Reason.UNAVAILABLE_LOCALE,
         "Minecraft ${version.text} does not publish locale $locale",
     )
 
-    /** Parses a JSON object, mapping any failure to MALFORMED_DATA. */
     private fun parse(bytes: ByteArray, name: String): JsonObject = try {
         JsonParser.parseString(String(bytes, StandardCharsets.UTF_8)).asJsonObject
     } catch (error: Exception) {
         throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft $name", error)
     }
 
-    /** Parses and validates the `versions` array of the manifest. */
     private fun manifestEntries(bytes: ByteArray): List<JsonObject> = try {
         val entries = parse(bytes, "version manifest").getAsJsonArray("versions")
             ?: throw malformed("Version manifest has no versions")
@@ -271,13 +242,10 @@ internal class MojangAssetResolver(
         throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft version manifest", error)
     }
 
-    /** MALFORMED_DATA error with [message]. */
     private fun malformed(message: String) = TranslationException(TranslationException.Reason.MALFORMED_DATA, message)
-    /** String value of [name], or null when missing or JSON null. */
     private fun JsonObject.string(name: String): String? = get(name)?.takeUnless { it.isJsonNull }?.asString
 
     companion object {
-        /** Official Mojang version manifest. */
         val MANIFEST: URI = URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
         private const val MANIFEST_LIMIT = 4 * 1024 * 1024
         private const val VERSION_LIMIT = 4 * 1024 * 1024

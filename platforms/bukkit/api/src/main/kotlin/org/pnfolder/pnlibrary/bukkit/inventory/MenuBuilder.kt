@@ -62,13 +62,10 @@ class MenuBuilder internal constructor(private val title: String, private val ty
         }
     }
 
-    /** Sets the function that fills the menu each time it is opened or refreshed. */
     fun render(renderer: MenuRenderer): MenuBuilder = apply { this.renderer = renderer }
 
-    /** Sets the callback that runs after the menu is opened for a player. */
     fun onOpen(handler: MenuOpenHandler): MenuBuilder = apply { openHandler = handler }
 
-    /** Sets the callback that runs after a player's session ends. */
     fun onClose(handler: MenuCloseHandler): MenuBuilder = apply { closeHandler = handler }
 
     /** Creates an immutable menu and snapshot of all current slot definitions. */

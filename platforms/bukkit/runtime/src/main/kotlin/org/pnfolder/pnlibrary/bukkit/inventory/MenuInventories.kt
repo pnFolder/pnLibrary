@@ -6,12 +6,10 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import java.util.UUID
 
-/** Creates the Bukkit inventory behind a menu; replaced in tests. */
 internal fun interface MenuInventories {
     fun create(menu: Menu, holder: InventoryHolder): Inventory
 }
 
-/** Creates real server inventories. */
 internal object NativeMenuInventories : MenuInventories {
     @Suppress("DEPRECATION")
     override fun create(menu: Menu, holder: InventoryHolder): Inventory =
@@ -26,7 +24,6 @@ internal object NativeMenuInventories : MenuInventories {
 internal class MenuHolder(val id: UUID) : InventoryHolder {
     private var inventory: Inventory? = null
 
-    /** Remembers the inventory created for this holder. */
     fun bind(inventory: Inventory) {
         this.inventory = inventory
     }
@@ -41,7 +38,6 @@ internal fun Inventory.anvilRenameText(): String? = try {
     (method?.invoke(this) as? String)?.takeIf(String::isNotBlank)
         ?: getItem(2)?.itemMeta?.displayName
         ?: getItem(0)?.itemMeta?.displayName
-} catch (_: ReflectiveOperationException) {
-    // The accessor is missing on older servers; the item name is read instead.
-    getItem(2)?.itemMeta?.displayName ?: getItem(0)?.itemMeta?.displayName
+} catch (_: Exception) {
+    null
 }

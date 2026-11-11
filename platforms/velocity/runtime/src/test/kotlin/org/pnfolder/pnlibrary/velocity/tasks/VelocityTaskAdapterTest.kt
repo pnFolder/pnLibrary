@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Checks task scheduling, entity-task warnings and shutdown on the Velocity scheduler. */
 class VelocityTaskAdapterTest {
     private val NAMES: (Any?) -> String = { "demo" }
     private val WARN: (String) -> Unit = {}

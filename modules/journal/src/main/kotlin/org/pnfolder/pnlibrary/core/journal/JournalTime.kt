@@ -11,16 +11,11 @@ import java.util.Locale
 
 // Dates and times of the journal, always in the configured display zone (DisplayZone).
 
-/** Day and month with the clock, for events of the current year. */
 val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss")
-/** Hours, minutes and seconds. */
 val CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-/** Day and month. */
 val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM")
-/** Day, month and year. */
 val DAY_WITH_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-/** Day, month, year and the clock, for events of earlier years. */
 val TIME_WITH_YEAR: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
 
@@ -31,22 +26,16 @@ fun stamp(millis: Long): String {
     val sameYear = instant.atZone(zone).year == java.time.LocalDate.now(zone).year
     return (if (sameYear) TIME else TIME_WITH_YEAR).withZone(zone).format(instant)
 }
-/** The locale of month and weekday names in chat. */
 val RU = Locale("ru")
-/** Day and month name, such as `16 октября`. */
 val LONG_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", RU)
-/** Day, month name and year, such as `16 октября 2023 года`. */
 val LONG_DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'года'", RU)
-/** The full weekday name. */
 val WEEKDAY: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE", RU)
-/** The clock in UTC, for the exact value in the hover card. */
 val UTC_STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(java.time.ZoneOffset.UTC)
 
 /** "16 октября 2023 года", or "16 октября" within the current year. */
 fun longDate(date: java.time.LocalDate): String =
     if (date.year == java.time.LocalDate.now(DisplayZone.zone).year) LONG_DAY.format(date) else LONG_DAY_YEAR.format(date)
 
-/** The calendar date of [millis] in the display zone. */
 fun localDate(millis: Long): java.time.LocalDate = java.time.Instant.ofEpochMilli(millis).atZone(DisplayZone.zone).toLocalDate()
 
 /** "16 октября 2023 года, 16:45:07": the date in words, then the clock in the display zone. */

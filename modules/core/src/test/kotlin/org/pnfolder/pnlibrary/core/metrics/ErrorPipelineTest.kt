@@ -31,19 +31,4 @@ class ErrorPipelineTest {
         assertEquals("Bearer [redacted]?token=[redacted]", received.single().message)
         assertEquals("C:\\Users\\[user]\\plugin\\Main.kt:10", received.single().stackTrace.single())
     }
-
-    @Test
-    fun `a failing tracker is reported once and does not reach the caller`() {
-        val failures = mutableListOf<Throwable>()
-        val delegate = object : ErrorReporter {
-            override fun capture(error: TelemetryError) = throw IllegalStateException("tracker is down")
-            override fun close() = Unit
-        }
-        val pipeline = ErrorPipeline(delegate, onForwardingFailure = { failures += it })
-
-        repeat(2) { index -> pipeline.capture(TelemetryError("a.Error", "failure $index", emptyList(), handled = true)) }
-
-        assertEquals(listOf("tracker is down"), failures.map { it.message })
-        assertEquals(2L, pipeline.diagnosticSnapshot()["forwardingFailures"])
-    }
 }

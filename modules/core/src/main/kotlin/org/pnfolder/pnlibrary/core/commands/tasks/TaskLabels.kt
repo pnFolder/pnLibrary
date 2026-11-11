@@ -11,7 +11,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Chat wording, colours and time formats for task statuses and moments. */
 object TaskLabels {
     fun label(status: TaskStatus): String = when (status) {
         TaskStatus.SCHEDULED -> "ожидает запуска"

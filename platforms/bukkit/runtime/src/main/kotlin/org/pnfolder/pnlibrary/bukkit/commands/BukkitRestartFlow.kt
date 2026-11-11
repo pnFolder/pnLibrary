@@ -73,11 +73,9 @@ internal class BukkitRestartFlow(
         else replies.say(reply, ChatTone.WARNING, "Перезапуск не запланирован.")
     }
 
-    /** Whether the confirmed update plan is still the current one, so the restart acts on what was approved. */
     fun isStill(grant: UpdateConfirmationTokens.Grant): Boolean =
         library.updates.currentPlan().orElse(null)?.let { it.id == grant.plan && it.revision == grant.revision } == true
 
-    /** Starts the restart in [mode] after checking the permission and that [grant] still matches the plan. */
     fun run(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant, mode: ServerRestarter.Mode) {
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")

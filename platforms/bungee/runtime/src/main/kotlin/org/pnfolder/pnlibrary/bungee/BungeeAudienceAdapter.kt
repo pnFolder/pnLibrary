@@ -23,6 +23,7 @@ internal class BungeeAudienceAdapter(
 
     override fun player(uniqueId: UUID): LibraryPlayer? = plugin.proxy.getPlayer(uniqueId)?.let(BungeeLibraryPlayer::of)
 
+    /** Wraps supported native senders; unsupported objects return null. */
     override fun sender(native: Any): AudienceSender? = when (native) {
         is ProxiedPlayer -> BungeeLibraryPlayer.of(native)
         is CommandSender -> wrap(native)
@@ -31,6 +32,7 @@ internal class BungeeAudienceAdapter(
 
     override fun onlinePlayers(): List<LibraryPlayer> = plugin.proxy.players.map(BungeeLibraryPlayer::of)
 
+    /** Wraps generic senders; action-bar messages fall back to chat and sounds are unsupported. */
     private fun wrap(sender: CommandSender): AudienceSender = object : AudienceSender {
         override val id get() = sender.name
         override val name get() = sender.name

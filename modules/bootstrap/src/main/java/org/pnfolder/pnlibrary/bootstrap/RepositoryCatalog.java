@@ -21,12 +21,6 @@ final class RepositoryCatalog {
     static final String PATH = ".pnlibrary/releases.json";
 
     private static final Pattern SAFE_FILE = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*\\.jar");
-    /** Every library jar is named {@code pnLibrary-...}, so a typo in the catalog cannot overwrite another plugin's jar. */
-    static boolean isLibraryFileName(String file) {
-        return file != null && SAFE_FILE.matcher(file).matches()
-                && file.regionMatches(true, 0, BootstrapDefaults.PRODUCT_NAME + "-", 0, BootstrapDefaults.PRODUCT_NAME.length() + 1);
-    }
-
     private static final Pattern SHA256 = Pattern.compile("(?i)^[0-9a-f]{64}$");
 
     private RepositoryCatalog() {}
@@ -164,7 +158,7 @@ final class RepositoryCatalog {
      * One {@code artifacts} entry, verified complete, or {@code null} when it is missing a required field.
      *
      * @param requireUniversalName {@code true} for a {@code UNIVERSAL} entry, whose file must match the universal
-     * jar name pattern; a platform-specific entry needs a safe {@code pnLibrary-} jar filename, checked against the downloaded
+     * jar name pattern; a platform-specific entry only needs a safe jar filename, checked against the downloaded
      * jar's own descriptor when it is installed
      */
     private static LibraryRelease decodeArtifact(
@@ -172,7 +166,7 @@ final class RepositoryCatalog {
         String file = text(entry, "file");
         String url = text(entry, "url");
         String sha256 = text(entry, "sha256");
-        if (!isLibraryFileName(file)) return null;
+        if (file == null || !SAFE_FILE.matcher(file).matches()) return null;
         if (requireUniversalName && !BootstrapPlatform.isUniversal(file)) return null;
         if (sha256 == null || !SHA256.matcher(sha256).matches()) return null;
         URI uri;

@@ -5,7 +5,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import java.time.Duration
 import java.time.Instant
 
-/** Menu screens for per-plugin update policies. */
 internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
     fun channels(player: MenuViewer, product: String) {

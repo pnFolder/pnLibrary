@@ -54,14 +54,12 @@ class TranslationRequest internal constructor(
         @JvmStatic
         fun builder(): Builder = Builder()
 
-        /** Lowercases [value], turns `-` into `_` and rejects anything that is not a Minecraft locale id. */
         internal fun normalizeLocale(value: String): String {
             val normalized = value.trim().lowercase(Locale.ROOT).replace('-', '_')
             require(LOCALE.matches(normalized)) { "Invalid Minecraft locale: $value" }
             return normalized
         }
 
-        /** Shape of a normalized locale id, such as `en_us`. */
         private val LOCALE = Regex("[a-z0-9]+(?:_[a-z0-9]+)*")
     }
 }

@@ -77,6 +77,7 @@ internal class BukkitCommandSender(
     override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
+/** Native registration boundary used by the runtime and command tests. */
 /** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
     override fun register(
@@ -122,6 +123,7 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         return field.get(Bukkit.getServer()) as CommandMap
     }
 
+    /** Constructs a native plugin command through Bukkit's non-public constructor. */
     private fun pluginCommand(name: String, owner: Plugin): PluginCommand {
         val constructor: Constructor<PluginCommand> = PluginCommand::class.java.getDeclaredConstructor(
             String::class.java,
