@@ -57,7 +57,7 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Validate requested version
         shell: pwsh
