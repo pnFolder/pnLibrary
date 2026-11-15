@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 
 /** The detail card of one event, or the timeline of its occurrences when [repeats] is set. */
-fun card(
+internal fun journalCard(
     sender: CommandSender,
     kit: ChatKit,
     journal: JournalStore,
@@ -115,7 +115,7 @@ private fun dayRows(
 /** The message, its details and the stack trace; the flag says whether some trace lines were folded away. */
 private fun detailsSection(kit: ChatKit, record: JournalRecord, wholeTrace: Boolean): Pair<List<Component>, Boolean> {
     val lines = mutableListOf<Component>(kit.section("Что случилось"))
-    wrap(record.message, CARD_WIDTH).forEach { lines += kit.text("    $it", ChatPalette.TEXT) }
+    wrapText(record.message, CARD_WIDTH).forEach { lines += kit.text("    $it", ChatPalette.TEXT) }
     record.details.filterKeys { it != JournalRecord.STACKTRACE }.forEach { (key, value) ->
         lines += kit.text("    $key: ", ChatPalette.LABEL).append(kit.text(value, ChatPalette.SOFT))
     }
@@ -158,7 +158,7 @@ private fun cardButtons(
 /** Copies the report for the plugin author; only in a chat that can click. */
 private fun copyButton(kit: ChatKit, group: List<JournalRecord>): Component =
     kit.bracketed("скопировать", ChatPalette.OK)
-        .clickEvent(ClickEvent.copyToClipboard(report(group.first(), group.size)))
+        .clickEvent(ClickEvent.copyToClipboard(clipboardText(group.first(), group.size)))
         .hoverEvent(
             kit.tooltip(
                 kit.text("Скопировать отчёт для автора плагина", ChatPalette.OK),
@@ -168,7 +168,7 @@ private fun copyButton(kit: ChatKit, group: List<JournalRecord>): Component =
         )
 
 /** Plain text for the plugin author: what happened, how often, and the whole stack trace. */
-fun report(record: JournalRecord, count: Int): String = buildString {
+internal fun clipboardText(record: JournalRecord, count: Int): String = buildString {
     appendLine("[${record.level}] ${record.source} · ${record.type}")
     appendLine("Время: ${stamp(record.timeMillis)} ${zoneLabel()}, повторов: $count")
     appendLine(record.message)

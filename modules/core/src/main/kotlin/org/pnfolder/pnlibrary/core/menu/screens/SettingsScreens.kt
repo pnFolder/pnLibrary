@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
 import org.pnfolder.pnlibrary.core.menu.style.HOLDS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
@@ -46,8 +47,23 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
         autoForAll(builder, all)
         downloadsForMissing(builder)
         pauseForAll(builder, all)
+        libraryParameters(builder)
         builder.button(SMALL_BACK + 9, backItem(), go { routes.home(it) })
         show(player, builder.build())
+    }
+
+    private fun libraryParameters(builder: MenuBuilder) {
+        builder.button(
+            SMALL_BACK,
+            icon(
+                Icons.SETTINGS, "WRITABLE_BOOK", "Параметры библиотеки",
+                Style.lore(
+                    wrapText("Приватность отчётов, часовой пояс, загрузки файлов, время проверки обновлений. То же делает /pn settings.", WRAP_WIDTH, 4),
+                    emptyList(), Style.left("открыть"),
+                ),
+            ),
+            go { who -> allowed(who, MenuPermissions.LIBRARY_SETTINGS) { routes.librarySettings(who, 0) } },
+        )
     }
 
     private fun howItWorks(builder: MenuBuilder) {
@@ -58,7 +74,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 Style.lore(
                     listOf("Проверка и сообщения включены всегда, отключить библиотеку нельзя."),
                     listOf(
-                        "Проверка" to "каждые ${UpdateDefaults.CHECK_INTERVAL.toHours()} ч",
+                        "Проверка" to "каждые ${checkInterval()}",
                         "Консоль" to "сообщения всегда",
                         "Канал" to "только dev",
                     ),
@@ -66,6 +82,10 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
             ),
         )
     }
+
+    /** How often the catalogs are asked, as this server has it set. */
+    private fun checkInterval(): String =
+        data.settings().firstOrNull { it.key == "updates.check-interval" }?.current ?: "${UpdateDefaults.CHECK_INTERVAL.toHours()}ч"
 
     private fun autoForAll(builder: MenuBuilder, all: List<UpdateSnapshot>) {
         val automatic = all.count { it.automaticDownload }
@@ -121,7 +141,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
             1 + (HOLDS.take(CYCLE_HOLDS).indexOfFirst { it.second >= span }.takeIf { it >= 0 } ?: (CYCLE_HOLDS - 1))
         } ?: 0
         val pauseNote = buildList {
-            if (untils.isNotEmpty()) add("Осталось" to timeLeft(longest!!))
+            longest?.let { add("Осталось" to timeLeft(it)) }
             if (untils.isNotEmpty()) add("На паузе" to "${untils.size} из ${all.size}")
         }
         builder.button(

@@ -18,7 +18,7 @@ import java.util.UUID
 internal class DownloadArtifactPreparer(
     private val platform: PlatformType,
     private val libraryData: Path,
-    private val configuration: DownloadConfiguration,
+    private val configuration: () -> DownloadConfiguration,
     http: TrustedHttpClient,
     pins: DownloadPins = DownloadPins(libraryData),
     private val maximumBytes: Long = 512L * 1024L * 1024L,
@@ -61,7 +61,7 @@ internal class DownloadArtifactPreparer(
     }
 
     private fun target(request: FileDownloads, declaration: FileDownload): Path {
-        require(declaration.destination in configuration.destinations) {
+        require(declaration.destination in configuration().destinations) {
             "назначение ${declaration.destination} запрещено конфигурацией"
         }
         val root = when (declaration.destination) {

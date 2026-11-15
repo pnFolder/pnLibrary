@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.menu.screens
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens
@@ -15,7 +16,6 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
@@ -114,7 +114,7 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
     private fun chooseChannel(player: MenuViewer, product: String, channel: UpdateChannel?) {
         data.setChannel(product, channel, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
                 routes.card(player, product)
             }
@@ -124,7 +124,7 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
     private fun chooseHold(player: MenuViewer, product: String, duration: Duration?) {
         data.setHeld(product, duration, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, if (duration == null) "Пауза $product снята." else "Обновления $product приостановлены.")
                 routes.card(player, product)
             }

@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
+import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
@@ -78,10 +79,7 @@ internal class BukkitControlCommand(
         executes(::overview)
         statusViews()
         updateViews()
-        library.mountableCommand("events")?.let { mount("events", it) }
-        library.mountableCommand("debug")?.let { mount("debug", it) }
-        library.mountableCommand("stats")?.let { mount("stats", it) }
-        library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
+        for (name in MountableCommands.ALL) library.mountableCommand(name)?.let { mount(name, it) }
         mount("bus", EventBusCommand(library).definition())
         mount("tasks", TaskCommand(library).definition())
         mount("configs", ConfigsCommand(library).definition())
@@ -162,6 +160,7 @@ internal class BukkitControlCommand(
             if (sender.hasPermission("pnlibrary.tasks")) add("/pn tasks")
             if (sender.hasPermission("pnlibrary.stats")) add("/pn stats")
             if (sender.hasPermission("pnlibrary.placeholders")) add("/pn placeholders")
+            if (sender.hasPermission("pnlibrary.settings")) add("/pn settings")
             if (sender.hasPermission(ServersCommand.PERMISSION)) add("/pn servers")
             if (sender.hasPermission("pnlibrary.debug")) add("/pn debug")
             add("/pn money")

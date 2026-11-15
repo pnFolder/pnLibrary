@@ -20,14 +20,13 @@ import java.util.ArrayDeque
  * @param retain keeps the observations that are still active at a time; replaceable so tests can count its use
  */
 internal class ObservationJournal(
-    dataFolder: Path,
+    private val file: Path,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val retain: (Collection<Observation>, Long) -> List<Observation> = ObservationRetention::active,
+    private val retain: (Collection<Observation>, Long) -> List<Observation> = Collection<Observation>::retained,
 ) : AutoCloseable {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
     private val lock = Any()
     private val observations = ArrayDeque<Observation>()
-    private val file = dataFolder.resolve("observability").resolve("observations.jsonl")
     private var writer: Writer? = null
     private var lastRetentionAt: Long? = null
 
@@ -45,7 +44,7 @@ internal class ObservationJournal(
         out.flush()
         val now = clock()
         val last = lastRetentionAt
-        if (observations.size > ObservationRetention.MAX_OBSERVATIONS + OVERFLOW_MARGIN ||
+        if (observations.size > MAX_OBSERVATIONS + OVERFLOW_MARGIN ||
             last == null || now - last >= RETENTION_INTERVAL_MILLIS || now < last
         ) {
             lastRetentionAt = now

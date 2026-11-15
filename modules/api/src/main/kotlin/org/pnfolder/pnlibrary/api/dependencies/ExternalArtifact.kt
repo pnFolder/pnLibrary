@@ -25,9 +25,4 @@ class ExternalArtifact(
         requireSha256(sha256, "External artifact")
         require(mirrors.all { it.isHttps() }) { "External artifact mirrors must use HTTPS" }
     }
-
-    /** Integrity validation constants. */
-    companion object {
-        private val SHA_256 = Regex("[0-9a-fA-F]{64}")
-    }
 }

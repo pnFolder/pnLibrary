@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder
@@ -13,6 +14,7 @@ import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
 import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
 import org.pnfolder.pnlibrary.core.menu.style.Row
@@ -20,7 +22,6 @@ import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.clockTime
-import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
@@ -29,7 +30,7 @@ import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
 
-private const val DOWNLOAD = "pnlibrary.updates.download"
+private const val DOWNLOAD = MenuPermissions.UPDATES_DOWNLOAD
 private const val CARD_ROWS = 4
 private const val CARD_BACK = 31
 private const val BLOCKER_LINES = 3
@@ -162,7 +163,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         data.checkAll(player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) return@sync tell(player, ChatTone.FAILURE, "Не удалось проверить обновления.", errorReason(error))
+                if (error != null) return@sync tell(player, ChatTone.FAILURE, "Не удалось проверить обновления.", error.rootMessage())
                 val snapshots = snapshots()
                 val news = UpdateCatalogView.announcement(snapshots, ROUTES, PnLibraryIdentity.SUPPORT_URL)
                 if (news.isEmpty()) tell(player, ChatTone.SUCCESS, "Проверка завершена: все плагины используют актуальные версии.")
@@ -182,7 +183,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val enable = !snapshot.automaticDownload
         data.setAutomatic(snapshot.product, enable, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, "Автозагрузка ${snapshot.product}: ${if (enable) "включена" else "выключена"}.")
                 card(player, snapshot.product)
             }
@@ -193,7 +194,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val stages = snapshots().map { change(it).toCompletableFuture() }
         java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, done)
                 routes.settings(player)
             }

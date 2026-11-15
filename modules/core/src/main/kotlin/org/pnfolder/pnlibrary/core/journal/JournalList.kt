@@ -17,7 +17,7 @@ private val FILTERS = listOf(
 )
 
 /** Prints one page of the journal for the filter and page named in [arguments], or tells which level words exist. */
-fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: List<String>, root: String) {
+internal fun journalList(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: List<String>, root: String) {
     val word = arguments.getOrNull(0)?.lowercase(Locale.ROOT) ?: "all"
     val filter = FILTERS.firstOrNull { it.first == word || (word == "warn" && it.first == "warning") }
     if (filter == null) {
@@ -35,7 +35,7 @@ fun list(sender: CommandSender, kit: ChatKit, journal: JournalStore, arguments: 
     val lines = listHead(kit, groups.size, tabs(kit, everything, filter.first, root)).toMutableList()
     if (rows.isEmpty()) lines += kit.note("Здесь пока пусто.")
     rows.forEach { group ->
-        lines += row(kit, group, sender.isConsole, root)
+        lines += journalRow(kit, group, sender.isConsole, root)
         lines += kit.blank()
     }
     if (pages > 1) {

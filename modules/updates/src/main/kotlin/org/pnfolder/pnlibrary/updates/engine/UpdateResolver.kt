@@ -76,8 +76,7 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
         } else {
             (allowedReleases.filter { it.product == libraryComponent } + currentLibraryRelease)
                 .filter { it.providesApi != null && it.version >= currentLibrary.version }
-                .distinctBy { it.version.toString() }
-                .sortedByDescending(ProductRelease::version)
+                .newestFirst()
         }
 
         var primaryFailure: List<BlockedReason>? = null
@@ -119,19 +118,7 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
         val reasons = mutableListOf<BlockedReason>()
 
         installed.sortedBy { it.product }.filter { it.product != libraryComponent }.forEach { current ->
-            val currentRelease = current.asRelease()
-            val compatibleUpdates = releases
-                .filter { it.product == current.product && it.version >= current.version }
-                .filter { it.supportedApi.supports(targetApi) }
-                .filter { externalPluginDependenciesAvailable(it, policy) }
-            val domain = if (current.product in frozen) {
-                if (current.supportedApi.supports(targetApi)) listOf(currentRelease) else emptyList()
-            } else {
-                (compatibleUpdates + currentRelease.takeIf { current.supportedApi.supports(targetApi) })
-                    .filterNotNull()
-                    .distinctBy { it.version.toString() }
-                    .sortedByDescending(ProductRelease::version)
-            }
+            val domain = installedDomain(current, releases, targetApi, current.product in frozen, policy)
             if (domain.isEmpty()) {
                 if (current.product in frozen) reasons += BlockedReason.Frozen(current.product)
                 reasons += BlockedReason.NoCompatibleRelease(current.product, targetApi)
@@ -141,24 +128,7 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
         }
         if (reasons.isNotEmpty()) return Attempt(null, reasons)
 
-        if (policy.allowManagedInstalls) {
-            var added: Boolean
-            do {
-                added = false
-                val missing = domains.values.flatten().flatMap(ProductRelease::dependencies)
-                    .map(ProductDependency::product).filterNot(domains::containsKey).distinct().sorted()
-                missing.forEach { dependency ->
-                    val candidates = releases.filter {
-                        it.product == dependency && it.supportedApi.supports(targetApi) && externalPluginDependenciesAvailable(it, policy)
-                    }
-                        .distinctBy { it.version.toString() }.sortedByDescending(ProductRelease::version)
-                    if (candidates.isNotEmpty()) {
-                        domains[dependency] = candidates
-                        added = true
-                    }
-                }
-            } while (added)
-        }
+        if (policy.allowManagedInstalls) addMissingDependencyDomains(domains, releases, targetApi, policy)
 
         val ids = domains.keys.filter { it != libraryComponent }.sorted()
         val selected = linkedMapOf(libraryComponent to libraryRelease)
@@ -172,28 +142,95 @@ internal class UpdateResolver(private val libraryComponent: ProductId) {
             if (current?.version == target.version) null
             else ProductChange(target.product, current?.version, target.version)
         }
-        val unavailableRequestedDependencies = if (policy.allowManagedInstalls) emptyList() else
-            releases.filter { candidate ->
-                val current = installedById[candidate.product]
-                current != null && candidate.version > current.version && candidate.supportedApi.supports(targetApi)
-            }.flatMap { candidate ->
-                candidate.dependencies.mapNotNull { dependency ->
-                    if (domains.containsKey(dependency.product)) null
-                    else BlockedReason.MissingDependency(candidate.product, dependency.product, dependency.minimumVersion)
-                }
-            }.distinct()
-        val installedExternal = policy.installedExternalPlugins.map { it.lowercase() }.toSet()
-        val externalReasons = releases.filter { candidate ->
-            val current = installedById[candidate.product]
-            current != null && candidate.version > current.version && candidate.supportedApi.supports(targetApi)
-        }.flatMap { release -> release.externalPluginDependencies.mapNotNull { dependency ->
-            if (dependency.plugin.lowercase() in installedExternal) null
-            else BlockedReason.MissingExternalPluginDependency(
-                release.product, dependency.plugin, dependency.minimumVersion, dependency.downloadPage?.toString(),
-            )
-        } }.distinct()
-        return Attempt(UpdatePlan(targetApi, changes, ordered), (unavailableRequestedDependencies + externalReasons).distinct())
+        val upgrades = upgradableCandidates(releases, installedById, targetApi)
+        val unavailableRequestedDependencies =
+            if (policy.allowManagedInstalls) emptyList() else missingDependencyReasons(upgrades, domains)
+        return Attempt(
+            UpdatePlan(targetApi, changes, ordered),
+            (unavailableRequestedDependencies + missingExternalPluginReasons(upgrades, policy)).distinct(),
+        )
     }
+
+    /** Releases that [current] may move to (or stay on) under [targetApi]; frozen products keep only themselves. */
+    private fun installedDomain(
+        current: InstalledProduct,
+        releases: List<ProductRelease>,
+        targetApi: Int,
+        frozen: Boolean,
+        policy: ResolverPolicy,
+    ): List<ProductRelease> {
+        val currentSupportsApi = current.supportedApi.supports(targetApi)
+        if (frozen) return if (currentSupportsApi) listOf(current.asRelease()) else emptyList()
+        val compatibleUpdates = releases
+            .filter { it.product == current.product && it.version >= current.version }
+            .filter { it.supportedApi.supports(targetApi) }
+            .filter { externalPluginDependenciesAvailable(it, policy) }
+        return (compatibleUpdates + current.asRelease().takeIf { currentSupportsApi })
+            .filterNotNull()
+            .newestFirst()
+    }
+
+    /** Adds domains for dependencies that are not installed yet, repeating until no new product appears. */
+    private fun addMissingDependencyDomains(
+        domains: MutableMap<ProductId, List<ProductRelease>>,
+        releases: List<ProductRelease>,
+        targetApi: Int,
+        policy: ResolverPolicy,
+    ) {
+        do {
+            var added = false
+            val missing = domains.values.flatten().flatMap(ProductRelease::dependencies)
+                .map(ProductDependency::product).filterNot(domains::containsKey).distinct().sorted()
+            missing.forEach { dependency ->
+                val candidates = releases.filter {
+                    it.product == dependency && it.supportedApi.supports(targetApi) &&
+                        externalPluginDependenciesAvailable(it, policy)
+                }.newestFirst()
+                if (candidates.isNotEmpty()) {
+                    domains[dependency] = candidates
+                    added = true
+                }
+            }
+        } while (added)
+    }
+
+    /** Newer releases of installed products that the target API supports. */
+    private fun upgradableCandidates(
+        releases: List<ProductRelease>,
+        installedById: Map<ProductId, InstalledProduct>,
+        targetApi: Int,
+    ): List<ProductRelease> = releases.filter { candidate ->
+        val current = installedById[candidate.product]
+        current != null && candidate.version > current.version && candidate.supportedApi.supports(targetApi)
+    }
+
+    private fun missingDependencyReasons(
+        upgrades: List<ProductRelease>,
+        domains: Map<ProductId, List<ProductRelease>>,
+    ): List<BlockedReason> = upgrades.flatMap { candidate ->
+        candidate.dependencies.mapNotNull { dependency ->
+            if (domains.containsKey(dependency.product)) null
+            else BlockedReason.MissingDependency(candidate.product, dependency.product, dependency.minimumVersion)
+        }
+    }.distinct()
+
+    private fun missingExternalPluginReasons(
+        upgrades: List<ProductRelease>,
+        policy: ResolverPolicy,
+    ): List<BlockedReason> {
+        val installedExternal = policy.installedExternalPlugins.map { it.lowercase() }.toSet()
+        return upgrades.flatMap { release ->
+            release.externalPluginDependencies.mapNotNull { dependency ->
+                if (dependency.plugin.lowercase() in installedExternal) null
+                else BlockedReason.MissingExternalPluginDependency(
+                    release.product, dependency.plugin, dependency.minimumVersion, dependency.downloadPage?.toString(),
+                )
+            }
+        }.distinct()
+    }
+
+    private fun List<ProductRelease>.newestFirst(): List<ProductRelease> =
+        distinctBy { it.version.toString() }.sortedByDescending(ProductRelease::version)
 
     private fun search(
         ids: List<ProductId>,

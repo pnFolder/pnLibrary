@@ -24,6 +24,7 @@ import org.pnfolder.pnlibrary.updates.history.BackupItemText
 import org.pnfolder.pnlibrary.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.PrivateFiles
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.updates.service.UpdateHealthReport
@@ -37,28 +38,28 @@ import java.util.UUID
  */
 internal class UpdateInstaller(
     platform: PlatformIdentity,
-    dataFolder: Path,
+    paths: LibraryPaths,
     private val configuration: UpdateConfiguration,
     http: TrustedHttpClient,
     private val databases: DatabaseBackups,
     private val warn: (String) -> Unit = {},
 ) {
-    private val configurationsFolder = dataFolder.resolve("updates/configurations")
-    private val configurations = ConfigurationSnapshots(configurationsFolder, dataFolder.parent)
-    private val libraryConfiguration = UpdateConfigurationBackup(dataFolder, listOf("config.yml"))
-    private val transactionsFolder = dataFolder.resolve("updates/transactions")
-    private val exportsFolder = dataFolder.resolve("updates/exports")
-    private val databasesFolder = dataFolder.resolve("updates/databases")
-    private val handoutFolder = dataFolder.resolve("updates/handout")
+    private val configurationsFolder = paths.configurations
+    private val configurations = ConfigurationSnapshots(configurationsFolder, paths.plugins)
+    private val libraryConfiguration = UpdateConfigurationBackup(paths.pluginFolder, listOf(paths.pluginFolder.relativize(paths.settings).joinToString("/")))
+    private val transactionsFolder = paths.transactions
+    private val exportsFolder = paths.exports
+    private val databasesFolder = paths.databases
+    private val handoutFolder = paths.handout
     private val transaction = UpdateTransaction(
         transactionsFolder,
         ArtifactVerifier(configuration.downloads.maxArtifactBytes),
-        dataFolder.parent,
+        paths.plugins,
         warn,
     )
     private val stager = UpdatePlanStager(
         platform = platform.type,
-        dataFolder = dataFolder,
+        paths = paths,
         http = http,
         transaction = transaction,
         maximumArtifactBytes = configuration.downloads.maxArtifactBytes,
@@ -141,7 +142,7 @@ internal class UpdateInstaller(
         if (total < BackupStorage.LARGE_BYTES) return
         warn(
             "Резервные копии занимают ${BackupItemText.size(total)}. Старше ${BackupStorage.RETENTION.toDays()} дней удаляются сами; " +
-                "копии плагинов лежат в updates/exports; ненужные можно удалить командой /pn updates backups delete <id>.",
+                "копии плагинов лежат в data/updates/exports; ненужные можно удалить командой /pn updates backups delete <id>.",
         )
     }
 

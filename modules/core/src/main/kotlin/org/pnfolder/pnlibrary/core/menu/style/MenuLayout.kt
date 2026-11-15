@@ -6,8 +6,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 internal val ROUTES = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check")
-internal const val SETTINGS = "pnlibrary.updates.settings"
-internal const val ROLLBACK = "pnlibrary.updates.rollback"
+internal const val SETTINGS = MenuPermissions.UPDATES_SETTINGS
+internal const val ROLLBACK = MenuPermissions.UPDATES_ROLLBACK
 internal const val HOME_ROWS = 5
 internal const val NETWORK_CHECK = 49
 internal const val GROUPS_PERMISSION = "pnlibrary.groups"
@@ -25,10 +25,10 @@ internal const val DATE_FILTER = 46
 internal const val JOURNAL_HOURS = 24
 internal const val JOURNAL_LIMIT = 200
 internal const val MESSAGE_PREVIEW = 70
-internal const val BUS = "pnlibrary.events.bus"
-internal const val TASKS = "pnlibrary.tasks"
-internal const val STATS = "pnlibrary.stats"
-internal const val PLACEHOLDERS = "pnlibrary.placeholders"
+internal const val BUS = MenuPermissions.EVENTS_BUS
+internal const val TASKS = MenuPermissions.TASKS
+internal const val STATS = MenuPermissions.STATS
+internal const val PLACEHOLDERS = MenuPermissions.PLACEHOLDERS
 internal const val CONFIGS = "pnlibrary.configs"
 internal const val DETAIL_ROWS = 5
 internal const val DETAIL_BACK = 40

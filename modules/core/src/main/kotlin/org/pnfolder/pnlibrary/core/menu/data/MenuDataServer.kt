@@ -4,11 +4,12 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.link.remote.DataCall
 import org.pnfolder.pnlibrary.core.link.remote.DataHandler
-import org.pnfolder.pnlibrary.core.menu.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.BUS
 import org.pnfolder.pnlibrary.core.menu.style.GROUPS_PERMISSION
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.ROLLBACK
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.TASKS
@@ -60,18 +61,18 @@ class MenuDataServer(
             reply(false, "Не хватает права: $needed")
             return
         }
-        if (updates(ask) || journalAndTasks(ask) || events(ask) || network(ask)) return
+        if (updates(ask) || journalAndTasks(ask) || events(ask) || network(ask) || librarySettings(ask)) return
         reply(false, "Неизвестный запрос: ${call.method}")
     }
 
     private fun allowed(viewer: String, permission: String): Boolean =
-        holds(viewer, permission) || holds(viewer, "pnlibrary.admin")
+        holds(viewer, permission) || holds(viewer, MenuPermissions.ADMIN)
 
     /** Pending confirmation of a data call awaiting the player's answer. */
     private class Question(val call: DataCall, val args: JsonObject, val actor: UpdateActor, val reply: (Boolean, String) -> Unit) {
         fun text(name: String): String? = args.get(name)?.takeIf { !it.isJsonNull }?.asString
 
-        fun give(value: Any?) = reply(true, MenuCalls.gson.toJson(value))
+        fun give(value: Any?) = reply(true, MenuWire.gson.toJson(value))
 
         fun done(stage: CompletionStage<Boolean>) {
             stage.whenComplete { value, error -> finish(reply, value, error) }
@@ -155,6 +156,16 @@ class MenuDataServer(
         true
     }
 
+    /** The settings of the library. Returns false when the question is not one of these. */
+    private fun librarySettings(ask: Question): Boolean = with(ask) {
+        when (call.method) {
+            MenuCalls.SETTINGS -> give(data.settings())
+            MenuCalls.CHANGE_SETTING -> give(data.changeSetting(text("key").orEmpty(), text("value"), actor))
+            else -> return@with false
+        }
+        true
+    }
+
     /** Owners, server groups and chat commands. Returns false when the question is not one of these. */
     private fun network(ask: Question): Boolean = with(ask) {
         when (call.method) {
@@ -167,7 +178,7 @@ class MenuDataServer(
             MenuCalls.COMMAND -> {
                 val permissions = MenuPermissions.ALL.filter { holds(call.viewer, it) }.toSet()
                 val viewer = ViewerInfo(call.viewer.ifEmpty { "игрок" }, permissions)
-                give(MenuCalls.encodeLines(data.command(viewer, text("line").orEmpty())))
+                give(MenuWire.encodeLines(data.command(viewer, text("line").orEmpty())))
             }
 
             else -> return@with false
@@ -177,13 +188,13 @@ class MenuDataServer(
 }
 
 private fun finish(reply: (Boolean, String) -> Unit, value: Any?, error: Throwable?) {
-    if (error != null) reply(false, generateSequence(error) { it.cause }.last().let { it.message ?: it.javaClass.simpleName })
-    else reply(true, MenuCalls.gson.toJson(value))
+    if (error != null) reply(false, error.rootMessage())
+    else reply(true, MenuWire.gson.toJson(value))
 }
 
 private val REQUIRED: Map<String, String> = mapOf(
-    MenuCalls.CHECK_ALL to "pnlibrary.updates.download",
-    MenuCalls.CHECK_ONE to "pnlibrary.updates.download",
+    MenuCalls.CHECK_ALL to MenuPermissions.UPDATES_DOWNLOAD,
+    MenuCalls.CHECK_ONE to MenuPermissions.UPDATES_DOWNLOAD,
     MenuCalls.SET_AUTOMATIC to SETTINGS,
     MenuCalls.SET_CHANNEL to SETTINGS,
     MenuCalls.SET_HELD to SETTINGS,
@@ -195,4 +206,5 @@ private val REQUIRED: Map<String, String> = mapOf(
     MenuCalls.SET_TRACING to BUS,
     MenuCalls.CLEAR_TRACES to BUS,
     MenuCalls.EDIT_GROUP to GROUPS_PERMISSION,
+    MenuCalls.CHANGE_SETTING to MenuPermissions.LIBRARY_SETTINGS,
 )

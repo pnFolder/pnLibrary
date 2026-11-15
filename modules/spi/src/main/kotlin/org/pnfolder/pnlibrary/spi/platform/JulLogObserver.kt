@@ -19,7 +19,7 @@ class JulLogObserver(
     private val fallbackOwner: Any,
     private val resolveOwner: (loggerName: String?) -> Any?,
 ) {
-    private val ownLogCall = ThreadLocal.withInitial { false }
+    private val ownLogs = OwnLogScope()
 
     @Volatile
     private var observer: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
@@ -27,7 +27,7 @@ class JulLogObserver(
 
     private val handler = object : Handler() {
         override fun publish(record: LogRecord?) {
-            if (record == null || ownLogCall.get()) return
+            if (record == null || ownLogs.isActive) return
             if (record.level.intValue() < Level.WARNING.intValue()) return
             val level = if (record.level.intValue() >= Level.SEVERE.intValue()) LogLevel.ERROR else LogLevel.WARNING
             val owner = resolveOwner(record.loggerName) ?: fallbackOwner
@@ -51,15 +51,7 @@ class JulLogObserver(
     }
 
     /** Runs [block] while records produced by this thread are treated as the library's own. */
-    fun <T> runOwn(block: () -> T): T {
-        val previous = ownLogCall.get()
-        ownLogCall.set(true)
-        try {
-            return block()
-        } finally {
-            ownLogCall.set(previous)
-        }
-    }
+    fun <T> runOwn(block: () -> T): T = ownLogs.run(block)
 
     /**
      * Platform log handler that writes each record to the logger [loggerFor] picks for its owner, at the

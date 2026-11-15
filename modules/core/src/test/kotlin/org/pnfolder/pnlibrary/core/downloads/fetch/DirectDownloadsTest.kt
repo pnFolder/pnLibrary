@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI
@@ -204,9 +205,7 @@ class DirectDownloadsTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloads(platform, platform, platform, platform, platform, directory.resolve("plugins/pnLibrary"), DownloadConfiguration(
-            automatic = automatic,
-        ), http)
+        return DirectDownloads(platform, platform, platform, platform, platform, LibraryPaths(directory.resolve("plugins/pnLibrary")), { DownloadConfiguration(automatic = automatic) }, http = http)
     }
 
     private fun pluginJar(name: String, version: String): ByteArray = ByteArrayOutputStream().also { output ->

@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Files
@@ -75,9 +76,9 @@ class NativeProxyUpdateTest {
         val product = ProductId.of("pnlibrary")
         val api = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
         val planId = UUID.randomUUID()
-        val configs = ConfigurationSnapshots(data.resolve("updates/configurations"), plugins)
+        val configs = ConfigurationSnapshots(LibraryPaths(data).configurations, plugins)
         val configId = configs.capture(planId, mapOf(product to UpdateConfigurationBackup(data, listOf("updates.yml"))))
-        val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(128L * 1024 * 1024), plugins)
+        val transactions = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(128L * 1024 * 1024), plugins)
         val saved = transactions.prepareForRestart(listOf(TransactionArtifact(
             ArtifactSpecification(product, SemanticVersion.parse(targetVersion), api, "release.jar", Files.size(release), digest(release)),
             release, plugins.resolve("update/pnLibrary.jar"), installed, originalVersion, api, installed,
@@ -110,7 +111,7 @@ class NativeProxyUpdateTest {
             }
             server.command("$command history", "откат подтверждён после перезапуска")
         }
-        val events = UpdateEventJournal(data.resolve("updates/events")).read(pageSize = 100)
+        val events = UpdateEventJournal(LibraryPaths(data).events).read(pageSize = 100)
         val applied = events.single { it.operation == "HEALTH" && it.planId == planId }
         assertEquals(UpdateActor.Kind.SYSTEM, applied.actor.kind)
         assertEquals(listOf(UpdateEventJournal.Change("pnlibrary", originalVersion, targetVersion)), applied.changes)

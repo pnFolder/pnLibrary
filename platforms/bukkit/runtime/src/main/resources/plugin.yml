@@ -30,6 +30,9 @@ permissions:
   pnlibrary.deps:
     description: 'Недостающие плагины: список, установка по коду, автозагрузка (/pn deps)'
     default: op
+  pnlibrary.settings:
+    description: 'Настройки библиотеки: смотреть и менять (/pn settings, раздел меню «Параметры библиотеки»)'
+    default: op
   pnlibrary.placeholders:
     description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
     default: op

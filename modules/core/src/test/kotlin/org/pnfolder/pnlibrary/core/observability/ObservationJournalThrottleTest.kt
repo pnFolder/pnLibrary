@@ -23,7 +23,7 @@ class ObservationJournalThrottleTest {
         val root = Files.createTempDirectory("observation-equivalence")
         var now = 0L
         val appended = ArrayList<Observation>()
-        ObservationJournal(root, clock = { now }).use { journal ->
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { now }).use { journal ->
             repeat(400) { index ->
                 now = index * (day / 20)
                 val level = ObservationLevel.values()[index % ObservationLevel.values().size]
@@ -31,11 +31,11 @@ class ObservationJournalThrottleTest {
                 val observation = observation(index, now, level, keep)
                 appended += observation
                 journal.append(observation)
-                assertEquals(ObservationRetention.active(appended, now), journal.recent(), "after append $index")
+                assertEquals(appended.retained(now), journal.recent(), "after append $index")
             }
         }
-        ObservationJournal(root, clock = { now }).use { reloaded ->
-            assertEquals(ObservationRetention.active(appended, now), reloaded.recent())
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { now }).use { reloaded ->
+            assertEquals(appended.retained(now), reloaded.recent())
         }
     }
 
@@ -43,26 +43,26 @@ class ObservationJournalThrottleTest {
     fun `ten thousand appends run retention at most ten times`() {
         val root = Files.createTempDirectory("observation-throttle")
         val calls = AtomicInteger()
-        val journal = ObservationJournal(root, clock = { 1_000 }, retain = { all, now ->
+        val journal = ObservationJournal(root.resolve("observations.jsonl"), clock = { 1_000 }, retain = { all, now ->
             calls.incrementAndGet()
-            ObservationRetention.active(all, now)
+            all.retained(now)
         })
         journal.use { repeat(10_000) { index -> it.append(observation(index, 1_000)) } }
 
         assertTrue(calls.get() <= 10, "retention calls: ${calls.get()}")
-        ObservationJournal(root, clock = { 1_000 }).use { assertEquals(10_000, it.recent().size) }
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { 1_000 }).use { assertEquals(10_000, it.recent().size) }
     }
 
     @Test
     fun `a full journal is cut by margin rather than rewritten on every append`() {
         val root = Files.createTempDirectory("observation-bound")
         val calls = AtomicInteger()
-        ObservationJournal(root, clock = { 1_000 }, retain = { all, now ->
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { 1_000 }, retain = { all, now ->
             calls.incrementAndGet()
-            ObservationRetention.active(all, now)
+            all.retained(now)
         }).use { journal ->
-            repeat(ObservationRetention.MAX_OBSERVATIONS + 1_200) { journal.append(observation(it, 1_000)) }
-            assertEquals(ObservationRetention.MAX_OBSERVATIONS, journal.recent().size)
+            repeat(MAX_OBSERVATIONS + 1_200) { journal.append(observation(it, 1_000)) }
+            assertEquals(MAX_OBSERVATIONS, journal.recent().size)
             assertEquals("event 1200", journal.recent().first().message)
         }
         assertTrue(calls.get() <= 5, "retention calls: ${calls.get()}")

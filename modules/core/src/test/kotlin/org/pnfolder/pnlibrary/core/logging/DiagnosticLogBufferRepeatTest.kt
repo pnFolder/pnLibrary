@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticThrowables
+import org.pnfolder.pnlibrary.core.diagnostics.fingerprint
+import org.pnfolder.pnlibrary.core.diagnostics.originFrame
+import org.pnfolder.pnlibrary.core.diagnostics.significantCause
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.security.MessageDigest
 import java.util.UUID
@@ -26,7 +28,7 @@ class DiagnosticLogBufferRepeatTest {
             redact = { redacts.incrementAndGet(); redactor.redact(it) },
             fingerprintOf = { context, message, error ->
                 fingerprints.incrementAndGet()
-                DiagnosticThrowables.fingerprint(context, message, error)
+                error.fingerprint(context, message)
             },
         )
     }
@@ -41,7 +43,7 @@ class DiagnosticLogBufferRepeatTest {
         val result = LinkedHashMap<String, Pair<String, Long>>()
         for ((level, message, error) in records) {
             val safe = redactor.redact(message).take(4_096)
-            val id = DiagnosticThrowables.fingerprint(listOf(redactor.redact("shop").take(96), level.name), safe, error)
+            val id = error.fingerprint(listOf(redactor.redact("shop").take(96), level.name), safe)
             result.merge(id, safe to 1L) { old, _ -> old.first to old.second + 1 }
         }
         return result
@@ -90,8 +92,8 @@ class DiagnosticLogBufferRepeatTest {
     @Test
     fun `fingerprint hex matches the old formatting`() {
         val old = { context: List<String>, message: String, error: Throwable? ->
-            val significant = DiagnosticThrowables.unwrap(error)
-            val frame = DiagnosticThrowables.originFrame(error)
+            val significant = error.significantCause()
+            val frame = error.originFrame()
             val normalize = { v: String ->
                 v.replace(Regex("(?i)\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b"), "<uuid>")
                     .replace(Regex("\\b\\d{4,}\\b"), "<number>").replace(Regex("\\s+"), " ").trim()
@@ -106,7 +108,7 @@ class DiagnosticLogBufferRepeatTest {
         repeat(200) { i ->
             val error = if (i % 2 == 0) cause("m$i", "f$i") else null
             val context = listOf("plugin$i", "ERROR")
-            assertEquals(old(context, "message $i", error), DiagnosticThrowables.fingerprint(context, "message $i", error))
+            assertEquals(old(context, "message $i", error), error.fingerprint(context, "message $i"))
         }
     }
 

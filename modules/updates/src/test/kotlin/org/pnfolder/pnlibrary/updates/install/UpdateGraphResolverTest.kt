@@ -21,6 +21,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
 import org.pnfolder.pnlibrary.updates.engine.FreezeStore
 import org.pnfolder.pnlibrary.updates.engine.ResolutionResult
+import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
@@ -63,7 +64,7 @@ class UpdateGraphResolverTest {
     private fun resolver(
         configuration: UpdateConfiguration = UpdateConfiguration(),
         overrides: UpdatePolicyOverrides? = null,
-    ) = UpdateGraphResolver(inventory, identity, configuration, catalogs, FreezeStore(directory.resolve("freezes.json")), overrides)
+    ) = UpdateGraphResolver(inventory, identity, configuration, catalogs, FreezeStore(UpdatePreferencesStore(directory.resolve("preferences.json"))), overrides)
 
     @Test
     fun `nothing registered resolves to an empty plan without loading any catalog`() {

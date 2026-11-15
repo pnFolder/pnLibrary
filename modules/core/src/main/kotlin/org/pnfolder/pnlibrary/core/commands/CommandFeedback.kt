@@ -50,7 +50,7 @@ internal fun handlerFor(handlers: ErrorHandlers, error: CommandError): CommandEr
 }
 
 /**
- * The library's own standard answers, the last link of the chain, taken from `config.yml`: one place that gives
+ * The library's own standard answers, the last link of the chain, taken from the library's settings: one place that gives
  * every plugin the same wording and sound until a plugin chooses otherwise. An error with its own default message
  * says that; any other is answered with the text of its nearest built-in base class, and the last resort is the
  * text for [CommandFailed].

@@ -83,8 +83,3 @@ internal fun wrapText(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_L
     }
     return if (lines.size > limit) lines.take(limit) + "…" else lines
 }
-
-internal fun errorReason(error: Throwable): String {
-    val cause = generateSequence(error) { it.cause }.last()
-    return cause.message ?: cause.javaClass.simpleName
-}

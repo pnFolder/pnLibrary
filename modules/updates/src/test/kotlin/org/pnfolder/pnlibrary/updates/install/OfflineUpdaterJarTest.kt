@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.*
 import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock
 import java.nio.file.Files
 import java.nio.file.Path
@@ -33,16 +34,16 @@ class OfflineUpdaterJarTest {
         val source = directory.resolve("release.jar").also { Files.write(it, byteArrayOf(2, 3)) }
         val api = ApiVersionRange(8, 8)
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("2.0.0"), api, "release.jar")
-        val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
+        val transactions = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(1024), plugins)
         val plan = UUID.randomUUID()
         val config = data.resolve("config.yml").also { Files.writeString(it, "version: 1") }
         val unrelated = data.resolve("unrelated.yml").also { Files.writeString(it, "keep") }
-        val snapshots = ConfigurationSnapshots(data.resolve("updates/configurations"), plugins)
+        val snapshots = ConfigurationSnapshots(LibraryPaths(data).configurations, plugins)
         val snapshot = snapshots.capture(plan, mapOf(ProductId.of("pnlibrary") to UpdateConfigurationBackup(data, listOf("config.yml", "optional.yml"))))
         val saved = transactions.prepareForRestart(listOf(TransactionArtifact(specification, source,
             plugins.resolve("update/library.jar"), active, "1.0.0", api, active)), planId = plan, targetApi = 8, configurationSnapshot = snapshot)
 
-        UpdateInstallationLock.acquire(data).use { assertNotEquals(0, runUpdater(data)) }
+        UpdateInstallationLock.acquire(LibraryPaths(data)).use { assertNotEquals(0, runUpdater(data)) }
         assertArrayEquals(byteArrayOf(1), Files.readAllBytes(active))
         assertEquals(0, runUpdater(data))
         assertArrayEquals(byteArrayOf(2, 3), Files.readAllBytes(active))

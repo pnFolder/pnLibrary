@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.release.*
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 import java.nio.file.Path
 import java.util.UUID
 
@@ -13,7 +14,7 @@ class UpdateAutomaticPolicyTest {
     @TempDir
     lateinit var directory: Path
 
-    private fun overrides() = UpdatePolicyOverrides(directory.resolve("settings.json"))
+    private fun overrides() = UpdatePolicyOverrides(UpdatePreferencesStore(directory.resolve("preferences.json")))
 
     @Test
     fun `plugin automatic download does not opt the library into automatic replacement`() {

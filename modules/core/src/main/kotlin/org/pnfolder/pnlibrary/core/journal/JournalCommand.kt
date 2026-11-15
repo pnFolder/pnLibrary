@@ -48,7 +48,7 @@ fun journalCommand(journal: JournalStore, root: String = "/pn events"): CommandD
 }
 
 private fun showList(context: CommandContext, journal: JournalStore, root: String) =
-    list(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root)
+    journalList(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments, root)
 
 private fun showCard(context: CommandContext, journal: JournalStore, root: String, repeats: Boolean, fullTrace: Boolean) =
-    card(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats, fullTrace, root)
+    journalCard(context.sender, ChatKit(ChatReader.of(context.sender)), journal, context.arguments.getOrNull(1), repeats, fullTrace, root)

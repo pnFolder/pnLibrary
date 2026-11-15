@@ -39,6 +39,29 @@ data class EventAbout(val purpose: String, val usage: String, val owner: OwnerIn
 /** Name and permissions of the player who looks at the menu. */
 data class ViewerInfo(val name: String, val permissions: Set<String>)
 
+/**
+ * One setting of the library as the menu shows it.
+ *
+ * @property kind `SWITCH`, `NUMBER`, `TEXT` or `TIME`
+ * @property range the allowed values in words, or empty
+ * @property live whether a change starts to work at once; otherwise it waits for a restart
+ */
+data class SettingRow(
+    val key: String,
+    val title: String,
+    val kind: String,
+    val description: String,
+    val current: String,
+    val default: String,
+    val changed: Boolean,
+    val range: String,
+    val examples: List<String>,
+    val live: Boolean,
+)
+
+/** What came of changing a setting from the menu: [message] is the reason when [ok] is false, otherwise the new value. */
+data class SettingOutcome(val ok: Boolean, val message: String, val live: Boolean = true)
+
 /** Kind of change the menu asks a proxy to make to server groups. */
 enum class GroupOp {
     CREATE,
@@ -137,6 +160,13 @@ interface MenuData {
 
     /** Changes one setting of a file of this server and saves it. */
     fun editConfig(id: String, path: String, text: String): ConfigEditResult =
+        throw UnsupportedOperationException("Настройки меняются на самом сервере")
+
+    /** Every setting of the library of this server with its value; empty when it has none. */
+    fun settings(): List<SettingRow> = emptyList()
+
+    /** Sets the setting [key] to [value], or returns it to the default when [value] is null. */
+    fun changeSetting(key: String, value: String?, actor: UpdateActor): SettingOutcome =
         throw UnsupportedOperationException("Настройки меняются на самом сервере")
 
     /** Whether missing plugins are downloaded without a command; `null` when this server has no such download. */

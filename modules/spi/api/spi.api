@@ -118,6 +118,12 @@ public final class org/pnfolder/pnlibrary/spi/platform/JulLogObserver$Companion 
 	public final fun matchPlugin (Ljava/lang/String;Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
+public final class org/pnfolder/pnlibrary/spi/platform/OwnLogScope {
+	public fun <init> ()V
+	public final fun isActive ()Z
+	public final fun run (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformAdapter : org/pnfolder/pnlibrary/spi/platform/PlatformBinding, org/pnfolder/pnlibrary/spi/platform/PlatformDiagnostics, org/pnfolder/pnlibrary/spi/platform/PlatformExecution, org/pnfolder/pnlibrary/spi/platform/PlatformIdentity, org/pnfolder/pnlibrary/spi/platform/PlatformLogObservation, org/pnfolder/pnlibrary/spi/platform/PlatformLogging, org/pnfolder/pnlibrary/spi/platform/PlatformOwnership, org/pnfolder/pnlibrary/spi/platform/PlatformReadiness, org/pnfolder/pnlibrary/spi/platform/PlatformShutdown {
 	public fun getAudienceAdapter ()Lorg/pnfolder/pnlibrary/spi/audiences/PlatformAudienceAdapter;
 	public fun getCommandAdapter ()Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandAdapter;
@@ -284,6 +290,17 @@ public final class org/pnfolder/pnlibrary/spi/platform/ProxyBackend {
 	public final fun getPlayers ()I
 }
 
+public abstract class org/pnfolder/pnlibrary/spi/platform/ProxyPlatformAdapter : org/pnfolder/pnlibrary/spi/platform/PlatformAdapter {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun close ()V
+	public fun executeReply (Ljava/lang/Object;Ljava/lang/Runnable;)V
+	protected final fun getLifecycle ()Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;
+	public final fun markReady ()V
+	public fun observeNativeLogs (Lkotlin/jvm/functions/Function4;)V
+	protected abstract fun observeProxyLogs (Lkotlin/jvm/functions/Function4;)V
+	public fun whenServerReady (Ljava/lang/Runnable;)V
+}
+
 public final class org/pnfolder/pnlibrary/spi/platform/StartupGate {
 	public fun <init> (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;Lkotlin/jvm/functions/Function1;)V
 	public final fun discardPending ()V
@@ -333,6 +350,7 @@ public abstract interface class org/pnfolder/pnlibrary/spi/tasks/RetirableCallba
 
 public abstract class org/pnfolder/pnlibrary/spi/tasks/TrackingPlatformTaskAdapter : org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter {
 	public fun <init> ()V
+	protected fun beforeSchedule (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;)V
 	public final fun close ()V
 	public final fun schedule (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskHandle;
 	protected abstract fun scheduleNative (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskHandle;

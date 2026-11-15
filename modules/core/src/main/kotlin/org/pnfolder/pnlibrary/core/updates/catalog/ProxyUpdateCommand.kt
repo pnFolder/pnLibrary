@@ -8,11 +8,11 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import java.time.Duration
 import java.util.UUID
 
@@ -42,7 +42,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
             permission(ADMIN, VIEW)
             executes { status(it, null) }
             argument("plugin", ArgumentType.string()) {
-                suggests { productNames() }
+                suggests { library.updateProductNames() }
                 executes { status(it, it.get<String>("plugin")) }
             }
         }
@@ -65,7 +65,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         root.literal("update") {
             permission(ADMIN, DOWNLOAD)
             argument("plugin", ArgumentType.string()) {
-                suggests { productNames() }
+                suggests { library.updateProductNames() }
                 executes { update(it, it.get<String>("plugin")) }
             }
             literal("confirm") {
@@ -87,8 +87,6 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         say(sender, ChatTone.INFO, "Команды pnLibrary, доступные вам:", available.joinToString("  ").ifEmpty { "нет" })
     }
 
-    private fun productNames(): List<String> = library.updates.all().map { it.snapshot.product }
-
     // --- status and check --------------------------------------------------------------------------------------
 
     private fun status(context: CommandContext, requested: String?) {
@@ -104,7 +102,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
 
     private fun check(context: CommandContext) {
         say(context.sender, ChatTone.PROGRESS, "Проверяю обновления…")
-        library.updates.checkNow(actor(context.sender)).whenComplete { _, error ->
+        library.updates.checkNow(context.sender.asUpdateActor()).whenComplete { _, error ->
             if (error != null) fail(context.sender, "Не удалось проверить обновления", error) else catalog.showAvailable(context)
         }
     }
@@ -116,7 +114,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         if (!sender.hasPermission(DOWNLOAD)) return say(sender, ChatTone.FAILURE, "Недостаточно прав для загрузки обновлений.")
         val registration = library.updates.get(name) ?: return notRegistered(sender, name)
         say(sender, ChatTone.PROGRESS, "Ищу совместимое обновление ${registration.snapshot.product}…")
-        library.updates.checkNow(actor(sender)).whenComplete { result, error ->
+        library.updates.checkNow(sender.asUpdateActor()).whenComplete { result, error ->
             if (error != null) fail(sender, "Проверка обновления не удалась", error) else stage(sender, registration, result)
         }
     }
@@ -128,7 +126,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         }
         val transition = "${change.product} v${change.from} » v${change.to}"
         say(sender, ChatTone.PROGRESS, "Найдено $transition. Скачиваю и проверяю…")
-        library.updates.stage(result.id, actor(sender)).whenComplete { _, error ->
+        library.updates.stage(result.id, sender.asUpdateActor()).whenComplete { _, error ->
             if (error != null) fail(sender, "Не удалось подготовить обновление", error)
             else say(sender, ChatTone.SUCCESS, "Обновление $transition подготовлено.", "Перезапустите прокси, чтобы применить его.")
         }
@@ -184,10 +182,10 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
                 if (current == null || current.id != grant.plan || current.revision != grant.revision) {
                     return say(sender, ChatTone.FAILURE, "План обновления изменился; запросите откат заново.")
                 }
-                library.updates.rollback(actor(sender)).whenComplete { _, error -> done(error) }
+                library.updates.rollback(sender.asUpdateActor()).whenComplete { _, error -> done(error) }
             }
-            UpdateAction.ROLLBACK -> library.updates.rollback(grant.plan, false, actor(sender)).whenComplete { _, error -> done(error) }
-            UpdateAction.ROLLBACK_CONFIGS -> library.updates.rollback(grant.plan, true, actor(sender)).whenComplete { _, error -> done(error) }
+            UpdateAction.ROLLBACK -> library.updates.rollback(grant.plan, false, sender.asUpdateActor()).whenComplete { _, error -> done(error) }
+            UpdateAction.ROLLBACK_CONFIGS -> library.updates.rollback(grant.plan, true, sender.asUpdateActor()).whenComplete { _, error -> done(error) }
             UpdateAction.RESTART, UpdateAction.RESTART_LATER, UpdateAction.RESTART_EMPTY ->
                 say(sender, ChatTone.WARNING, "Перезапустите прокси его обычной командой.")
         }
@@ -207,14 +205,10 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         say(sender, ChatTone.FAILURE, "Плагин $product не зарегистрирован в pnLibrary.")
 
     private fun fail(sender: CommandSender, title: String, error: Throwable) {
-        val cause = generateSequence(error) { it.cause }.last()
-        say(sender, ChatTone.FAILURE, "$title.", cause.message ?: cause.javaClass.simpleName)
+        say(sender, ChatTone.FAILURE, "$title.", error.rootMessage())
     }
 
     private fun identityOf(sender: CommandSender): UUID = UUID.nameUUIDFromBytes(sender.id.toByteArray())
-
-    private fun actor(sender: CommandSender): UpdateActor =
-        UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
 
     internal companion object {
         val ROUTES = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check")

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -14,11 +15,11 @@ class UpdatePolicyOverridesTest {
     @TempDir
     lateinit var directory: Path
 
-    private val file get() = directory.resolve("updates/settings.json")
+    private val file get() = directory.resolve("updates/preferences.json")
 
     @Test
     fun `nothing is overridden until a choice is made`() {
-        val overrides = UpdatePolicyOverrides(file)
+        val overrides = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         assertNull(overrides.channel("pnlibrary"))
         assertNull(overrides.automatic("pnlibrary"))
         assertFalse(overrides.anyAutomaticEnabled())
@@ -27,7 +28,7 @@ class UpdatePolicyOverridesTest {
 
     @Test
     fun `choices apply immediately and survive reopening`() {
-        val overrides = UpdatePolicyOverrides(file)
+        val overrides = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         overrides.setChannel("pnlibrary", UpdateChannel.BETA)
         overrides.setAutomatic("pnlibrary", true)
         overrides.setAutomatic("shop", false)
@@ -35,7 +36,7 @@ class UpdatePolicyOverridesTest {
         assertEquals(UpdateChannel.BETA, overrides.channel("pnlibrary"))
         assertTrue(overrides.anyAutomaticEnabled())
 
-        val reopened = UpdatePolicyOverrides(file)
+        val reopened = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         assertEquals(UpdateChannel.BETA, reopened.channel("pnlibrary"))
         assertEquals(true, reopened.automatic("pnlibrary"))
         assertEquals(false, reopened.automatic("shop"))
@@ -44,7 +45,7 @@ class UpdatePolicyOverridesTest {
 
     @Test
     fun `a later choice replaces the earlier one and turning everything off clears the flag`() {
-        val overrides = UpdatePolicyOverrides(file)
+        val overrides = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         overrides.setAutomatic("pnlibrary", true)
         overrides.setAutomatic("pnlibrary", false)
         overrides.setChannel("pnlibrary", UpdateChannel.RC)
@@ -56,14 +57,14 @@ class UpdatePolicyOverridesTest {
 
     @Test
     fun `removing a channel choice hands the decision back to the plugin and survives reopening`() {
-        val overrides = UpdatePolicyOverrides(file)
+        val overrides = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         overrides.setChannel("shop", UpdateChannel.BETA)
         overrides.setChannel("pnlibrary", UpdateChannel.RC)
 
         overrides.setChannel("shop", null)
 
         assertNull(overrides.channel("shop"))
-        val reopened = UpdatePolicyOverrides(file)
+        val reopened = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         assertNull(reopened.channel("shop"))
         assertEquals(UpdateChannel.RC, reopened.channel("pnlibrary"))
     }
@@ -73,11 +74,11 @@ class UpdatePolicyOverridesTest {
         Files.createDirectories(file.parent)
         Files.writeString(file, "{ not json")
         val warnings = mutableListOf<String>()
-        assertNull(UpdatePolicyOverrides(file, warnings::add).channel("pnlibrary"))
+        assertNull(UpdatePolicyOverrides(UpdatePreferencesStore(file, warnings::add)).channel("pnlibrary"))
         assertEquals(1, warnings.size)
 
         Files.writeString(file, """{"channels":{"pnlibrary":"nightly","shop":"BETA"},"automatic":{}}""")
-        val tolerant = UpdatePolicyOverrides(file)
+        val tolerant = UpdatePolicyOverrides(UpdatePreferencesStore(file))
         assertNull(tolerant.channel("pnlibrary"))
         assertEquals(UpdateChannel.BETA, tolerant.channel("shop"))
     }

@@ -13,7 +13,7 @@ internal data class DependencyDownloadRequest(
     val requirements: Map<String, ExternalPluginDependency>,
 )
 
-internal class DependencyDownloadRequestFactory(private val pluginDirectory: Path) {
+internal class DependencyDownloadRequestFactory(private val serverUpdateFolder: Path) {
     /** The external dependencies that are not installed at a fitting version. */
     fun missing(dependencies: List<PluginDependency>, installedPlugins: Map<String, String>): List<ExternalPluginDependency> =
         dependencies.mapNotNull { it.external }.filterNot { isAlreadyCompatible(it, installedPlugins) }
@@ -31,7 +31,7 @@ internal class DependencyDownloadRequestFactory(private val pluginDirectory: Pat
         if (downloadable.isEmpty()) return null
 
         val request = FileDownloads.builder()
-            .dataDirectory(pluginDirectory.resolve("update"))
+            .dataDirectory(serverUpdateFolder)
             .also { builder ->
                 downloadable.forEach { (dependency, external, artifact) ->
                     val key = dependencyKey(external.plugin)

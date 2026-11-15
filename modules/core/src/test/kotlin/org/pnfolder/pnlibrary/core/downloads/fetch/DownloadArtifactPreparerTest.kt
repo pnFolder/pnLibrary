@@ -36,7 +36,7 @@ class DownloadArtifactPreparerTest {
         val preparer = DownloadArtifactPreparer(
             platform = PlatformType.BUKKIT,
             libraryData = directory.resolve("plugins/pnLibrary"),
-            configuration = DownloadConfiguration(),
+            configuration = { DownloadConfiguration() },
             http = http,
         )
 
@@ -55,7 +55,7 @@ class DownloadArtifactPreparerTest {
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
             override fun get(uri: URI, maximumBytes: Int) = "invalid jar".toByteArray()
         }
-        val preparer = DownloadArtifactPreparer(PlatformType.BUKKIT, libraryData, DownloadConfiguration(), http)
+        val preparer = DownloadArtifactPreparer(PlatformType.BUKKIT, libraryData, { DownloadConfiguration() }, http)
         val failure = IllegalArgumentException("Plugin identity does not match")
 
         assertSame(failure, assertThrows(IllegalArgumentException::class.java) {

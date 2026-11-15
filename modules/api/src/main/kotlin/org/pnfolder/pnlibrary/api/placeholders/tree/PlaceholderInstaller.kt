@@ -48,7 +48,8 @@ internal class PlaceholderInstaller(
 
     private fun evaluate(node: Node, path: List<Segment>, request: PlaceholderRequest): CompletionStage<Any?> {
         val call = callFor(path, request) ?: return CompletableFuture.completedFuture(null)
-        return node.value!!(call)
+        val value = checkNotNull(node.value) { "A placeholder node without a value cannot be evaluated" }
+        return value(call)
     }
 
     private fun change(updater: Updater, path: List<Segment>, request: PlaceholderRequest, text: String): Any? {

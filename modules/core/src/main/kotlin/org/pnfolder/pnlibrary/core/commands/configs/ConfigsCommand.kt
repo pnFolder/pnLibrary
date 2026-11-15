@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigId
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
 import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.commands.pageCount
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
@@ -90,7 +91,7 @@ class ConfigsCommand(private val library: PnLibrary) {
 
     private fun list(context: CommandContext, requested: Int) {
         val all = library.configurations.all()
-        val pages = ((all.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
+        val pages = pageCount(all.size, PAGE_SIZE)
         val page = requested.coerceIn(1, pages)
         say(context, "Конфигурации: ${all.size}, страница $page/$pages", ChatPalette.ACCENT)
         all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { info ->

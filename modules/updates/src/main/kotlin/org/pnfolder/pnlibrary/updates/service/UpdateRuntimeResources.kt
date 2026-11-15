@@ -7,11 +7,10 @@ import org.pnfolder.pnlibrary.updates.install.ReleaseCatalogGateway
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import java.nio.file.Path
 import java.time.Duration
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /** Owns shared network and release-catalog resources used by the update pipeline. */
-internal class UpdateRuntimeResources(dataFolder: Path, configuration: UpdateConfiguration = UpdateConfiguration()) : AutoCloseable {
+internal class UpdateRuntimeResources(catalogFolder: Path, configuration: UpdateConfiguration = UpdateConfiguration()) : AutoCloseable {
     private val catalogExecutor = Executors.newFixedThreadPool(4) { action ->
         Thread(action, "pnLibrary-catalog-fetch").apply { isDaemon = true }
     }
@@ -26,7 +25,7 @@ internal class UpdateRuntimeResources(dataFolder: Path, configuration: UpdateCon
     val downloadHttp = TrustedHttpClient(configuration.downloads.connectTimeout, configuration.downloads.readTimeout)
     private val releaseCatalog = ReleaseCatalogClient(
         http,
-        ReleaseCatalogStore(dataFolder.resolve("updates/catalog")),
+        ReleaseCatalogStore(catalogFolder),
         catalogExecutor,
         Duration.ofMinutes(30),
     )
@@ -37,11 +36,7 @@ internal class UpdateRuntimeResources(dataFolder: Path, configuration: UpdateCon
     )
 
     override fun close() {
-        shutdown(catalogExecutor)
-        shutdown(catalogRequestExecutor)
-    }
-
-    private fun shutdown(executor: ExecutorService) {
-        executor.shutdownNow()
+        catalogExecutor.shutdownNow()
+        catalogRequestExecutor.shutdownNow()
     }
 }

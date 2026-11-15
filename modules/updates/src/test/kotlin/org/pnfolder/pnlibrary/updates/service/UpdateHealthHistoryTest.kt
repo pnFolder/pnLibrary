@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal
 import org.pnfolder.pnlibrary.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import java.net.URI
 import java.nio.file.Files
@@ -31,9 +32,9 @@ class UpdateHealthHistoryTest {
     fun `health history uses the original transaction rather than the latest resolver snapshot`() {
         val fixture = fixture()
         val unrelated = UUID.randomUUID()
-        val state = UpdateStateStore(fixture.data.resolve("updates"))
+        val state = UpdateStateStore(LibraryPaths(fixture.data).updates)
         state.save(UpdatePlanSnapshot(unrelated, 99, UpdateState.UPDATE_AVAILABLE, null, emptyList(), "newer check"))
-        val events = UpdateEventJournal(fixture.data.resolve("updates/events"))
+        val events = UpdateEventJournal(LibraryPaths(fixture.data).events)
         fixture.installer.reconcileVersions(mapOf("pnlibrary" to "2.0.0"), { events.recordHealth(it) })
         val event = events.read().single()
         assertEquals(fixture.plan, event.planId)
@@ -103,7 +104,7 @@ class UpdateHealthHistoryTest {
         val source = directory.resolve("release.jar").also { Files.write(it, byteArrayOf(2)) }
         val api = ApiVersionRange(8, 8)
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("2.0.0"), api, "release.jar")
-        val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
+        val transactions = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(1024), plugins)
         val plan = UUID.randomUUID()
         val result = transactions.prepareForRestart(listOf(TransactionArtifact(specification, source,
             plugins.resolve("update/library.jar"), installed, "1.0.0", api, installed)), planId = plan, targetApi = 8)
@@ -115,7 +116,7 @@ class UpdateHealthHistoryTest {
         val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
             override fun get(uri: URI, maximumBytes: Int): ByteArray = error("health verification must not access the network")
         }
-        val databases = DatabaseBackups(data.resolve("updates/databases"), DatabaseSources())
-        return Fixture(data, plan, result.journal, transactions, UpdateInstaller(platform, data, UpdateConfiguration(), http, databases))
+        val databases = DatabaseBackups(LibraryPaths(data).databases, DatabaseSources())
+        return Fixture(data, plan, result.journal, transactions, UpdateInstaller(platform, LibraryPaths(data), UpdateConfiguration(), http, databases))
     }
 }

@@ -21,7 +21,7 @@ class RuntimeJournalTest {
         Files.writeString(folder.resolve("journal"), "a file where the journal folder should be")
         val reported = mutableListOf<Throwable>()
         val first = CountDownLatch(1)
-        val journal = RuntimeJournal(folder, PnLibraryConfig(), ownership, 0L, "/pn events") {
+        val journal = RuntimeJournal(folder.resolve("journal"), PnLibraryConfig(), ownership, 0L, "/pn events") {
             reported += it
             first.countDown()
         }

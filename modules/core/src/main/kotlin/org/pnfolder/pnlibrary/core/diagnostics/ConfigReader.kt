@@ -105,21 +105,11 @@ internal class ConfigReader(
     }
 
     private fun redaction(configSpec: DiagnosticConfiguration, rootDirectory: Path): ConfigRedaction = ConfigRedaction(
-        excludedPaths = (administratorPaths("${rootDirectory.fileName}/${configSpec.path}") + configSpec.excludedPaths).toSet(),
+        excludedPaths = configSpec.excludedPaths.toSet(),
         keyPatterns = ConfigRedaction.compile(globalConfig.secretKeyPatterns + configSpec.secretKeyPatterns),
         valuePatterns = ConfigRedaction.compile(globalConfig.redactValuePatterns + configSpec.valuePatterns),
         redactor = redactor,
     )
-
-    /** An entry is either a path for every file, or `plugin/file.yml:path` for that one file only. */
-    private fun administratorPaths(fileKey: String): List<String> = globalConfig.excludedPaths.mapNotNull { entry ->
-        val colon = entry.indexOf(':')
-        when {
-            colon < 0 -> entry
-            entry.substring(0, colon).trim().equals(fileKey, ignoreCase = true) -> entry.substring(colon + 1).trim()
-            else -> null
-        }
-    }
 
     companion object {
         const val MAX_FILE_SIZE_BYTES = 1_048_576L

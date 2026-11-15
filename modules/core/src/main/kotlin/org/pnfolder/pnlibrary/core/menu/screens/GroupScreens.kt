@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.link.remote.LinkNames
 import org.pnfolder.pnlibrary.core.link.remote.RemoteAction
@@ -23,7 +24,6 @@ import org.pnfolder.pnlibrary.core.menu.style.NETWORK_CHECK
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
-import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
 
 private const val NETWORK_UPDATE = 51
@@ -77,7 +77,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
                 val loaded = proxyData.groups()
                 host.sync { then(loaded, map) }
             } catch (error: Exception) {
-                host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", errorReason(error)) }
+                host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", error.rootMessage()) }
             }
         }
     }
@@ -89,7 +89,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
                     val done = proxyData.editGroup(edit)
                     host.sync { if (done) then() else tell(player, ChatTone.FAILURE, "Не получилось изменить группу ${edit.group}.") }
                 } catch (error: Exception) {
-                    host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", errorReason(error)) }
+                    host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", error.rootMessage()) }
                 }
             }
         }

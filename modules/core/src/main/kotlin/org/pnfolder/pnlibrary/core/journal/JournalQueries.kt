@@ -48,7 +48,7 @@ class JournalQueries(
             journal.read(levels = levels, sinceMillis = since, limit = SCAN)
                 .groupBy { it.fingerprint }
                 .map { (id, group) ->
-                    val newest = group.maxByOrNull { it.timeMillis }!!
+                    val newest = group.maxBy { it.timeMillis }
                     JournalGroup(id, newest.level.fileGroup, newest.source, newest.message.lineSequence().first(), group.size, newest.timeMillis)
                 }
                 .sortedByDescending { it.lastMillis }

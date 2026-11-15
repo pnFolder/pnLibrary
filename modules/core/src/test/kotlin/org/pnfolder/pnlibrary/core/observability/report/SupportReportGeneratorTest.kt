@@ -27,6 +27,7 @@ class SupportReportGeneratorTest {
         }
         val generator = SupportReportGenerator(
             dataFolder = temporary,
+            reportsFolder = temporary.resolve("reports"),
             config = PnLibraryConfig(upload = false, uploadMode = "disabled"),
             diagnosticsRegistry = registry,
             platformIdentity = TestPlatform(),
@@ -57,6 +58,7 @@ class SupportReportGeneratorTest {
         registry.register("pnMarket", folder, DiagnosticContainer.builder("pnMarket").configuration("./config.yml").configuration("config.yml").build())
         val generator = SupportReportGenerator(
             dataFolder = temporary,
+            reportsFolder = temporary.resolve("reports"),
             config = PnLibraryConfig(upload = false, uploadMode = "disabled"),
             diagnosticsRegistry = registry,
             platformIdentity = TestPlatform(),

@@ -13,16 +13,14 @@ class VelocityTaskAdapterTest {
     private val WARN: (String) -> Unit = {}
 
     @Test
-    fun `task created during shutdown is cancelled and rejected`() {
+    fun `task created during shutdown is cancelled`() {
         val cancelled = AtomicBoolean()
         lateinit var adapter: VelocityTaskAdapter
         adapter = VelocityTaskAdapter(NAMES, WARN) {
             adapter.close()
             PlatformTaskHandle { cancelled.compareAndSet(false, true) }
         }
-        assertThrows(IllegalStateException::class.java) {
-            adapter.schedule(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {}))
-        }
+        adapter.schedule(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {}))
         assertTrue(cancelled.get())
     }
 

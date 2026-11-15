@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.*
 import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock
 import java.nio.file.Files
 import java.nio.file.Path
@@ -41,7 +42,7 @@ class OfflineUpdateInstallerTest {
     @Test
     fun `active runtime lock prevents any offline changes`() {
         val fixture = prepare()
-        UpdateInstallationLock.acquire(fixture.data).use {
+        UpdateInstallationLock.acquire(LibraryPaths(fixture.data)).use {
             assertThrows(IllegalStateException::class.java) { OfflineUpdateInstaller.apply(fixture.data) }
         }
         assertArrayEquals(byteArrayOf(1), Files.readAllBytes(fixture.active))
@@ -101,11 +102,11 @@ class OfflineUpdateInstallerTest {
         val api = ApiVersionRange(8, 8)
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
         val specification = ArtifactSpecification(ProductId.of("pnlibrary"), SemanticVersion.parse("2.0.0"), api, "release.jar", bytes.size.toLong(), digest)
-        val transactions = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
+        val transactions = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(1024), plugins)
         val plan = UUID.randomUUID()
         val snapshot = if (configuration) {
             Files.writeString(data.resolve("config.yml"), "version: 1")
-            ConfigurationSnapshots(data.resolve("updates/configurations"), plugins).capture(plan,
+            ConfigurationSnapshots(LibraryPaths(data).configurations, plugins).capture(plan,
                 mapOf(ProductId.of("pnlibrary") to UpdateConfigurationBackup(data, listOf("config.yml"))))
         } else null
         val result = transactions.prepareForRestart(listOf(TransactionArtifact(specification, source, pending, active,

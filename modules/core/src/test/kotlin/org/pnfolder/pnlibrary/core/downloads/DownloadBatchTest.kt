@@ -120,7 +120,7 @@ class DownloadBatchTest {
         request = FileDownloads.builder().file(key) {
             it.url("https://example.org/manual.bin").destination(DownloadDestination.DATA_FOLDER, "manual.bin")
         }.build(),
-        configuration = DownloadConfiguration(),
+        configuration = { DownloadConfiguration() },
         executor = executor,
         managerIsClosed = managerIsClosed,
         install = install,
@@ -142,7 +142,7 @@ class DownloadBatchTest {
         try {
             val registration = DownloadBatch(
                 request = request,
-                configuration = DownloadConfiguration(),
+                configuration = { DownloadConfiguration() },
                 executor = executor,
                 managerIsClosed = { false },
                 install = { declarations, _ -> installed += declarations.map { it.key } },

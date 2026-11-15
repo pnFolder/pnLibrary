@@ -9,18 +9,19 @@ import org.pnfolder.pnlibrary.api.observability.ObservationKeys
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.nio.file.Path
 import java.time.Instant
 
 /** Records observations with their attachments and component statuses, and applies retention to them. */
 internal class ObservabilityRuntime(
-    dataFolder: Path,
+    paths: LibraryPaths,
     private val clock: () -> Long = System::currentTimeMillis,
     reportFactory: ((ObservabilityReportRequest) -> ObservabilityReport)? = null,
 ) : ObservabilityService {
     private val recordLock = Any()
-    private val journal = ObservationJournal(dataFolder, clock)
-    private val attachmentStore = AttachmentStore(dataFolder)
+    private val journal = ObservationJournal(paths.observations, clock)
+    private val attachmentStore = AttachmentStore(paths.attachments)
     private val statusRegistry = ComponentStatusRegistry()
     @Volatile
     private var reportFactory = reportFactory

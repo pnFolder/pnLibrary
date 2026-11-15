@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.chatPager
+import org.pnfolder.pnlibrary.core.commands.pageCount
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
@@ -95,7 +96,7 @@ class TaskCommand(private val library: PnLibrary) {
         val all = library.taskSnapshots().sortedByDescending { TaskLabels.activity(it) }
         val inPeriod = all.filter(period::keep)
         val shown = inPeriod.filter(state::keep)
-        val pages = ((shown.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
+        val pages = pageCount(shown.size, PAGE_SIZE)
         val page = requestedPage.coerceIn(1, pages)
         val count = "${all.size} ${RussianText.plural(all.size.toLong(), "задача", "задачи", "задач")}"
         val lines = mutableListOf(kit.blank(), kit.header("Задачи плагинов", kit.text(count, ChatPalette.LABEL)))

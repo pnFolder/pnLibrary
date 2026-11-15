@@ -6,6 +6,9 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
+/** Module view whose registrations are removed together when the module closes. */
+internal interface ServiceScope : ServiceManager, AutoCloseable
+
 /** Thread-safe implementation of the typed, plugin-owned service registry. */
 internal class ServiceRegistry : ServiceManager, AutoCloseable {
     private val lock = Any()

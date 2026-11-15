@@ -13,8 +13,6 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -26,15 +24,16 @@ import org.pnfolder.pnlibrary.updates.databases.DatabaseBackups
 import org.pnfolder.pnlibrary.updates.databases.DatabaseSources
 import org.pnfolder.pnlibrary.updates.engine.FreezeStore
 import org.pnfolder.pnlibrary.updates.engine.ResolutionResult
+import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.updates.install.UpdateGraphResolver
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateAutomaticPolicy
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides
+import org.pnfolder.pnlibrary.updates.policy.UpdateTiming
 import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -53,38 +52,41 @@ class UpdateServiceImpl(
     private val inventory: PlatformPluginInventory,
     private val identity: PlatformIdentity,
     private val readiness: PlatformReadiness,
-    private val dataFolder: Path,
+    private val paths: LibraryPaths,
     private val consoleTheme: ConsoleTheme,
+    timing: UpdateTiming = UpdateTiming(),
 ) : UpdateService, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val registrations = UpdateRegistrationStore()
-    private val configuration = UpdateConfiguration()
+    private val configuration = UpdateConfiguration(
+        checks = UpdateConfiguration.Checks(timing.checkInterval),
+        downloads = UpdateConfiguration.Downloads(connectTimeout = timing.connectTimeout, readTimeout = timing.readTimeout),
+    )
+    private val registrationValidator = RegistrationValidator(ownership, identity)
     init {
         retireOldSettingsFile()
     }
-    // Keep a manual `/pn update` responsive even when GitHub is unreachable.
-    // The check can cover several registered products, so long per-request
-    // timeouts otherwise add up and look like a frozen command.
-    private val resources = UpdateRuntimeResources(dataFolder, configuration)
-    private val overrides = UpdatePolicyOverrides(dataFolder.resolve("updates/settings.json")) {
+    private val resources = UpdateRuntimeResources(paths.catalog, configuration)
+    private val preferences = UpdatePreferencesStore(paths.preferences) { logging.log(this, LogLevel.WARNING, it) }
+    private val overrides = UpdatePolicyOverrides(preferences) {
         logging.log(this, LogLevel.WARNING, it)
     }
     private val automaticPolicy = UpdateAutomaticPolicy(configuration, overrides) { registrations.snapshot() }
     /** Where plugins say their databases are; the configuration service fills it as files are registered. */
     val databaseSources = DatabaseSources()
     private val installer = UpdateInstaller(
-        identity, dataFolder, configuration, resources.downloadHttp,
-        DatabaseBackups(dataFolder.resolve("updates/databases"), databaseSources),
+        identity, paths, configuration, resources.downloadHttp,
+        DatabaseBackups(paths.databases, databaseSources),
     ) {
         logging.log(this, LogLevel.WARNING, it)
     }
-    private val freezes = FreezeStore(dataFolder.resolve("updates/freezes.json"))
+    private val freezes = FreezeStore(preferences)
     private val graphResolver = UpdateGraphResolver(inventory, identity, configuration, resources.catalogGateway, freezes, overrides) { message, error ->
         logging.log(this, LogLevel.ERROR, message, error)
     }
     private val runtime = UpdateOrchestratorRuntime(
         configuration = configuration,
-        dataFolder = dataFolder,
+        paths = paths,
         logging = logging,
         readiness = readiness,
         installer = installer,
@@ -101,9 +103,9 @@ class UpdateServiceImpl(
 
     /** The settings file of older versions no longer does anything; it is kept aside so nothing is lost. */
     private fun retireOldSettingsFile() {
-        val old = dataFolder.resolve("updates.yml")
+        val old = paths.pluginFolder.resolve("updates.yml")
         if (!Files.isRegularFile(old)) return
-        val kept = dataFolder.resolve("updates.yml.old")
+        val kept = paths.pluginFolder.resolve("updates.yml.old")
         Files.move(old, kept, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         logging.log(
             this, LogLevel.WARNING,
@@ -118,31 +120,7 @@ class UpdateServiceImpl(
         dependencies: List<PluginDependency>,
     ): UpdateRegistration {
         check(!closed.get()) { "Update service is closed" }
-        val info = ownership.ownerDetails(owner)
-        val nativeProductName = info["name"] ?: request.repositoryName
-        listOf(nativeProductName, request.repositoryName).firstOrNull(UpdateCommandWords::isReserved)?.let { word ->
-            throw IllegalArgumentException(
-                "A plugin cannot be called '$word' for updates: it is a word of the /pn update command " +
-                    "(${UpdateCommandWords.RESERVED.joinToString()}). Rename the plugin or its repository.",
-            )
-        }
-        val version = info["version"] ?: error("Cannot determine the version of the registering plugin")
-        require(SemanticVersion.tryParse(version) != null) {
-            "Version of $nativeProductName must be semantic: $version"
-        }
-        val jar = Paths.get(owner.javaClass.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize()
-        require(Files.isRegularFile(jar)) { "Plugin must be loaded from a JAR file" }
-        val pluginsDirectory = pluginsDirectoryOf(jar)
-        request.configurationBackup?.let { backup ->
-            require(backup.root != pluginsDirectory && backup.root.toAbsolutePath().normalize().startsWith(pluginsDirectory)) {
-                "Configuration backup root must be a component data directory inside the plugins directory"
-            }
-        }
-        val artifact = request.artifactFor(JavaRuntime.feature, identity.type)
-            ?: error("No artifact of ${request.repositoryName} is registered for Java ${JavaRuntime.feature}")
-        require(product.version == SemanticVersion.parse(version)) {
-            "Product version ${product.version} does not match native plugin version $version"
-        }
+        val (jar, pluginsDirectory, artifact) = registrationValidator.validate(owner, product, request)
         val registration = RegisteredUpdate(
             descriptor = product,
             request = request,
@@ -288,13 +266,6 @@ class UpdateServiceImpl(
 
     private companion object {
         val HOLD_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm", Locale("ru"))
-        const val PAPER_REMAPPED = ".paper-remapped"
-
-        /** Paper runs remapped copies from `plugins/.paper-remapped`; data folders and `update` still sit in `plugins`. */
-        fun pluginsDirectoryOf(jar: Path): Path {
-            val folder = jar.parent
-            return if (folder.fileName?.toString() == PAPER_REMAPPED) folder.parent else folder
-        }
     }
 
     private fun resolveGraph(refreshMode: RefreshMode = RefreshMode.CACHED): ResolutionResult =

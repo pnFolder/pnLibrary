@@ -5,7 +5,6 @@ import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Instant
 
 /**
  * Uploads an encrypted report to file.io as a single-download fallback.
@@ -40,7 +39,7 @@ class FileIoUploader(private val endpoint: URI = URI.create("https://file.io")) 
         if (json.get("success")?.asBoolean != true) throw IOException("file.io rejected the report")
         val link = URI.create(json.get("link")?.asString ?: throw IOException("file.io response has no link"))
         if (link.scheme != "https" || link.host != "file.io") throw IOException("Invalid file.io link")
-        return UploadReceipt(link, json.get("key")?.asString.orEmpty(), "", Instant.now().epochSecond, 0, backendId)
+        return UploadReceipt.permanent(link, json.get("key")?.asString.orEmpty(), backendId)
     }
 
     private companion object { const val MAX_BYTES = 2L * 1024 * 1024 * 1024 }

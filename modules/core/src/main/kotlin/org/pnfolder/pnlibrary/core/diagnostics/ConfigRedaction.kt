@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 /**
  * The values of one configuration file that a report must hide.
  *
- * [requested] is what an administrator (`excluded-paths`, key and value patterns) or the plugin (`@ConfigSecret`,
+ * [requested] is what an administrator (key and value patterns) or the plugin (`@ConfigSecret`,
  * its own patterns) asked for; those promises hold in every report. [redact] adds the built-in secret key names,
  * the built-in text redactor and size limits for a plaintext report.
  */

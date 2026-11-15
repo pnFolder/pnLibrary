@@ -1,18 +1,14 @@
 package org.pnfolder.pnlibrary.bungee.commands
 
-import net.kyori.adventure.sound.Sound
-import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.bungee.BungeeAudienceAdapter
 import org.pnfolder.pnlibrary.core.commands.PROXY_SUGGESTION_MILLIS
-import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
 import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
@@ -42,29 +38,7 @@ internal class BungeeCommandAdapter internal constructor(
         source: NativeCommandSender,
         alias: String,
         arguments: Array<String>,
-    ): CommandContext = CommandContext(
-        sender = BungeeCommandSender(audience(source), ProxyCommandNames.owns(alias)),
-        arguments = arguments.toList(),
-        invokedAlias = alias,
-        currentInput = arguments.lastOrNull().orEmpty(),
-    )
-}
-
-/** Delegates portable command replies to the native audience bridge. */
-private class BungeeCommandSender(
-    private val audience: AudienceSender,
-    private val proxyControl: Boolean,
-) : CommandSender, AudienceSender by audience {
-
-    override fun send(message: Component) = audience.sendMessage(shown(message))
-
-    override fun sendMessage(text: Component) = audience.sendMessage(shown(text))
-
-    private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
-
-    override fun actionBar(text: Component) = audience.actionBar(text)
-
-    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
+    ): CommandContext = proxyCommandContext(audience(source), alias, arguments)
 }
 
 /** Installs command and tab-completion handlers in the proxy plugin manager. */
@@ -77,14 +51,20 @@ private class DefaultBungeeNativeCommandRegistrar : NativeCommandRegistrar<Nativ
     ): PlatformCommandRegistration {
         val ownerPlugin = owner as? Plugin
             ?: throw IllegalArgumentException("Command owner must be a Bungee plugin")
-        val executeHandler = execute
-        val suggestionHandler = suggest
-        val native = object : Command(command.name, null, *command.aliases.toTypedArray()), TabExecutor {
-            override fun execute(sender: NativeCommandSender, args: Array<String>) = executeHandler(sender, command.name, args)
-            override fun onTabComplete(sender: NativeCommandSender, args: Array<String>): Iterable<String> =
-                suggestionHandler(sender, command.name, args).suggestionsWithin(PROXY_SUGGESTION_MILLIS)
-        }
+        val native = NativeBungeeCommand(command, execute, suggest)
         ownerPlugin.proxy.pluginManager.registerCommand(ownerPlugin, native)
         return PlatformCommandRegistration { ownerPlugin.proxy.pluginManager.unregisterCommand(native) }
     }
+}
+
+/** One portable command as a BungeeCord command; tab completion waits at most [PROXY_SUGGESTION_MILLIS]. */
+private class NativeBungeeCommand(
+    private val definition: CommandDefinition,
+    private val onExecute: (NativeCommandSender, String, Array<String>) -> Unit,
+    private val onSuggest: (NativeCommandSender, String, Array<String>) -> CompletionStage<List<String>>,
+) : Command(definition.name, null, *definition.aliases.toTypedArray()), TabExecutor {
+    override fun execute(sender: NativeCommandSender, args: Array<String>) = onExecute(sender, definition.name, args)
+
+    override fun onTabComplete(sender: NativeCommandSender, args: Array<String>): Iterable<String> =
+        onSuggest(sender, definition.name, args).suggestionsWithin(PROXY_SUGGESTION_MILLIS)
 }

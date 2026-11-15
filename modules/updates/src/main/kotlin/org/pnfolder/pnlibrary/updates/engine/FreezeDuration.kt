@@ -8,7 +8,6 @@ object FreezeDuration {
     val MAXIMUM: Duration = Duration.ofDays(7)
 
     private val minimum = Duration.ofMinutes(1)
-    private val maximum = MAXIMUM
     private val pattern = Regex("^(\\d+)([mhd])$", RegexOption.IGNORE_CASE)
 
     /** Parses a positive `m`, `h`, or `d` duration within supported bounds. */
@@ -28,7 +27,7 @@ object FreezeDuration {
 
     /** Returns [duration] after verifying the supported freeze interval. */
     fun validate(duration: Duration): Duration {
-        require(duration >= minimum && duration <= maximum) {
+        require(duration >= minimum && duration <= MAXIMUM) {
             "Freeze duration must be between 1 minute and 7 days"
         }
         return duration

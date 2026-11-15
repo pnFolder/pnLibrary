@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.updates.service
 
 import org.pnfolder.pnlibrary.updates.engine.UpdatePaths
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -17,9 +17,9 @@ internal class UpdateInstallationLock private constructor(private val channel: F
     }
 
     companion object {
-        /** Takes the lock in [dataDirectory], failing if another process holds it. */
-        fun acquire(dataDirectory: Path): UpdateInstallationLock {
-            val path = UpdatePaths.inside(dataDirectory.resolve("updates/install.lock"), dataDirectory)
+        /** Takes the lock of [paths], failing if another process holds it. */
+        fun acquire(paths: LibraryPaths): UpdateInstallationLock {
+            val path = UpdatePaths.inside(paths.installLock, paths.data)
             Files.createDirectories(path.parent)
             val channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
             try {

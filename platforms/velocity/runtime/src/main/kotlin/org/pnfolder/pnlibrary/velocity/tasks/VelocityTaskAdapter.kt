@@ -2,25 +2,20 @@ package org.pnfolder.pnlibrary.velocity.tasks
 
 import com.velocitypowered.api.proxy.ProxyServer
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
+import org.pnfolder.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
 
 /**
  * Adapts pnLibrary task requests to the native Velocity scheduler.
  *
- * The adapter owns every scheduled handle and cancels all remaining tasks when it is closed.
- * One-shot tasks are removed from the tracking set immediately after their callback finishes.
+ * Handle tracking, one-shot release and shutdown come from [TrackingPlatformTaskAdapter].
  */
 internal class VelocityTaskAdapter internal constructor(
     private val describeOwner: (Any?) -> String,
     private val warning: (String) -> Unit,
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
-) : PlatformTaskAdapter {
+) : TrackingPlatformTaskAdapter() {
 
     /**
      * Creates an adapter backed by Velocity's scheduler. [describeOwner] names the plugin that asked for a task,
@@ -49,98 +44,18 @@ internal class VelocityTaskAdapter internal constructor(
         },
     )
 
-    private val closed = AtomicBoolean(false)
-    private val handles = ConcurrentHashMap.newKeySet<TrackedHandle>()
+    override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle = nativeSchedule(request)
 
     /**
-     * Schedules a request and starts tracking its cancellation handle.
-     *
      * Velocity has no entity scheduler, so an entity task runs on the proxy scheduler instead, and every such
      * call writes a warning that names the plugin which asked for it.
      */
-    override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
-        check(!closed.get()) { "Velocity task adapter is closed" }
+    override fun beforeSchedule(request: PlatformTaskRequest) {
         if (request.executionKind == TaskExecution.Kind.ENTITY) {
             warning(
                 "Плагин ${describeOwner(request.owner)} запросил задачу, привязанную к игроку. " +
                     "Velocity такие задачи не поддерживает: задача выполнена на общем планировщике прокси.",
             )
-        }
-
-        val reference = AtomicReference<TrackedHandle?>()
-        val completed = AtomicBoolean(false)
-        val forwardedRequest = request.withLifecycle(reference, completed)
-        val handle = TrackedHandle(nativeSchedule(forwardedRequest))
-
-        reference.set(handle)
-        handles += handle
-
-        if (closed.get()) {
-            handle.cancel()
-            error("Velocity task adapter is closed")
-        }
-
-        if (completed.get()) {
-            handle.release()
-        }
-
-        return handle
-    }
-
-    override fun close() {
-        if (!closed.compareAndSet(false, true)) {
-            return
-        }
-
-        var failure: Throwable? = null
-        handles.toList().forEach { handle ->
-            runCatchingNonFatal { handle.cancel() }.onFailure { error ->
-                if (failure == null) failure = error
-                else if (failure !== error) failure?.addSuppressed(error)
-            }
-        }
-        handles.clear()
-        failure?.let { throw it }
-    }
-
-    private fun PlatformTaskRequest.withLifecycle(
-        reference: AtomicReference<TrackedHandle?>,
-        completed: AtomicBoolean,
-    ): PlatformTaskRequest = copy(
-        callback = Runnable {
-            try {
-                callback.run()
-            } finally {
-                if (interval == null) {
-                    completed.set(true)
-                    reference.get()?.release()
-                }
-            }
-        },
-    )
-
-    /** A native handle that removes itself from [handles] once it is cancelled or its one-shot task has run. */
-    private inner class TrackedHandle(
-        private val delegate: PlatformTaskHandle,
-    ) : PlatformTaskHandle {
-        private val cancelled = AtomicBoolean(false)
-
-        override fun cancel(): Boolean {
-            if (!cancelled.compareAndSet(false, true)) {
-                return false
-            }
-
-            try {
-                delegate.cancel()
-            } finally {
-                handles.remove(this)
-            }
-            return true
-        }
-
-        /** Stops tracking the task without cancelling it. */
-        fun release() {
-            handles.remove(this)
         }
     }
 }

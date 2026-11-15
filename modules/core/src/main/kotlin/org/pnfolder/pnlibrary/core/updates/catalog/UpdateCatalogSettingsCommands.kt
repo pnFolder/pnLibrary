@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.text.RussianText
+import org.pnfolder.pnlibrary.core.cleanup.rootCause
 import org.pnfolder.pnlibrary.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -72,10 +73,10 @@ internal class UpdateCatalogSettingsCommands(
         val enabled = switch(context) ?: return
         if (!ready(context)) return
         val sender = context.sender
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        val actor = sender.asUpdateActor()
         library.updates.setAutomaticDownloadForAllPlugins(enabled, actor).whenComplete { _, failure ->
             deliver(Runnable {
-                val text = if (failure != null) generateSequence(failure) { it.cause }.last().message ?: "Не удалось изменить настройку."
+                val text = if (failure != null) failure.rootCause().message ?: "Не удалось изменить настройку."
                 else "Сохранено. Автозагрузка для всех плагинов: ${if (enabled) "включена" else "выключена"}."
                 sender.send(if (failure != null) catalogError(text) else Component.text(text, ChatPalette.OK))
             })
@@ -115,12 +116,11 @@ internal class UpdateCatalogSettingsCommands(
         val product = context.get<String>("plugin")
         val sender = context.sender
         val before = library.updates.get(product)?.snapshot?.let(current) ?: value
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        val actor = sender.asUpdateActor()
         apply(product, actor).whenComplete { snapshot, failure ->
             deliver(Runnable {
                 if (failure != null) {
-                    val cause = generateSequence(failure) { it.cause }.last()
-                    sender.send(catalogError(cause.message ?: "Не удалось изменить настройку."))
+                    sender.send(catalogError(failure.rootCause().message ?: "Не удалось изменить настройку."))
                 } else {
                     val routes = routesFor(context)
                     val arrow = if (routes.ascii) "->" else "→"

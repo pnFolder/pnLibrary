@@ -61,51 +61,51 @@ class MenuDataTest {
     private val listener = ListenerInfo(PluginId.of("shop"), ModuleId.of("core"), "a.b.Event", 3, true, "x", 10, 1, 500, 900)
     private val trace = EventTrace("a.b.Event", true, "ok", listOf(EventTrace.Step(PluginId.of("shop"), null, 1, false, false, 5, "a", "b")), at = now)
 
-    private fun <T> roundTrip(value: T, type: java.lang.reflect.Type): T = MenuCalls.gson.fromJson(MenuCalls.gson.toJson(value), type)
+    private fun <T> roundTrip(value: T, type: java.lang.reflect.Type): T = MenuWire.gson.fromJson(MenuWire.gson.toJson(value), type)
 
     @Test
     fun `update data survives the trip as json`() {
-        val back = roundTrip(listOf(snapshot), MenuCalls.typeOf<List<UpdateSnapshot>>()).single()
+        val back = roundTrip(listOf(snapshot), MenuWire.typeOf<List<UpdateSnapshot>>()).single()
         assertEquals("shop", back.product)
         assertEquals(UpdateState.UPDATE_AVAILABLE, back.state)
         assertEquals(ApiVersionRange(1, 2), back.supportedApi)
         assertEquals(now, back.availableReleases.single().publishedAt)
 
-        val history = roundTrip(listOf(entry), MenuCalls.typeOf<List<UpdateHistoryEntry>>()).single()
+        val history = roundTrip(listOf(entry), MenuWire.typeOf<List<UpdateHistoryEntry>>()).single()
         assertEquals(entry.id, history.id)
         assertEquals("shop", history.changes.single().product.value)
         assertEquals(SemanticVersion.parse("1.1.0"), history.changes.single().to)
         assertEquals("Admin", history.actor.name)
 
-        val saved = roundTrip(listOf(backup), MenuCalls.typeOf<List<UpdateBackup>>()).single()
+        val saved = roundTrip(listOf(backup), MenuWire.typeOf<List<UpdateBackup>>()).single()
         assertEquals("1.0.0", saved.components.single().backupVersion)
         assertEquals(3, saved.configurationFiles)
     }
 
     @Test
     fun `task and event data survive the trip as json`() {
-        val tasks = roundTrip(listOf(task), MenuCalls.typeOf<List<TaskSnapshot>>()).single()
+        val tasks = roundTrip(listOf(task), MenuWire.typeOf<List<TaskSnapshot>>()).single()
         assertEquals("shop:save", tasks.id.value)
         assertEquals(Duration.ofMinutes(5), tasks.interval)
         assertEquals(setOf("a"), tasks.tags)
         assertEquals(false, tasks.cancellable)
 
-        val listeners = roundTrip(listOf(listener), MenuCalls.typeOf<List<ListenerInfo>>()).single()
+        val listeners = roundTrip(listOf(listener), MenuWire.typeOf<List<ListenerInfo>>()).single()
         assertEquals("shop", listeners.plugin.value)
         assertEquals("core", listeners.module?.value)
         assertEquals(900, listeners.maxNanos)
 
-        val traces = roundTrip(listOf(trace), MenuCalls.typeOf<List<EventTrace>>()).single()
+        val traces = roundTrip(listOf(trace), MenuWire.typeOf<List<EventTrace>>()).single()
         assertEquals("shop", traces.steps.single().plugin.value)
         assertEquals(now, traces.at)
 
-        val day = roundTrip(listOf(EventDay(LocalDate.of(2026, 10, 30), "a.b.Event", 5, 1)), MenuCalls.typeOf<List<EventDay>>()).single()
+        val day = roundTrip(listOf(EventDay(LocalDate.of(2026, 10, 30), "a.b.Event", 5, 1)), MenuWire.typeOf<List<EventDay>>()).single()
         assertEquals(LocalDate.of(2026, 10, 30), day.date)
 
-        val about = roundTrip(EventAbout("p", "u", OwnerInfo("shop", "1.0", listOf("me"))), MenuCalls.typeOf<EventAbout?>())
+        val about = roundTrip(EventAbout("p", "u", OwnerInfo("shop", "1.0", listOf("me"))), MenuWire.typeOf<EventAbout?>())
         assertEquals(listOf("me"), about?.owner?.authors)
 
-        val plan = roundTrip(PlanInfo(UpdateState.BLOCKED, true, listOf("busy")), MenuCalls.typeOf<PlanInfo?>())
+        val plan = roundTrip(PlanInfo(UpdateState.BLOCKED, true, listOf("busy")), MenuWire.typeOf<PlanInfo?>())
         assertEquals(listOf("busy"), plan?.blockers)
     }
 
@@ -197,5 +197,21 @@ class MenuDataTest {
 
         val granted = connected("rollback" to true, holds = { viewer, permission -> viewer == "Admin" && permission == "pnlibrary.updates.rollback" })
         assertTrue(granted.rollback(UUID.randomUUID(), false, actor).toCompletableFuture().get())
+    }
+
+    @Test
+    fun `settings travel through the link and a change needs the settings permission`() {
+        val actor = UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin")
+        val row = SettingRow("privacy", "Приватность отчёта", "SWITCH", "Прятать данные.", "false", "false", false, "", emptyList(), false)
+        val granted = connected(
+            "settings" to listOf(row), "changeSetting" to SettingOutcome(true, "true", false),
+            holds = { viewer, permission -> viewer == "Admin" && permission == "pnlibrary.settings" },
+        )
+        assertEquals(listOf(row), granted.settings())
+        assertEquals(SettingOutcome(true, "true", false), granted.changeSetting("privacy", "true", actor))
+
+        val denied = connected("changeSetting" to SettingOutcome(true, "true"), holds = { _, _ -> false })
+        val error = org.junit.jupiter.api.Assertions.assertThrows(Exception::class.java) { denied.changeSetting("privacy", "true", actor) }
+        assertTrue(generateSequence<Throwable>(error) { it.cause }.any { it.message?.contains("pnlibrary.settings") == true })
     }
 }

@@ -19,13 +19,13 @@ import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingDependency
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingGroup
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPreferences
-import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
 import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -42,8 +42,9 @@ internal class DirectDownloads(
     private val inventory: PlatformPluginInventory,
     private val readiness: PlatformReadiness,
     private val logging: PlatformLogging,
-    private val libraryData: Path,
-    private val configuration: DownloadConfiguration,
+    paths: LibraryPaths,
+    private val configuration: () -> DownloadConfiguration,
+    private val saveAutomatic: (Boolean) -> Unit = {},
     private val http: TrustedHttpClient = TrustedHttpClient(
         Duration.ofSeconds(8), Duration.ofSeconds(30),
     ),
@@ -54,19 +55,18 @@ internal class DirectDownloads(
     }
     private val registrations = CopyOnWriteArrayList<DownloadBatch>()
     private val pluginJarVerifier = PluginJarVerifier(identity)
-    private val filePublisher = AtomicDownloadPublisher(libraryData)
-    private val pins = DownloadPins(libraryData)
-    private val preferences = DownloadPreferences(libraryData) { configuration.automatic }
+    private val filePublisher = AtomicDownloadPublisher(paths.data)
+    private val pins = DownloadPins(paths.data)
     private val missing = MissingDependencies()
     private val artifactPreparer = DownloadArtifactPreparer(
-        identity.type, libraryData, configuration, http, pins, MAX_BYTES,
+        identity.type, paths.data, configuration, http, pins, MAX_BYTES,
     )
-    private val dependencyStore = DownloadedDependencyStore(libraryData)
+    private val dependencyStore = DownloadedDependencyStore(paths.data)
     private val dependencyReporter = DependencyDownloadReporter(
         logging, ownership, if (identity.type == PlatformType.VELOCITY || identity.type == PlatformType.BUNGEECORD) "pnproxy" else "pn",
     )
     private val dependencyRequestFactory = DependencyDownloadRequestFactory(
-        requireNotNull(libraryData.parent) { "Library data directory must have a parent plugins directory" },
+        paths.serverUpdateFolder,
     )
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
@@ -96,7 +96,7 @@ internal class DirectDownloads(
                 .onFailure { logging.log(owner, LogLevel.ERROR, "Could not report the failed dependency download", it) }
         },
         remove = registrations::remove,
-        automaticAllowed = preferences::automatic,
+        automaticAllowed = ::automatic,
     ).also { registration ->
         registrations += registration
         registration.startAutomatic()
@@ -123,15 +123,17 @@ internal class DirectDownloads(
     private fun announceMissing(owner: Any, lacking: List<ExternalPluginDependency>, registration: DownloadRegistration?) {
         val items = lacking.map { MissingDependency(it.plugin, it.minimumVersion.toString(), it.downloadPage, it.artifact?.let { a -> listOf(a.uri) + a.mirrors }.orEmpty()) }
         val group = missing.add(ownerName(owner), items, registration)
-        runCatchingNonFatal { dependencyReporter.missing(owner, group, preferences.automatic() && registration != null) }
+        runCatchingNonFatal { dependencyReporter.missing(owner, group, automatic() && registration != null) }
             .onFailure { logging.log(owner, LogLevel.ERROR, "Could not report the missing dependencies", it) }
     }
 
     private fun ownerName(owner: Any): String = ownership.ownerDetails(owner)?.get("name") ?: PnLibraryIdentity.NAME
 
-    fun automatic(): Boolean = preferences.automatic()
+    /** Whether downloads that a plugin starts itself are allowed now. */
+    fun automatic(): Boolean = configuration().automatic
 
-    fun setAutomatic(value: Boolean) = preferences.setAutomatic(value)
+    /** Saves the choice as the setting `downloads.automatic`. */
+    fun setAutomatic(value: Boolean) = saveAutomatic(value)
 
     /** Dependencies still missing, with the code that installs each group. */
     internal fun missingGroups(): List<MissingGroup> = missing.pending()

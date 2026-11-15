@@ -27,6 +27,7 @@ internal interface MenuRoutes {
     fun hold(snapshot: UpdateSnapshot, duration: Duration?, player: MenuViewer): java.util.concurrent.CompletionStage<*>
     fun home(player: MenuViewer)
     fun journal(player: MenuViewer, level: String?, page: Int)
+    fun librarySettings(player: MenuViewer, page: Int)
     fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row>
     fun labelled(label: String, text: String): List<Pair<String, String>>
     fun members(map: NetworkReport): List<NetworkServer>

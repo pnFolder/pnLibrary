@@ -11,7 +11,8 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels
+import org.pnfolder.pnlibrary.updates.policy.color
+import org.pnfolder.pnlibrary.updates.policy.title
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
@@ -131,8 +132,8 @@ internal object BukkitConsoleStatusRenderer {
 
         card.blank()
         channels.forEachIndexed { index, (channel, release) ->
-            card.section(UpdateChannelLabels.channelTitle(channel).replaceFirstChar { it.titlecase(Locale.ROOT) })
-                .detail("Версия", ConsoleStyle.paint(release.version, UpdateChannelLabels.channelColor(channel)))
+            card.section(channel.title().replaceFirstChar { it.titlecase(Locale.ROOT) })
+                .detail("Версия", ConsoleStyle.paint(release.version, channel.color()))
                 .lastDetail(
                     "Опубликована",
                     release.publishedAt?.let(::publishedAtLabel) ?: "дата неизвестна",
@@ -209,7 +210,7 @@ internal object BukkitStatusLabels {
     }
 
     fun channel(snapshot: UpdateSnapshot): String =
-        ConsoleStyle.paint(UpdateChannelLabels.channelTitle(snapshot.channel), UpdateChannelLabels.channelColor(snapshot.channel))
+        ConsoleStyle.paint(snapshot.channel.title(), snapshot.channel.color())
 
     fun product(product: String): String =
         if (product.equals(PnLibraryIdentity.PRODUCT_ID, true)) PnLibraryIdentity.NAME else product

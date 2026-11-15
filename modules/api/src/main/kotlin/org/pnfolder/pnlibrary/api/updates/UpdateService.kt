@@ -140,7 +140,7 @@ interface UpdateService {
 
     /**
      * Copies the saved databases and plugin exports of [product] from the retained set [transactionId] into a new
-     * folder under `plugins/pnLibrary/updates/handout`, for a plugin that cannot take them back itself, and returns
+     * folder under `plugins/pnLibrary/data/updates/handout`, for a plugin that cannot take them back itself, and returns
      * the folder path. Does not grant permissions.
      */
     fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> =

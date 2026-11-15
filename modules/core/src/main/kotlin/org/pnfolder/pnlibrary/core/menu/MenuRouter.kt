@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.core.menu.screens.GroupScreens
 import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens
 import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens
 import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens
+import org.pnfolder.pnlibrary.core.menu.screens.LibrarySettingsScreens
 import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens
 import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens
 import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens
@@ -38,6 +39,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
     private val configScreens = ConfigScreens(session, this)
+    private val librarySettingsScreens = LibrarySettingsScreens(session, this)
 
     override fun aboutOf(name: String): EventAbout? = taskScreens.aboutOf(name)
     override fun backups(player: MenuViewer, page: Int) = historyScreens.backups(player, page)
@@ -56,6 +58,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
         updateScreens.hold(snapshot, duration, player)
     override fun home(player: MenuViewer) = homeScreens.home(player)
     override fun journal(player: MenuViewer, level: String?, page: Int) = journalScreens.journal(player, level, page)
+    override fun librarySettings(player: MenuViewer, page: Int) = librarySettingsScreens.librarySettings(player, page)
     override fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row> = journalScreens.journalRows(level, back)
     override fun labelled(label: String, text: String): List<Pair<String, String>> = taskScreens.labelled(label, text)
     override fun members(map: NetworkReport): List<NetworkServer> = networkScreens.members(map)

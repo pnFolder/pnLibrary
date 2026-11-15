@@ -3,14 +3,10 @@ package org.pnfolder.pnlibrary.velocity.commands
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ProxyServer
-import net.kyori.adventure.sound.Sound
-import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
+import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -37,27 +33,7 @@ internal class VelocityCommandAdapter internal constructor(
         source: CommandSource,
         alias: String,
         arguments: Array<String>,
-    ): CommandContext = CommandContext(
-        sender = VelocityCommandSender(audience(source), ProxyCommandNames.owns(alias)),
-        arguments = arguments.toList(),
-        invokedAlias = alias,
-        currentInput = arguments.lastOrNull().orEmpty(),
-    )
-}
-
-/** Adapts a portable command sender to the native Velocity audience. */
-private class VelocityCommandSender(
-    private val audience: AudienceSender,
-    private val proxyControl: Boolean,
-) : CommandSender, AudienceSender by audience {
-    override fun send(message: Component) = audience.sendMessage(shown(message))
-
-    // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
-    override fun sendMessage(text: Component) = audience.sendMessage(shown(text))
-
-    private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
-    override fun actionBar(text: Component) = audience.actionBar(text)
-    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
+    ): CommandContext = proxyCommandContext(audience(source), alias, arguments)
 }
 
 /** Default registrar backed by Velocity's command manager. */

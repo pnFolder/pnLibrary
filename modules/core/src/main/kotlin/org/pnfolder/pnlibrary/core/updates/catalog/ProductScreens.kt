@@ -4,12 +4,13 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelColor
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelHint
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelName
+import org.pnfolder.pnlibrary.updates.policy.color
+import org.pnfolder.pnlibrary.updates.policy.commandName
+import org.pnfolder.pnlibrary.updates.policy.hint
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -27,7 +28,7 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         snapshot.latestChangelogUrl?.takeIf(::safeLink)?.takeIf { update != null }?.let { version = version.append(changelogButton(it)) }
         result += version
         releasedAt(snapshot, update ?: snapshot.currentVersion)?.let { result += field("Выпущена", text(released(it), ChatPalette.TEXT)) }
-        result += field("Канал", channelTag(snapshot.channel)).hoverEvent(tooltip(text(channelHint(snapshot.channel), ChatPalette.TEXT)))
+        result += field("Канал", channelTag(snapshot.channel)).hoverEvent(tooltip(text(snapshot.channel.hint(), ChatPalette.TEXT)))
             .append(change(product, "Выбрать другой канал обновлений"))
         otherChannels(snapshot)?.let { result += it }
         result += field("Автозагрузка", if (snapshot.automaticDownload) text("включена", ChatPalette.OK) else text("выключена", ChatPalette.DANGER))
@@ -67,8 +68,8 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         if (clickable) result += note("Нажмите на кнопку, чтобы выбрать. ${glyph('✔')} — выбрано сейчас.")
         if (clickable) result += note("Пауза — не дольше 7 дней.")
         result += blank()
-        result += choices("Канал", UpdateCatalogView.CHANNELS.map { it to channelName(it) }, snapshot.channel, ::channelColor) { channel ->
-            routes.set(product, "channel", channelName(channel)) to channelHint(channel)
+        result += choices("Канал", UpdateCatalogView.CHANNELS.map { it to it.commandName() }, snapshot.channel, UpdateChannel::color) { channel ->
+            routes.set(product, "channel", channel.commandName()) to channel.hint()
         }
         if (clickable) {
             actions(
@@ -95,7 +96,7 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         if (!routes.interactive || !routes.editable) {
             result += commandHints(
                 routes.set(product, "channel",
-                    "<${UpdateCatalogView.CHANNELS.joinToString("|") { channelName(it) }}|default>") to "канал (default: как задал плагин)",
+                    "<${UpdateCatalogView.CHANNELS.joinToString("|") { it.commandName() }}|default>") to "канал (default: как задал плагин)",
                 routes.set(product, "auto", "<on|off>") to "автозагрузка",
                 routes.set(product, "hold", "<${UpdateCatalogView.HOLD_PERIODS.joinToString("|")}|off>") to "пауза",
             )
@@ -113,13 +114,13 @@ internal class ProductScreens(routes: UpdateCatalogRoutes, now: Instant, zone: Z
         val entries = newest.map { (channel, release) ->
             val entry = channelTag(channel).append(text(" ${version(release.version)}", ChatPalette.TEXT))
             val card = listOfNotNull(
-                text("${channelName(channel)} ${version(release.version)}", channelColor(channel)),
+                text("${channel.commandName()} ${version(release.version)}", channel.color()),
                 release.publishedAt?.let { hoverField("Выпущена", text(released(it), ChatPalette.TEXT)) },
-                text(channelHint(channel), ChatPalette.LABEL),
-                text("» Нажмите, чтобы переключиться на ${channelName(channel)}", ChatPalette.LABEL).takeIf { clickable },
+                text(channel.hint(), ChatPalette.LABEL),
+                text("» Нажмите, чтобы переключиться на ${channel.commandName()}", ChatPalette.LABEL).takeIf { clickable },
             )
             val shown = entry.hoverEvent(tooltip(*card.toTypedArray()))
-            if (clickable) shown.clickEvent(ClickEvent.runCommand(routes.set(snapshot.product, "channel", channelName(channel)))) else shown
+            if (clickable) shown.clickEvent(ClickEvent.runCommand(routes.set(snapshot.product, "channel", channel.commandName()))) else shown
         }
         return field("Другие каналы", entries.drop(1).fold(entries.first()) { line, entry -> line.append(dot()).append(entry) })
     }

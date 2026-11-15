@@ -21,9 +21,8 @@ internal data class StoredAttachment(
 )
 
 /** Stores observation attachments on disk with a manifest, refusing executable and unsafe files. */
-internal class AttachmentStore(dataFolder: Path) {
+internal class AttachmentStore(private val directory: Path) {
     private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
-    private val directory = dataFolder.resolve("observability").resolve("attachments")
     private val manifest = directory.resolve("manifest.json")
     private val attachments = linkedMapOf<String, StoredAttachment>()
 

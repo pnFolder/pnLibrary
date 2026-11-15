@@ -8,23 +8,23 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 // Stack traces in chat: colored like source code, with frames of the JDK and the server folded.
 
 /** Stack trace lines in a player's chat card; the console prints all of them. */
-const val CARD_TRACE_LINES = 14
+internal const val CARD_TRACE_LINES = 14
 
 /** Stack trace frame: optional module prefix, class, method and the `File.java:44` location. */
-val FRAME = Regex("""^at\s+(?:\S*/)?([\w$.]+)\.([\w$<>]+)\((.*)\)$""")
+private val FRAME = Regex("""^at\s+(?:\S*/)?([\w$.]+)\.([\w$<>]+)\((.*)\)$""")
 
 /** Exception line: optional `Caused by: `, the class and its message. */
-val HEAD = Regex("""^(Caused by: |Suppressed: )?([\w$.]+)(?::\s?(.*))?$""")
+private val HEAD = Regex("""^(Caused by: |Suppressed: )?([\w$.]+)(?::\s?(.*))?$""")
 
 /** Packages of the JDK, the server and common libraries: their frames are dimmed, the plugin's own stay bright. */
-val FRAMEWORK = listOf(
+private val FRAMEWORK = listOf(
     "java.", "javax.", "jdk.", "sun.", "org.bukkit.", "io.papermc.", "net.minecraft.", "com.mojang.", "org.spigotmc.",
     "net.md_5.", "com.destroystokyo.", "io.netty.", "org.apache.", "kotlin.", "kotlinx.", "com.velocitypowered.",
     "net.kyori.", "org.jetbrains.",
 )
 
 /** One trace line as colored text, and whether it is a frame of the JDK, the server or a library. */
-fun traceLine(kit: ChatKit, line: String): Pair<Component, Boolean> {
+internal fun traceLine(kit: ChatKit, line: String): Pair<Component, Boolean> {
     val text = line.replace("\t", " ").trim()
     FRAME.matchEntire(text)?.let { match ->
         val (className, method, location) = match.destructured
@@ -70,7 +70,7 @@ private fun frameLine(kit: ChatKit, className: String, method: String, location:
  * own frames in amber and green, frames of the JDK and the server dimmed. In chat the dimmed frames of one run are
  * folded into a single line and the list is cut; the console shows every line.
  */
-fun traceView(kit: ChatKit, trace: List<String>, full: Boolean): Pair<List<Component>, Boolean> {
+internal fun traceView(kit: ChatKit, trace: List<String>, full: Boolean): Pair<List<Component>, Boolean> {
     val rendered = trace.map { traceLine(kit, it) }
     if (full) return rendered.map { it.first } to false
     val out = mutableListOf<Component>()

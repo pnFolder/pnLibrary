@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.config.ManagedConfigFile
  * Puts every file a plugin registers through the configuration service into that plugin's report, with the fields
  * marked `@ConfigSecret` hidden. The returned handle removes the file from the report again.
  */
-internal fun configFileDiagnostics(diagnostics: DiagnosticsRegistry): (ManagedConfigFile) -> AutoCloseable? = { file ->
+internal fun DiagnosticsRegistry.reportConfigFile(file: ManagedConfigFile): AutoCloseable? {
     val configuration = DiagnosticConfiguration.builder(file.path).also { builder ->
         file.secretPaths.forEach(builder::exclude)
     }.build()
@@ -17,5 +17,5 @@ internal fun configFileDiagnostics(diagnostics: DiagnosticsRegistry): (ManagedCo
         override fun collect(): Map<String, Any?> = emptyMap()
         override fun configurations(): Collection<DiagnosticConfiguration> = listOf(configuration)
     }
-    diagnostics.register(file.pluginId.value, file.directory, contributor)
+    return register(file.pluginId.value, file.directory, contributor)
 }

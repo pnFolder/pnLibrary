@@ -62,7 +62,7 @@ class ObservationScope internal constructor() {
     internal fun build(error: Throwable? = null): ObservationRequest = ObservationRequest(
         plugin = plugin,
         source = source,
-        message = if (message == "Diagnostic observation" && error?.message != null) error.message!! else message,
+        message = error?.message?.takeIf { message == "Diagnostic observation" } ?: message,
         level = if (error == null) level else ObservationLevel.ERROR,
         data = data.toMap() + listOfNotNull(keepFor?.let { ObservationKeys.KEEP_FOR_MS to it.toMillis().toString() }),
         files = files.toList(),

@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 
 /** Splits [text] into lines of at most [width] characters at spaces. */
-fun wrap(text: String, width: Int): List<String> {
+internal fun wrapText(text: String, width: Int): List<String> {
     val lines = mutableListOf<String>()
     var current = StringBuilder()
     text.split(' ').forEach { word ->
@@ -22,7 +22,7 @@ fun wrap(text: String, width: Int): List<String> {
 }
 
 /** The label and the color that mark records of [level]. */
-fun levelStyle(level: JournalLevel) = when (level) {
+internal fun levelStyle(level: JournalLevel) = when (level) {
     JournalLevel.ERROR -> "ОШИБКА" to ChatPalette.DANGER
     JournalLevel.WARNING -> "ВНИМАНИЕ" to ChatPalette.WARN
     JournalLevel.INFO -> "инфо" to ChatPalette.SOFT
@@ -43,7 +43,7 @@ private fun levelIcon(kit: ChatKit, level: JournalLevel): Component = when (leve
  * One event as a two-line block with a colored bar on its left edge: the source, the repeat count and how long
  * ago on the first line, the message on the second. [group] holds the repeats, newest first.
  */
-fun row(kit: ChatKit, group: List<JournalRecord>, full: Boolean, root: String): Component {
+internal fun journalRow(kit: ChatKit, group: List<JournalRecord>, full: Boolean, root: String): Component {
     val record = group.first()
     val (tag, color) = levelStyle(record.level)
     val text = if (!full && record.message.length > CHAT_CHARS) record.message.take(CHAT_CHARS) + "…" else record.message
@@ -54,7 +54,7 @@ fun row(kit: ChatKit, group: List<JournalRecord>, full: Boolean, root: String): 
         icon.append(kit.text(" $tag", color)).append(kit.dot()).append(kit.text(record.source, ChatPalette.ACCENT)),
         kit.blank(),
     )
-    wrap(record.message.lineSequence().first(), HOVER_WIDTH).take(HOVER_MESSAGE_LINES).forEach { hover += kit.text(it, ChatPalette.TEXT) }
+    wrapText(record.message.lineSequence().first(), HOVER_WIDTH).take(HOVER_MESSAGE_LINES).forEach { hover += kit.text(it, ChatPalette.TEXT) }
     hover += kit.blank()
     hover += kit.hoverField("Последний раз", kit.text(fullStamp(record.timeMillis), ChatPalette.TEXT))
     if (group.size > 1) {

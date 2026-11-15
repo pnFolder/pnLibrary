@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.link.remote
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -32,7 +33,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
             }
         } catch (error: Exception) {
             library.logging.logger(library.owner, "link").error("Remote action ${request.action} from ${request.origin} failed", error)
-            reply(result(request, false, message(error)))
+            reply(result(request, false, error.rootMessage()))
         }
     }
 
@@ -40,7 +41,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
         library.updates.checkNow(actor).whenComplete { plan, error ->
             reply(
                 if (error != null) {
-                    result(request, false, "Проверка не удалась: ${message(error)}")
+                    result(request, false, "Проверка не удалась: ${error.rootMessage()}")
                 } else {
                     val count = plan.plan?.changes?.size ?: 0
                     result(request, true, if (count == 0) "Всё актуально." else "Найдено обновлений: $count.")
@@ -54,7 +55,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
         library.updates.setAutomaticDownload(product, enabled, actor).whenComplete { _, error ->
             reply(
                 if (error != null) {
-                    result(request, false, "Не удалось изменить: ${message(error)}")
+                    result(request, false, "Не удалось изменить: ${error.rootMessage()}")
                 } else {
                     result(request, true, "Автозагрузка $product: ${if (enabled) "включена" else "выключена"}.")
                 },
@@ -67,12 +68,12 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
         library.updates.checkNow(actor).whenComplete { plan, error ->
             val change = plan?.plan?.changes?.firstOrNull { it.product.value.equals(product, ignoreCase = true) }
             when {
-                error != null -> reply(result(request, false, "Проверка не удалась: ${message(error)}"))
+                error != null -> reply(result(request, false, "Проверка не удалась: ${error.rootMessage()}"))
                 plan.state != UpdateState.UPDATE_AVAILABLE || change == null -> reply(result(request, true, "Для $product нет обновления."))
                 else -> library.updates.stage(plan.id, actor).whenComplete { _, stageError ->
                     reply(
                         if (stageError != null) {
-                            result(request, false, "Не удалось подготовить: ${message(stageError)}")
+                            result(request, false, "Не удалось подготовить: ${stageError.rootMessage()}")
                         } else {
                             result(request, true, "Подготовлено: $product v${change.from} » v${change.to}. Нужен перезапуск.")
                         },
@@ -83,11 +84,6 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
     }
 
     private fun result(request: RemoteRequest, ok: Boolean, text: String) = RemoteResult(request.id, request.origin, ok, text, clock())
-
-    private fun message(error: Throwable): String {
-        val cause = generateSequence(error) { it.cause }.last()
-        return cause.message ?: cause.javaClass.simpleName
-    }
 
     private companion object {
         val REMEMBER: Duration = Duration.ofMinutes(10)

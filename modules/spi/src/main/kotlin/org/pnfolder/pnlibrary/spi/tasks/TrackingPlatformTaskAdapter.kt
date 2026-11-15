@@ -17,8 +17,12 @@ abstract class TrackingPlatformTaskAdapter : PlatformTaskAdapter {
     /** Hands [request] to the native scheduler and returns its handle. */
     protected abstract fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle
 
+    /** Called for every request after the closed check and before it is scheduled; the default does nothing. */
+    protected open fun beforeSchedule(request: PlatformTaskRequest) = Unit
+
     final override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
         check(!closed.get()) { "Platform task adapter is closed" }
+        beforeSchedule(request)
         val reference = AtomicReference<TrackedHandle?>()
         val completed = AtomicBoolean(false)
         val forwarded = request.copy(callback = object : Runnable, RetirableCallback {

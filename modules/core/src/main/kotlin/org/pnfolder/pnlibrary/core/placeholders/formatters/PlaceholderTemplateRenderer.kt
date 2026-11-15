@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.placeholders.formatters
 
-import org.pnfolder.pnlibrary.core.placeholders.LocalPlaceholderExpression
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage

@@ -6,7 +6,6 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Instant
 
 /**
  * Uploads an encrypted `.pnsupport` file through Catbox's multipart API.
@@ -49,7 +48,7 @@ class CatboxUploader(
         if (uri.scheme != "https" || uri.host != "files.catbox.moe" || uri.path.isNullOrBlank()) {
             throw IOException("Catbox rejected the report: ${link.take(256)}")
         }
-        return UploadReceipt(uri, uri.path.substringAfterLast('/'), "", Instant.now().epochSecond, 0, backendId)
+        return UploadReceipt.permanent(uri, uri.path.substringAfterLast('/'), backendId)
     }
 
     private companion object {

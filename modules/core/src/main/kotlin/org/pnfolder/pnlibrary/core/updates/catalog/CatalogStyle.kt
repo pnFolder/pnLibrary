@@ -9,7 +9,8 @@ import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels
+import org.pnfolder.pnlibrary.updates.policy.color
+import org.pnfolder.pnlibrary.updates.policy.commandName
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -34,7 +35,7 @@ internal open class CatalogStyle(
 
     /** Colored tag with the channel name. */
     fun channelTag(channel: UpdateChannel): Component =
-        text(UpdateChannelLabels.channelName(channel), UpdateChannelLabels.channelColor(channel))
+        text(channel.commandName(), channel.color())
 
     /**
      * The current version, then an arrow and the highlighted new one when there is an update. With [changelog]

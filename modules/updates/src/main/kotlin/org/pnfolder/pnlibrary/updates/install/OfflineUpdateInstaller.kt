@@ -12,6 +12,8 @@ import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionState
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
 import org.pnfolder.pnlibrary.updates.history.ConfigurationRestorer
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
+import org.pnfolder.pnlibrary.updates.layout.LegacyLayoutMigration
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,16 +32,18 @@ object OfflineUpdateInstaller {
         println("Applied $applied prepared component sets. Start the server to verify loaded versions.")
     }
 
-    /** Installs every prepared set found in [dataDirectory] and returns how many were applied. */
-    internal fun apply(dataDirectory: Path): Int {
-        val data = dataDirectory.toAbsolutePath().normalize()
+    /** Installs every prepared set found in the plugin folder [pluginFolder] and returns how many were applied. */
+    internal fun apply(pluginFolder: Path): Int {
+        val data = pluginFolder.toAbsolutePath().normalize()
         require(Files.isDirectory(data) && data.parent != null) { "Library data directory does not exist" }
-        return UpdateInstallationLock.acquire(data).use {
-            val plugins = data.parent
+        val layout = LibraryPaths(data)
+        LegacyLayoutMigration(layout) { System.err.println(it) }.run()
+        return UpdateInstallationLock.acquire(layout).use {
+            val plugins = layout.plugins
             val verifier = ArtifactVerifier(512L * 1024 * 1024)
-            val transactions = UpdateTransaction(data.resolve("updates/transactions"), verifier, plugins)
-            val snapshots = ConfigurationSnapshots(data.resolve("updates/configurations"), plugins)
-            val restorer = ConfigurationRestorer(snapshots, data.resolve("updates/configuration-restores"))
+            val transactions = UpdateTransaction(layout.transactions, verifier, plugins)
+            val snapshots = ConfigurationSnapshots(layout.configurations, plugins)
+            val restorer = ConfigurationRestorer(snapshots, layout.configurationRestores)
             restorer.recoverInterrupted()
             transactions.recoverAllOffline()
             val pending = transactions.pendingInstallations().map { path -> prepare(transactions, verifier, snapshots, plugins, path) }

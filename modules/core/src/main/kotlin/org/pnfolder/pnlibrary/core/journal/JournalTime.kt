@@ -12,49 +12,47 @@ import java.util.Locale
 // Dates and times of the journal, always in the configured display zone (DisplayZone).
 
 /** Day and month with the clock, for events of the current year. */
-val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss")
+private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss")
 /** Hours, minutes and seconds. */
-val CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-/** Day and month. */
-val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM")
+internal val CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 /** Day, month and year. */
-val DAY_WITH_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+internal val DAY_WITH_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
 /** Day, month, year and the clock, for events of earlier years. */
-val TIME_WITH_YEAR: DateTimeFormatter =
+private val TIME_WITH_YEAR: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
 
 /** Day and time, with the year only when it is not the current one, so old events are never ambiguous. */
-fun stamp(millis: Long): String {
+internal fun stamp(millis: Long): String {
     val instant = java.time.Instant.ofEpochMilli(millis)
     val zone = DisplayZone.zone
     val sameYear = instant.atZone(zone).year == java.time.LocalDate.now(zone).year
     return (if (sameYear) TIME else TIME_WITH_YEAR).withZone(zone).format(instant)
 }
 /** The locale of month and weekday names in chat. */
-val RU = Locale("ru")
+private val RU = Locale("ru")
 /** Day and month name, such as `16 октября`. */
-val LONG_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", RU)
+private val LONG_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", RU)
 /** Day, month name and year, such as `16 октября 2023 года`. */
-val LONG_DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'года'", RU)
+private val LONG_DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'года'", RU)
 /** The full weekday name. */
-val WEEKDAY: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE", RU)
+internal val WEEKDAY: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE", RU)
 /** The clock in UTC, for the exact value in the hover card. */
-val UTC_STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(java.time.ZoneOffset.UTC)
+private val UTC_STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(java.time.ZoneOffset.UTC)
 
 /** "16 октября 2023 года", or "16 октября" within the current year. */
-fun longDate(date: java.time.LocalDate): String =
+internal fun longDate(date: java.time.LocalDate): String =
     if (date.year == java.time.LocalDate.now(DisplayZone.zone).year) LONG_DAY.format(date) else LONG_DAY_YEAR.format(date)
 
 /** The calendar date of [millis] in the display zone. */
-fun localDate(millis: Long): java.time.LocalDate = java.time.Instant.ofEpochMilli(millis).atZone(DisplayZone.zone).toLocalDate()
+private fun localDate(millis: Long): java.time.LocalDate = java.time.Instant.ofEpochMilli(millis).atZone(DisplayZone.zone).toLocalDate()
 
 /** "16 октября 2023 года, 16:45:07": the date in words, then the clock in the display zone. */
-fun fullStamp(millis: Long): String =
+internal fun fullStamp(millis: Long): String =
     "${longDate(localDate(millis))}, ${CLOCK.withZone(DisplayZone.zone).format(java.time.Instant.ofEpochMilli(millis))}"
 
 /** The same moment as numbers and in UTC, for the hover card, so the exact value is always one hover away. */
-fun momentTip(kit: ChatKit, millis: Long) = kit.tooltip(
+internal fun momentTip(kit: ChatKit, millis: Long) = kit.tooltip(
     kit.text(TIME_WITH_YEAR.withZone(DisplayZone.zone).format(java.time.Instant.ofEpochMilli(millis)), ChatPalette.TEXT),
     kit.text(WEEKDAY.format(localDate(millis)), ChatPalette.LABEL),
     kit.blank(),
@@ -64,17 +62,17 @@ fun momentTip(kit: ChatKit, millis: Long) = kit.tooltip(
 )
 
 /** A date and time in words that shows the exact numbers when hovered. */
-fun moment(kit: ChatKit, millis: Long): Component =
+internal fun moment(kit: ChatKit, millis: Long): Component =
     kit.text(fullStamp(millis), ChatPalette.TEXT).hoverEvent(momentTip(kit, millis))
 
 /** "How long ago": gray, and dimmer once it is more than a month old. */
-fun agoColor(millis: Long, now: Long = System.currentTimeMillis()): TextColor =
+internal fun agoColor(millis: Long, now: Long = System.currentTimeMillis()): TextColor =
     if (now - millis < 30L * 86_400_000) ChatPalette.SOFT else ChatPalette.FAINT
 /**
  * How long ago [millis] was, with the two largest units: "только что", "5 мин назад", "3 ч 12 мин назад",
  * "5 дней назад", "3 месяца 2 дня назад" or "3 года 1 день назад".
  */
-fun ago(millis: Long, now: Long = System.currentTimeMillis(), zone: java.time.ZoneId = DisplayZone.zone): String {
+internal fun ago(millis: Long, now: Long = System.currentTimeMillis(), zone: java.time.ZoneId = DisplayZone.zone): String {
     val seconds = ((now - millis) / 1000).coerceAtLeast(0)
     if (seconds < 60) return "только что"
     if (seconds < 86_400) {
@@ -94,7 +92,7 @@ fun ago(millis: Long, now: Long = System.currentTimeMillis(), zone: java.time.Zo
 }
 
 /** A span such as "1 ч 20 мин" for the average gap between repeats. */
-fun span(millis: Long): String {
+internal fun span(millis: Long): String {
     val minutes = millis / 60_000
     return when {
         minutes < 1 -> "меньше минуты"
@@ -104,7 +102,7 @@ fun span(millis: Long): String {
     }
 }
 /** The display zone as `Europe/Moscow (UTC+03:00)`, so nobody has to guess which clock a time uses. */
-fun zoneLabel(): String {
+internal fun zoneLabel(): String {
     val zone = DisplayZone.zone
     val offset = zone.rules.getOffset(java.time.Instant.now()).id.let { if (it == "Z") "+00:00" else it }
     return "${zone.id} (UTC$offset)"

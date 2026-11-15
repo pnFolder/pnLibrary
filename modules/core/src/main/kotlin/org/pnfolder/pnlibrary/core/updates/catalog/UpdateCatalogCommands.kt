@@ -5,9 +5,9 @@ import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.core.cleanup.rootCause
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
@@ -73,14 +73,14 @@ class UpdateCatalogCommands(
         addLiteral("info") {
             viewPermission?.let(::permission)
             argument("plugin", ArgumentType.string()) {
-                suggests { productNames() }
+                suggests { library.updateProductNames() }
                 executes(::showInfo)
             }
         }
         addLiteral("settings") {
             viewPermission?.let(::permission)
             argument("plugin", ArgumentType.string()) {
-                suggests { productNames() }
+                suggests { library.updateProductNames() }
                 executes { showSettings(it, it.get<String>("plugin")) }
             }
         }
@@ -100,7 +100,7 @@ class UpdateCatalogCommands(
                 }
             }
             argument("plugin", ArgumentType.string()) {
-                suggests { productNames() }
+                suggests { library.updateProductNames() }
                 literal("channel") {
                     argument("value", ArgumentType.string()) {
                         suggests { settings.available().map { it.name.lowercase(Locale.ROOT) } + UpdateCatalogSettingsCommands.DEFAULT_CHANNEL }
@@ -130,7 +130,7 @@ class UpdateCatalogCommands(
             argument("page", ArgumentType.integer()) { executes { showHistory(it, product = null) } }
             literal("plugin") {
                 argument("product", ArgumentType.string()) {
-                    suggests { productNames() }
+                    suggests { library.updateProductNames() }
                     executes { showHistory(it, product = it.get<String>("product")) }
                     argument("page", ArgumentType.integer()) {
                         executes { showHistory(it, product = it.get<String>("product")) }
@@ -145,7 +145,7 @@ class UpdateCatalogCommands(
                 managePermission?.let(::permission)
                 argument("backupId", ArgumentType.string()) {
                     argument("backupPlugin", ArgumentType.string()) {
-                        suggests { productNames() }
+                        suggests { library.updateProductNames() }
                         literal("confirm") { argument("databaseName", ArgumentType.greedyString()) { executes { restoreDatabase(it, true) } } }
                         argument("databaseName", ArgumentType.greedyString()) { executes { restoreDatabase(it, false) } }
                     }
@@ -155,7 +155,7 @@ class UpdateCatalogCommands(
                 managePermission?.let(::permission)
                 argument("backupId", ArgumentType.string()) {
                     argument("backupPlugin", ArgumentType.string()) {
-                        suggests { productNames() }
+                        suggests { library.updateProductNames() }
                         executes(::extractBackup)
                     }
                 }
@@ -177,7 +177,7 @@ class UpdateCatalogCommands(
         if ("plugin" !in used) {
             literal("plugin") {
                 argument("backupPlugin", ArgumentType.string()) {
-                    suggests { productNames() }
+                    suggests { library.updateProductNames() }
                     backupFilters(used + "plugin")
                 }
             }
@@ -204,8 +204,6 @@ class UpdateCatalogCommands(
 
     /** Shows the first page of components with an available or prepared update. */
     fun showAvailable(context: CommandContext) = showCatalog(context, updatesOnly = true)
-
-    private fun productNames(): List<String> = library.updates.all().map { it.snapshot.product }
 
     /** Routes for this sender: no buttons when it cannot click, ASCII for the console, read-only without permission. */
     private fun routesFor(context: CommandContext): UpdateCatalogRoutes = routes.copy(
@@ -279,11 +277,11 @@ class UpdateCatalogCommands(
             )
             return
         }
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        val actor = sender.asUpdateActor()
         library.updates.restoreDatabase(id, plugin, name, actor).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
-                else sender.send(error("Не удалось вернуть базу: ${generateSequence(failure) { it.cause }.last().message}"))
+                else sender.send(error("Не удалось вернуть базу: ${failure.rootCause().message}"))
             })
         }
     }
@@ -295,11 +293,11 @@ class UpdateCatalogCommands(
         val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
             ?: return sender.send(error("Некорректный ID резервного набора."))
         val plugin = context.get<String>("backupPlugin")
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        val actor = sender.asUpdateActor()
         library.updates.extractBackup(id, plugin, actor).whenComplete { folder, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("Файлы плагина $plugin лежат в папке: $folder"))
-                else sender.send(error("Не удалось выдать файлы: ${generateSequence(failure) { it.cause }.last().message}"))
+                else sender.send(error("Не удалось выдать файлы: ${failure.rootCause().message}"))
             })
         }
     }
@@ -309,11 +307,11 @@ class UpdateCatalogCommands(
         val sender = context.sender
         val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
             ?: return sender.send(error("Некорректный ID резервного набора."))
-        val actor = UpdateActor(if (sender.isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, sender.id, sender.name)
+        val actor = sender.asUpdateActor()
         library.updates.deleteBackup(id, actor).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("Резервный набор $id удалён."))
-                else sender.send(error("Не удалось удалить набор: ${generateSequence(failure) { it.cause }.last().message}"))
+                else sender.send(error("Не удалось удалить набор: ${failure.rootCause().message}"))
             })
         }
     }
@@ -343,8 +341,7 @@ class UpdateCatalogCommands(
     }
 
     private fun historyFailure(failure: Throwable, product: String?): String {
-        val cause = generateSequence(failure) { it.cause }.last()
-        return if (product != null && cause is IllegalArgumentException) "Некорректное имя плагина: $product."
+        return if (product != null && failure.rootCause() is IllegalArgumentException) "Некорректное имя плагина: $product."
         else "Не удалось прочитать историю обновлений."
     }
 

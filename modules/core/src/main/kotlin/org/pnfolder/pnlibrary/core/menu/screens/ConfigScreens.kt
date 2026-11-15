@@ -1,9 +1,5 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import net.kyori.adventure.text.event.ClickEvent
-import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.config.ConfigApply
 import org.pnfolder.pnlibrary.api.config.ConfigEditException
@@ -175,7 +171,7 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
     private fun ask(player: MenuViewer, id: String, setting: ConfigSetting) {
         val hint = listOf(setting.format.takeIf(String::isNotBlank)?.let { "Формат: $it." }, setting.examples.takeIf { it.isNotEmpty() }?.let { "Например: ${it.joinToString()}." })
             .filterNotNull().joinToString(" ")
-        suggest(player, "Введите новое значение для «${setting.title}». $hint".trim(), "/pn configs edit $id ${setting.path} ${setting.value.orEmpty()}")
+        suggestCommand(player, "Введите новое значение для «${setting.title}». $hint".trim(), "/pn configs edit $id ${setting.path} ${setting.value.orEmpty()}")
     }
 
     private fun write(player: MenuViewer, id: String, setting: ConfigSetting, next: String, after: (MenuViewer) -> Unit) {
@@ -221,14 +217,4 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
     }
 
     private fun clamp(value: Double, setting: ConfigSetting): Double = value.coerceIn(setting.min ?: -Double.MAX_VALUE, setting.max ?: Double.MAX_VALUE)
-
-    private fun suggest(player: MenuViewer, text: String, command: String) {
-        player.close()
-        val kit = ChatKit(ChatReader.PLAYER)
-        val line = kit.mark(ChatTone.INFO).append(kit.text(text, ChatPalette.TEXT)).append(kit.text(" "))
-            .append(kit.bracketed("Ввести команду", ChatPalette.ACCENT))
-            .clickEvent(ClickEvent.suggestCommand(command))
-            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить в чат", ChatPalette.TEXT), kit.text(command.trim(), ChatPalette.LABEL)))
-        player.send(listOf(line))
-    }
 }

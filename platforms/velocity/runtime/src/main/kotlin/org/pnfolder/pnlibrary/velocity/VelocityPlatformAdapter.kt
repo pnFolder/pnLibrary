@@ -8,12 +8,9 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
-import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
-import org.pnfolder.pnlibrary.spi.platform.PlatformLifecycle
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
-import org.pnfolder.pnlibrary.spi.platform.StartupGate
-import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
@@ -37,13 +34,10 @@ internal class VelocityPlatformAdapter(
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
     logger: Logger,
-) : PlatformAdapter {
+) : ProxyPlatformAdapter(plugin) {
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
-    private val lifecycle = PlatformLifecycle()
     private val plugins = velocityPlugins(proxy)
-    private val startup = StartupGate(lifecycle, ::executeGlobal)
 
-    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
     private val logObserver = VelocityLogObserver(
         plugin,
         pluginInstances = { proxy.pluginManager.plugins.mapNotNull { it.instance.orElse(null) } },
@@ -89,12 +83,8 @@ internal class VelocityPlatformAdapter(
         )
     }
 
-    /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, or stops doing so. */
-    @Synchronized
-    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null) lifecycle.checkOpen()
+    override fun observeProxyLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         logObserver.observe(observer)
-        uncaughtExceptionObserver.observe(observer)
     }
 
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
@@ -132,25 +122,6 @@ internal class VelocityPlatformAdapter(
         taskAdapter.schedule(PlatformTaskRequest(
             TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, task, plugin,
         ))
-    }
-
-    /** Defers startup-dependent work until the entry point has published the native API. */
-    override fun whenServerReady(task: Runnable) {
-        startup.whenReady(task)
-    }
-
-    /** Called once the runtime and Velocity API registration both succeeded. */
-    internal fun markReady() {
-        startup.markReady()
-    }
-
-    override fun executeReply(recipient: Any, task: Runnable) {
-        executeGlobal(task)
-    }
-
-    /** Discards pending startup work, cancels native tasks and stops native log observation once. */
-    override fun close() {
-        lifecycle.closeAdapter(startup, taskAdapter) { observeNativeLogs(null) }
     }
 
     private companion object {

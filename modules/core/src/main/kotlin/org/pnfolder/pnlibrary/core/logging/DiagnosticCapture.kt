@@ -39,7 +39,7 @@ internal class DiagnosticCapture(
             else -> return
         }
         rememberEcho(level, output)
-        emit { native.log(owner, level, ConsoleStyle.decorate(level, output), if (output == message) error else null) }
+        emit { native.log(owner, level, LogLevelMarks.decorate(level, output), if (output == message) error else null) }
     }
 
     override fun console(owner: Any, message: String) = emit { native.console(owner, message) }
@@ -86,7 +86,7 @@ internal class DiagnosticCapture(
         if (!stageFailures.shouldReport(stage)) return
         val message = "pnLibrary could not pass a log line to the $stage: ${error.javaClass.simpleName}: ${error.message}"
         rememberEcho(LogLevel.ERROR, message)
-        emit { native.log(owner, LogLevel.ERROR, ConsoleStyle.decorate(LogLevel.ERROR, message), error) }
+        emit { native.log(owner, LogLevel.ERROR, LogLevelMarks.decorate(LogLevel.ERROR, message), error) }
     }
 
     private inline fun emit(action: () -> Unit) {

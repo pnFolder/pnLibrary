@@ -18,8 +18,8 @@ import org.pnfolder.pnlibrary.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.updates.install.ComponentLedger
 import org.pnfolder.pnlibrary.updates.install.ComponentOperation
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
-import java.nio.file.Path
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Owns the scheduler and lifecycle wiring around the update orchestrator. */
 internal class UpdateOrchestratorRuntime(
     private val configuration: UpdateConfiguration,
-    dataFolder: Path,
+    paths: LibraryPaths,
     private val logging: PlatformLogging,
     readiness: PlatformReadiness,
     installer: UpdateInstaller,
@@ -49,13 +49,13 @@ internal class UpdateOrchestratorRuntime(
         Thread(action, "pnLibrary-update-orchestrator").apply { isDaemon = true }
     }
 
-    private val installationLock = UpdateInstallationLock.acquire(dataFolder)
-    private val journal by lazy { UpdateEventJournal(dataFolder.resolve("updates/events"), warning = {
+    private val installationLock = UpdateInstallationLock.acquire(paths)
+    private val journal by lazy { UpdateEventJournal(paths.events, warning = {
         logging.log(this, LogLevel.WARNING, it)
     }) }
 
     private val componentLedger by lazy {
-        ComponentLedger(dataFolder.resolve("updates/components.json"), journal, warning = {
+        ComponentLedger(paths.components, journal, warning = {
             logging.log(this, LogLevel.WARNING, it)
         })
     }
@@ -63,7 +63,7 @@ internal class UpdateOrchestratorRuntime(
 
     val orchestrator = try { UpdateOrchestrator(
         configuration,
-        UpdateStateStore(dataFolder.resolve("updates"), warning = { logging.log(this, LogLevel.WARNING, it) }),
+        UpdateStateStore(paths.updates, warning = { logging.log(this, LogLevel.WARNING, it) }),
         executor,
         { resolveGraph(RefreshMode.CACHED) },
         stageGraph,

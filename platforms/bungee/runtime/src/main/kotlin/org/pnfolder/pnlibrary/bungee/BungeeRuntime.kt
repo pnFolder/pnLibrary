@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee
 
+import net.md_5.bungee.api.ProxyServer
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform
@@ -122,3 +123,8 @@ internal class BungeeRuntime(private val plugin: Plugin) {
         runCatchingNonFatal(action).onFailure { plugin.logger.log(Level.SEVERE, "Could not stop $part", it) }
     }
 }
+
+/** Native-backed Bungee platform API installed by the Bungee runtime. */
+private class BungeePlatformServices(
+    override val proxy: ProxyServer,
+) : BungeePlatform

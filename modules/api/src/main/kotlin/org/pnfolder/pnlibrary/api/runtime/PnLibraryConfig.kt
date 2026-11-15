@@ -8,8 +8,7 @@ import java.util.regex.PatternSyntaxException
 /**
  * Immutable runtime policy for diagnostic collection, retention, and upload.
  *
- * Paths in [excludedPaths] use dotted configuration notation, for example
- * `database.password`. Regular expressions are compiled when this object is
+ * Regular expressions are compiled when this object is
  * created, so an invalid redaction policy fails during startup rather than while
  * a support report is being generated.
  *
@@ -18,8 +17,7 @@ import java.util.regex.PatternSyntaxException
  *     upload = false,
  *     logs = true,
  *     logRecords = 500,
- *     excludedPaths = listOf("database.password"),
- *     secretKeyPatterns = listOf("(?i).*(token|secret|password).*"),
+ * *     secretKeyPatterns = listOf("(?i).*(token|secret|password).*"),
  * )
  * ```
  *
@@ -48,7 +46,6 @@ import java.util.regex.PatternSyntaxException
  * age-based deletion
  * @property taskHistoryCapacity maximum number of completed task records retained in memory;
  * `0` disables task history
- * @property excludedPaths dotted configuration paths omitted from every report
  * @property secretKeyPatterns regular expressions matched against configuration keys
  * whose values must be redacted
  * @property redactValuePatterns regular expressions whose matches are redacted inside
@@ -91,7 +88,6 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val maxReportBytes: Int = 8 * 1024 * 1024,
     val deleteAfterDays: Int = 90,
     val taskHistoryCapacity: Int = 256,
-    val excludedPaths: List<String> = emptyList(),
     val secretKeyPatterns: List<String> = emptyList(),
     val redactValuePatterns: List<String> = emptyList(),
     val privacy: Boolean = false,
@@ -148,11 +144,10 @@ data class PnLibraryConfig @JvmOverloads constructor(
         require(maxReportBytes in 65_536..64 * 1024 * 1024) { "Setting maxReportBytes must be between 64 KiB and 64 MiB" }
         require(deleteAfterDays in 0..3_650) { "Setting deleteAfterDays must be between 0 and 3650" }
         require(taskHistoryCapacity in 0..10_000) { "Setting taskHistoryCapacity must be between 0 and 10000" }
-        require(excludedPaths.size <= 128 && secretKeyPatterns.size <= 64 && redactValuePatterns.size <= 64) {
+        require(secretKeyPatterns.size <= 64 && redactValuePatterns.size <= 64) {
             "Too many diagnostic redaction rules"
         }
         require(uploadKeyId.isNotBlank() && uploadKeyId.length <= 128) { "Setting uploadKeyId is invalid" }
-        excludedPaths.forEach { require(it.isNotBlank() && it.length <= 256) { "Invalid excluded path: $it" } }
         (secretKeyPatterns + redactValuePatterns).forEach { expression ->
             require(expression.isNotBlank() && expression.length <= 256) { "Invalid diagnostic regex" }
             try {

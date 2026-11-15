@@ -5,11 +5,13 @@ import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.menu.data.MenuData
 import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
 import org.pnfolder.pnlibrary.core.menu.style.BACK
 import org.pnfolder.pnlibrary.core.menu.style.FOOTER_END
 import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.NEXT
 import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
@@ -19,9 +21,8 @@ import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.closeItem
 import org.pnfolder.pnlibrary.core.menu.style.footerCorners
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.pane
-import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.pane
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 
 private const val LIST_ROWS = 6
@@ -37,7 +38,7 @@ internal class MenuSession(
     val remote get() = remoteName != null
 
     fun allowed(player: MenuViewer, permission: String, action: () -> Unit) {
-        if (player.hasPermission(permission) || player.hasPermission("pnlibrary.admin")) action()
+        if (player.hasPermission(permission) || player.hasPermission(MenuPermissions.ADMIN)) action()
         else tell(player, ChatTone.FAILURE, "Не хватает права.", permission)
     }
 
@@ -112,7 +113,7 @@ internal class MenuSession(
             try {
                 action()
             } catch (error: Exception) {
-                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", errorReason(error))
+                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", error.rootMessage())
             }
         }
     }

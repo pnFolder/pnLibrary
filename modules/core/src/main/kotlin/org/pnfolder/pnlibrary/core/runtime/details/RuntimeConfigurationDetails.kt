@@ -16,7 +16,6 @@ internal object RuntimeConfigurationDetails {
         "taskHistoryCapacity" to config.taskHistoryCapacity,
         "keepReports" to config.keepReports,
         "maxReportBytes" to config.maxReportBytes,
-        "excludedPathCount" to config.excludedPaths.size,
         "redactionRuleCount" to (config.secretKeyPatterns.size + config.redactValuePatterns.size),
     )
 }

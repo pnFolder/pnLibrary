@@ -11,7 +11,7 @@ import java.time.Duration
  * an unknown word and an unfinished command alike, until something more specific is set.
  *
  * Handlers are attached at five levels, and the most specific level that has one wins: a subcommand, a command, a
- * plugin module, the whole plugin, and last the library's standard answer from `config.yml`.
+ * plugin module, the whole plugin, and last the library's standard answer from the library's settings.
  *
  * @property defaultMessage what the library says when no handler answers, or `null` to use the standard text of the
  * nearest built-in base class. It may contain `{name}` placeholders from [placeholders].

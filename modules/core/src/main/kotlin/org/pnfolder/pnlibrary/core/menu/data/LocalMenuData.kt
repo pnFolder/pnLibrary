@@ -22,6 +22,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.dependencyDownloads
 import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
+import org.pnfolder.pnlibrary.core.lifecycle.librarySettings
 import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
@@ -31,6 +32,8 @@ import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.PluginDirectory
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow
 import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.settings.SettingApply
+import org.pnfolder.pnlibrary.core.settings.SettingException
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages
@@ -132,6 +135,24 @@ class LocalMenuData(
 
     override fun editConfig(id: String, path: String, text: String): ConfigEditResult =
         requireNotNull(library.configurations.get(ConfigId.parse(id))) { "Файла $id нет" }.edit(path, text)
+
+    override fun settings(): List<SettingRow> = library.librarySettings()?.values().orEmpty().map { entry ->
+        val spec = entry.spec
+        SettingRow(
+            spec.key, spec.title, spec.kind.name, spec.description, entry.current, spec.default, entry.changed, spec.range(), spec.examples,
+            spec.applies == SettingApply.LIVE,
+        )
+    }
+
+    override fun changeSetting(key: String, value: String?, actor: UpdateActor): SettingOutcome {
+        val store = library.librarySettings() ?: return SettingOutcome(false, "Настройки здесь недоступны.")
+        return try {
+            val change = if (value == null) store.reset(key) else store.set(key, value)
+            SettingOutcome(true, change.after, change.spec.applies == SettingApply.LIVE)
+        } catch (error: SettingException) {
+            SettingOutcome(false, error.message.orEmpty())
+        }
+    }
 
     override fun events(): List<EventInfo> = bus.events()
 

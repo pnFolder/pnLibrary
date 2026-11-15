@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.observability.ObservabilityReportSnapshot
-import org.pnfolder.pnlibrary.core.security.EncryptedEnvelopeCodec
+import org.pnfolder.pnlibrary.core.observability.report.EncryptedEnvelopeCodec
 import org.pnfolder.pnlibrary.core.upload.UploadLedger
 import org.pnfolder.pnlibrary.core.upload.UploadProvider
 import org.pnfolder.pnlibrary.core.upload.UploadReceipt
@@ -26,7 +26,8 @@ import java.nio.file.Path
  * failures are instead returned in [DiagnosticReport.uploadError], preserving the
  * successfully written local report for manual support workflows.
  *
- * @param dataFolder runtime data root and parent of the `reports` directory
+ * @param dataFolder plugin data folder, the default root for configuration files
+ * @param reportsFolder where the generated reports are stored
  * @param config immutable diagnostic and upload policy
  * @param diagnosticsRegistry source of plugin snapshots and configuration declarations
  * @param encryptionCodec envelope codec required in encrypted mode
@@ -37,6 +38,7 @@ import java.nio.file.Path
  */
 internal class SupportReportGenerator(
     private val dataFolder: Path,
+    reportsFolder: Path,
     private val config: PnLibraryConfig,
     diagnosticsRegistry: DiagnosticsRegistry,
     platformIdentity: PlatformIdentity,
@@ -63,7 +65,7 @@ internal class SupportReportGenerator(
         observabilitySnapshot = observabilitySnapshot,
         runtimeDiagnostics = runtimeDiagnostics,
     )
-    private val reportStore = SupportReportStore(dataFolder.resolve("reports"))
+    private val reportStore = SupportReportStore(reportsFolder)
 
     /**
      * Generates one report according to [request], stores it locally, and optionally

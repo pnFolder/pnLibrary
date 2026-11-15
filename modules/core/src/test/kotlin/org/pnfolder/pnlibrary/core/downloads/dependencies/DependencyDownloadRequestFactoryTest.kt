@@ -17,7 +17,7 @@ class DependencyDownloadRequestFactoryTest {
             .url("https://example.org/plugin.jar")
             .automaticDownload(true)
             .build()
-        val plan = DependencyDownloadRequestFactory(directory).create(listOf(dependency), emptyMap())
+        val plan = DependencyDownloadRequestFactory(directory.resolve("update")).create(listOf(dependency), emptyMap())
 
         requireNotNull(plan)
         assertEquals(directory.resolve("update"), plan.request.dataDirectory)
@@ -32,7 +32,7 @@ class DependencyDownloadRequestFactoryTest {
             .automaticDownload(true)
             .build()
 
-        assertNull(DependencyDownloadRequestFactory(directory).create(
+        assertNull(DependencyDownloadRequestFactory(directory.resolve("update")).create(
             listOf(dependency),
             mapOf("vault" to "1.7.3"),
         ))

@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.core.cleanup.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens
@@ -24,7 +25,6 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.clockTime
-import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
@@ -173,7 +173,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.extractBackup(backup.id, product, player.actor).whenComplete { folder, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось выдать файлы.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось выдать файлы.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, "Файлы плагина $product выданы.", "Папка на сервере: $folder")
             }
         }
@@ -184,7 +184,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.restoreDatabase(backup.id, item.product.value, item.name, player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось вернуть базу.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось вернуть базу.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, "База «${item.name}» возвращена.", "Перезапустите плагин ${item.product.value}, чтобы он перечитал данные.")
             }
         }
@@ -213,7 +213,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.rollback(backup.id, restoreConfigurations, player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось подготовить откат.", errorReason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось подготовить откат.", error.rootMessage())
                 else tell(player, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
             }
         }

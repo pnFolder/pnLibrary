@@ -108,36 +108,38 @@ class ConfigurationServiceImplTest {
     }
 
     @Test
-    fun `every file carries the support note once, new or already existing`() {
-        Files.writeString(directory.resolve("old.yml"), "retries: 4"+"\n"+"name: custom"+"\n")
+    fun `new and rewritten files never carry a support note`() {
+        Files.writeString(directory.resolve("old.yml"), "retries: 4\nname: custom\n")
         service().use { service ->
             val scope = scope(service)
-            scope.yaml<ServiceSettings>("settings.yml") { ServiceSettings() }.load()
+            val fresh = scope.yaml<ServiceSettings>("settings.yml") { ServiceSettings() }
+            fresh.load()
+            fresh.save()
             val old = scope.yaml<ServiceSettings>("old.yml") { ServiceSettings() }
             old.load()
             old.reload()
             listOf("settings.yml", "old.yml").forEach { name ->
                 val text = Files.readString(directory.resolve(name))
-                assertEquals(1, text.split("discord.gg").size - 1, "$name: $text")
-                assertTrue(text.contains("write to us"), text)
-                assertTrue(text.contains("пишите нам"), text)
-                assertTrue(text.contains("# Discord: https://discord.gg/"), text)
+                assertFalse(text.contains("discord.gg"), "$name: $text")
+                assertFalse(text.contains("write to us"), text)
+                assertFalse(text.contains("пишите нам"), text)
             }
         }
     }
 
     @Test
-    fun `an older support note is replaced by the current one instead of being repeated`() {
-        val older = "# Если у вас возникли проблемы с плагином, пишите в наш Discord: мы всегда рады помочь.\n" +
-            "# If you have any problem with a plugin, write to our Discord: we are always happy to help.\n" +
-            "# https://discord.gg/old\n"
-        Files.writeString(directory.resolve("old.yml"), "_config-version: 1\n" + older + "retries: 4\n")
+    fun `an old support note is removed from an existing file and nothing else changes`() {
+        val note = "# Если у вас возникли проблемы с плагином, пишите нам: мы всегда рады помочь.\n" +
+            "# If you have any problem with a plugin, write to us: we are always happy to help.\n" +
+            "# Discord: https://discord.gg/old\n"
+        Files.writeString(directory.resolve("old.yml"), "_config-version: 1\n" + note + "# my note\nretries: 4\nname: custom\n")
         service().use { service ->
             scope(service).yaml<ServiceSettings>("old.yml") { ServiceSettings() }.load()
             val text = Files.readString(directory.resolve("old.yml"))
-            assertEquals(1, text.split("If you have any problem").size - 1, text)
-            assertFalse(text.contains("discord.gg/old"), text)
-            assertTrue(text.contains("retries: 4"), text)
+            assertFalse(text.contains("discord.gg"), text)
+            assertFalse(text.contains("If you have any problem"), text)
+            assertTrue(text.contains("# my note\nretries: 4"), text)
+            assertTrue(text.contains("name: custom"), text)
         }
     }
 

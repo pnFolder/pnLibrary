@@ -57,13 +57,15 @@ class PlaceholderAddressIndex {
             slots.exact[lowered]?.let { return PlaceholderEntryLookup.Match(it.entry, emptyMap()) }
         }
         var best: PlaceholderEntry<*>? = null
+        var bestSpecificity = Int.MIN_VALUE
         var bestParameters = emptyMap<String, String>()
         for (slots in scope) {
             for (registered in slots.patterns) {
                 val pattern = registered.entry.pattern ?: continue
                 val parameters = pattern.match(name) ?: continue
-                if (best == null || pattern.specificity > best.pattern!!.specificity) {
+                if (best == null || pattern.specificity > bestSpecificity) {
                     best = registered.entry
+                    bestSpecificity = pattern.specificity
                     bestParameters = parameters
                 }
             }

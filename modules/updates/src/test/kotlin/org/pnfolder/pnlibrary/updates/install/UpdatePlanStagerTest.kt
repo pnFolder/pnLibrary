@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -54,7 +55,7 @@ class UpdatePlanStagerTest {
     fun `saved transaction identifies the backup version time and originating plan`() {
         val before = Instant.now()
         stage(digest(), bytes.size.toLong())
-        val root = directory.resolve("plugins/pnLibrary/updates/transactions")
+        val root = directory.resolve("plugins/pnLibrary/data/updates/transactions")
         val path = Files.list(root).use { it.findFirst().get().resolve("journal.json") }
         val journal = TransactionJournal.load(path)
         assertFalse(Instant.parse(journal.createdAt).isBefore(before))
@@ -88,8 +89,8 @@ class UpdatePlanStagerTest {
             size, hash, URI(url))
         val release = ProductRelease(product, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), artifacts = listOf(artifact))
         val plan = UpdatePlan(1, listOf(ProductChange(product, SemanticVersion.parse("1.0.0"), version)), listOf(release))
-        val transaction = UpdateTransaction(data.resolve("updates/transactions"), ArtifactVerifier(1024), plugins)
-        UpdatePlanStager(PlatformType.BUKKIT, data, http, transaction, 1024).stage(UUID.randomUUID(), plan,
+        val transaction = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(1024), plugins)
+        UpdatePlanStager(PlatformType.BUKKIT, LibraryPaths(data), http, transaction, 1024).stage(UUID.randomUUID(), plan,
             mapOf(product to InstalledUpdateTarget(current, plugins.resolve("update"))))
     }
 

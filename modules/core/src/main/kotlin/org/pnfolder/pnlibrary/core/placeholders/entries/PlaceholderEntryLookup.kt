@@ -43,13 +43,15 @@ class PlaceholderEntryLookup(
 
     private fun bestPattern(namespace: PluginId, key: String): Match {
         var best: PlaceholderEntry<*>? = null
+        var bestSpecificity = Int.MIN_VALUE
         var bestParameters = emptyMap<String, String>()
         for (entry in entries.patternsOf(namespace)) {
             scanned.incrementAndGet()
             val pattern = entry.pattern ?: continue
             val parameters = pattern.match(key) ?: continue
-            if (best == null || pattern.specificity > best.pattern!!.specificity) {
+            if (best == null || pattern.specificity > bestSpecificity) {
                 best = entry
+                bestSpecificity = pattern.specificity
                 bestParameters = parameters
             }
         }

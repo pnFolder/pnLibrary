@@ -4,6 +4,8 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 
+internal fun pageCount(total: Int, pageSize: Int): Int = ((total + pageSize - 1) / pageSize).coerceAtLeast(1)
+
 internal fun chatPager(kit: ChatKit, base: String, page: Int, pages: Int): Component {
     fun link(target: Int, label: String) = kit.option(label, "$base $target", "Страница $target из $pages", ChatPalette.SOFT)
     var line = kit.text("  ")

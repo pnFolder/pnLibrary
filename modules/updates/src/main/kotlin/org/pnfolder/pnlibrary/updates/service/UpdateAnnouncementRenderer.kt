@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTheme
-import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels
+import org.pnfolder.pnlibrary.updates.policy.title
 
 /** Renders automatic update notifications with the same card used by console status. */
 internal object UpdateAnnouncementRenderer {
@@ -50,7 +50,7 @@ internal object UpdateAnnouncementRenderer {
         card.section("ОБНОВЛЕНИЯ")
         changes.forEachIndexed { index, change ->
             val release = snapshot.plan?.selected?.firstOrNull { it.product == change.product }
-            val channel = release?.channel?.let(UpdateChannelLabels::channelTitle) ?: "не указан"
+            val channel = release?.channel?.title() ?: "не указан"
             val api = release?.supportedApi?.let { "${it.minimum}–${it.maximum}" } ?: "не указан"
             val artifact = release?.artifacts?.firstOrNull()
             val platform = artifact?.platform?.displayName ?: "не указана"
@@ -82,7 +82,7 @@ internal object UpdateAnnouncementRenderer {
                     .groupBy(ReleaseSummary::channel)
                     .mapValues { (_, releases) -> releases.maxByOrNull { it.version } }
                 latestByChannel.values.filterNotNull().forEach { release ->
-                    card.firstDetail(UpdateChannelLabels.channelTitle(release.channel), release.version)
+                    card.firstDetail(release.channel.title(), release.version)
                         .lastDetail("Опубликована", release.publishedAt?.toString() ?: "дата неизвестна")
                 }
                 if (index != histories.lastIndex) card.blank()

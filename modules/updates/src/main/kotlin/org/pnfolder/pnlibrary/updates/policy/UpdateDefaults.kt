@@ -3,14 +3,18 @@ package org.pnfolder.pnlibrary.updates.policy
 import java.time.Duration
 
 /**
- * Fixed update rules that administrators cannot change.
+ * The update rules and their default values.
  *
- * Checks and warnings are never switched off by a file: an administrator pauses one plugin with a command
- * (`hold`), which always expires. Every number the update system relies on lives here, so it is found in one place.
+ * Checks and warnings are never switched off: an administrator pauses one plugin with a command (`hold`), which always
+ * expires. Every number the update system relies on lives here, so it is found in one place. The check interval and the
+ * two download timeouts are only defaults: an administrator changes them with `/pn settings` (see [UpdateTiming]).
  */
 object UpdateDefaults {
     /** How often the release catalogs are asked for new versions; the first check runs at startup. */
     val CHECK_INTERVAL: Duration = Duration.ofHours(6)
+
+    val MIN_REMINDER_INTERVAL: Duration = Duration.ofMinutes(1)
+    val MAX_REMINDER_INTERVAL: Duration = Duration.ofHours(6)
 
     /**
      * How often administrators are reminded in the console and in chat about an update that is available or waits
@@ -20,11 +24,8 @@ object UpdateDefaults {
      */
     val REMINDER_INTERVAL: Duration = reminderInterval(Duration.ofHours(6))
 
-    val MIN_REMINDER_INTERVAL: Duration = Duration.ofMinutes(1)
-    val MAX_REMINDER_INTERVAL: Duration = Duration.ofHours(6)
-
     private fun reminderInterval(value: Duration): Duration {
-        require(value >= Duration.ofMinutes(1) && value <= Duration.ofHours(6)) { "Reminder interval must be 1 minute to 6 hours" }
+        require(value >= MIN_REMINDER_INTERVAL && value <= MAX_REMINDER_INTERVAL) { "Reminder interval must be 1 minute to 6 hours" }
         return value
     }
 

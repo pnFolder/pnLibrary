@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.TrustedHosts
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.nio.file.Path
 import java.util.UUID
 
@@ -32,7 +33,7 @@ internal data class InstalledUpdateTarget(
 /** Downloads every artifact in an update plan and prepares one restart transaction. */
 internal class UpdatePlanStager(
     private val platform: PlatformType,
-    private val dataFolder: Path,
+    private val paths: LibraryPaths,
     private val http: TrustedHttpClient,
     private val transaction: UpdateTransaction,
     private val maximumArtifactBytes: Long,
@@ -45,7 +46,7 @@ internal class UpdatePlanStager(
         installedTargets: Map<ProductId, InstalledUpdateTarget>,
         configurationSnapshot: UUID? = null,
     ) {
-        val stagingDirectory = dataFolder.resolve("updates/staging/$planId")
+        val stagingDirectory = paths.staging.resolve(planId.toString())
         val artifacts = plan.changes.map { change ->
             prepareArtifact(change, plan, stagingDirectory, installedTargets[change.product])
         }
@@ -82,7 +83,7 @@ internal class UpdatePlanStager(
             sha256 = artifact.sha256,
         )
         val target = installedTarget?.updateDirectory?.resolve(installedTarget.currentJar.fileName)
-            ?: dataFolder.parent.resolve("update").resolve(artifact.file)
+            ?: paths.serverUpdateFolder.resolve(artifact.file)
 
         return TransactionArtifact(
             specification = specification,
@@ -91,7 +92,7 @@ internal class UpdatePlanStager(
             rollbackSource = installedTarget?.currentJar ?: target,
             previousVersion = change.from?.toString(),
             previousApi = installedTarget?.supportedApi,
-            installedTarget = installedTarget?.currentJar ?: dataFolder.parent.resolve(artifact.file),
+            installedTarget = installedTarget?.currentJar ?: paths.plugins.resolve(artifact.file),
         )
     }
 

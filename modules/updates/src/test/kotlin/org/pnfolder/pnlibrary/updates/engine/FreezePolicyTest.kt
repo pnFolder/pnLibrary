@@ -27,27 +27,27 @@ class FreezePolicyTest {
     @Test
     fun `a pause saved under the older thirty day limit ends within seven days`() {
         val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
-        val file = directory.resolve("freezes.json")
-        Files.write(file, """{"pnmarket":${clock.instant().plus(Duration.ofDays(30)).toEpochMilli()}}""".toByteArray())
-        assertEquals(Duration.ofDays(7), FreezeStore(file, clock).remaining(ProductId.of("pnmarket")))
+        val file = directory.resolve("preferences.json")
+        Files.write(file, """{"freezes":{"pnmarket":${clock.instant().plus(Duration.ofDays(30)).toEpochMilli()}}}""".toByteArray())
+        assertEquals(Duration.ofDays(7), FreezeStore(UpdatePreferencesStore(file), clock).remaining(ProductId.of("pnmarket")))
     }
 
     @Test
     fun `persists absolute expiry and does not restart duration`() {
         val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
-        val file = directory.resolve("freezes.json")
+        val file = directory.resolve("preferences.json")
         val market = ProductId.of("pnmarket")
-        FreezeStore(file, clock).freeze(market, Duration.ofHours(2))
+        FreezeStore(UpdatePreferencesStore(file), clock).freeze(market, Duration.ofHours(2))
 
         clock.advance(Duration.ofMinutes(30))
-        val restarted = FreezeStore(file, clock)
+        val restarted = FreezeStore(UpdatePreferencesStore(file), clock)
         assertEquals(Duration.ofMinutes(90), restarted.remaining(market))
     }
 
     @Test
     fun `expiry removes only the elapsed component`() {
         val clock = MutableClock(Instant.parse("2026-09-17T10:00:00Z"))
-        val store = FreezeStore(directory.resolve("freezes.json"), clock)
+        val store = FreezeStore(UpdatePreferencesStore(directory.resolve("preferences.json")), clock)
         val market = ProductId.of("pnmarket")
         val auth = ProductId.of("pnauth")
         store.freeze(market, Duration.ofMinutes(1))

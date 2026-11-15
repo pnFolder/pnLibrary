@@ -101,11 +101,35 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `tools/release`, `tools/api`, `tools/ci` | скрипты, которые запускает CI: выпуск релиза, проверка поколения API, подготовка нативных сборок |
 | `tools/support` | `decode_pnsupport.py`: расшифровка отчётов `/pn debug` |
 
+## Папка данных
+
+Состояние библиотеки лежит в одной папке `plugins/pnLibrary/data/`. Рядом с ней остаются только то, что правит администратор
+(`localization/`), `link.key` и серверная папка `plugins/update`; настройки библиотеки лежат в `data/settings.json`. В корне папки пишутся две справки для администратора (`Помощь.txt`, `Настройки.txt`), их текст живёт в коде. Все пути задаёт один класс
+`LibraryPaths` (пакет `updates.layout`, модуль `updates`: его видят и `updates`, и `core`).
+
+```
+data/
+  updates/        каталог, события, транзакции, копии, preferences.json (каналы, автозагрузка, паузы), install.lock
+  journal/        журнал сервера
+  history/        task-history.tsv, event-history.tsv
+  reports/        отчёты поддержки
+  observability/  observations.jsonl, attachments/
+  diagnostics/history/
+  downloads/      состояние скачивания
+  upload-ledger.json
+```
+
+Каналы, автозагрузку и паузы хранит один файл `preferences.json` (`UpdatePreferencesStore`): одна блокировка и одна модель
+в памяти, каждый владелец (`UpdatePolicyOverrides`, `FreezeStore`) меняет только свой раздел. `LegacyLayoutMigration` при старте
+(и перед офлайн-установщиком) переносит состояние старых версий в `data/`, ничего не перезаписывая, и сливает старые
+`settings.json` и `freezes.json` в `preferences.json`.
+
 ## Пакеты `core`
 
 | Пакет | За что отвечает |
 |---|---|
-| `core.runtime` | запуск рантайма (`PnLibraryLauncher`, корень сборки `PnLibraryImpl`), жизненный цикл, `config.yml`, часовой пояс |
+| `core.runtime` | запуск рантайма (`PnLibraryLauncher`, корень сборки `PnLibraryImpl`), жизненный цикл, часовой пояс |
+| `core.settings` | настройки библиотеки: один реестр `SettingsRegistry` (ключ, тип, границы, описание), хранилище `SettingsStore` (`data/settings.json`), разовый перенос старых `config.yml` и `downloads.yml`; `LibraryInfoFiles` каждый запуск (и каждое изменение настройки) заново пишет `Помощь.txt` и `Настройки.txt` из реестра и текущих ссылок, файл переписывается только если изменился текст, сбой записи не мешает запуску; команда `/pn settings` и страница меню читают этот реестр, см. [settings.md](settings.md) |
 | `core.commands` | дерево команд, разбор аргументов, пять уровней ответа на ошибки |
 | `core.commands.events`, `.tasks`, `.groups`, `.proxy` | команды `/pn bus`, `/pn tasks`, группы серверов, `/pn servers` и управление прокси |
 | `core.menu` | меню `/pn gui`, платформенно-нейтральное; данные берёт у `MenuData` (свои или чужого сервера по связи) |
@@ -114,15 +138,15 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `core.journal` (модуль `journal`) | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
 | `core.upload` | загрузка зашифрованных отчётов |
-| `updates.*` (модуль `updates`) и `core.updates.catalog` (в `core`) | `core.updates.catalog` команды и страницы; `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
+| `updates.*` (модуль `updates`; `layout` пути и перенос старой папки) и `core.updates.catalog` (в `core`) | `core.updates.catalog` команды и страницы; `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |
 | `core.plugin.module` | сборка модуля: ресурсы, метаданные, зависимости, расширения |
 | `core.remote` | политики |
-| `core.placeholders`, `core.events` (свои модули), `core.tasks`, `core.cooldowns`, `core.services`, `core.audiences`, `core.text`, `core.expansions` | реализации одноимённых сервисов API |
+| `core.placeholders`, `core.events` (свои модули), `core.tasks`, `core.services`, `core.text`, `core.expansions` | реализации одноимённых сервисов API |
 | `core.ui` | цвета палитры для консоли |
-| `core.security`, `core.cleanup`, `core.lifecycle` | шифрование, очистка ресурсов, связь рантайма с ресурсами |
+| `core.cleanup`, `core.lifecycle` | очистка ресурсов, связь рантайма с ресурсами (шифрование отчётов — `core.observability.report`) |
 | `core.proxy` | сборка связи с прокси (`ProxyLink`) |
 
 ## Сообщения
