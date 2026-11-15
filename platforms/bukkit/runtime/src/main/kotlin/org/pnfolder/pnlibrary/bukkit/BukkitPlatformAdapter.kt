@@ -8,10 +8,13 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
+import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter

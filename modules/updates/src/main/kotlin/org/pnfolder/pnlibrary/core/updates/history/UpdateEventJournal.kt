@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
-import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
+import org.pnfolder.pnlibrary.core.updates.install.ComponentOperation
 import org.pnfolder.pnlibrary.core.updates.service.UpdateHealthReport
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
@@ -249,8 +249,8 @@ internal class UpdateEventJournal(
         /** Pruning runs once per this many writes. */
         const val PRUNE_EVERY_WRITES = 25
         val COMPONENT_OPERATIONS = setOf(
-            ComponentLedger.OPERATION_ADDED, ComponentLedger.OPERATION_REMOVED,
-            ComponentLedger.OPERATION_VERSION_CHANGED, ComponentLedger.OPERATION_SETTINGS_CHANGED,
+            ComponentOperation.ADDED, ComponentOperation.REMOVED,
+            ComponentOperation.VERSION_CHANGED, ComponentOperation.SETTINGS_CHANGED,
         )
         val OPERATIONS = setOf("STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK") + COMPONENT_OPERATIONS
     }

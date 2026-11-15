@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.updates.engine.CatalogRelease
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.CatalogRelease
 import org.pnfolder.pnlibrary.core.updates.policy.ReleaseChannelSelector
 import java.nio.file.Path
 import java.util.concurrent.CompletionStage

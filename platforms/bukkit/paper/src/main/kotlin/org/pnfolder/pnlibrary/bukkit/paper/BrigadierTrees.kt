@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.bukkit.paper
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.StringReader
-import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -14,6 +13,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.tree.LiteralCommandNode
+import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import org.pnfolder.pnlibrary.api.commands.ArgumentSpec
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNode

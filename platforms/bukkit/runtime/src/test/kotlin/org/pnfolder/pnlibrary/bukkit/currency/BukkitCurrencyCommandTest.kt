@@ -1,7 +1,5 @@
 package org.pnfolder.pnlibrary.bukkit.currency
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -17,6 +15,7 @@ import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler

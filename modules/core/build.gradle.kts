@@ -10,11 +10,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-core" }
 dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:runtime-spi"))
-    api(project(":modules:link"))
-    api(project(":modules:journal"))
-    api(project(":modules:upload"))
-    api(project(":modules:events"))
-    api(project(":modules:placeholders"))
+    implementation(project(":modules:common"))
     api(project(":modules:updates"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))

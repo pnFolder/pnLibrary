@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.core.updates.history.UpdateEventJournal
+import org.pnfolder.pnlibrary.core.updates.install.ComponentOperation
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
@@ -41,9 +42,9 @@ class ComponentLedgerTest {
         val recorded = history().toSet()
         assertEquals(
             setOf(
-                ComponentLedger.OPERATION_ADDED to "shop",
-                ComponentLedger.OPERATION_REMOVED to "currency",
-                ComponentLedger.OPERATION_VERSION_CHANGED to "pnlibrary",
+                ComponentOperation.ADDED to "shop",
+                ComponentOperation.REMOVED to "currency",
+                ComponentOperation.VERSION_CHANGED to "pnlibrary",
             ),
             recorded,
         )
@@ -65,7 +66,7 @@ class ComponentLedgerTest {
         ledger.observe(mapOf("pnlibrary" to component("2.0.0", "beta", true)))
 
         val event = journal.read().single()
-        assertEquals(ComponentLedger.OPERATION_SETTINGS_CHANGED, event.operation)
+        assertEquals(ComponentOperation.SETTINGS_CHANGED, event.operation)
         assertEquals("канал: stable → beta; автозагрузка: выкл → вкл", event.message)
     }
 

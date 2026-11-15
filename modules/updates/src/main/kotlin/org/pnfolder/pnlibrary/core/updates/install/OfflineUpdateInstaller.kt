@@ -4,12 +4,12 @@ import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactSpecification
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
-import org.pnfolder.pnlibrary.core.updates.engine.TransactionArtifact
-import org.pnfolder.pnlibrary.core.updates.engine.TransactionState
 import org.pnfolder.pnlibrary.core.updates.engine.UpdatePaths
-import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactSpecification
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactVerifier
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.TransactionArtifact
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.TransactionState
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.UpdateTransaction
 import org.pnfolder.pnlibrary.core.updates.history.ConfigurationRestorer
 import org.pnfolder.pnlibrary.core.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.core.updates.service.UpdateInstallationLock

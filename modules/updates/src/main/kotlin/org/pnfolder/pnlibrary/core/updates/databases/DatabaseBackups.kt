@@ -4,6 +4,9 @@ import org.pnfolder.pnlibrary.api.config.DatabaseKind
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
+import org.pnfolder.pnlibrary.core.updates.databases.mongo.MongoEngine
+import org.pnfolder.pnlibrary.core.updates.databases.mysql.MysqlEngine
+import org.pnfolder.pnlibrary.core.updates.databases.postgres.PostgresEngine
 import org.pnfolder.pnlibrary.core.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.core.updates.history.PrivateFiles
 import java.net.URLDecoder

@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.updates.service
 
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogClient
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogStore
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogStore
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.core.updates.install.ReleaseCatalogGateway
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import java.nio.file.Path

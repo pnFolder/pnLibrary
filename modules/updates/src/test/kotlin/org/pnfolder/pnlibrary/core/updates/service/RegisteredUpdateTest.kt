@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.updates.engine.CatalogArtifact
-import org.pnfolder.pnlibrary.core.updates.engine.CatalogRelease
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.CatalogArtifact
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.CatalogRelease
 import java.net.URI
 import java.nio.file.Paths
 import java.time.Instant

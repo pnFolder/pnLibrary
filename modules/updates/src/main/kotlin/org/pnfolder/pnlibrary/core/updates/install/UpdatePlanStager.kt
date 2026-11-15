@@ -8,12 +8,12 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactDownloader
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactSpecification
-import org.pnfolder.pnlibrary.core.updates.engine.TransactionArtifact
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHosts
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
-import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactDownloader
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactSpecification
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHosts
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.TransactionArtifact
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.UpdateTransaction
 import java.nio.file.Path
 import java.util.UUID
 

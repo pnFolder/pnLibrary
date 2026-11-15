@@ -4,12 +4,12 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
-import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
+import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
-import org.pnfolder.pnlibrary.core.placeholders.GlobalPlaceholderValueStore
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.placeholders.builtin.GlobalPlaceholderValueStore
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle

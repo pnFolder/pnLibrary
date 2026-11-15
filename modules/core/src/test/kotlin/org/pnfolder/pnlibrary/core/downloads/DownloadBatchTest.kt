@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
+import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import java.util.concurrent.CompletionException
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors

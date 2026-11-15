@@ -2,6 +2,9 @@ package org.pnfolder.pnlibrary.bukkit
 
 import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
+import org.pnfolder.pnlibrary.bukkit.currency.error
+import org.pnfolder.pnlibrary.bukkit.integration.BukkitIntegrations
 import org.pnfolder.pnlibrary.bukkit.inventory.BukkitMenus
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo

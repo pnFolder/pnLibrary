@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.core.updates.install
 
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.updates.CatalogSource
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalog
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogClient
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogCodec
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalog
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogCodec
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
 import java.net.URI
 import java.util.Base64
 import java.util.Collections

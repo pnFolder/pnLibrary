@@ -7,11 +7,6 @@ include(
     ":modules:runtime-spi",
     ":modules:console",
     // Runtime.
-    ":modules:link",
-    ":modules:placeholders",
-    ":modules:events",
-    ":modules:upload",
-    ":modules:journal",
     ":modules:core",
     ":modules:updates",
     ":modules:bootstrap",

@@ -27,11 +27,6 @@ apiValidation {
     ignoredProjects.addAll(
         listOf(
             "core",
-            "link",
-            "journal",
-            "upload",
-            "events",
-            "placeholders",
             "updates",
             "distribution",
             "runtime",

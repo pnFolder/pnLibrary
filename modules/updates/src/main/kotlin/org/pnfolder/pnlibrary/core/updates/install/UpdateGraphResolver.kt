@@ -9,10 +9,10 @@ import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
 import org.pnfolder.pnlibrary.core.updates.engine.ResolverPolicy
 import org.pnfolder.pnlibrary.core.updates.engine.UpdateResolver
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.policy.UpdatePolicyOverrides
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate

@@ -9,11 +9,12 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.history.UpdateEventJournal
 import org.pnfolder.pnlibrary.core.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.core.updates.install.ComponentLedger
+import org.pnfolder.pnlibrary.core.updates.install.ComponentOperation
 import org.pnfolder.pnlibrary.core.updates.install.UpdateInstaller
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
@@ -117,7 +118,7 @@ internal class UpdateOrchestratorRuntime(
     fun recordSettingsChange(registration: RegisteredUpdate, message: String, actor: UpdateActor) {
         runCatchingNonFatal {
             journal.recordComponent(
-                ComponentLedger.OPERATION_SETTINGS_CHANGED, registration.product, registration.version, registration.version,
+                ComponentOperation.SETTINGS_CHANGED, registration.product, registration.version, registration.version,
                 message, actor,
             )
             val snapshot = registration.snapshot

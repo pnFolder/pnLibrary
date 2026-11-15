@@ -15,6 +15,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import java.util.UUID

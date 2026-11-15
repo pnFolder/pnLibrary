@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.bukkit.BukkitTitle
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView

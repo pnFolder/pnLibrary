@@ -39,16 +39,16 @@ internal class ComponentLedger(
             current.toSortedMap().forEach { (product, now) ->
                 val before = previous[product]
                 when {
-                    before == null -> journal.recordComponent(OPERATION_ADDED, product, null, now.version, null)
+                    before == null -> journal.recordComponent(ComponentOperation.ADDED, product, null, now.version, null)
                     before.version != now.version && product !in verifiedByHealth ->
-                        journal.recordComponent(OPERATION_VERSION_CHANGED, product, before.version, now.version, null)
+                        journal.recordComponent(ComponentOperation.VERSION_CHANGED, product, before.version, now.version, null)
                 }
                 if (before != null) describeSettings(before, now)?.let { message ->
-                    journal.recordComponent(OPERATION_SETTINGS_CHANGED, product, now.version, now.version, message)
+                    journal.recordComponent(ComponentOperation.SETTINGS_CHANGED, product, now.version, now.version, message)
                 }
             }
             previous.toSortedMap().filterKeys { it !in current }.forEach { (product, before) ->
-                journal.recordComponent(OPERATION_REMOVED, product, before.version, before.version, null)
+                journal.recordComponent(ComponentOperation.REMOVED, product, before.version, before.version, null)
             }
         }
         save(current)
@@ -95,13 +95,5 @@ internal class ComponentLedger(
         } finally {
             Files.deleteIfExists(temporary)
         }
-    }
-
-    internal companion object {
-        /** Journal operation names written for component changes. */
-        const val OPERATION_ADDED = "COMPONENT_ADDED"
-        const val OPERATION_REMOVED = "COMPONENT_REMOVED"
-        const val OPERATION_VERSION_CHANGED = "VERSION_CHANGED"
-        const val OPERATION_SETTINGS_CHANGED = "SETTINGS_CHANGED"
     }
 }

@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.updates.CatalogSource
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalog
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogClient
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalogStore
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalog
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogClient
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogStore
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
 import java.net.URI
 import java.nio.file.Path
 import java.time.Duration

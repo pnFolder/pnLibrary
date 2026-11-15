@@ -8,11 +8,11 @@ import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.release.*
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerificationException
-import org.pnfolder.pnlibrary.core.updates.engine.ArtifactVerifier
-import org.pnfolder.pnlibrary.core.updates.engine.TransactionJournal
-import org.pnfolder.pnlibrary.core.updates.engine.TrustedHttpClient
-import org.pnfolder.pnlibrary.core.updates.engine.UpdateTransaction
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactVerificationException
+import org.pnfolder.pnlibrary.core.updates.engine.net.ArtifactVerifier
+import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.TransactionJournal
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.UpdateTransaction
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path

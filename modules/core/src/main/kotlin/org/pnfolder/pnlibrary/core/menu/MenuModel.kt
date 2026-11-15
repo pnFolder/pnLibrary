@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.menu
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.core.link.Link
+import org.pnfolder.pnlibrary.core.menu.style.title
 import java.util.UUID
 
 /**

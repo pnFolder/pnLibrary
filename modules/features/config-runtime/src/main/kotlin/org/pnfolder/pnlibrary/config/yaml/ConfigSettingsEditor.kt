@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-import org.pnfolder.pnlibrary.api.config.ConfigEditException
 import org.pnfolder.pnlibrary.api.config.ConfigDuration
+import org.pnfolder.pnlibrary.api.config.ConfigEditException
 import org.pnfolder.pnlibrary.api.config.ConfigEditable
 import org.pnfolder.pnlibrary.api.config.ConfigHint
-import org.pnfolder.pnlibrary.api.config.ConfigStep
 import org.pnfolder.pnlibrary.api.config.ConfigRange
 import org.pnfolder.pnlibrary.api.config.ConfigSecret
 import org.pnfolder.pnlibrary.api.config.ConfigSetting
 import org.pnfolder.pnlibrary.api.config.ConfigSettingKind
+import org.pnfolder.pnlibrary.api.config.ConfigStep
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.Locale

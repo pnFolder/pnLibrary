@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu
 
+import org.pnfolder.pnlibrary.core.menu.data.MenuData
+
 /**
  * The inventory menu of `/pn gui`: everything the update commands do, on several connected screens.
  *

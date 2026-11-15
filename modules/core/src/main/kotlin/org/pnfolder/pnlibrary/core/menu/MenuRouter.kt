@@ -3,8 +3,25 @@ package org.pnfolder.pnlibrary.core.menu
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
-import org.pnfolder.pnlibrary.core.link.NetworkReport
-import org.pnfolder.pnlibrary.core.link.NetworkServer
+import org.pnfolder.pnlibrary.core.link.report.NetworkReport
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
+import org.pnfolder.pnlibrary.core.menu.data.EventAbout
+import org.pnfolder.pnlibrary.core.menu.screens.BusHistoryScreens
+import org.pnfolder.pnlibrary.core.menu.screens.BusScreens
+import org.pnfolder.pnlibrary.core.menu.screens.ConfigScreens
+import org.pnfolder.pnlibrary.core.menu.screens.Filter
+import org.pnfolder.pnlibrary.core.menu.screens.GroupScreens
+import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens
+import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens
+import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens
+import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens
+import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens
+import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.TaskScreens
+import org.pnfolder.pnlibrary.core.menu.screens.UpdateScreens
+import org.pnfolder.pnlibrary.core.menu.style.Row
+import org.pnfolder.pnlibrary.core.menu.style.duration
 import java.time.Duration
 
 /** Opens menu screens by route and keeps the navigation back stack of a session. */

@@ -3,8 +3,11 @@ package org.pnfolder.pnlibrary.core.menu
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
-import org.pnfolder.pnlibrary.core.link.NetworkReport
-import org.pnfolder.pnlibrary.core.link.NetworkServer
+import org.pnfolder.pnlibrary.core.link.report.NetworkReport
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
+import org.pnfolder.pnlibrary.core.menu.data.EventAbout
+import org.pnfolder.pnlibrary.core.menu.screens.Filter
+import org.pnfolder.pnlibrary.core.menu.style.Row
 import java.time.Duration
 
 /** The screens that more than one part of the menu opens, so each part needs no knowledge of the others. */

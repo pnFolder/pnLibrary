@@ -13,10 +13,10 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import org.pnfolder.pnlibrary.bukkit.menu.PluginsMenu
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
-import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
-import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
+import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
+import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.link.Link

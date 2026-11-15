@@ -18,9 +18,9 @@ import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
-import org.pnfolder.pnlibrary.core.updates.engine.ReleaseCatalog
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalog
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.core.updates.policy.UpdatePolicyOverrides
 import org.pnfolder.pnlibrary.core.updates.service.RegisteredUpdate

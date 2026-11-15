@@ -8,6 +8,9 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.core.updates.engine.*
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.*
+import org.pnfolder.pnlibrary.core.updates.engine.net.*
+import org.pnfolder.pnlibrary.core.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.core.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.core.updates.service.UpdateInstallationLock
 import java.nio.file.Files

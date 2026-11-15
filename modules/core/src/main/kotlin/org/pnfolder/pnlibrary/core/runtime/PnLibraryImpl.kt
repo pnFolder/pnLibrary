@@ -44,7 +44,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
 import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
+import org.pnfolder.pnlibrary.core.placeholders.builtin.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
 import org.pnfolder.pnlibrary.core.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl

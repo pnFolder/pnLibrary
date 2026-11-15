@@ -22,8 +22,8 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.cooldowns.InMemoryCooldowns
-import org.pnfolder.pnlibrary.core.downloads.CompositeDownloadRegistration
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.dependencies.CompositeDownloadRegistration
+import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
 import org.pnfolder.pnlibrary.core.plugin.ModuleMetrics

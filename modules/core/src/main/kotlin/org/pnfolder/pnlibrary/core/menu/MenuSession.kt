@@ -5,6 +5,26 @@ import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.core.menu.data.MenuData
+import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
+import org.pnfolder.pnlibrary.core.menu.style.BACK
+import org.pnfolder.pnlibrary.core.menu.style.CLOSE
+import org.pnfolder.pnlibrary.core.menu.style.FOOTER_END
+import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.LIST_ROWS
+import org.pnfolder.pnlibrary.core.menu.style.NEXT
+import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
+import org.pnfolder.pnlibrary.core.menu.style.REFRESH
+import org.pnfolder.pnlibrary.core.menu.style.ROUTES
+import org.pnfolder.pnlibrary.core.menu.style.Row
+import org.pnfolder.pnlibrary.core.menu.style.Style
+import org.pnfolder.pnlibrary.core.menu.style.backItem
+import org.pnfolder.pnlibrary.core.menu.style.closeItem
+import org.pnfolder.pnlibrary.core.menu.style.footerCorners
+import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.menu.style.pane
+import org.pnfolder.pnlibrary.core.menu.style.reason
+import org.pnfolder.pnlibrary.core.menu.style.title
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 
 /** State of one open menu: viewer, data source and the current screen. */

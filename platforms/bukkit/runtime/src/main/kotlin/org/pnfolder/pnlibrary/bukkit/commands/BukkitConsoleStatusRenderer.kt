@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels
+import org.pnfolder.pnlibrary.core.updates.policy.UpdateChannelLabels
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset

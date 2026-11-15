@@ -2,6 +2,8 @@ package org.pnfolder.pnlibrary.core.menu
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.core.menu.style.Row
+import org.pnfolder.pnlibrary.core.menu.style.title
 
 /** The helpers every screen group uses; they live in the [MenuSession] and are only forwarded here. */
 internal abstract class MenuScreens(private val session: MenuSession, protected val routes: MenuRoutes) {

@@ -73,7 +73,7 @@ import java.util.regex.PatternSyntaxException
  * expression is invalid
  */
 data class PnLibraryConfig @JvmOverloads constructor(
-    val upload: Boolean = true,
+    val upload: Boolean = false,
     val uploadMode: String = "encrypted",
     val uploadProviders: List<String> = listOf("catbox", "fileio"),
     val uploadEndpoint: String = "https://api.mclo.gs/1/log",

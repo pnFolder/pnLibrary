@@ -4,8 +4,8 @@ import net.md_5.bungee.api.connection.Server
 import net.md_5.bungee.api.event.PluginMessageEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.event.EventHandler
-import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
+import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
 
 /** Takes the reports that game servers send on the pnLibrary link channel; messages from players are dropped. */
 internal class BungeeLinkListener(private val receiver: LinkReceiver) : Listener {

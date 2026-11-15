@@ -17,13 +17,11 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAnnouncementRenderer
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCommandWords
 import org.pnfolder.pnlibrary.core.updates.databases.DatabaseBackups
 import org.pnfolder.pnlibrary.core.updates.databases.DatabaseSources
 import org.pnfolder.pnlibrary.core.updates.engine.FreezeStore
-import org.pnfolder.pnlibrary.core.updates.engine.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.engine.ResolutionResult
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.core.updates.install.UpdateGraphResolver
 import org.pnfolder.pnlibrary.core.updates.install.UpdateInstaller
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateAutomaticPolicy

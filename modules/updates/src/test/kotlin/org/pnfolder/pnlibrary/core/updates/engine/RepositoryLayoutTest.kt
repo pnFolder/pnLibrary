@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalog
+import org.pnfolder.pnlibrary.core.updates.engine.catalog.ReleaseCatalogCodec
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

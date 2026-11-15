@@ -26,7 +26,7 @@ class PnLibraryConfigLoaderTest {
         assertTrue(text.contains("database.password"))
         assertFalse(text.contains("upload"))
         assertFalse(text.contains("log-records"))
-        assertEquals(true, defaults.upload)
+        assertEquals(false, defaults.upload)
         assertEquals(200, defaults.logRecords)
 
         Files.writeString(file, """
