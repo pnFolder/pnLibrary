@@ -30,7 +30,6 @@ import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
 import org.pnfolder.pnlibrary.core.menu.style.ROLLBACK
 import org.pnfolder.pnlibrary.core.menu.style.STATS
 import org.pnfolder.pnlibrary.core.menu.style.TASKS
-import org.pnfolder.pnlibrary.core.menu.style.duration
 import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl

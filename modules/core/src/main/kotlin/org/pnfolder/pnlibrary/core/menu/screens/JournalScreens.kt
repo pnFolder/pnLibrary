@@ -12,30 +12,31 @@ import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
-import org.pnfolder.pnlibrary.core.menu.style.DETAILS_SHOWN
 import org.pnfolder.pnlibrary.core.menu.style.DETAIL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.DETAIL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.FILTER
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_HOURS
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_LIMIT
-import org.pnfolder.pnlibrary.core.menu.style.LEVELS
-import org.pnfolder.pnlibrary.core.menu.style.LEVEL_CYCLE
 import org.pnfolder.pnlibrary.core.menu.style.MESSAGE_PREVIEW
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
-import org.pnfolder.pnlibrary.core.menu.style.TIMES_PREVIEW
-import org.pnfolder.pnlibrary.core.menu.style.TRACE_LINES
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.clockStamp
+import org.pnfolder.pnlibrary.core.menu.style.clockTime
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.stamp
-import org.pnfolder.pnlibrary.core.menu.style.time
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import java.time.Instant
+
+private val LEVEL_CYCLE = listOf<String?>(null, "error", "warning", "info")
+private val LEVELS = mapOf("error" to "ошибки", "warning" to "предупреждения", "info" to "сведения")
+private const val TRACE_LINES = 12
+private const val DETAILS_SHOWN = 8
+private const val TIMES_PREVIEW = 5
 
 /** Menu screens for the journal of recorded problems. */
 internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -79,7 +80,7 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         val material = journalMaterial(group.level)
         val parameters = listOf(
             "Источник" to group.source,
-            "Когда" to time(Instant.ofEpochMilli(group.lastMillis)),
+            "Когда" to clockTime(Instant.ofEpochMilli(group.lastMillis)),
             "Повторов" to "${group.count}",
         )
         val lore = Style.lore(
@@ -95,7 +96,7 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
             tell(player, ChatTone.INFO, "Это событие уже вышло из журнала.")
             return back(player)
         }
-        val builder = frame(Menus.chest(title("Событие")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Событие")).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, journalSummary(detail))
         detail.stackTrace?.let { trace ->
             builder.button(20, traceItem(trace), go { who -> who.close(); runCommand(who, "pn events full $id") })
@@ -116,12 +117,12 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
     private fun journalSummary(detail: JournalDetail): ItemSpec {
         val last = Instant.ofEpochMilli(detail.times.first())
         val summary = Style.lore(
-            wrap(detail.message),
+            wrapText(detail.message),
             listOf(
                 "Важность" to LEVELS.getValue(detail.level),
                 "Источник" to detail.source,
                 "Повторов" to "${detail.times.size}",
-                "Последний раз" to stamp(last),
+                "Последний раз" to clockStamp(last),
                 "" to ago(last),
             ),
         )
@@ -130,7 +131,7 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
     }
 
     private fun traceItem(trace: String): ItemSpec {
-        val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrap(trace, limit = TRACE_LINES).map { Style.danger(it) })
+        val lore = Style.lore(emptyList(), emptyList(), Style.left("весь текст в чат"), extra = wrapText(trace, limit = TRACE_LINES).map { Style.danger(it) })
         return icon(Icons.PROBLEMS, "BOOK", "Текст ошибки", lore, danger = true)
     }
 
@@ -138,7 +139,7 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         val moments = detail.times.map { Instant.ofEpochMilli(it) }
         val more = moments.size - TIMES_PREVIEW
         val timesLore = Style.lore(
-            moments.take(TIMES_PREVIEW).map { stamp(it) },
+            moments.take(TIMES_PREVIEW).map { clockStamp(it) },
             listOf("Пояс" to DisplayZone.zone.id),
             *if (more > 0) arrayOf(Style.left("все ${moments.size} раз")) else emptyArray(),
             extra = if (more > 0) listOf(Style.description("и ещё $more")) else emptyList(),
@@ -162,7 +163,7 @@ internal class JournalScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         val rows = detail.times.mapIndexed { index, millis ->
             val moment = Instant.ofEpochMilli(millis)
             val lore = Style.lore(emptyList(), listOf("Было" to ago(moment), "Номер" to "${detail.times.size - index} из ${detail.times.size}"))
-            Row(icon(Icons.CLOCK, "CLOCK", stamp(moment), lore, alternative = "WATCH"))
+            Row(icon(Icons.CLOCK, "CLOCK", clockStamp(moment), lore, alternative = "WATCH"))
         }
         list(player, "Когда случалось", rows, page, PAGE_SIZE, { who, to -> journalTimes(who, id, to, back) }, { journalEvent(it, id, back) }, "Времени нет")
     }

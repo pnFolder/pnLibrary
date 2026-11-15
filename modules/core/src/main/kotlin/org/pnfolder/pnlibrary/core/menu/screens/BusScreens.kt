@@ -24,15 +24,15 @@ import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.backItem
+import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.dayTitle
-import org.pnfolder.pnlibrary.core.menu.style.duration
-import org.pnfolder.pnlibrary.core.menu.style.frame
 import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.section
 import org.pnfolder.pnlibrary.core.menu.style.shortName
-import org.pnfolder.pnlibrary.core.menu.style.stamp
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import java.time.LocalDate
 
 /** Menu screens for event bus overview, events and listeners. */
@@ -53,7 +53,7 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         val calls = data.eventHistory(null).filter { it.date == today }.sumOf { it.calls }
         val failures = listeners.sumOf { it.failures }
         val traced = data.tracedEvents().size
-        val builder = frame(Menus.chest(title("События плагинов")).rows(HOME_ROWS), HOME_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("События плагинов")).rows(HOME_ROWS), HOME_ROWS)
         busSummary(builder, events.size, listeners.size, calls, failures)
         busButtons(builder, events.size, listeners.size, failures, traced)
         builder.button(HOME_CLOSE, backItem(), go { routes.home(it) })
@@ -66,7 +66,7 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             icon(
                 Icons.OVERVIEW, "NETHER_STAR", "События плагинов",
                 Style.lore(
-                    wrap("Так плагины сообщают друг другу, что произошло. Одни вызывают событие, другие слушают его и отвечают."),
+                    wrapText("Так плагины сообщают друг другу, что произошло. Одни вызывают событие, другие слушают его и отвечают."),
                     listOf(
                         "Событий" to "$events",
                         "Слушателей" to "$listeners",
@@ -161,12 +161,12 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
         val recording = info.eventType in data.tracedEvents()
         val about = routes.aboutOf(info.eventType)
         val owner = about?.owner
-        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it, limit = 3) }.orEmpty()
+        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrapText(it, limit = 3) }.orEmpty()
         val parameters = buildList {
             add("Плагин" to (owner?.let { routes.versioned(it) } ?: "сервер или библиотека"))
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
-            info.lastCalledAt?.let { add("Последний" to "${stamp(it)}, ${ago(it)}") }
+            info.lastCalledAt?.let { add("Последний" to "${clockStamp(it)}, ${ago(it)}") }
             if (info.denied > 0) add("Отказов" to "${info.denied}")
             add("Запись" to if (recording) "● идёт" else "не ведётся")
         }
@@ -181,7 +181,7 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             tell(player, ChatTone.INFO, "Такого события больше нет.")
             return back(player)
         }
-        val builder = frame(Menus.chest(title(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle(shortName(name))).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, eventCard(name, info))
         eventButtons(builder, name, info, back)
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
@@ -195,12 +195,12 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             add("Слушателей" to "${info.listeners}")
             add("Вызовов" to "${info.calls}")
             add("Отказов" to "${info.denied}")
-            add("Последний вызов" to (info.lastCalledAt?.let { "${stamp(it)}, ${ago(it)}" } ?: "с запуска не было"))
+            add("Последний вызов" to (info.lastCalledAt?.let { "${clockStamp(it)}, ${ago(it)}" } ?: "с запуска не было"))
             addAll(eventDays(name))
             addAll(routes.labelled("Класс", name))
             about?.usage?.takeIf { it.isNotBlank() }?.let { addAll(routes.labelled("Как использовать", it)) }
         }
-        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrap(it) } ?: listOf("Автор плагина не описал это событие.")
+        val purpose = about?.purpose?.takeIf { it.isNotBlank() }?.let { wrapText(it) } ?: listOf("Автор плагина не описал это событие.")
         return icon(null, "NETHER_STAR", shortName(name), Style.lore(purpose, parameters))
     }
 
@@ -262,8 +262,8 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
             add("Событие" to shortName(info.eventType))
             add("Приоритет" to "${info.priority}")
             add("Запусков" to "${info.invocations}")
-            add("Среднее" to duration(info.averageNanos))
-            add("Максимум" to duration(info.maxNanos))
+            add("Среднее" to nanosText(info.averageNanos))
+            add("Максимум" to nanosText(info.maxNanos))
             if (info.failures > 0) add("Ошибок" to "✖ ${info.failures}")
             if (info.ignoreDenied) add("Особенность" to "работает даже после отказа")
             add("Откуда" to info.source.take(MESSAGE_PREVIEW))
@@ -279,7 +279,7 @@ internal class BusScreens(session: MenuSession, routes: MenuRoutes) : MenuScreen
                 add("Слушателей" to "${group.size}")
                 add("Событий" to "${group.map { it.eventType }.distinct().size}")
                 add("Запусков" to "${group.sumOf { it.invocations }}")
-                add("Время всего" to duration(group.sumOf { it.totalNanos }))
+                add("Время всего" to nanosText(group.sumOf { it.totalNanos }))
                 if (failures > 0) add("Ошибок" to "✖ $failures")
             }
             val query = ListenerQuery(

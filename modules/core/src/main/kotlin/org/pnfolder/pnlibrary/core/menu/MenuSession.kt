@@ -8,13 +8,10 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.menu.data.MenuData
 import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
 import org.pnfolder.pnlibrary.core.menu.style.BACK
-import org.pnfolder.pnlibrary.core.menu.style.CLOSE
 import org.pnfolder.pnlibrary.core.menu.style.FOOTER_END
 import org.pnfolder.pnlibrary.core.menu.style.Icons
-import org.pnfolder.pnlibrary.core.menu.style.LIST_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.NEXT
 import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
-import org.pnfolder.pnlibrary.core.menu.style.REFRESH
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
@@ -23,9 +20,13 @@ import org.pnfolder.pnlibrary.core.menu.style.closeItem
 import org.pnfolder.pnlibrary.core.menu.style.footerCorners
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.pane
-import org.pnfolder.pnlibrary.core.menu.style.reason
-import org.pnfolder.pnlibrary.core.menu.style.title
+import org.pnfolder.pnlibrary.core.menu.style.errorReason
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
+
+private const val LIST_ROWS = 6
+private const val REFRESH = 49
+private const val CLOSE = 53
 
 /** State of one open menu: viewer, data source and the current screen. */
 internal class MenuSession(
@@ -66,7 +67,7 @@ internal class MenuSession(
         val pages = ((total - 1) / perPage + 1).coerceAtLeast(1)
         val current = page.coerceIn(0, pages - 1)
         val shown = if (total == rows.size) rows.drop(current * perPage).take(perPage) else rows.take(perPage)
-        val builder = Menus.chest(title("$title ${current + 1}/$pages")).rows(LIST_ROWS)
+        val builder = Menus.chest(menuTitle("$title ${current + 1}/$pages")).rows(LIST_ROWS)
         shown.forEachIndexed { slot, row -> if (row.click != null) builder.button(slot, row.stack, row.click) else builder.slot(slot, row.stack) }
         if (total == 0) builder.slot(22, icon(Icons.PROBLEMS, "BARRIER", emptyText, emptyList(), muted = true))
         footerCorners(builder)
@@ -111,7 +112,7 @@ internal class MenuSession(
             try {
                 action()
             } catch (error: Exception) {
-                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", reason(error))
+                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", errorReason(error))
             }
         }
     }

@@ -4,6 +4,10 @@ import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder
 import org.pnfolder.pnlibrary.core.menu.MenuClickHandler
 
+private const val FOOTER_START = 45
+private const val LEGACY_BLACK: Short = 15
+private const val LEGACY_PURPLE: Short = 10
+
 /** Gradient color pair used for titles and highlights. */
 internal enum class Tone(val from: String, val to: String) {
     NORMAL("D19BFF", "F5C6FF"),
@@ -25,9 +29,9 @@ internal fun backItem(label: String = "Назад"): ItemSpec =
 internal fun closeItem(): ItemSpec =
     icon(Icons.BACK, "BARRIER", "Закрыть", Style.lore(emptyList(), emptyList(), Style.left("закрыть меню")), danger = true)
 
-internal fun title(text: String): String = MenuColors.legacy('0') + "pnLibrary " + MenuColors.legacy('5') + "» " + MenuColors.legacy('0') + text
+internal fun menuTitle(text: String): String = MenuColors.legacy('0') + "pnLibrary " + MenuColors.legacy('5') + "» " + MenuColors.legacy('0') + text
 
-internal fun frame(builder: MenuBuilder, rows: Int): MenuBuilder {
+internal fun menuFrame(builder: MenuBuilder, rows: Int): MenuBuilder {
     val last = (rows - 1) * 9
     listOf(0, 1, 9, 7, 8, 17, last, last + 1, last - 9, last + 7, last + 8, last - 1).forEach { builder.slot(it, accent()) }
     return builder.fill(pane())

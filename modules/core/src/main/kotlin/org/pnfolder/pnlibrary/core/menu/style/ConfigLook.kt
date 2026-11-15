@@ -87,7 +87,7 @@ internal object ConfigLook {
 
     private fun facts(vararg pairs: Pair<String, String>): List<Pair<String, String>> = pairs.flatMap { (label, value) -> fact(label, value) }
 
-    private fun about(text: String): List<String> = wrap(text, WRAP_WIDTH, 3)
+    private fun about(text: String): List<String> = wrapText(text, WRAP_WIDTH, 3)
 
     private fun editableWord(count: Int) = if (count > 0) "$count" else "нет"
 
@@ -149,7 +149,7 @@ internal object ConfigLook {
             if (setting.examples.isNotEmpty()) addAll(fact("Примеры", setting.examples.joinToString(", ")))
             if (setting.apply != ConfigApply.LIVE) add("Заработает" to AMBER + applyWord(setting.apply))
         }
-        val description = setting.description.takeIf(String::isNotBlank)?.let { wrap(it, WRAP_WIDTH, 4) }.orEmpty()
+        val description = setting.description.takeIf(String::isNotBlank)?.let { wrapText(it, WRAP_WIDTH, 4) }.orEmpty()
         val (texture, material) = when (setting.kind) {
             ConfigSettingKind.BOOLEAN -> Icons.TOGGLE to if (setting.value == "true") "LIME_DYE" else "GRAY_DYE"
             ConfigSettingKind.CHOICE -> Icons.SETTINGS to "COMPARATOR"

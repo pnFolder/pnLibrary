@@ -18,21 +18,22 @@ import org.pnfolder.pnlibrary.core.menu.style.HOME_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_HOURS
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_LIMIT
-import org.pnfolder.pnlibrary.core.menu.style.NETWORK_SLOT
 import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
-import org.pnfolder.pnlibrary.core.menu.style.RESTART_SLOT
-import org.pnfolder.pnlibrary.core.menu.style.ROLLBACK_SLOT
 import org.pnfolder.pnlibrary.core.menu.style.STATS
-import org.pnfolder.pnlibrary.core.menu.style.SUPPORT_SLOT
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TASKS
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.closeItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.section
-import org.pnfolder.pnlibrary.core.menu.style.title
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
+
+private const val NETWORK_SLOT = 34
+private const val SUPPORT_SLOT = 38
+private const val RESTART_SLOT = 41
+private const val ROLLBACK_SLOT = 42
 
 /** Menu home page with the main sections. */
 internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -41,7 +42,7 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         val pending = snapshots.count { it.state in CatalogLabels.PENDING }
         val errors = data.journalGroups("error", JOURNAL_HOURS, JOURNAL_LIMIT).size
         val problems = snapshots.count { it.state in CatalogLabels.PROBLEMS } + errors
-        val builder = frame(Menus.chest(title("Главная")).rows(HOME_ROWS), HOME_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Главная")).rows(HOME_ROWS), HOME_ROWS)
         summary(builder, pending, problems)
         sections(builder, pending, problems, errors)
         network(builder)

@@ -14,16 +14,16 @@ import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
-import org.pnfolder.pnlibrary.core.menu.style.TRACE_STEPS
 import org.pnfolder.pnlibrary.core.menu.style.ago
-import org.pnfolder.pnlibrary.core.menu.style.bar
+import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.dayTitle
-import org.pnfolder.pnlibrary.core.menu.style.duration
 import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.menu.style.nanosText
+import org.pnfolder.pnlibrary.core.menu.style.progressBar
 import org.pnfolder.pnlibrary.core.menu.style.shortName
-import org.pnfolder.pnlibrary.core.menu.style.stamp
-import org.pnfolder.pnlibrary.core.menu.style.title
 import java.time.LocalDate
+
+private const val TRACE_STEPS = 6
 
 /** Menu screens listing recent event bus history. */
 internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -39,7 +39,7 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
                 add("Вызовов" to "$total")
                 if (event == null) add("Событий" to "${entries.size}")
                 if (denied > 0) add("Отказов" to "$denied")
-                add("Нагрузка" to bar(total, busiest))
+                add("Нагрузка" to progressBar(total, busiest))
             }
             val hint = if (event == null) Style.left("события этого дня") else Style.left("открыть событие")
             val click = if (event == null) go { who -> busDay(who, date, 0, page) } else go { who -> routes.busEvent(who, event) { busDays(it, event, page) } }
@@ -57,7 +57,7 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
             val parameters = buildList {
                 add("Вызовов" to "${day.calls}")
                 if (day.denied > 0) add("Отказов" to "${day.denied}")
-                add("Нагрузка" to bar(day.calls, busiest))
+                add("Нагрузка" to progressBar(day.calls, busiest))
             }
             Row(
                 icon(null, "PAPER", shortName(day.eventType), Style.lore(emptyList(), parameters, Style.left("открыть событие")), warn = day.denied > 0),
@@ -98,7 +98,7 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
             "" to "$owner · $action"
         }
         val parameters = buildList {
-            trace.at?.let { add("Когда" to stamp(it)); add("" to ago(it)) }
+            trace.at?.let { add("Когда" to clockStamp(it)); add("" to ago(it)) }
             add("Результат" to (trace.result ?: "-"))
             add("Режим" to if (trace.mode == DispatchMode.ASYNC) "async, мир не трогать" else "sync")
             add("Поток" to trace.thread)
@@ -125,11 +125,11 @@ internal class BusHistoryScreens(session: MenuSession, routes: MenuRoutes) : Men
                 add("Приоритет" to "${step.priority}")
                 add("Что сделал" to action)
                 if (step.changedResult) add("Результат" to "${step.resultBefore} → ${step.resultAfter}")
-                if (!step.skipped) add("Время" to duration(step.nanos))
+                if (!step.skipped) add("Время" to nanosText(step.nanos))
             }
             Row(icon(null, "PAPER", owner, Style.lore(emptyList(), parameters), danger = step.failed, warn = step.changedResult, muted = step.skipped))
         }
-        val title = "${shortName(trace.eventName)}${trace.at?.let { ", ${stamp(it)}" }.orEmpty()}"
+        val title = "${shortName(trace.eventName)}${trace.at?.let { ", ${clockStamp(it)}" }.orEmpty()}"
         list(player, title.take(TITLE_LIMIT), rows, page, PAGE_SIZE, { who, to -> busTrace(who, trace, to, back) }, back, "Никто не отвечал")
     }
 }

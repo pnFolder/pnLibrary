@@ -8,27 +8,28 @@ import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
-import org.pnfolder.pnlibrary.core.menu.style.CYCLE_HOLDS
 import org.pnfolder.pnlibrary.core.menu.style.HOLDS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
-import org.pnfolder.pnlibrary.core.menu.style.SUPPORT_TOOL_SLOT
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.duration
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.nanosText
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.left
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.timeLeft
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
+
+private const val SUPPORT_TOOL_SLOT = 16
+private const val CYCLE_HOLDS = 3
 
 /** Menu screens for library settings. */
 internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -40,7 +41,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
 
     fun settings(player: MenuViewer) {
         val all = snapshots()
-        val builder = frame(Menus.chest(title("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        val builder = menuFrame(Menus.chest(menuTitle("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         howItWorks(builder)
         autoForAll(builder, all)
         downloadsForMissing(builder)
@@ -97,7 +98,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
             icon(
                 Icons.TOGGLE, "HOPPER", "Недостающие плагины",
                 Style.lore(
-                    wrap("Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.", WRAP_WIDTH, 4),
+                    wrapText("Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.", WRAP_WIDTH, 4),
                     emptyList(), Style.left(if (automatic) "выключить" else "включить"),
                     extra = Style.choices(listOf("скачивать самому", "только сообщать"), if (automatic) 0 else 1),
                 ),
@@ -120,7 +121,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
             1 + (HOLDS.take(CYCLE_HOLDS).indexOfFirst { it.second >= span }.takeIf { it >= 0 } ?: (CYCLE_HOLDS - 1))
         } ?: 0
         val pauseNote = buildList {
-            if (untils.isNotEmpty()) add("Осталось" to left(longest!!))
+            if (untils.isNotEmpty()) add("Осталось" to timeLeft(longest!!))
             if (untils.isNotEmpty()) add("На паузе" to "${untils.size} из ${all.size}")
         }
         builder.button(
@@ -148,7 +149,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
     }
 
     fun tools(player: MenuViewer) {
-        val builder = frame(Menus.chest(title("Инструменты")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        val builder = menuFrame(Menus.chest(menuTitle("Инструменты")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         val entries = listOf(
             Triple(Icons.CHECK, "COMPASS", "Статус сервера") to ("Версии сервера и всех плагинов." to "pn status"),
             Triple(Icons.CHANGELOG, "WRITTEN_BOOK", "Отчёт для поддержки") to ("Зашифрованный отчёт, который можно отправить нам." to "pn debug"),

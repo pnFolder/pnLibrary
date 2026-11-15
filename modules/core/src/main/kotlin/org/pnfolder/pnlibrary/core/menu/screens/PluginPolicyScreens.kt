@@ -8,8 +8,6 @@ import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
-import org.pnfolder.pnlibrary.core.menu.style.CHANNEL_HINTS
-import org.pnfolder.pnlibrary.core.menu.style.CHANNEL_ITEMS
 import org.pnfolder.pnlibrary.core.menu.style.HOLDS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
@@ -17,21 +15,35 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.duration
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.left
-import org.pnfolder.pnlibrary.core.menu.style.reason
-import org.pnfolder.pnlibrary.core.menu.style.title
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.timeLeft
 import java.time.Duration
 import java.time.Instant
+
+private val CHANNEL_ITEMS = mapOf(
+    UpdateChannel.STABLE to "EMERALD",
+    UpdateChannel.RC to "GOLD_INGOT",
+    UpdateChannel.BETA to "IRON_INGOT",
+    UpdateChannel.ALPHA to "REDSTONE",
+    UpdateChannel.DEV to "COAL",
+)
+private val CHANNEL_HINTS = mapOf(
+    UpdateChannel.STABLE to "Только проверенные релизы.",
+    UpdateChannel.RC to "Кандидаты в релиз и стабильные.",
+    UpdateChannel.BETA to "Бета-версии, кандидаты и стабильные.",
+    UpdateChannel.ALPHA to "Ранние версии: возможны ошибки.",
+    UpdateChannel.DEV to "Все версии, включая ежедневные сборки.",
+)
 
 /** Menu screens for per-plugin update policies. */
 internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     /** The channel choice. It stays in the code and is switched on by [CHANNEL_SWITCH] once more than `dev` works. */
     fun channels(player: MenuViewer, product: String) {
         val current = data.snapshot(product)?.channel
-        val builder = frame(Menus.chest(title("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Канал $product")).rows(SMALL_ROWS), SMALL_ROWS)
         UpdateChannel.values().forEachIndexed { index, channel ->
             val chosen = channel == current
             val lore = Style.lore(
@@ -61,13 +73,13 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
         Icons.CLOCK, "CLOCK", "Пауза сейчас",
         Style.lore(
             listOf("Пока пауза идёт, обновления не предлагаются и не скачиваются."),
-            listOf("Состояние" to (remaining?.let { "‖ осталось ${left(it)}" } ?: "нет паузы")),
+            listOf("Состояние" to (remaining?.let { "‖ осталось ${timeLeft(it)}" } ?: "нет паузы")),
         ),
         alternative = "WATCH", warn = remaining != null,
     )
 
     private fun holdChoice(label: String, selectedRemaining: Duration?): ItemSpec {
-        val note = selectedRemaining?.let { listOf("Выбрано" to "● осталось ${left(it)}") } ?: emptyList()
+        val note = selectedRemaining?.let { listOf("Выбрано" to "● осталось ${timeLeft(it)}") } ?: emptyList()
         val action = if (selectedRemaining != null) "начать срок заново" else "приостановить"
         return icon(
             Icons.CLOCK, "CLOCK", label,
@@ -80,7 +92,7 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
         val until = data.heldUntil(product)?.takeIf { it.isAfter(Instant.now()) }
         val remaining = until?.let { Duration.between(Instant.now(), it) }
         val chosen = remaining?.let { holdIndex(it) } ?: -1
-        val builder = frame(Menus.chest(title("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Пауза $product")).rows(SMALL_ROWS), SMALL_ROWS)
         builder.slot(4, holdSummary(remaining))
         HOLDS.forEachIndexed { index, (label, duration) ->
             val item = holdChoice(label, if (index == chosen) remaining else null)
@@ -102,7 +114,7 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
     private fun chooseChannel(player: MenuViewer, product: String, channel: UpdateChannel?) {
         data.setChannel(product, channel, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить канал.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, "Канал $product: ${channel?.name?.lowercase() ?: "как указал плагин"}.")
                 routes.card(player, product)
             }
@@ -112,7 +124,7 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
     private fun chooseHold(player: MenuViewer, product: String, duration: Duration?) {
         data.setHeld(product, duration, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить паузу.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, if (duration == null) "Пауза $product снята." else "Обновления $product приостановлены.")
                 routes.card(player, product)
             }

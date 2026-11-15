@@ -12,12 +12,6 @@ import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
-import org.pnfolder.pnlibrary.core.menu.style.BLOCKER_LINES
-import org.pnfolder.pnlibrary.core.menu.style.CARD_BACK
-import org.pnfolder.pnlibrary.core.menu.style.CARD_ROWS
-import org.pnfolder.pnlibrary.core.menu.style.CHANNEL_SWITCH
-import org.pnfolder.pnlibrary.core.menu.style.CHECK_REOPEN_MILLIS
-import org.pnfolder.pnlibrary.core.menu.style.DOWNLOAD
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
@@ -25,16 +19,22 @@ import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.duration
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.clockTime
+import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.reason
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.menu.style.section
-import org.pnfolder.pnlibrary.core.menu.style.time
-import org.pnfolder.pnlibrary.core.menu.style.title
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import java.time.Duration
+
+private const val DOWNLOAD = "pnlibrary.updates.download"
+private const val CARD_ROWS = 4
+private const val CARD_BACK = 31
+private const val BLOCKER_LINES = 3
+private const val CHECK_REOPEN_MILLIS = 3_000L
+private const val CHANNEL_SWITCH = false
 
 /** Plugin list filter in the updates screen. */
 internal enum class Filter(val title: String) { ALL("Плагины"), UPDATES("Обновления"), PROBLEMS("Проблемы") }
@@ -73,7 +73,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
 
     fun card(player: MenuViewer, product: String) {
         val snapshot = data.snapshot(product) ?: return routes.home(player)
-        val builder = frame(Menus.chest(title(snapshot.product)).rows(CARD_ROWS), CARD_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle(snapshot.product)).rows(CARD_ROWS), CARD_ROWS)
         builder.slot(4, plate(snapshot))
         cardActions(builder, snapshot)
         channelSlot(builder, snapshot)
@@ -146,7 +146,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             val link = release.changelogUrl
             val parameters = buildList {
                 add("Канал" to release.channel.name.lowercase())
-                release.publishedAt?.let { add("Выпущен" to time(it)) }
+                release.publishedAt?.let { add("Выпущен" to clockTime(it)) }
                 if (current) add("Состояние" to "установлена сейчас")
             }
             val lore = Style.lore(emptyList(), parameters, *if (link != null) arrayOf(Style.left("получить список изменений")) else emptyArray())
@@ -162,7 +162,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         data.checkAll(player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) return@sync tell(player, ChatTone.FAILURE, "Не удалось проверить обновления.", reason(error))
+                if (error != null) return@sync tell(player, ChatTone.FAILURE, "Не удалось проверить обновления.", errorReason(error))
                 val snapshots = snapshots()
                 val news = UpdateCatalogView.announcement(snapshots, ROUTES, PnLibraryIdentity.SUPPORT_URL)
                 if (news.isEmpty()) tell(player, ChatTone.SUCCESS, "Проверка завершена: все плагины используют актуальные версии.")
@@ -182,7 +182,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val enable = !snapshot.automaticDownload
         data.setAutomatic(snapshot.product, enable, player.actor).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось изменить автозагрузку.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, "Автозагрузка ${snapshot.product}: ${if (enable) "включена" else "выключена"}.")
                 card(player, snapshot.product)
             }
@@ -193,7 +193,7 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val stages = snapshots().map { change(it).toCompletableFuture() }
         java.util.concurrent.CompletableFuture.allOf(*stages.toTypedArray()).whenComplete { _, error ->
             sync {
-                if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не всё удалось изменить.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, done)
                 routes.settings(player)
             }

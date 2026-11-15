@@ -7,7 +7,15 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-internal fun left(span: Duration): String {
+private const val HOURS_PER_DAY = 24
+private const val MINUTES_PER_HOUR = 60
+private const val WRAP_LINES = 8
+private const val NANOS_PER_MICRO = 1_000L
+private const val NANOS_PER_MILLI = 1_000_000L
+private val DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
+private const val SECONDS_PER_MINUTE = 60L
+
+internal fun timeLeft(span: Duration): String {
     val days = span.toDays()
     val hours = span.toHours() % HOURS_PER_DAY
     val minutes = span.toMinutes() % MINUTES_PER_HOUR
@@ -18,14 +26,14 @@ internal fun left(span: Duration): String {
     }
 }
 
-internal fun duration(nanos: Long): String =
+internal fun nanosText(nanos: Long): String =
     if (nanos >= NANOS_PER_MILLI) "%.1f мс".format(nanos / NANOS_PER_MILLI.toDouble()) else "%.1f мкс".format(nanos / NANOS_PER_MICRO.toDouble())
 
 internal fun shortName(name: String): String = name.substringAfterLast('.')
 
-internal fun time(moment: Instant): String = format(moment, "HH:mm")
+internal fun clockTime(moment: Instant): String = format(moment, "HH:mm")
 
-internal fun stamp(moment: Instant): String = format(moment, "HH:mm:ss")
+internal fun clockStamp(moment: Instant): String = format(moment, "HH:mm:ss")
 
 private fun format(moment: Instant, clock: String): String {
     val zone = DisplayZone.zone
@@ -38,8 +46,8 @@ internal fun ago(moment: Instant): String {
     val span = Duration.between(moment, Instant.now())
     return when {
         span.abs().seconds < SECONDS_PER_MINUTE -> "только что"
-        span.isNegative -> "через ${left(span.negated())}"
-        else -> "${left(span)} назад"
+        span.isNegative -> "через ${timeLeft(span.negated())}"
+        else -> "${timeLeft(span)} назад"
     }
 }
 
@@ -49,12 +57,12 @@ internal fun dayTitle(date: LocalDate, today: LocalDate): String = when (date) {
     else -> (if (date.year == today.year) DAY else DAY_YEAR).format(date)
 }
 
-internal fun bar(value: Long, busiest: Long): String {
+internal fun progressBar(value: Long, busiest: Long): String {
     val width = ((value * BAR_WIDTH + busiest - 1) / busiest.coerceAtLeast(1)).toInt().coerceIn(1, BAR_WIDTH)
     return "█".repeat(width)
 }
 
-internal fun wrap(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
+internal fun wrapText(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
     val lines = ArrayList<String>()
     for (raw in text.lines()) {
         var line = StringBuilder()
@@ -76,7 +84,7 @@ internal fun wrap(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES
     return if (lines.size > limit) lines.take(limit) + "…" else lines
 }
 
-internal fun reason(error: Throwable): String {
+internal fun errorReason(error: Throwable): String {
     val cause = generateSequence(error) { it.cause }.last()
     return cause.message ?: cause.javaClass.simpleName
 }

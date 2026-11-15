@@ -21,7 +21,6 @@ import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens
 import org.pnfolder.pnlibrary.core.menu.screens.TaskScreens
 import org.pnfolder.pnlibrary.core.menu.screens.UpdateScreens
 import org.pnfolder.pnlibrary.core.menu.style.Row
-import org.pnfolder.pnlibrary.core.menu.style.duration
 import java.time.Duration
 
 /** Opens menu screens by route and keeps the navigation back stack of a session. */

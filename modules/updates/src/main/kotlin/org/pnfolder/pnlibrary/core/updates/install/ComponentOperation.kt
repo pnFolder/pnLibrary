@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.install
 
-/** Названия операций, которые список компонентов пишет в историю обновлений. */
+/** Operation names the component ledger writes to the update history. */
 object ComponentOperation {
     const val ADDED = "COMPONENT_ADDED"
     const val REMOVED = "COMPONENT_REMOVED"

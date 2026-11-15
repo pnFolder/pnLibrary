@@ -14,12 +14,13 @@ import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.NETWORK_CHECK
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
-import org.pnfolder.pnlibrary.core.menu.style.PROXY_LABEL
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.section
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
+
+private const val PROXY_LABEL = "Прокси"
 
 /** Menu screens describing the proxy network and its servers. */
 internal class NetworkScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {

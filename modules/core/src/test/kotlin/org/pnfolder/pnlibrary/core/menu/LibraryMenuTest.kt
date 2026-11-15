@@ -17,7 +17,6 @@ import org.pnfolder.pnlibrary.core.menu.style.NEXT
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
 import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
-import org.pnfolder.pnlibrary.core.menu.style.title
 import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
 import java.lang.reflect.Proxy
 import java.util.UUID

@@ -18,17 +18,18 @@ import org.pnfolder.pnlibrary.core.menu.data.GroupEdit
 import org.pnfolder.pnlibrary.core.menu.data.GroupOp
 import org.pnfolder.pnlibrary.core.menu.data.RemoteMenuData
 import org.pnfolder.pnlibrary.core.menu.style.GROUPS_PERMISSION
-import org.pnfolder.pnlibrary.core.menu.style.GROUP_ADD
-import org.pnfolder.pnlibrary.core.menu.style.GROUP_DELETE
-import org.pnfolder.pnlibrary.core.menu.style.GROUP_PLUGINS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.NETWORK_CHECK
-import org.pnfolder.pnlibrary.core.menu.style.NETWORK_UPDATE
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
+import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.reason
+
+private const val NETWORK_UPDATE = 51
+private const val GROUP_ADD = 46
+private const val GROUP_PLUGINS = 47
+private const val GROUP_DELETE = 52
 
 /** Menu screens for server groups and their members. */
 internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -76,7 +77,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
                 val loaded = proxyData.groups()
                 host.sync { then(loaded, map) }
             } catch (error: Exception) {
-                host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", reason(error)) }
+                host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", errorReason(error)) }
             }
         }
     }
@@ -88,7 +89,7 @@ internal class GroupScreens(session: MenuSession, routes: MenuRoutes) : MenuScre
                     val done = proxyData.editGroup(edit)
                     host.sync { if (done) then() else tell(player, ChatTone.FAILURE, "Не получилось изменить группу ${edit.group}.") }
                 } catch (error: Exception) {
-                    host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", reason(error)) }
+                    host.sync { tell(player, ChatTone.FAILURE, "Прокси не ответил.", errorReason(error)) }
                 }
             }
         }

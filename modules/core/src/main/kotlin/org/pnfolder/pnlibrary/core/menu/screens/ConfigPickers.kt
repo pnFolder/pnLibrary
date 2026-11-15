@@ -20,11 +20,11 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
 import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.time
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.clockTime
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 
 /** Writes [text] into a setting, then runs [after] with the viewer; the screens that edit a value share it. */
 internal typealias SettingWriter = (MenuViewer, ConfigSetting, String, (MenuViewer) -> Unit) -> Unit
@@ -40,7 +40,7 @@ internal class ConfigPickers(session: MenuSession, routes: MenuRoutes) : MenuScr
     fun number(player: MenuViewer, id: String, path: String, back: (MenuViewer) -> Unit, write: SettingWriter, ask: (MenuViewer, ConfigSetting) -> Unit) {
         val setting = setting(id, path)?.takeIf { it.value?.toDoubleOrNull() != null } ?: return back(player)
         val current = requireNotNull(setting.value).toDouble()
-        val builder = frame(Menus.chest(title(setting.title.take(TITLE_LIMIT))).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
+        val builder = menuFrame(Menus.chest(menuTitle(setting.title.take(TITLE_LIMIT))).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         val again = { who: MenuViewer -> number(who, id, path, back, write, ask) }
         builder.slot(VALUE, ConfigLook.setting(setting, true))
         ConfigNumbers.ladder(setting).forEachIndexed { index, (label, amount) ->
@@ -61,7 +61,7 @@ internal class ConfigPickers(session: MenuSession, routes: MenuRoutes) : MenuScr
     private fun typingHelp(setting: ConfigSetting): List<String> {
         val base = if (setting.kind == ConfigSettingKind.INTEGER) "Целое число." else "Число, дробная часть через точку."
         val time = if (setting.duration != null) " Время можно писать так: 90m, 1h30m, 45с, 2д." else ""
-        return wrap(base + time, WRAP_WIDTH, 3)
+        return wrapText(base + time, WRAP_WIDTH, 3)
     }
 
     private fun stepItem(sign: String, label: String, down: Boolean): ItemSpec =

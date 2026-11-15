@@ -33,7 +33,7 @@ class EncryptedReportUploader @JvmOverloads constructor(
         return send(body.size.toLong(), "application/json; charset=UTF-8") { it.write(body) }
     }
 
-    /** Файл уходит потоком, а не целиком в памяти: отчёт до 64 МБ не занимает столько же оперативной памяти. */
+    /** Streams the file instead of loading it whole, so a report of up to 64 MB does not take as much heap. */
     override fun uploadFile(file: Path, contentType: String): UploadReceipt {
         val size = Files.size(file)
         if (size > MAX_UPLOAD_BYTES) throw IOException("Report is too large to upload: $size bytes")

@@ -15,7 +15,6 @@ import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
-import org.pnfolder.pnlibrary.core.menu.style.CONFIGS_EDIT
 import org.pnfolder.pnlibrary.core.menu.style.ConfigLook
 import org.pnfolder.pnlibrary.core.menu.style.ConfigNumbers
 import org.pnfolder.pnlibrary.core.menu.style.DATE_FILTER
@@ -27,7 +26,9 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
 import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
+
+private const val CONFIGS_EDIT = "pnlibrary.configs.edit"
 
 /** One configuration file in the menu list. */
 data class ConfigRow(
@@ -83,7 +84,7 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
 
     private fun switcher(label: String, description: String, options: List<String>, selected: Int) = icon(
         Icons.SETTINGS, "HOPPER", "$label: ${options[selected]}",
-        Style.lore(wrap(description, WRAP_WIDTH, 2), emptyList(), Style.left("переключить"), extra = Style.choices(options, selected)),
+        Style.lore(wrapText(description, WRAP_WIDTH, 2), emptyList(), Style.left("переключить"), extra = Style.choices(options, selected)),
     )
 
     private fun pluginRow(plugin: String, files: List<Located>, top: Top): Row = Row(

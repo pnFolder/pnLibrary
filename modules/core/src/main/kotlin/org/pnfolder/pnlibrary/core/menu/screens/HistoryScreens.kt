@@ -12,17 +12,10 @@ import org.pnfolder.pnlibrary.core.menu.MenuScreens
 import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
-import org.pnfolder.pnlibrary.core.menu.style.CHANGE_BUTTONS
-import org.pnfolder.pnlibrary.core.menu.style.CHANGE_FIRST
-import org.pnfolder.pnlibrary.core.menu.style.DATABASE_BUTTONS
-import org.pnfolder.pnlibrary.core.menu.style.DATABASE_FIRST
 import org.pnfolder.pnlibrary.core.menu.style.DETAIL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.DETAIL_ROWS
-import org.pnfolder.pnlibrary.core.menu.style.FILES_BUTTON
 import org.pnfolder.pnlibrary.core.menu.style.HISTORY_PAGE
 import org.pnfolder.pnlibrary.core.menu.style.Icons
-import org.pnfolder.pnlibrary.core.menu.style.NOTE_LINES
-import org.pnfolder.pnlibrary.core.menu.style.NOTE_PREVIEW_LINES
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.ROLLBACK
 import org.pnfolder.pnlibrary.core.menu.style.Row
@@ -30,14 +23,22 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.clockTime
+import org.pnfolder.pnlibrary.core.menu.style.errorReason
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.reason
-import org.pnfolder.pnlibrary.core.menu.style.time
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
+
+private const val DATABASE_BUTTONS = 3
+private const val DATABASE_FIRST = 15
+private const val FILES_BUTTON = 20
+private const val CHANGE_FIRST = 19
+private const val CHANGE_BUTTONS = 7
+private const val NOTE_LINES = 8
+private const val NOTE_PREVIEW_LINES = 2
 
 /** Menu screens showing the history of updates and changes. */
 internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -73,7 +74,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
                     val latest = sets.mapNotNull { it.createdAt }.maxOrNull()
                     val lore = Style.lore(
                         emptyList(),
-                        listOf("Копий" to sets.size.toString()) + listOfNotNull(latest?.let { "Последняя" to time(it) }),
+                        listOf("Копий" to sets.size.toString()) + listOfNotNull(latest?.let { "Последняя" to clockTime(it) }),
                         Style.left("выбрать дату"),
                     )
                     Row(icon(Icons.PLUGIN, "PAPER", product, lore), go { pluginBackups(it, product, 0) })
@@ -104,7 +105,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
     }
 
     private fun backupChoice(player: MenuViewer, backup: UpdateBackup, product: String) {
-        val builder = frame(Menus.chest(title("Откат")).rows(SMALL_ROWS), SMALL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Откат")).rows(SMALL_ROWS), SMALL_ROWS)
         builder.slot(4, backupItem(backup))
         val plain = Style.lore(
             listOf("Вернутся сохранённые JAR.", "Конфигурации не изменятся.", "Применится после перезапуска.") +
@@ -150,7 +151,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
 
     /** The last question before a database is replaced: what is lost, what is kept, and a way out. */
     private fun databaseConfirm(player: MenuViewer, backup: UpdateBackup, item: UpdateBackupItem, product: String) {
-        val builder = frame(Menus.chest(title("Вернуть базу")).rows(SMALL_ROWS), SMALL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Вернуть базу")).rows(SMALL_ROWS), SMALL_ROWS)
         val warning = Style.lore(
             listOf(
                 "Таблицы базы «${item.name}» будут заменены теми, что были до обновления.",
@@ -172,7 +173,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.extractBackup(backup.id, product, player.actor).whenComplete { folder, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось выдать файлы.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось выдать файлы.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, "Файлы плагина $product выданы.", "Папка на сервере: $folder")
             }
         }
@@ -183,14 +184,14 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.restoreDatabase(backup.id, item.product.value, item.name, player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось вернуть базу.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось вернуть базу.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, "База «${item.name}» возвращена.", "Перезапустите плагин ${item.product.value}, чтобы он перечитал данные.")
             }
         }
     }
 
     private fun historyEntry(player: MenuViewer, entry: UpdateHistoryEntry, back: (MenuViewer) -> Unit) {
-        val builder = frame(Menus.chest(title("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Запись истории")).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, historyItem(entry, NOTE_LINES))
         entry.changes.take(CHANGE_BUTTONS).forEachIndexed { index, change ->
             val product = change.product.value
@@ -212,7 +213,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
         data.rollback(backup.id, restoreConfigurations, player.actor).whenComplete { _, error ->
             sync {
                 if (!player.online) return@sync
-                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось подготовить откат.", reason(error))
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось подготовить откат.", errorReason(error))
                 else tell(player, ChatTone.SUCCESS, "Резервный набор подготовлен.", "Полностью перезапустите сервер, чтобы применить его.")
             }
         }
@@ -221,11 +222,11 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
     private fun historyItem(entry: UpdateHistoryEntry, noteLines: Int, vararg clicks: String): ItemSpec {
         val failed = entry.state == UpdateState.FAILED
         val parameters = buildList {
-            add("Когда" to time(entry.occurredAt))
+            add("Когда" to clockTime(entry.occurredAt))
             add("Кто" to entry.actor.name)
             entry.changes.forEach { add(it.product.value to "${it.from} » ${it.to}") }
         }
-        val note = entry.message?.let { wrap(it, limit = noteLines) }.orEmpty()
+        val note = entry.message?.let { wrapText(it, limit = noteLines) }.orEmpty()
             .map { if (failed) Style.danger(it) else Style.description(it) }
         val title = "${CatalogLabels.operationLabel(entry.operation)}: ${CatalogLabels.stateLabel(entry.state)}"
         return icon(null, if (failed) "BARRIER" else "PAPER", title, Style.lore(emptyList(), parameters, *clicks, extra = note), danger = failed)
@@ -233,7 +234,7 @@ internal class HistoryScreens(session: MenuSession, routes: MenuRoutes) : MenuSc
 
     private fun backupItem(backup: UpdateBackup, vararg clicks: String): ItemSpec {
         val parameters = buildList {
-            backup.createdAt?.let { add("Создана" to time(it)) }
+            backup.createdAt?.let { add("Создана" to clockTime(it)) }
             backup.components.forEach { add(it.product.value to "${it.backupVersion ?: "?"} (было ${it.updatedVersion ?: "?"})") }
             backup.items.forEach { add("Сохранено" to BackupItemText.describe(it)) }
         }

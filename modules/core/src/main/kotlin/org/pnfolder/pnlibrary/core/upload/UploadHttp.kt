@@ -6,11 +6,11 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 
-/** Общий HTTP-слой загрузчиков: одни и те же таймауты, правила и ограничение ответа. */
+/** HTTP plumbing shared by the upload providers: timeouts, HTTPS rule and a bounded response read. */
 internal object UploadHttp {
     const val USER_AGENT = "pnLibrary-Diagnostics"
 
-    /** Самый большой ответ, который читается; больше этого хостинг нам не присылает. */
+    /** Largest response body that is read; the hosting services never send more. */
     const val MAX_RESPONSE_BYTES = 16_384
 
     private const val READ_BUFFER_BYTES = 4096
@@ -19,7 +19,7 @@ internal object UploadHttp {
         require(uri.scheme.equals("https", ignoreCase = true)) { "$what must use HTTPS" }
     }
 
-    /** Открывает соединение без перехода по редиректам: ответ чужого хостинга не должен вести нас дальше. */
+    /** Opens a connection that never follows redirects, so a foreign host cannot send us elsewhere. */
     fun open(uri: URI, method: String, connectTimeoutMs: Int, readTimeoutMs: Int): HttpURLConnection {
         val connection = uri.toURL().openConnection() as HttpURLConnection
         connection.connectTimeout = connectTimeoutMs
@@ -30,7 +30,7 @@ internal object UploadHttp {
         return connection
     }
 
-    /** Читает ответ, но не больше [limit] байт: иначе чужой сервер мог бы забить память. */
+    /** Reads the response but stops after [limit] bytes, so a hostile server cannot fill the memory. */
     @Throws(IOException::class)
     fun readBounded(input: InputStream, limit: Int = MAX_RESPONSE_BYTES, what: String = "Response"): ByteArray {
         val result = ByteArrayOutputStream()

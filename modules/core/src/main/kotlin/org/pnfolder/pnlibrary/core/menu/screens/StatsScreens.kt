@@ -11,15 +11,15 @@ import org.pnfolder.pnlibrary.core.menu.style.DETAIL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.title
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 /** Menu screens with usage statistics. */
 internal class StatsScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun stats(player: MenuViewer) {
         val now = data.stats()
-        val builder = frame(Menus.chest(title("Статистика")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Статистика")).rows(DETAIL_ROWS), DETAIL_ROWS)
         builder.slot(4, overview(now))
         builder.slot(20, tasks(now))
         builder.slot(22, events(now))

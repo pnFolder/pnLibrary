@@ -28,12 +28,11 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TASKS
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.frame
+import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.reason
-import org.pnfolder.pnlibrary.core.menu.style.stamp
-import org.pnfolder.pnlibrary.core.menu.style.title
-import org.pnfolder.pnlibrary.core.menu.style.wrap
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 /** Menu screens for scheduled tasks. */
@@ -79,7 +78,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             TaskStatus.CANCELLED -> "COAL"
             TaskStatus.FAILED -> "BARRIER"
         }
-        val description = task.description?.let { wrap(it, limit = 3) } ?: listOf("Плагин не описал эту задачу.")
+        val description = task.description?.let { wrapText(it, limit = 3) } ?: listOf("Плагин не описал эту задачу.")
         val parameters = buildList {
             add("Плагин" to ownerLine(task.ownerName))
             add("Состояние" to TaskLabels.label(task.status))
@@ -99,7 +98,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             tell(player, ChatTone.INFO, "Эта задача уже исчезла из списка.")
             return back(player)
         }
-        val builder = frame(Menus.chest(title("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
+        val builder = menuFrame(Menus.chest(menuTitle("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
         taskSummary(builder, task)
         taskFacts(builder, task)
         runControl(builder, task, back)
@@ -114,7 +113,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             add("Состояние" to TaskLabels.label(task.status))
             task.interval?.let { add("Повторяется" to "каждые ${TaskLabels.span(it)}") }
         }
-        val about = task.description?.let { wrap(it) } ?: listOf("Плагин не описал эту задачу.")
+        val about = task.description?.let { wrapText(it) } ?: listOf("Плагин не описал эту задачу.")
         builder.slot(
             4,
             icon(
@@ -125,7 +124,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
     }
 
     private fun taskFacts(builder: MenuBuilder, task: TaskSnapshot) {
-        val usage = task.usage?.let { wrap(it) } ?: listOf("Не указано. Плагин может добавить usage в TaskSpec.")
+        val usage = task.usage?.let { wrapText(it) } ?: listOf("Не указано. Плагин может добавить usage в TaskSpec.")
         builder.slot(20, icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Как используется", Style.lore(usage, emptyList()), muted = task.usage == null))
         val runs = buildList {
             add("Запусков" to "${task.runCount}")
@@ -139,10 +138,10 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
 
     private fun taskTimes(builder: MenuBuilder, task: TaskSnapshot) {
         val times = buildList {
-            add("Создана" to stamp(task.createdAt))
-            task.nextRunAt?.let { add("Следующий запуск" to stamp(it)); add("" to ago(it)) }
-            task.lastStartedAt?.let { add("Последний запуск" to stamp(it)); add("" to ago(it)) }
-            task.lastCompletedAt?.let { add("Закончилась" to stamp(it)) }
+            add("Создана" to clockStamp(task.createdAt))
+            task.nextRunAt?.let { add("Следующий запуск" to clockStamp(it)); add("" to ago(it)) }
+            task.lastStartedAt?.let { add("Последний запуск" to clockStamp(it)); add("" to ago(it)) }
+            task.lastCompletedAt?.let { add("Закончилась" to clockStamp(it)) }
             add("Пояс" to DisplayZone.zone.id)
         }
         builder.slot(22, icon(Icons.CLOCK, "CLOCK", "Время", Style.lore(emptyList(), times), alternative = "WATCH"))
@@ -156,7 +155,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         }
         builder.slot(23, icon(Icons.PLUGIN, "PAPER", "Откуда и права", Style.lore(emptyList(), origin)))
         task.lastFailure?.let { failure ->
-            val lore = Style.lore(emptyList(), emptyList(), extra = wrap(failure).map { Style.danger(it) })
+            val lore = Style.lore(emptyList(), emptyList(), extra = wrapText(failure).map { Style.danger(it) })
             builder.slot(24, icon(Icons.PROBLEMS, "BARRIER", "Последняя ошибка", lore, danger = true))
         }
     }
@@ -230,5 +229,5 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
 
     /** [text] as `[ label ]` followed by indented lines, for a value that does not fit one line. */
     fun labelled(label: String, text: String): List<Pair<String, String>> =
-        wrap(text).mapIndexed { index, line -> (if (index == 0) label else "") to line }
+        wrapText(text).mapIndexed { index, line -> (if (index == 0) label else "") to line }
 }
