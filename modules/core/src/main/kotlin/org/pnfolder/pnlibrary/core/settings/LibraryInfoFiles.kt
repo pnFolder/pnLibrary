@@ -16,10 +16,10 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * The two text files an administrator can open in the library's own folder: the help (`Помощь.txt`) and the overview of
- * every setting with its current value (`Настройки.txt`).
+ * The three text files an administrator can open in the library's own folder: the help (`Помощь.txt`), the overview of
+ * every setting with its current value (`Настройки.txt`) and the list of every command and permission (`Команды.txt`).
  *
- * The text is ours and lives here, in code. Both files are created again at every start and the overview also after every
+ * The text is ours and lives here, in code. All files are created again at every start and the overview also after every
  * change of a setting, so the links ([supportUrl], [repositoryUrl]) and the values are always those of the running library.
  * Nothing is cached anywhere else, and edits made by hand are lost.
  *
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * through [warning] and the library goes on.
  *
  * @param values the settings with their values now
- * @param version the library version shown at the end of both files
+ * @param version the library version shown at the end of every file
  * @param clock the source of the creation time
  */
 internal class LibraryInfoFiles(
@@ -42,10 +42,11 @@ internal class LibraryInfoFiles(
 ) {
     private val warned = AtomicBoolean(false)
 
-    /** Writes both files; call it once the settings are loaded. */
+    /** Writes every file; call it once the settings are loaded. */
     fun refresh() {
         refreshHelp()
         refreshSettings()
+        refreshCommands()
     }
 
     /** Writes the help file. */
@@ -53,6 +54,9 @@ internal class LibraryInfoFiles(
 
     /** Writes the settings overview; call it after a setting changed. */
     fun refreshSettings() = publish(paths.settingsOverview, settingsText())
+
+    /** Writes the list of commands and permissions. */
+    fun refreshCommands() = publish(paths.commandGuide, commandsText())
 
     /** The text of the help file. */
     fun helpText(): String = lines(
@@ -72,6 +76,9 @@ internal class LibraryInfoFiles(
         "Код и документация",
         "  GitHub: $repositoryUrl",
         "  Документация: $repositoryUrl/tree/main/docs",
+        "",
+        "Все команды и права",
+        "  Полный список с правами лежит в файле ${paths.commandGuide.preferred}.",
         "",
         "Самые полезные команды",
         "  /pn updates          каталог плагинов и их обновления",
@@ -97,6 +104,11 @@ internal class LibraryInfoFiles(
             "Настройки pnLibrary",
             "===================",
             "",
+            "ВАЖНО: этот файл только для чтения, это справка.",
+            "Здесь показано, какие настройки есть и какие у них сейчас значения.",
+            "Если вы поменяете что-то в этом файле, ничего не изменится: библиотека перезапишет его.",
+            "Менять настройки нужно командой или в меню, как описано ниже.",
+            "",
             "Как изменить настройку:",
             "  /pn settings list            все настройки со значениями",
             "  /pn settings get <ключ>      одна настройка подробно",
@@ -114,18 +126,34 @@ internal class LibraryInfoFiles(
         )
     }
 
+    /** The text of the command guide: the header, how to read it and [LibraryCommandGuide]. */
+    fun commandsText(): String = lines(
+        "Команды и права pnLibrary",
+        "=========================",
+        "",
+        "Все права по умолчанию у операторов; назначайте их в LuckPerms или другом менеджере прав.",
+        "Этот файл создаётся заново при каждом запуске, ваши правки не сохранятся.",
+        "",
+        "Как читать этот файл",
+        *LibraryCommandGuide.notes.map { "  $it" }.toTypedArray(),
+        *LibraryCommandGuide.lines().toTypedArray(),
+        "",
+        *signature(),
+    )
+
     private fun describe(value: SettingValue): List<String> {
         val spec = value.spec
         return listOfNotNull(
             "",
             "${spec.key}  (${spec.title})",
-            "  Сейчас: ${value.current}${if (value.changed) "  (изменено администратором)" else "  (по умолчанию)"}",
-            "  По умолчанию: ${spec.default}",
+            "  Сейчас: ${spec.display(value.current)}${if (value.changed) "  (изменено администратором)" else "  (по умолчанию)"}",
+            "  По умолчанию: ${spec.display(spec.default)}",
             "  Тип: ${spec.kind.label}",
             spec.range().takeIf(String::isNotEmpty)?.let { "  Границы: $it" },
             spec.examples.takeIf(List<String>::isNotEmpty)?.let { "  Примеры: ${it.joinToString(", ")}" },
             "  Начнёт работать: ${spec.applies.label}",
             "  ${spec.description}",
+            "  Изменить: /pn settings set ${spec.key} ${spec.examples.firstOrNull() ?: if (spec.kind == SettingKind.SWITCH) "включено" else "<значение>"}",
         )
     }
 

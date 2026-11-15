@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
@@ -67,12 +68,18 @@ internal interface RuntimeResources {
     /** The settings an administrator may change, or `null` when the runtime has none. */
     fun librarySettings(): SettingsStore?
 
+    /** What `/pn settings pick` calls to open the choice list in the menu. */
+    val settingPicker: SettingPickerHook
+
     /** The whole event behind a [JournalGroup.id], or `null` when it is no longer in the journal. */
     fun journalDetail(id: String): JournalDetail?
 }
 
 /** Missing-dependency downloads of this server. */
 internal fun PnLibrary.dependencyDownloads(): DirectDownloads? = resources()?.dependencyDownloads()
+
+/** What `/pn settings pick` calls to open the choice list in the menu; `null` when this is not the core runtime. */
+fun PnLibrary.settingPicker(): SettingPickerHook? = resources()?.settingPicker
 
 /** The settings an administrator may change; `null` when the runtime has none. */
 internal fun PnLibrary.librarySettings(): SettingsStore? = resources()?.librarySettings()

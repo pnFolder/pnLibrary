@@ -74,6 +74,7 @@ import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
 import org.pnfolder.pnlibrary.core.settings.LegacySettingsImport
 import org.pnfolder.pnlibrary.core.settings.LibraryInfoFiles
+import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
@@ -252,7 +253,7 @@ internal class PnLibraryImpl(
         mountable[MountableCommands.EVENTS] = journalRuntime.command()
         mountable[MountableCommands.STATS] = stats.command()
         mountable[MountableCommands.PLACEHOLDERS] = placeholdersCommand(features.placeholders)
-        mountable[MountableCommands.SETTINGS] = SettingsCommand(settings).definition()
+        mountable[MountableCommands.SETTINGS] = SettingsCommand(settings, settingPicker).definition()
         LibraryPlaceholders(features.placeholders, startedAtMillis, { plugins.all().size }, stats::values).register()
         registerRuntimeCommand(libraryInfoCommand(this, platform.identity) {
             platform.ownership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -305,6 +306,8 @@ internal class PnLibraryImpl(
     override fun dependencyDownloads() = features.downloads
 
     override fun librarySettings(): SettingsStore = settings
+
+    override val settingPicker = SettingPickerHook()
 
     override fun taskSnapshots(): List<TaskSnapshot> = tasks.query().filterNot { it.hidden }
 

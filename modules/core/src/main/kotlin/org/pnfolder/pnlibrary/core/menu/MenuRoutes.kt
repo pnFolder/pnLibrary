@@ -28,6 +28,7 @@ internal interface MenuRoutes {
     fun home(player: MenuViewer)
     fun journal(player: MenuViewer, level: String?, page: Int)
     fun librarySettings(player: MenuViewer, page: Int)
+    fun pickSetting(player: MenuViewer, key: String, filter: String)
     fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row>
     fun labelled(label: String, text: String): List<Pair<String, String>>
     fun members(map: NetworkReport): List<NetworkServer>

@@ -39,6 +39,18 @@ permissions:
   pnlibrary.stats:
     description: 'Смотреть сводную статистику библиотеки (/pn stats)'
     default: op
+  pnlibrary.configs:
+    description: 'Смотреть конфигурации плагинов и перечитывать их (/pn configs)'
+    default: op
+  pnlibrary.configs.edit:
+    description: 'Менять настройки конфигураций плагинов в игре (/pn configs edit)'
+    default: op
+  pnlibrary.servers:
+    description: 'Серверы сети и удалённые действия обновлений (/pn servers)'
+    default: op
+  pnlibrary.currency.list:
+    description: 'Список валют (/pn money list)'
+    default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений
     default: op

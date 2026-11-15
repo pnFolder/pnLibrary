@@ -34,7 +34,7 @@ class LibraryInfoFilesTest {
         assertTrue(PnLibraryIdentity.SUPPORT_URL in text)
         assertTrue(PnLibraryIdentity.REPOSITORY_URL in text)
         assertTrue("${PnLibraryIdentity.REPOSITORY_URL}/tree/main/docs" in text)
-        listOf("/pn settings", "/pn debug", "/pn updates", "заказать", "data/").forEach { assertTrue(it in text, it) }
+        listOf("/pn settings", "/pn debug", "/pn updates", "заказать", "data/", "Команды.txt", "Настройки.txt").forEach { assertTrue(it in text, it) }
         assertTrue("Этот файл создаётся заново при каждом запуске, ваши правки не сохранятся." in text)
         assertTrue(text.trimEnd().endsWith("${PnLibraryIdentity.NAME} 1.2.3\nСоздан: 2026-11-15 12:30 UTC"), text)
     }
@@ -55,7 +55,7 @@ class LibraryInfoFilesTest {
             assertTrue(spec.key in text, spec.key)
             assertTrue(spec.title in text, spec.key)
             assertTrue(spec.description in text, spec.key)
-            assertTrue(spec.default in text, spec.key)
+            assertTrue(spec.display(spec.default) in text, spec.key)
             if (spec.range().isNotEmpty()) assertTrue(spec.range() in text, spec.key)
         }
         assertTrue("/pn settings set" in text)
@@ -76,8 +76,34 @@ class LibraryInfoFilesTest {
     }
 
     @Test
-    fun `both files are written as UTF-8 under their Russian names`() {
+    fun `the help keeps its list of useful commands short`() {
+        val lines = files().helpText().lines()
+        val start = lines.indexOf("Самые полезные команды")
+
+        assertTrue(start >= 0)
+        assertTrue(lines.drop(start + 1).takeWhile { it.startsWith("  /pn") }.size <= 8, lines.toString())
+    }
+
+    @Test
+    fun `the command file has the header, every permission and the creation time`() {
+        val text = files().commandsText()
+
+        assertTrue("Все права по умолчанию у операторов; назначайте их в LuckPerms или другом менеджере прав." in text)
+        assertTrue("Этот файл создаётся заново при каждом запуске, ваши правки не сохранятся." in text)
+        LibraryCommandGuide.entries.forEach { entry ->
+            assertTrue(entry.usage in text, entry.usage)
+            entry.permission?.let { assertTrue(it in text, it) }
+        }
+        assertTrue(text.trimEnd().endsWith("${PnLibraryIdentity.NAME} 1.2.3\nСоздан: 2026-11-15 12:30 UTC"), text)
+    }
+
+    @Test
+    fun `the three files are written as UTF-8 under their Russian names`() {
         files().refresh()
+
+        assertTrue(Files.isRegularFile(plugin.resolve("Команды.txt")))
+        assertFalse(Files.exists(plugin.resolve("COMMANDS.txt")))
+        assertFalse(read("Команды.txt").contains('\r'))
 
         assertTrue(Files.isRegularFile(plugin.resolve("Помощь.txt")))
         assertTrue(Files.isRegularFile(plugin.resolve("Настройки.txt")))
@@ -94,6 +120,7 @@ class LibraryInfoFilesTest {
         files("2026-11-16T08:00:00Z").refresh()
 
         assertEquals(before, read("Помощь.txt"))
+        assertTrue("Все права по умолчанию у операторов" in read("Команды.txt"))
     }
 
     @Test
@@ -109,11 +136,13 @@ class LibraryInfoFilesTest {
         // A folder in the way makes the Russian name unusable, as an unmappable name does on a non-UTF-8 JVM.
         Files.createDirectories(plugin.resolve("Помощь.txt/inside"))
         Files.createDirectories(plugin.resolve("Настройки.txt/inside"))
+        Files.createDirectories(plugin.resolve("Команды.txt/inside"))
 
         files().refresh()
 
         assertTrue(Files.isRegularFile(plugin.resolve("HELP.txt")))
         assertTrue(Files.isRegularFile(plugin.resolve("SETTINGS.txt")))
+        assertTrue(Files.isRegularFile(plugin.resolve("COMMANDS.txt")))
         assertTrue(PnLibraryIdentity.SUPPORT_URL in read("HELP.txt"))
         assertTrue(warnings.isEmpty(), warnings.toString())
     }
@@ -128,5 +157,15 @@ class LibraryInfoFilesTest {
         files.refresh()
 
         assertEquals(1, warnings.size, warnings.toString())
+    }
+
+    @Test
+    fun `switches are written in Russian in the overview`() {
+        val text = files().settingsText()
+
+        assertTrue("Сейчас: выключено  (по умолчанию)" in text, text)
+        assertTrue("По умолчанию: включено" in text, text)
+        assertTrue("/pn settings set privacy включено" in text, text)
+        assertFalse(Regex("""(Сейчас|По умолчанию): (true|false)""").containsMatchIn(text), text)
     }
 }

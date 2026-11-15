@@ -42,9 +42,10 @@ data class ViewerInfo(val name: String, val permissions: Set<String>)
 /**
  * One setting of the library as the menu shows it.
  *
- * @property kind `SWITCH`, `NUMBER`, `TEXT` or `TIME`
+ * @property kind `SWITCH`, `NUMBER`, `TEXT`, `TIME` or `CHOICE`
  * @property range the allowed values in words, or empty
  * @property live whether a change starts to work at once; otherwise it waits for a restart
+ * @property choiceSource the name of the list a `CHOICE` setting is chosen from; the menu builds the list itself, it is not sent
  */
 data class SettingRow(
     val key: String,
@@ -57,6 +58,7 @@ data class SettingRow(
     val range: String,
     val examples: List<String>,
     val live: Boolean,
+    val choiceSource: String = "",
 )
 
 /** What came of changing a setting from the menu: [message] is the reason when [ok] is false, otherwise the new value. */

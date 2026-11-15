@@ -112,7 +112,7 @@ internal object SettingsRegistry {
         key: String, title: String, property: KProperty1<LibrarySettings, String>, applies: SettingApply, description: String, examples: List<String>,
         write: (LibrarySettings, String) -> LibrarySettings,
     ) = SettingSpec(
-        key, title, property.name, SettingKind.TEXT, description, applies, examples = examples,
+        key, title, property.name, SettingKind.CHOICE, description, applies, examples = examples, choices = ChoiceSource.ZONES,
         read = { property.get(it) }, write = { s, v -> write(s, v as String) },
         parse = {
             val value = it.trim()

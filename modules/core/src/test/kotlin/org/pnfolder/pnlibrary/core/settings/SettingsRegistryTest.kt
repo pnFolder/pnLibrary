@@ -81,4 +81,23 @@ class SettingsRegistryTest {
         assertThrows(SettingException::class.java) { message.normalize("   ") }
         assertThrows(SettingException::class.java) { message.normalize("я".repeat(257)) }
     }
+
+    @Test
+    fun `a switch is read in Russian and shown in Russian while it is stored as true or false`() {
+        val spec = requireNotNull(SettingsRegistry["privacy"])
+        listOf("вкл", "включено", "Да", "true", "on").forEach { assertEquals("true", spec.normalize(it), it) }
+        listOf("выкл", "выключено", "нет", "false", "off").forEach { assertEquals("false", spec.normalize(it), it) }
+        assertEquals("включено", spec.display("true"))
+        assertEquals("выключено", spec.display(spec.default))
+        assertEquals("30", requireNotNull(SettingsRegistry["history-retention-days"]).display("30"))
+    }
+
+    @Test
+    fun `the time zone is a choice from the list of zones and still accepts any known zone id`() {
+        val zone = requireNotNull(SettingsRegistry["time-zone"])
+
+        assertEquals(SettingKind.CHOICE, zone.kind)
+        assertTrue("Europe/Moscow" in zone.choices?.all.orEmpty())
+        assertEquals("Asia/Tokyo", zone.normalize("Asia/Tokyo"))
+    }
 }

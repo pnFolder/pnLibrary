@@ -5,8 +5,8 @@ import java.time.Duration
 /** Reading and writing the values of settings as text. */
 internal object SettingTexts {
     private val PART = Regex("""(\d+(?:[.,]\d+)?)\s*(ms|мс|сек|с|s|мин|м|m|ч|h|д|d)""")
-    private val ON = setOf("true", "on", "yes", "да", "вкл", "1")
-    private val OFF = setOf("false", "off", "no", "нет", "выкл", "0")
+    private val ON = setOf("true", "on", "yes", "да", "вкл", "включено", "1")
+    private val OFF = setOf("false", "off", "no", "нет", "выкл", "выключено", "0")
     private const val DAY = 86_400_000L
     private const val HOUR = 3_600_000L
     private const val MINUTE = 60_000L
@@ -16,8 +16,11 @@ internal object SettingTexts {
     fun switch(text: String): Boolean = when (text.trim().lowercase()) {
         in ON -> true
         in OFF -> false
-        else -> throw SettingException("Нужно значение true или false (можно on, off, да, нет).")
+        else -> throw SettingException("Нужно значение вкл или выкл (можно также включено, выключено, true, false, on, off, да, нет).")
     }
+
+    /** How a switch is read by people: `включено` or `выключено`; the stored value stays `true` or `false`. */
+    fun switchWord(on: Boolean): String = if (on) "включено" else "выключено"
 
     /** A whole number inside [min]..[max]. */
     fun number(text: String, min: Long, max: Long): Int {

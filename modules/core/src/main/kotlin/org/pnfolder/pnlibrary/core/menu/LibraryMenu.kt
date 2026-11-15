@@ -23,4 +23,7 @@ class LibraryMenu(
     fun home(player: MenuViewer) = router.home(player)
 
     fun open(player: MenuViewer) = router.open(player)
+
+    /** Opens the list of values of the choice setting [key], only those that contain [filter]; for `/pn settings pick`. */
+    fun pickSetting(player: MenuViewer, key: String, filter: String) = router.pick(player, key, filter)
 }

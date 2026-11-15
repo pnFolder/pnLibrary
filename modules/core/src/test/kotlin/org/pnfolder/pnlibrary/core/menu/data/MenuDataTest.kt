@@ -203,11 +203,12 @@ class MenuDataTest {
     fun `settings travel through the link and a change needs the settings permission`() {
         val actor = UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin")
         val row = SettingRow("privacy", "Приватность отчёта", "SWITCH", "Прятать данные.", "false", "false", false, "", emptyList(), false)
+        val zone = SettingRow("time-zone", "Часовой пояс", "CHOICE", "Пояс.", "UTC", "UTC", false, "", listOf("UTC"), true, "zones")
         val granted = connected(
-            "settings" to listOf(row), "changeSetting" to SettingOutcome(true, "true", false),
+            "settings" to listOf(row, zone), "changeSetting" to SettingOutcome(true, "true", false),
             holds = { viewer, permission -> viewer == "Admin" && permission == "pnlibrary.settings" },
         )
-        assertEquals(listOf(row), granted.settings())
+        assertEquals(listOf(row, zone), granted.settings())
         assertEquals(SettingOutcome(true, "true", false), granted.changeSetting("privacy", "true", actor))
 
         val denied = connected("changeSetting" to SettingOutcome(true, "true"), holds = { _, _ -> false })

@@ -56,5 +56,12 @@ internal class PluginsMenu(
         else replies.say(reply, ChatTone.INFO, "Меню доступно только игроку.", "В консоли используйте /pn updates.")
     }
 
+    /** Opens the values of the choice setting [key] for [sender], narrowed to [filter]; `false` when [sender] is not a player. */
+    fun pickFor(sender: NativeSender, key: String, filter: String): Boolean {
+        val player = sender as? Player ?: return false
+        menu.pickSetting(adapter.viewer(player), key, filter)
+        return true
+    }
+
     fun home(viewer: MenuViewer) = menu.home(viewer)
 }

@@ -140,7 +140,7 @@ class LocalMenuData(
         val spec = entry.spec
         SettingRow(
             spec.key, spec.title, spec.kind.name, spec.description, entry.current, spec.default, entry.changed, spec.range(), spec.examples,
-            spec.applies == SettingApply.LIVE,
+            spec.applies == SettingApply.LIVE, spec.choices?.id.orEmpty(),
         )
     }
 
@@ -148,7 +148,7 @@ class LocalMenuData(
         val store = library.librarySettings() ?: return SettingOutcome(false, "Настройки здесь недоступны.")
         return try {
             val change = if (value == null) store.reset(key) else store.set(key, value)
-            SettingOutcome(true, change.after, change.spec.applies == SettingApply.LIVE)
+            SettingOutcome(true, change.spec.display(change.after), change.spec.applies == SettingApply.LIVE)
         } catch (error: SettingException) {
             SettingOutcome(false, error.message.orEmpty())
         }

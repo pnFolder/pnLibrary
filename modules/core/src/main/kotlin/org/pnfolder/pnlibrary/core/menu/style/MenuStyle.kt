@@ -8,6 +8,9 @@ private const val FOOTER_START = 45
 private const val LEGACY_BLACK: Short = 15
 private const val LEGACY_PURPLE: Short = 10
 
+/** The remark after the option that is the default one. */
+internal const val DEFAULT_NOTE = "(по умолчанию)"
+
 /** Gradient color pair used for titles and highlights. */
 internal enum class Tone(val from: String, val to: String) {
     NORMAL("D19BFF", "F5C6FF"),
@@ -95,12 +98,17 @@ internal object Style {
 
     fun description(text: String): String = DESCRIPTION + text
 
-    fun choices(options: List<String>, selected: Int): List<String> = options.mapIndexed { index, label ->
-        if (index == selected) {
+    /** A small grey italic remark, for example `(по умолчанию)` after an option; the one place that turns italics on. */
+    fun note(text: String): String = MenuColors.color("&#9AA4AD") + MenuColors.legacy('o') + text
+
+    /** The option list of a switch or a choice; the option at [defaultIndex] gets the grey italic mark [DEFAULT_NOTE]. */
+    fun choices(options: List<String>, selected: Int, defaultIndex: Int? = null): List<String> = options.mapIndexed { index, label ->
+        val line = if (index == selected) {
             MenuColors.color("   &#6EE7A0➤ ") + MenuColors.gradient(label, "D19BFF", "FF9BD2")
         } else {
             MenuColors.color("   &#64546E· &#8B7A99") + label
         }
+        if (index == defaultIndex) "$line ${note(DEFAULT_NOTE)}" else line
     }
 
     fun danger(text: String): String = MenuColors.color(" &#FF7A7A") + text

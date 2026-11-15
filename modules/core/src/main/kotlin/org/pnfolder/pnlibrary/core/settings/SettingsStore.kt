@@ -113,7 +113,7 @@ internal class SettingsStore(
                 when (spec.kind) {
                     SettingKind.SWITCH -> JsonPrimitive(text.toBoolean())
                     SettingKind.NUMBER -> JsonPrimitive(text.toLong())
-                    SettingKind.TEXT, SettingKind.TIME -> JsonPrimitive(text)
+                    SettingKind.TEXT, SettingKind.TIME, SettingKind.CHOICE -> JsonPrimitive(text)
                 },
             )
         }

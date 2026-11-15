@@ -6,6 +6,7 @@ internal enum class SettingKind(val label: String) {
     NUMBER("число"),
     TEXT("текст"),
     TIME("время"),
+    CHOICE("выбор из списка"),
 }
 
 /** When a changed value starts to work. */
@@ -25,6 +26,7 @@ internal class SettingException(message: String) : IllegalArgumentException(mess
  * @property field the property of [LibrarySettings] it controls
  * @property min lowest number, or lowest length in milliseconds for a time
  * @property max highest number, or highest length in milliseconds for a time
+ * @property choices the list a [SettingKind.CHOICE] setting is chosen from
  */
 internal class SettingSpec(
     val key: String,
@@ -36,6 +38,7 @@ internal class SettingSpec(
     val min: Long? = null,
     val max: Long? = null,
     val examples: List<String> = emptyList(),
+    val choices: ChoiceSource? = null,
     private val read: (LibrarySettings) -> Any,
     private val write: (LibrarySettings, Any) -> LibrarySettings,
     private val parse: (String) -> Any,
@@ -46,6 +49,9 @@ internal class SettingSpec(
 
     /** The default value as text. */
     val default: String get() = valueIn(LibrarySettings())
+
+    /** [value] (from [valueIn] or [default]) as people read it: a switch says `включено` or `выключено`, the rest is as is. */
+    fun display(value: String): String = if (kind == SettingKind.SWITCH) SettingTexts.switchWord(value == "true") else value
 
     /** [settings] with this setting changed to [text].
      * @throws SettingException when [text] is not acceptable */

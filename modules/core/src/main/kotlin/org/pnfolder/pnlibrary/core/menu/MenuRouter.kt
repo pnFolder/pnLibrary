@@ -59,6 +59,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun home(player: MenuViewer) = homeScreens.home(player)
     override fun journal(player: MenuViewer, level: String?, page: Int) = journalScreens.journal(player, level, page)
     override fun librarySettings(player: MenuViewer, page: Int) = librarySettingsScreens.librarySettings(player, page)
+    override fun pickSetting(player: MenuViewer, key: String, filter: String) = librarySettingsScreens.pick(player, key, filter)
     override fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row> = journalScreens.journalRows(level, back)
     override fun labelled(label: String, text: String): List<Pair<String, String>> = taskScreens.labelled(label, text)
     override fun members(map: NetworkReport): List<NetworkServer> = networkScreens.members(map)
@@ -77,4 +78,6 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun versioned(owner: OwnerInfo): String = taskScreens.versioned(owner)
 
     fun open(player: MenuViewer) = session.away(player) { home(player) }
+
+    fun pick(player: MenuViewer, key: String, filter: String) = session.away(player) { pickSetting(player, key, filter) }
 }

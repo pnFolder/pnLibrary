@@ -20,6 +20,7 @@ import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.lifecycle.settingPicker
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
@@ -71,7 +72,17 @@ internal class BukkitControlCommand(
     private val support = BukkitSupportCommands(plugin, library, replies)
     private val menu = PluginsMenu(plugin, library, replies, link, scheduler)
 
-    override fun close() = menu.close()
+    init {
+        // `/pn settings pick` is a shared command; the menu it opens exists only here.
+        library.settingPicker()?.opener = { context, key, filter ->
+            (context.sender as? BukkitCommandSender)?.native?.let { menu.pickFor(it, key, filter) } ?: false
+        }
+    }
+
+    override fun close() {
+        library.settingPicker()?.opener = null
+        menu.close()
+    }
 
     fun definition(): CommandDefinition = command("pn") {
         // Other labels for the same command: they keep it reachable when another plugin already owns `/pn`.

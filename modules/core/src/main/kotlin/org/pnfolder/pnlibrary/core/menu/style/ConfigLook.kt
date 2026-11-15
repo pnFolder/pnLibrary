@@ -185,17 +185,20 @@ internal object ConfigLook {
     }
 
     /** The choices one under another with the current one marked; a long list shows the window around it. */
-    private fun choices(setting: ConfigSetting): List<String> {
-        if (setting.choices.isEmpty()) return emptyList()
-        val at = setting.choices.indexOf(setting.value).coerceAtLeast(0)
-        val from = (at - CHOICES_SHOWN / 2).coerceIn(0, (setting.choices.size - CHOICES_SHOWN).coerceAtLeast(0))
-        val window = setting.choices.drop(from).take(CHOICES_SHOWN)
-        val lines = Style.choices(window, at - from)
-        val above = from
-        val below = setting.choices.size - from - window.size
+    private fun choices(setting: ConfigSetting): List<String> = window(setting.choices, setting.choices.indexOf(setting.value).coerceAtLeast(0))
+
+    /**
+     * The rolling switcher: [options] one under another with the one at [at] marked, at most [CHOICES_SHOWN] lines around
+     * it, and `▲ выше ещё N` / `▼ ниже ещё N` for what is cut off. Config settings and library settings share it.
+     */
+    fun window(options: List<String>, at: Int): List<String> {
+        if (options.isEmpty()) return emptyList()
+        val from = (at - CHOICES_SHOWN / 2).coerceIn(0, (options.size - CHOICES_SHOWN).coerceAtLeast(0))
+        val shown = options.drop(from).take(CHOICES_SHOWN)
+        val below = options.size - from - shown.size
         return buildList {
-            if (above > 0) add("$GRAY   ▲ выше ещё $above")
-            addAll(lines)
+            if (from > 0) add("$GRAY   ▲ выше ещё $from")
+            addAll(Style.choices(shown, at - from))
             if (below > 0) add("$GRAY   ▼ ниже ещё $below")
         }
     }

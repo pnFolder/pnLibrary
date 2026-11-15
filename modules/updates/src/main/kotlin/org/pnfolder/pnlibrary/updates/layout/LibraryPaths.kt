@@ -34,6 +34,9 @@ class LibraryPaths(val pluginFolder: Path) {
     /** Generated overview of every library setting with its current value; rewritten at start and at every change. */
     val settingsOverview = InfoFileNames("Настройки.txt", "SETTINGS.txt")
 
+    /** Generated list of every command and permission; rewritten at every start, edits are lost. */
+    val commandGuide = InfoFileNames("Команды.txt", "COMMANDS.txt")
+
     /** Where the server picks up prepared plugin jars on its next start. */
     val serverUpdateFolder: Path = plugins.resolve("update")
 
