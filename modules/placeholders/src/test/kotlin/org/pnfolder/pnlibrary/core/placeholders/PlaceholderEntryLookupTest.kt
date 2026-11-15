@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.plugin.PluginId
@@ -47,8 +48,8 @@ class PlaceholderEntryLookupTest {
         key = PlaceholderKey.of(key, String::class.java),
         resolver = { CompletableFuture.completedFuture("value") },
         updater = null,
-        access = PlaceholderAccess.shared(),
-        updateAccess = PlaceholderAccess.ownerOnly(),
+        access = PluginAccess.shared(),
+        updateAccess = PluginAccess.ownerOnly(),
         cachePolicy = PlaceholderCachePolicy.none(),
         fallback = null,
         adapterLookup = { null },

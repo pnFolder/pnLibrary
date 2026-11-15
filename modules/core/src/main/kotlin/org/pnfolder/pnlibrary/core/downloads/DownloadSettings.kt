@@ -20,8 +20,8 @@ internal class DownloadSettings {
     var enabled: Boolean = true
 
     @field:ConfigDefaultOnInvalid
-    @field:ConfigComment("Разрешить загрузки, которые плагин запускает сам, без команды администратора.")
-    var automatic: Boolean = false
+    @field:ConfigComment("Разрешить загрузки, которые плагин запускает сам, без команды администратора. Выбор в игровом меню или /pn deps auto главнее этого значения.")
+    var automatic: Boolean = true
 
     @field:ConfigComment("Куда разрешено сохранять скачанные файлы.")
     var destinations: Destinations = Destinations()

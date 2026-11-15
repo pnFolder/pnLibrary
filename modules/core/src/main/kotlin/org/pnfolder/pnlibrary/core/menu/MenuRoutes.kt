@@ -17,6 +17,7 @@ internal interface MenuRoutes {
     fun busTraces(player: MenuViewer, event: String?, page: Int)
     fun card(player: MenuViewer, product: String)
     fun checkAll(player: MenuViewer)
+    fun configs(player: MenuViewer, page: Int)
     fun everyone(player: MenuViewer, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>)
     fun groups(player: MenuViewer, page: Int): Unit
     fun history(player: MenuViewer, product: String?, page: Int)

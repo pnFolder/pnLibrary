@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
@@ -36,8 +37,8 @@ class BuiltInPlaceholders(
             key = typedKey,
             resolver = { CompletableFuture.completedFuture(value()) },
             updater = null,
-            access = PlaceholderAccess.shared(),
-            updateAccess = PlaceholderAccess.ownerOnly(),
+            access = PluginAccess.shared(),
+            updateAccess = PluginAccess.ownerOnly(),
             cachePolicy = PlaceholderCachePolicy.none(),
             fallback = null,
             adapterLookup = adapterLookup,
@@ -56,8 +57,8 @@ class BuiltInPlaceholders(
                 CompletableFuture.completedFuture(commands.resolve(request.parameters["value"].orEmpty(), request.playerId))
             },
             null,
-            PlaceholderAccess.shared(),
-            PlaceholderAccess.ownerOnly(),
+            PluginAccess.shared(),
+            PluginAccess.ownerOnly(),
             cachePolicy = PlaceholderCachePolicy.none(),
             fallback = null,
             adapterLookup = adapterLookup,

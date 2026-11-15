@@ -26,6 +26,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
     override val required: Boolean = builder.required
     /** Administrator/automatic download policy. */
     override val downloadPolicy: DownloadPolicy = builder.downloadPolicy
+        ?: if (builder.artifact != null) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
 
     /** Fluent builder for an [ExternalPluginDependency]. */
     class Builder internal constructor(
@@ -37,7 +38,8 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal var required = true
         internal var maximumInclusive: SemanticVersion? = null
         internal var maximumExclusive: SemanticVersion? = null
-        internal var downloadPolicy = DownloadPolicy.MANUAL
+        internal var downloadPolicy: DownloadPolicy? = null
+        internal val mirrors = mutableListOf<URI>()
         internal var verifyPluginId = true
         internal var verifyVersion = true
 
@@ -52,6 +54,9 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         }
         /** Sets a direct download URL without an integrity check. */
         fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+
+        /** Adds another HTTPS address of the same file; without a checksum the copies are compared with each other. */
+        fun mirror(value: String): Builder = apply { mirrors += requireHttpsUri(value, "Mirror must use HTTPS") }
 
         /** Sets whether the plugin refuses to start without this dependency. */
         fun required(value: Boolean): Builder = apply { required = value }
@@ -78,7 +83,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         /** Enables or disables mandatory automatic installation. */
         fun forceAutomaticDownload(value: Boolean): Builder = apply {
             if (value) downloadPolicy = DownloadPolicy.FORCED
-            else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = DownloadPolicy.MANUAL
+            else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = null
         }
 
         internal fun versions() = VersionConstraint(minimumVersion, maximumInclusive, maximumExclusive)
@@ -86,9 +91,10 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         /** Validates and creates the immutable dependency. */
         fun build(): ExternalPluginDependency {
             require(downloadPage != null || artifact != null) { "External dependency requires a download page or artifact" }
-            require(artifact != null || downloadPolicy == DownloadPolicy.MANUAL) {
+            require(artifact != null || downloadPolicy == null || downloadPolicy == DownloadPolicy.MANUAL) {
                 "A download page cannot be installed automatically"
             }
+            artifact = artifact?.let { ExternalArtifact(it.uri, it.size, it.sha256, mirrors.toList()) }
             versions()
             return ExternalPluginDependency(this)
         }

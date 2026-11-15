@@ -108,13 +108,36 @@ object Dependencies {
         size: Long,
         sha256: String,
         required: Boolean = true,
-        automaticDownload: Boolean = false,
+        automaticDownload: Boolean = true,
         forceAutomaticDownload: Boolean = false,
     ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
         .artifact(downloadUrl, size, sha256)
         .required(required)
         .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
         .build()
+
+    /**
+     * Declares an external plugin with several download addresses and no checksum. The first address is tried first,
+     * the others are mirrors; when two or more answer, their files must be identical, so a replaced copy is caught.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun plugin(
+        plugin: String,
+        minimumVersion: String,
+        sources: List<String>,
+        required: Boolean = true,
+        automaticDownload: Boolean = true,
+        forceAutomaticDownload: Boolean = false,
+    ): PluginDependency {
+        require(sources.isNotEmpty()) { "At least one download address is required" }
+        return ExternalPluginDependency.builder(plugin, minimumVersion)
+            .url(sources.first())
+            .also { builder -> sources.drop(1).forEach(builder::mirror) }
+            .required(required)
+            .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+            .build()
+    }
 
     private fun downloadPolicy(automatic: Boolean, forced: Boolean): DownloadPolicy = when {
         forced -> DownloadPolicy.FORCED

@@ -17,9 +17,12 @@ internal class DownloadArtifactPreparer(
     private val platform: PlatformType,
     private val libraryData: Path,
     private val configuration: DownloadConfiguration,
-    private val http: TrustedHttpClient,
+    http: TrustedHttpClient,
+    pins: DownloadPins = DownloadPins(libraryData),
     private val maximumBytes: Long = 512L * 1024L * 1024L,
 ) {
+    private val fetcher = SourceFetcher(http, pins)
+
     fun prepare(
         request: FileDownloads,
         declaration: FileDownload,
@@ -31,7 +34,7 @@ internal class DownloadArtifactPreparer(
 
         val target = target(request, declaration)
         val limit = declaration.source.size?.coerceAtMost(maximumBytes)?.toInt() ?: maximumBytes.toInt()
-        val bytes = http.get(declaration.source.uri, limit)
+        val bytes = fetcher.fetch(declaration.source, limit)
         verifyIntegrity(declaration, bytes)
 
         val staging = libraryData.resolve("downloads/staging").resolve("${UUID.randomUUID()}-${target.fileName}")

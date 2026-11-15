@@ -169,6 +169,7 @@ internal class PluginRegistryImpl(
         val nativeId: PluginId,
         private val registrationId: Long,
     ) : PluginRegistration {
+        override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()

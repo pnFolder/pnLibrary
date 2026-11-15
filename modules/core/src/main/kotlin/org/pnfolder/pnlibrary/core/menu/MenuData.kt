@@ -5,6 +5,8 @@ import org.pnfolder.pnlibrary.api.events.EventDay
 import org.pnfolder.pnlibrary.api.events.EventInfo
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.config.ConfigEditResult
+import org.pnfolder.pnlibrary.api.config.ConfigSetting
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
@@ -124,6 +126,21 @@ interface MenuData {
     fun stats(): StatsSnapshot
 
     fun placeholders(): List<PlaceholderInfo>
+
+    /** The configuration files of this server; another server's files are managed there, so the default is none. */
+    fun configs(): List<ConfigRow> = emptyList()
+
+    /** The settings of one file that may be changed in game, with their values. */
+    fun configSettings(id: String): List<ConfigSetting> = emptyList()
+
+    /** Changes one setting of a file of this server and saves it. */
+    fun editConfig(id: String, path: String, text: String): ConfigEditResult =
+        throw UnsupportedOperationException("Настройки меняются на самом сервере")
+
+    /** Whether missing plugins are downloaded without a command; `null` when this server has no such download. */
+    fun downloadsAutomatic(): Boolean? = null
+
+    fun setDownloadsAutomatic(value: Boolean) {}
 
     fun runTask(id: String): TaskControl
 

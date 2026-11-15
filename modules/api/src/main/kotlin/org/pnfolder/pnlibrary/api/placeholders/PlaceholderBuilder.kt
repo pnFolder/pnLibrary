@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import java.util.function.Consumer
 
 /** Fluent definition of one typed placeholder before it enters the service registry. */
@@ -15,13 +16,13 @@ interface PlaceholderBuilder<T : Any> {
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
 
     /** Restricts which plugins may change this placeholder's value. */
-    fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
+    fun updateAccess(access: PluginAccess): PlaceholderBuilder<T>
 
     /** Sets which plugins may read this placeholder. */
-    fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
+    fun access(access: PluginAccess): PlaceholderBuilder<T>
 
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
-    fun access(configure: Consumer<PlaceholderAccess.Builder>): PlaceholderBuilder<T>
+    fun access(configure: Consumer<PluginAccess.Builder>): PlaceholderBuilder<T>
 
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>

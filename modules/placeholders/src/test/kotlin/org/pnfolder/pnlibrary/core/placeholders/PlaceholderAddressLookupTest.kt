@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -20,7 +22,7 @@ class PlaceholderAddressLookupTest {
     @Test
     fun `a placeholder is found by its full address from another plugin`() {
         val clans = scope("m-clans-war-1", "pnclans", "war")
-        clans.register("score", Int::class.javaObjectType) { it.resolve { 7 }.access(org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess.shared()) }
+        clans.register("score", Int::class.javaObjectType) { it.resolve { 7 }.access(org.pnfolder.pnlibrary.api.plugin.PluginAccess.shared()) }
         val other = scope("m-shop-main-1", "pnshop", "main")
 
         assertTrue(other.contains("pnclans/war:score"))
@@ -33,7 +35,7 @@ class PlaceholderAddressLookupTest {
         val clans = scope("m-clans-war-1", "pnclans", "war")
         clans.register("player.{name}", String::class.java) { builder ->
             builder.resolve { request -> request.parameters.getValue("name") }
-            builder.access(org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess.shared())
+            builder.access(org.pnfolder.pnlibrary.api.plugin.PluginAccess.shared())
         }
 
         assertEquals("Alex", clans.resolve("pnclans/war:player.Alex").toCompletableFuture().get())

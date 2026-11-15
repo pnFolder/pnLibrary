@@ -19,6 +19,19 @@ interface PluginRegistry : AutoCloseable {
     fun require(owner: Any): PluginRegistration =
         get(owner) ?: error("Platform plugin ${owner.javaClass.name} is not registered in pnLibrary")
 
+    /** Returns the registration of the plugin with identifier [id], or `null` when no such plugin is registered. */
+    fun getById(id: PluginId): PluginRegistration? = all().firstOrNull { it.id == id }
+
+    /** Normalizes [id] and returns the matching registration, or `null`. */
+    fun getById(id: String): PluginRegistration? = getById(PluginId.of(id))
+
+    /** Returns the registration of the plugin with identifier [id], or fails naming the registered plugins. */
+    fun requireById(id: PluginId): PluginRegistration =
+        getById(id) ?: error("Plugin $id is not registered in pnLibrary; registered: ${all().joinToString { it.id.value }}")
+
+    /** Normalizes [id] and returns the matching registration, or fails naming the registered plugins. */
+    fun requireById(id: String): PluginRegistration = requireById(PluginId.of(id))
+
     /** Closes and removes [owner]'s registration when present. */
     fun unregister(owner: Any)
 

@@ -120,7 +120,7 @@ module.formats {
 ## Ключи
 
 Ключ типизирован: `PlaceholderKey.of("balance", Long::class.java)`. Значение настраивается в билдере
-(`PlaceholderBuilder`): откуда брать, кто может читать (`PlaceholderAccess`), как кэшировать (`PlaceholderCachePolicy`,
+(`PlaceholderBuilder`): откуда брать, кто может читать (`PluginAccess`), как кэшировать (`PlaceholderCachePolicy`,
 `PlaceholderCacheScope`).
 
 ```kotlin

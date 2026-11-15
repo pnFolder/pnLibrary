@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.currency
 
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
 import org.pnfolder.pnlibrary.api.currency.CurrencyConfirmationMode
@@ -14,7 +14,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
@@ -30,13 +29,13 @@ import java.util.function.Consumer
 /** Common access and alias configuration shared by all currency builders. */
 internal open class CurrencyOptions : CurrencyRegistrationOptions {
     /** Visibility policy; owner-only until the plugin widens it. */
-    var access: CurrencyAccess = CurrencyAccess.ownerOnly()
+    var access: PluginAccess = PluginAccess.ownerOnly()
     /** Extra names under which the same currency can be resolved. */
     val aliases = linkedSetOf<String>()
 
-    override fun access(access: CurrencyAccess) = apply { this.access = access }
-    override fun access(configure: Consumer<CurrencyAccess.Builder>) = apply {
-        access = CurrencyAccess.builder().also(configure::accept).build()
+    override fun access(access: PluginAccess) = apply { this.access = access }
+    override fun access(configure: Consumer<PluginAccess.Builder>) = apply {
+        access = PluginAccess.builder().also(configure::accept).build()
     }
     override fun aliases(vararg aliases: String) = apply { this.aliases += aliases }
 }
@@ -125,14 +124,14 @@ private class ManagedPlaceholderOptions(defaultNamespace: String) : CurrencyPlac
     /** Whether placeholders are registered at all. */
     var enabled = true
     /** Who may resolve the placeholders. */
-    var access: PlaceholderAccess = PlaceholderAccess.ownerOnly()
+    var access: PluginAccess = PluginAccess.ownerOnly()
     /** Whether the placeholders are also published to PlaceholderAPI. */
     var placeholderApi = false
     /** PlaceholderAPI identifier prefix. */
     var namespace = defaultNamespace
 
     override fun enabled(value: Boolean) = apply { enabled = value }
-    override fun access(access: PlaceholderAccess) = apply { this.access = access }
+    override fun access(access: PluginAccess) = apply { this.access = access }
     override fun placeholderApi(enabled: Boolean) = apply { placeholderApi = enabled }
     override fun placeholderApi(namespace: String) = apply {
         require(namespace.isNotBlank()) { "PlaceholderAPI namespace must not be blank" }

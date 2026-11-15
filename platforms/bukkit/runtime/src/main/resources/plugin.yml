@@ -27,6 +27,9 @@ permissions:
   pnlibrary.tasks:
     description: 'Смотреть задачи плагинов (/pn tasks) и отменять их'
     default: op
+  pnlibrary.deps:
+    description: 'Недостающие плагины: список, установка по коду, автозагрузка (/pn deps)'
+    default: op
   pnlibrary.placeholders:
     description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
     default: op

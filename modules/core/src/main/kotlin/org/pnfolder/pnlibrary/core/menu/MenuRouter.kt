@@ -21,6 +21,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val placeholderScreens = PlaceholderScreens(session, this)
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
+    private val configScreens = ConfigScreens(session, this)
 
     override fun aboutOf(name: String): EventAbout? = taskScreens.aboutOf(name)
     override fun backups(player: MenuViewer, page: Int) = historyScreens.backups(player, page)
@@ -30,6 +31,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun busTraces(player: MenuViewer, event: String?, page: Int) = busHistoryScreens.busTraces(player, event, page)
     override fun card(player: MenuViewer, product: String) = updateScreens.card(player, product)
     override fun checkAll(player: MenuViewer) = updateScreens.checkAll(player)
+    override fun configs(player: MenuViewer, page: Int) = configScreens.configs(player, page)
     override fun everyone(player: MenuViewer, done: String, change: (UpdateSnapshot) -> java.util.concurrent.CompletionStage<*>) =
         updateScreens.everyone(player, done, change)
     override fun groups(player: MenuViewer, page: Int): Unit = groupScreens.groups(player, page)

@@ -38,7 +38,7 @@ object StandaloneConfigs {
         val codec = AnnotatedYamlCodec(
             type = type,
             defaults = defaults,
-            serializers = BuiltInConfigSerializers.create(),
+            serializers = BuiltInConfigSerializers.create().let { builtIn -> { builtIn } },
             runtimeTypes = { emptyList() },
             consumer = "pnlibrary",
             options = options,

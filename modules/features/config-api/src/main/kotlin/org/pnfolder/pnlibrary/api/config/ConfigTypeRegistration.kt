@@ -1,87 +1,8 @@
 package org.pnfolder.pnlibrary.api.config
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.common.text.Wildcards
 import java.util.Collections
 import java.util.LinkedHashSet
-
-/**
- * Controls which plugin configurations may use a dynamically published polymorphic type.
- *
- * Denials are evaluated first and override every allow rule, including owner access. Otherwise the
- * owner is allowed automatically. Pattern matching is case-insensitive and `*` matches any number
- * of characters; all other pattern characters are treated literally.
- */
-class ConfigTypeAccess private constructor(
-    /** Whether every pnLibrary plugin is allowed unless explicitly denied. */
-    val allLibraryPlugins: Boolean,
-    /** Explicitly allowed plugin identifiers. */
-    val allowedPlugins: Set<PluginId>,
-    /** Case-insensitive glob patterns matched against plugin identifiers. */
-    val allowedPatterns: Set<String>,
-    /** Explicit denials that override owner and allow rules. */
-    val deniedPlugins: Set<PluginId>,
-) {
-    init {
-        require(allowedPatterns.none(String::isBlank)) { "Config type access patterns must not be blank" }
-    }
-
-    /** Returns whether [consumer] may use a type published by [owner]. */
-    fun allows(owner: PluginId, consumer: PluginId): Boolean {
-        if (consumer in deniedPlugins) return false
-        if (owner == consumer) return true
-        return allLibraryPlugins || consumer in allowedPlugins || allowedPatterns.any {
-            Wildcards.matches(it, consumer.value)
-        }
-    }
-
-    /** Ready-made visibility policies and the custom-policy builder entry point. */
-    companion object {
-        /** Creates an access policy that allows only the publishing plugin. */
-        @JvmStatic
-        fun ownerOnly(): ConfigTypeAccess = Builder().build()
-
-        /** Creates an access policy that allows every pnLibrary plugin. */
-        @JvmStatic
-        fun everyone(): ConfigTypeAccess = Builder().allowAll().build()
-
-        /** Creates an owner-plus-explicit-plugins access policy. */
-        @JvmStatic
-        fun plugins(vararg pluginIds: String): ConfigTypeAccess =
-            Builder().allow(*pluginIds).build()
-
-        /** Creates a mutable access-policy builder. */
-        @JvmStatic
-        fun builder(): Builder = Builder()
-    }
-
-    /** Fluent builder for [ConfigTypeAccess]. */
-    class Builder internal constructor() {
-        private var all = false
-        private val allowed = linkedSetOf<PluginId>()
-        private val patterns = linkedSetOf<String>()
-        private val denied = linkedSetOf<PluginId>()
-
-        /** Allows every pnLibrary plugin unless denied explicitly. */
-        fun allowAll(): Builder = apply { all = true }
-        /** Allows the supplied normalized plugin identifiers. */
-        fun allow(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(allowed::add) }
-        /** Allows plugin identifiers matching any supplied case-insensitive glob. */
-        fun allowMatching(vararg patterns: String): Builder = apply {
-            require(patterns.none(String::isBlank)) { "Config type access patterns must not be blank" }
-            patterns.map(String::trim).forEach(this.patterns::add)
-        }
-        /** Denies the supplied plugins, overriding all allow rules. */
-        fun deny(vararg pluginIds: String): Builder = apply { pluginIds.map(PluginId::of).forEach(denied::add) }
-        /** Creates an immutable access policy. */
-        fun build(): ConfigTypeAccess = ConfigTypeAccess(
-            all,
-            Collections.unmodifiableSet(LinkedHashSet(allowed)),
-            Collections.unmodifiableSet(LinkedHashSet(patterns)),
-            Collections.unmodifiableSet(LinkedHashSet(denied)),
-        )
-    }
-}
 
 /** Handle for one plugin-owned polymorphic configuration type. */
 interface ConfigTypeRegistration : AutoCloseable {
@@ -93,6 +14,8 @@ interface ConfigTypeRegistration : AutoCloseable {
     val implementation: Class<*>
     /** Normalized primary discriminator value. */
     val name: String
+    /** Where the word works: a plugin, a module or one file. */
+    val target: ConfigAddress
     /** Whether this registration is still visible to configuration codecs. */
     val isActive: Boolean
     /** Deactivates and removes this registration. Closing is idempotent. */
@@ -102,8 +25,9 @@ interface ConfigTypeRegistration : AutoCloseable {
 /**
  * Fluent publication of one polymorphic configuration type, created by [ConfigScope.type].
  *
- * Only [name] is required. Without further calls the type is private to its owner, has priority
- * zero and no aliases. Nothing is published until [register] is called.
+ * Only [name] is required. Without [into] the word works in the configurations of the module that registers it.
+ * With [into] it works where the address points, for example in another plugin's file, and it lives and dies
+ * with the registering module. Nothing is published until [register] is called.
  */
 class ConfigTypeBuilder<T : Any> internal constructor(
     private val scope: ConfigScope,
@@ -113,7 +37,7 @@ class ConfigTypeBuilder<T : Any> internal constructor(
     private var name: String? = null
     private val aliases = linkedSetOf<String>()
     private var priority = 0
-    private var access = ConfigTypeAccess.ownerOnly()
+    private var target: ConfigAddress? = null
 
     /** Sets the primary discriminator value. */
     fun name(value: String): ConfigTypeBuilder<T> = apply { name = value }
@@ -124,16 +48,31 @@ class ConfigTypeBuilder<T : Any> internal constructor(
     /** Sets the priority; the higher value wins when several registrations accept one identifier. */
     fun priority(value: Int): ConfigTypeBuilder<T> = apply { priority = value }
 
-    /** Sets which plugins may use the type. */
-    fun access(value: ConfigTypeAccess): ConfigTypeBuilder<T> = apply { access = value }
+    /** Makes the word work at [address]: a plugin, a module or one file. */
+    fun into(address: ConfigAddress): ConfigTypeBuilder<T> = apply { target = address }
 
-    /** Sets the access policy through a Java-friendly callback. */
-    fun access(configure: java.util.function.Consumer<ConfigTypeAccess.Builder>): ConfigTypeBuilder<T> =
-        access(ConfigTypeAccess.builder().also(configure::accept).build())
+    /** Short form for the address written as text: `*`, `quests`, `quests/main` or `quests/main:quests.yml`. */
+    fun into(address: String): ConfigTypeBuilder<T> = into(ConfigAddress.parse(address))
+
+    /** Makes the word work in one registered file. */
+    fun into(config: ManagedConfig<*>): ConfigTypeBuilder<T> =
+        into(requireNotNull(config.id) { "This configuration has no identifier" }.address)
+
+    /** Makes the word work in every file of the plugin [plugin]. */
+    fun into(plugin: PluginId): ConfigTypeBuilder<T> = into(ConfigAddress.plugin(plugin))
+
+    /** Makes the word work in every file of the module that owns [other], for example another plugin's scope. */
+    fun into(other: ConfigScope): ConfigTypeBuilder<T> = into(ConfigAddress.module(other.plugin, other.module))
+
+    /** Makes the word work in the file that [info] describes, for example one found in the catalog. */
+    fun into(info: ConfigInfo): ConfigTypeBuilder<T> = into(info.address)
+
+    /** Makes the word work in every file of every plugin that accepts it. */
+    fun everywhere(): ConfigTypeBuilder<T> = into(ConfigAddress.everywhere())
 
     /** Publishes the type and returns its handle. */
     fun register(): ConfigTypeRegistration {
         val primary = requireNotNull(name) { "Config type name is required: call name(...) before register()" }
-        return scope.publishType(baseType, implementation, primary, LinkedHashSet(aliases), priority, access)
+        return scope.publishType(baseType, implementation, primary, LinkedHashSet(aliases), priority, target)
     }
 }

@@ -57,7 +57,7 @@ class ModuleResourceFactoryTest {
     private fun factory(): ModuleResourceFactory {
         `when`(events.scope(key, PluginId.of("native"), id)).thenReturn(eventScope)
         `when`(tasks.scope(owner, key)).thenReturn(taskScope)
-        `when`(configurations.scope(owner, key)).thenReturn(configScope)
+        `when`(configurations.scope(owner, key, PluginId.of("native"), id)).thenReturn(configScope)
         `when`(placeholders.scope(key, false, "native", id.value)).thenReturn(placeholderScope)
         `when`(currency.scope(key, placeholderScope)).thenReturn(currencyScope)
         `when`(currency.storages).thenReturn(storageFactory)

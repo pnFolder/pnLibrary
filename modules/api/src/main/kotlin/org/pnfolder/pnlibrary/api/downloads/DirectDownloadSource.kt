@@ -14,6 +14,7 @@ import java.util.Locale
  * @property maximumJava newest supported Java feature version, or `null` when unbounded
  * @property size expected byte length, when integrity metadata is available
  * @property sha256 expected lowercase SHA-256 digest, when available
+ * @property mirrors other addresses of the same file
  */
 class DirectDownloadSource private constructor(builder: Builder) {
     val uri: URI = requireNotNull(builder.uri) { "Download URL is required" }
@@ -22,6 +23,9 @@ class DirectDownloadSource private constructor(builder: Builder) {
     val maximumJava: Int? = builder.maximumJava
     val size: Long? = builder.size
     val sha256: String? = builder.sha256
+
+    /** Other HTTPS addresses of the same file, tried after [uri] and compared with it when no checksum is declared. */
+    val mirrors: List<URI> = builder.mirrors.toList()
 
     /** Returns whether this source supports [platform] on [javaFeature]. */
     fun supports(platform: PlatformType, javaFeature: Int): Boolean =
@@ -36,10 +40,16 @@ class DirectDownloadSource private constructor(builder: Builder) {
         internal var maximumJava: Int? = null
         internal var size: Long? = null
         internal var sha256: String? = null
+        internal val mirrors = mutableListOf<URI>()
 
         /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply {
             uri = requireHttpsUri(value, "Download URL must use HTTPS")
+        }
+
+        /** Adds another HTTPS address of the same file. */
+        fun mirror(value: String): Builder = apply {
+            mirrors += requireHttpsUri(value, "Mirror URL must use HTTPS")
         }
 
         /** Restricts the source to [value]. */

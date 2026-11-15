@@ -2,6 +2,48 @@
 
 ## Ветка next (0.1.0-dev)
 
+### Настройки в меню
+- Числа: `@ConfigStep(шаг, единица)`, `@ConfigDuration(TimeUnit)` (в меню «1 ч 30 мин», шаги секунда/минута/час, ввод `90m`, `1h30m`).
+  Колёсико мыши открывает редактор числа: шаги вниз и вверх разного размера, «Минимум», «Максимум», ввод в чате.
+- Тексты: `@ConfigHint(format, examples, values, strict)`; со `strict` текст становится списком выбора. Длинный список листается
+  отдельным экраном (Shift + клик).
+- В списках: кнопки страниц `◀ Страница N` / `Страница N ▶`, номер страницы и диапазон на средней кнопке. В карточке файла виден полный класс.
+
+### Зависимости
+- У внешней зависимости несколько источников без контрольной суммы: `Dependencies.plugin(имя, версия, listOf(url1, url2))`,
+  `ExternalPluginDependency.Builder.mirror(url)`, `FileDownload.Builder.mirror(url)`. Файлы с разных адресов сверяются; при расхождении загрузка отклоняется.
+  Единственный адрес запоминает SHA-256 первой загрузки: если файл по нему изменился, нужно подтверждение администратора.
+- Автозагрузка недостающих плагинов включена по умолчанию (у зависимости с прямой ссылкой). Выбор администратора лежит в данных
+  (`downloads/preferences.state`), а не в конфиге, и главнее `downloads.yml`; переключатель есть в меню настроек и в `/pn deps auto on|off`.
+- Чего не хватает: сообщение в консоли со ссылками и кодом. `/pn deps` показывает список, `/pn deps install <код>` скачивает сразу, даже при выключенной автозагрузке.
+  Право `pnlibrary.deps`.
+
+### Конфигурации
+- Регистрация полиморфных типов по адресу: `.into("плагин" | "плагин/модуль" | "плагин/модуль:путь" | ConfigAddress | ManagedConfig)`.
+  `ConfigTypeAccess` и `.access(...)` удалены. Регистрация живёт и умирает с модулем регистранта.
+- Защита: нельзя занять слова базового типа и хозяина файла; хозяин ограничивает расширения `extensions { allow/deny/denyAll }`.
+- `ConfigOptions.unknownTypes` (`FAIL`/`SKIP`): при `SKIP` элемент списка с незнакомым `type` пропускается и остаётся в файле;
+  запись заблокирована, пока есть пропущенные. Ожидающие конфиги перечитываются при регистрации типа.
+- Идентификаторы `плагин/модуль:путь` (`ConfigId`, `ConfigAddress`, `ConfigInfo`) и каталог:
+  `library.configurations.all/find/get/require/byModel/types`, `library.plugins.getById/requireById`, `PluginRegistration.configs()`,
+  `ConfigScope.list/get/require`, `ManagedConfig.id/info`.
+- `ConfigOptions.root` (`PLUGIN`, `PLUGINS`, `SERVER`) и `ConfigOptions.readOnly`.
+- Команда `/pn configs [страница] | info | reload | validate | types`, право `pnlibrary.configs`.
+- Файл по любому абсолютному пути: `scope.yamlAt(Path)` (корень `ConfigRoot.EXTERNAL`, ID `плагин/модуль:@external/<путь>`).
+  Путь может прийти из собственного конфига плагина. Файл считается своим: создаётся и перезаписывается, секреты скрываются в отчётах.
+- Один класс `PluginAccess` (`ownerOnly()`, `shared()`, `only(...)`, `builder()`) вместо `PlaceholderAccess`, `CurrencyAccess`
+  и `ConfigExtensionPolicy`; `configs.extensions { }` теперь тоже на нём.
+- Правка настроек в игре: аннотация `@ConfigEditable(title, description, apply)`, `ManagedConfig.settings` и `edit(path, text)`,
+  `ConfigApply` (`LIVE`, `RELOAD`, `RESTART`). Секреты (`@ConfigSecret`) не показываются. Команды `/pn configs settings <id>` и
+  `/pn configs edit <id> <путь> <значение>` (право `pnlibrary.configs.edit`), страница «Конфигурации» в `/pn gui`: плагины → модули → файлы (или все файлы плагина с названием модуля), с переключением и страницами.
+- Колбэки: `ManagedConfig.onChanged(...)` (чтение, запись, правка) и `onReloadRequired(...)` (изменена настройка, которой нужно
+  перечитывание или перезапуск); принимают несколько обработчиков, ошибка одного не мешает другим. `ConfigInfo.pendingApply`.
+- Адрес собирается из частей, строки не нужны: `ConfigAddress.plugin("shop").inModule("main").inFile("a.yml")`; `into` принимает ещё `PluginId`, `ConfigScope`, `ConfigInfo`, `ManagedConfig`.
+- Адрес `*` (`ConfigAddress.everywhere()`, в билдерах `.everywhere()`): слово типа и сериализатор можно добавить во все файлы всех плагинов.
+- Сериализаторы в чужих файлах: `scope.serializerFor(serializer).into(адрес).priority(n).register()`, список `configurations.serializers()`.
+  Свои сериализаторы модуля главнее добавленных, хозяин ограничивает `extensions { }`, чужим файлам нельзя подменить примитивы
+  и типы `java.`/`kotlin.`. Сериализаторы читаются при каждом чтении файла, поэтому добавление после `yaml(...)` тоже работает.
+
 ### Плейсхолдеры
 - Дерево с аргументами (`player`, `param`, `choice`), адрес `плагин/модуль:путь`, генерация веток `from<R>`, `table`, `list`,
   форматы по четырём уровням и свои форматы модуля, доступ `access`, запись `update`, публикация в PlaceholderAPI из той же

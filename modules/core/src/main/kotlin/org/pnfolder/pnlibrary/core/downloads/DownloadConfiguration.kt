@@ -8,7 +8,7 @@ import java.util.function.Supplier
 /** Administrator policy from `downloads.yml`: whether downloads run, start automatically, and which destinations are allowed. */
 internal data class DownloadConfiguration(
     val enabled: Boolean = true,
-    val automatic: Boolean = false,
+    val automatic: Boolean = true,
     val destinations: Set<DownloadDestination> = setOf(
         DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE,
     ),

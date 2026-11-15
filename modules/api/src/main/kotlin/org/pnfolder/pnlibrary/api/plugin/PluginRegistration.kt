@@ -3,12 +3,15 @@ package org.pnfolder.pnlibrary.api.plugin
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandError
 import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.config.ConfigInfo
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
 interface PluginRegistration : AutoCloseable {
     /** Native platform plugin owning this registration. */
     val owner: Any
+    /** Identifier of the plugin, as in `quests/main:quests.yml`. */
+    val id: PluginId
     /** Whether this registration has released its modules. */
     val isClosed: Boolean
 
@@ -60,6 +63,9 @@ interface PluginRegistration : AutoCloseable {
 
     /** Returns an immutable snapshot of logical modules owned by this plugin. */
     fun all(): List<ModuleContext>
+
+    /** Every configuration file of every module of this plugin. */
+    fun configs(): List<ConfigInfo> = all().flatMap { it.configs.list() }
 
     /** Closes every owned module and releases this registration. */
     override fun close()

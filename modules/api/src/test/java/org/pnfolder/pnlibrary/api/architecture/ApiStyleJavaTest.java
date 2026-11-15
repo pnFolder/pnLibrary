@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess;
+
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition;
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
 import org.pnfolder.pnlibrary.api.remote.DenyAction;
@@ -22,7 +23,7 @@ class ApiStyleJavaTest {
     private static PlaceholderRegistration<String> registerPlaceholder(PlaceholderService service) {
         return service.register("status", String.class, placeholder -> placeholder
             .resolve(request -> "online")
-            .access(PlaceholderAccess.ownerOnly())
+            .access(PluginAccess.ownerOnly())
             .fallback("offline"));
     }
 

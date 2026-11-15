@@ -268,6 +268,8 @@ internal class PnLibraryImpl(
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
 
+    override fun dependencyDownloads() = features.downloads
+
     override fun taskSnapshots(): List<TaskSnapshot> = tasks.query().filterNot { it.hidden }
 
     override fun cancelTask(id: String): TaskControl =

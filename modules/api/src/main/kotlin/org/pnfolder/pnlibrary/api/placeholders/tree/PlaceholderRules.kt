@@ -1,26 +1,26 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 
 /** Who may read (or change) a placeholder. A denial always beats an allowance. */
 sealed class AccessRule {
-    internal abstract fun toAccess(): PlaceholderAccess
+    internal abstract fun toAccess(): PluginAccess
 
     internal object AllowAll : AccessRule() {
-        override fun toAccess(): PlaceholderAccess = PlaceholderAccess.shared()
+        override fun toAccess(): PluginAccess = PluginAccess.shared()
     }
 
     internal object DenyAll : AccessRule() {
-        override fun toAccess(): PlaceholderAccess = PlaceholderAccess.ownerOnly()
+        override fun toAccess(): PluginAccess = PluginAccess.ownerOnly()
     }
 
     internal class AllowOnly(private val ids: List<String>) : AccessRule() {
-        override fun toAccess(): PlaceholderAccess = PlaceholderAccess.builder().owner().allow(*ids.toTypedArray()).build()
+        override fun toAccess(): PluginAccess = PluginAccess.builder().owner().allow(*ids.toTypedArray()).build()
     }
 
     internal class Deny(private val ids: List<String>) : AccessRule() {
-        override fun toAccess(): PlaceholderAccess =
-            PlaceholderAccess.builder().owner().allowAllLibraryPlugins().deny(*ids.toTypedArray()).build()
+        override fun toAccess(): PluginAccess =
+            PluginAccess.builder().owner().allowAll().deny(*ids.toTypedArray()).build()
     }
 }
 

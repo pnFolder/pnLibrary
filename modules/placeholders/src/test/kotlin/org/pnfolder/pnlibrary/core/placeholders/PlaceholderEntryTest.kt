@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCacheScope
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
@@ -25,8 +26,8 @@ class PlaceholderEntryTest {
                 CompletableFuture.completedFuture("online-${calls.incrementAndGet()}")
             },
             updater = null,
-            access = PlaceholderAccess.ownerOnly(),
-            updateAccess = PlaceholderAccess.ownerOnly(),
+            access = PluginAccess.ownerOnly(),
+            updateAccess = PluginAccess.ownerOnly(),
             cachePolicy = PlaceholderCachePolicy(PlaceholderCacheScope.GLOBAL, 1, Duration.ofSeconds(60)),
             fallback = "offline",
             adapterLookup = { null },
@@ -56,8 +57,8 @@ class PlaceholderEntryTest {
                 CompletableFuture.completedFuture(null)
             },
             updater = null,
-            access = PlaceholderAccess.ownerOnly(),
-            updateAccess = PlaceholderAccess.ownerOnly(),
+            access = PluginAccess.ownerOnly(),
+            updateAccess = PluginAccess.ownerOnly(),
             cachePolicy = PlaceholderCachePolicy(
                 scope = PlaceholderCacheScope.GLOBAL,
                 maximumEntries = 1,

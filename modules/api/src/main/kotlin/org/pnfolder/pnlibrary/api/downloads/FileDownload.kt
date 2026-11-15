@@ -44,6 +44,9 @@ class FileDownload internal constructor(builder: Builder) {
         /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply { source.url(value) }
 
+        /** Adds another HTTPS address of the same file; the copies are compared when no checksum is declared. */
+        fun mirror(value: String): Builder = apply { source.mirror(value) }
+
         /** Restricts the source to [value]. */
         fun platform(value: PlatformType): Builder = apply { source.platform(value) }
 

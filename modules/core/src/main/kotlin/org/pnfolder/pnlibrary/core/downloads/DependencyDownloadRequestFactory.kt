@@ -14,6 +14,10 @@ internal data class DependencyDownloadRequest(
 )
 
 internal class DependencyDownloadRequestFactory(private val pluginDirectory: Path) {
+    /** The external dependencies that are not installed at a fitting version. */
+    fun missing(dependencies: List<PluginDependency>, installedPlugins: Map<String, String>): List<ExternalPluginDependency> =
+        dependencies.mapNotNull { it.external }.filterNot { isAlreadyCompatible(it, installedPlugins) }
+
     fun create(
         dependencies: List<PluginDependency>,
         installedPlugins: Map<String, String>,
@@ -21,7 +25,7 @@ internal class DependencyDownloadRequestFactory(private val pluginDirectory: Pat
         val downloadable = dependencies.mapNotNull { dependency ->
             val external = dependency.external ?: return@mapNotNull null
             val artifact = external.artifact ?: return@mapNotNull null
-            if (!dependency.automaticDownload || isAlreadyCompatible(external, installedPlugins)) return@mapNotNull null
+            if (isAlreadyCompatible(external, installedPlugins)) return@mapNotNull null
             Triple(dependency, external, artifact)
         }
         if (downloadable.isEmpty()) return null
@@ -34,9 +38,10 @@ internal class DependencyDownloadRequestFactory(private val pluginDirectory: Pat
                     builder.file(key) { file ->
                         file.url(artifact.uri.toString())
                             .required(dependency.required)
-                            .automaticDownload(true)
+                            .automaticDownload(dependency.automaticDownload)
                             .forceAutomaticDownload(dependency.forceAutomaticDownload)
                             .destination(DownloadDestination.DATA_FOLDER, safeFileName(external.plugin))
+                        artifact.mirrors.forEach { file.mirror(it.toString()) }
                         val expectedSize = artifact.size
                         val expectedHash = artifact.sha256
                         if (expectedSize != null && expectedHash != null) {

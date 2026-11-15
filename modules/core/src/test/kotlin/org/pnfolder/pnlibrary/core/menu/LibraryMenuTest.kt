@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.api.config.ConfigApply
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import java.lang.reflect.Proxy
 import java.util.UUID
@@ -40,10 +41,11 @@ class LibraryMenuTest {
     }
 
     /** Facts that are all empty, except what a test gives: lists are empty, texts are plain, the rest is nothing. */
-    private fun data(placeholders: List<PlaceholderInfo> = emptyList()): MenuData =
+    private fun data(placeholders: List<PlaceholderInfo> = emptyList(), configs: List<ConfigRow> = emptyList()): MenuData =
         Proxy.newProxyInstance(MenuData::class.java.classLoader, arrayOf(MenuData::class.java)) { _, method, _ ->
             when {
                 method.name == "placeholders" -> placeholders
+                method.name == "configs" -> configs
                 method.returnType == List::class.java -> emptyList<Any>()
                 method.returnType == CompletionStage::class.java -> CompletableFuture.completedFuture(emptyList<Any>())
                 method.returnType == String::class.java -> "1.0"
@@ -110,5 +112,61 @@ class LibraryMenuTest {
         click(viewer, viewer.opened.last(), 23)
 
         assertEquals("Плейсхолдеров нет", viewer.opened.last().items.getValue(22).item!!.name.replace(Regex("§."), ""))
+    }
+
+    private fun file(id: String, editable: Int = 1) = ConfigRow(id, "Model", true, false, editable, null)
+
+    private fun title(menu: Menu) = menu.title.replace(Regex("§."), "")
+
+    @Test
+    fun `configurations go from plugins to modules to files and back`() {
+        val viewer = Viewer(setOf(CONFIGS))
+        val files = listOf(file("shop/main:a.yml"), file("shop/main:b.yml"), file("shop/vip:c.yml"), file("clans/core:d.yml"))
+        LibraryMenu(data(configs = files), Host).home(viewer)
+        click(viewer, viewer.opened.last(), 21)
+
+        val plugins = viewer.opened.last()
+        assertTrue(title(plugins).contains("Конфигурации"))
+        assertEquals(2, plugins.items.count { (slot, item) -> slot < PAGE_SIZE && item.item != null && item.handler != null })
+
+        assertNotNull(plugins.items[FILTER]?.handler)
+        click(viewer, plugins, FILTER) // every file of every plugin, with plugin and module named
+        assertEquals(4, viewer.opened.last().items.count { (slot, item) -> slot < PAGE_SIZE && item.item != null && item.handler != null })
+        click(viewer, viewer.opened.last(), FILTER) // back to the plugins
+
+        click(viewer, plugins, 0) // clans: one module, so its files are shown at once
+        assertTrue(title(viewer.opened.last()).contains("clans"))
+        assertNotNull(viewer.opened.last().items[FILTER]?.handler) // the choice between modules and files is always there
+
+        click(viewer, plugins, 1) // shop: two modules
+        val shop = viewer.opened.last()
+        assertEquals(2, shop.items.count { (slot, item) -> slot < PAGE_SIZE && item.item != null && item.handler != null })
+        assertNotNull(shop.items[FILTER]?.handler)
+
+        click(viewer, shop, 0) // module main
+        val main = viewer.opened.last()
+        assertTrue(title(main).contains("shop · main"))
+        assertEquals(2, main.items.count { (slot, item) -> slot < PAGE_SIZE && item.item != null && item.handler != null })
+
+        click(viewer, main, BACK)
+        assertTrue(title(viewer.opened.last()).contains("shop"))
+
+        click(viewer, shop, FILTER) // every file of the plugin, with its module named
+        val all = viewer.opened.last()
+        assertEquals(3, all.items.count { (slot, item) -> slot < PAGE_SIZE && item.item != null && item.handler != null })
+    }
+
+    @Test
+    fun `a plugin with many files is cut into pages`() {
+        val viewer = Viewer(setOf(CONFIGS))
+        val files = (1..50).map { file("big/core:f$it.yml") }
+        LibraryMenu(data(configs = files), Host).home(viewer)
+        click(viewer, viewer.opened.last(), 21)
+        click(viewer, viewer.opened.last(), 0)
+
+        val first = viewer.opened.last()
+        assertTrue(first.title.contains("1/2"))
+        click(viewer, first, NEXT)
+        assertTrue(viewer.opened.last().title.contains("2/2"))
     }
 }

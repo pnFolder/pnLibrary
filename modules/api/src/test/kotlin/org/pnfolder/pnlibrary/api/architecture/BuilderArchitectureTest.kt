@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
-import org.pnfolder.pnlibrary.api.config.ConfigTypeAccess
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
@@ -23,7 +23,7 @@ class BuilderArchitectureTest {
         val entryPoints = listOf(
             Triple(CommandDefinition::class.java, arrayOf(String::class.java), "command"),
             Triple(ConfigOptions::class.java, emptyArray(), "config options"),
-            Triple(ConfigTypeAccess::class.java, emptyArray(), "config access"),
+            Triple(PluginAccess::class.java, emptyArray(), "plugin access"),
             Triple(DiagnosticConfiguration::class.java, arrayOf(String::class.java), "diagnostic configuration"),
             Triple(DiagnosticContainer::class.java, arrayOf(String::class.java), "diagnostic container"),
             Triple(FileDownloads::class.java, emptyArray(), "file downloads"),

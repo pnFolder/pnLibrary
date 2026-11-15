@@ -1,10 +1,11 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.placeholders.ExternalPlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterCapabilities
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
@@ -52,8 +53,8 @@ class PlaceholderMainThreadTest {
             CompletableFuture.supplyAsync { Thread.sleep(millis); "fresh" }
         },
         updater = null,
-        access = PlaceholderAccess.shared(),
-        updateAccess = PlaceholderAccess.ownerOnly(),
+        access = PluginAccess.shared(),
+        updateAccess = PluginAccess.ownerOnly(),
         cachePolicy = PlaceholderCachePolicy.none(),
         fallback = "fallback",
         adapterLookup = { null },

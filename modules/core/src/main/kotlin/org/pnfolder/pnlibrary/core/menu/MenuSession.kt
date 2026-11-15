@@ -52,23 +52,32 @@ internal class MenuSession(
         footerCorners(builder)
         builder.fill(pane(), 0, FOOTER_END)
         builder.button(BACK, backItem(), go { back(it) })
-        if (current > 0) {
-            val previous = icon(Icons.BACK, "ARROW", "Назад по списку", Style.lore(emptyList(), emptyList(), Style.left("страница $current")), good = true)
-            builder.button(PREVIOUS, previous, go { reopen(it, current - 1) })
-        }
-        if (current < pages - 1) {
-            val following = icon(Icons.NEXT, "ARROW", "Дальше по списку",
-                Style.lore(emptyList(), emptyList(), Style.left("страница ${current + 2}")), good = true)
-            builder.button(NEXT, following, go { reopen(it, current + 1) })
-        }
-        builder.button(
-            REFRESH,
-            icon(Icons.CHECK, "COMPASS", "Обновить список", Style.lore(listOf("Перечитать данные заново."), emptyList(), Style.left("обновить"))),
-            go { reopen(it, current) },
-        )
+        pager(builder, current, pages, perPage, total, shown.size, reopen)
         extra(builder)
         builder.button(CLOSE, closeItem(), go { it.close() })
         show(player, builder.build())
+    }
+
+    private fun pager(builder: MenuBuilder, current: Int, pages: Int, perPage: Int, total: Int, shown: Int, reopen: (MenuViewer, Int) -> Unit) {
+        val first = if (total == 0) 0 else current * perPage + 1
+        val range = "$first–${current * perPage + shown} из $total"
+        if (current > 0) {
+            val previous = icon(null, "SPECTRAL_ARROW", "◀ Страница $current", Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на предыдущую")), good = true)
+            builder.button(PREVIOUS, previous, go { reopen(it, current - 1) })
+        } else if (pages > 1) {
+            builder.slot(PREVIOUS, icon(null, "GRAY_DYE", "Это первая страница", emptyList(), muted = true))
+        }
+        if (current < pages - 1) {
+            val following = icon(null, "SPECTRAL_ARROW", "Страница ${current + 2} ▶", Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на следующую")), good = true)
+            builder.button(NEXT, following, go { reopen(it, current + 1) })
+        } else if (pages > 1) {
+            builder.slot(NEXT, icon(null, "GRAY_DYE", "Это последняя страница", emptyList(), muted = true))
+        }
+        builder.button(
+            REFRESH,
+            icon(Icons.CHECK, "COMPASS", "Страница ${current + 1} из $pages", Style.lore(listOf("Показано $range."), emptyList(), Style.left("обновить список"))),
+            go { reopen(it, current) },
+        )
     }
 
     fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player) } }

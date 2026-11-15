@@ -85,6 +85,11 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             go { allowed(it, STATS) { routes.stats(it) } },
         )
         builder.button(
+            21,
+            section(Icons.SETTINGS, "WRITABLE_BOOK", "Конфигурации", "Файлы настроек плагинов: включить, выключить, изменить.", "Файлов" to "${data.configs().size}"),
+            go { allowed(it, CONFIGS) { routes.configs(it, 0) } },
+        )
+        builder.button(
             23,
             section(Icons.TOOLS, "NAME_TAG", "Плейсхолдеры", "Что плагины публикуют для текста и PlaceholderAPI."),
             go { allowed(it, PLACEHOLDERS) { routes.placeholders(it, 0) } },

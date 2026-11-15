@@ -37,6 +37,34 @@ internal class DependencyDownloadReporter(
         }
     }
 
+    /** Tells the administrator what is missing, where to get it, and how to have it installed. */
+    fun missing(owner: Any, group: MissingGroup, installingNow: Boolean) {
+        val command = "pn deps install ${group.code}"
+        val wanted = ConsoleTree.builder("Не хватает").also { tree ->
+            group.items.forEach { item ->
+                val links = listOfNotNull(item.page) + item.sources
+                tree.child("${item.plugin} ${item.minimum}+")
+                links.forEach { tree.child("  $it") }
+            }
+        }.build()
+        val next = ConsoleTree.builder("Что сделать").also { tree ->
+            when {
+                installingNow -> tree.child("Скачиваю сам, это займёт несколько секунд; потом перезапустите сервер")
+                group.installable -> tree.child("Вставьте в консоль: $command").child("Или включите автозагрузку: pn deps auto on")
+                else -> tree.child("Скачайте по ссылкам выше и положите в папку plugins")
+            }
+        }.build()
+        ConsoleCard.builder(ConsoleStyle.theme(ChatTone.WARNING), "НЕ ХВАТАЕТ ПЛАГИНОВ")
+            .mascot("o.o", group.owner, "нужны другие плагины")
+            .blank().tree(wanted).blank().tree(next).blank()
+            .status("Без них ${group.owner} работает не полностью")
+            .build()
+            .send { logging.console(owner, it) }
+        if (!installingNow && group.installable) {
+            logging.log(owner, LogLevel.WARNING, "${group.owner}: не хватает ${group.items.joinToString { it.plugin }}. Установить: $command")
+        }
+    }
+
     fun staged(owner: Any, declarations: List<FileDownload>) {
         val files = declarations.map { Paths.get(it.relativePath).fileName.toString() }
         ConsoleCard.builder(ConsoleStyle.theme(ChatTone.SUCCESS), "ЗАВИСИМОСТИ ПОДГОТОВЛЕНЫ")

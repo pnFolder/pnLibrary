@@ -13,6 +13,8 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.groups.GroupsCommand
+import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
+import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.dispatchRuntimeCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
@@ -88,6 +90,8 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
             library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
+            mount("configs", ConfigsCommand(library).definition())
+            mount("deps", DepsCommand(library).definition())
             mount("servers", ServersCommand(link, ServersCommand.fromReports(link)).definition())
             mount("groups", GroupsCommand(link, withProxy()).definition())
         }

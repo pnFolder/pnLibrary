@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
+import org.pnfolder.pnlibrary.core.lifecycle.dependencyDownloads
 import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
 import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
@@ -23,6 +24,9 @@ import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.api.config.ConfigEditResult
+import org.pnfolder.pnlibrary.api.config.ConfigId
+import org.pnfolder.pnlibrary.api.config.ConfigSetting
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
@@ -48,6 +52,12 @@ class LocalMenuData(
     private val groups: ServerGroups? = null,
 ) : MenuData {
     private val bus get() = library.events.inspector
+
+    override fun downloadsAutomatic(): Boolean? = library.dependencyDownloads()?.automatic()
+
+    override fun setDownloadsAutomatic(value: Boolean) {
+        library.dependencyDownloads()?.setAutomatic(value)
+    }
 
     override fun version(): String = library.version
 
@@ -109,6 +119,16 @@ class LocalMenuData(
     override fun stats(): StatsSnapshot = library.statsSnapshot()
 
     override fun placeholders(): List<PlaceholderInfo> = library.placeholderInfos()
+
+    override fun configs(): List<ConfigRow> = library.configurations.all().map { info ->
+        val config = library.configurations.get(info.id)
+        ConfigRow(info.id.toString(), info.modelType.name, info.isLoaded, info.readOnly, config?.settings?.size ?: 0, info.pendingApply)
+    }
+
+    override fun configSettings(id: String): List<ConfigSetting> = library.configurations.get(ConfigId.parse(id))?.settings.orEmpty()
+
+    override fun editConfig(id: String, path: String, text: String): ConfigEditResult =
+        requireNotNull(library.configurations.get(ConfigId.parse(id))) { "Файла $id нет" }.edit(path, text)
 
     override fun events(): List<EventInfo> = bus.events()
 

@@ -16,7 +16,7 @@ class DownloadConfigurationTest {
         val configuration = DownloadConfiguration.load(path)
 
         assertTrue(configuration.enabled)
-        assertFalse(configuration.automatic)
+        assertTrue(configuration.automatic)
         val text = Files.readString(path)
         assertTrue(text.contains("enabled: true"))
         assertTrue(text.contains("data-folder: true"))

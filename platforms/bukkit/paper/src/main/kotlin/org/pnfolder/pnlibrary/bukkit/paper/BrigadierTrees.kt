@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.bukkit.paper
 
 import com.mojang.brigadier.Command
+import com.mojang.brigadier.StringReader
+import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -101,10 +103,10 @@ internal object BrigadierTrees {
         ArgumentSpec.Kind.LONG ->
             LongArgumentType.longArg(bound(spec.minimum, spec).toLong(), bound(spec.maximum, spec).toLong())
         ArgumentSpec.Kind.DECIMAL ->
-            if (spec.minimum == -Double.MAX_VALUE && spec.maximum == Double.MAX_VALUE) StringArgumentType.word()
+            if (spec.minimum == -Double.MAX_VALUE && spec.maximum == Double.MAX_VALUE) SpacelessWord
             else DoubleArgumentType.doubleArg(bound(spec.minimum, spec), bound(spec.maximum, spec))
         ArgumentSpec.Kind.GREEDY -> StringArgumentType.greedyString()
-        ArgumentSpec.Kind.BOOLEAN, ArgumentSpec.Kind.CHOICE, ArgumentSpec.Kind.TEXT -> StringArgumentType.word()
+        ArgumentSpec.Kind.BOOLEAN, ArgumentSpec.Kind.CHOICE, ArgumentSpec.Kind.TEXT -> SpacelessWord
     } as ArgumentType<Any>
 
     private fun <S> suggestionsFor(invocation: NativeInvocation<S>): SuggestionProvider<S> = SuggestionProvider { context, builder ->
@@ -119,6 +121,22 @@ internal object BrigadierTrees {
         }
         result
     }
+}
+
+/**
+ * A word up to the next space. Brigadier's own word stops at anything but letters, digits and `_-.+`, which cut ids such as
+ * `shop/main:config.yml` and values such as `world;0;64;0` and ended the command with "expected a space". The client is
+ * told it is a greedy string so it does not colour such a word red; only the server reads it as one word.
+ */
+internal object SpacelessWord : CustomArgumentType<String, String> {
+    override fun parse(reader: StringReader): String {
+        val start = reader.cursor
+        while (reader.canRead() && !Character.isWhitespace(reader.peek())) reader.skip()
+        return reader.string.substring(start, reader.cursor)
+    }
+
+    // The client only paints the line: a plain word would colour `/`, `:` and `;` red, a greedy one accepts them.
+    override fun getNativeType(): ArgumentType<String> = StringArgumentType.greedyString()
 }
 
 /** A command line split into the label the player typed and its arguments. */

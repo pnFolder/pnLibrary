@@ -24,7 +24,7 @@ class ConfigPolymorphicResolverTest {
     }
 
     @Test
-    fun `external runtime type requires owner namespace`() {
+    fun `visible external type works with its plain word and with owner namespace`() {
         val external = RuntimeConfigType(
             owner = "economy",
             baseType = Payment::class.java,
@@ -35,17 +35,46 @@ class ConfigPolymorphicResolverTest {
         )
         val resolver = resolver(listOf(external), consumer = "shop")
 
-        assertThrows(IllegalArgumentException::class.java) {
-            resolver.decodingType(Payment::class.java, emptyList(), "token", "payment")
-        }
+        assertEquals(
+            TokenPayment::class.java,
+            resolver.decodingType(Payment::class.java, emptyList(), "token", "payment"),
+        )
         assertEquals(
             TokenPayment::class.java,
             resolver.decodingType(Payment::class.java, emptyList(), "economy::token", "payment"),
         )
         assertEquals(
-            "economy::token",
+            "token",
             resolver.encodingType(Payment::class.java, emptyList(), TokenPayment::class.java)
                 .serializedName("shop"),
+        )
+    }
+
+    @Test
+    fun `an unknown word fails with a dedicated exception that a list can skip`() {
+        val resolver = resolver(emptyList(), consumer = "shop")
+
+        assertThrows(UnknownConfigTypeException::class.java) {
+            resolver.decodingType(Payment::class.java, emptyList(), "nope", "payment")
+        }
+    }
+
+    @Test
+    fun `two additions with one word and one priority are ambiguous until namespaced`() {
+        fun addition(owner: String, implementation: Class<*>) = RuntimeConfigType(
+            owner, Payment::class.java, implementation, "token", emptySet(), 0,
+        )
+        val resolver = resolver(
+            listOf(addition("economy", TokenPayment::class.java), addition("bank", CardPayment::class.java)),
+            consumer = "shop",
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            resolver.decodingType(Payment::class.java, emptyList(), "token", "payment")
+        }
+        assertEquals(
+            CardPayment::class.java,
+            resolver.decodingType(Payment::class.java, emptyList(), "bank::token", "payment"),
         )
     }
 

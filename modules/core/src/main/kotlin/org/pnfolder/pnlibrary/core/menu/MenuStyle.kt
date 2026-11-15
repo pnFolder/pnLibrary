@@ -83,6 +83,8 @@ internal object Style {
 
     fun shiftLeft(action: String): String = click("Shift + клик", "5BC8F5", "B5ECFF", action)
 
+    fun middle(action: String): String = click("Колёсико", "FDE047", "FFB347", action)
+
     fun description(text: String): String = DESCRIPTION + text
 
     fun choices(options: List<String>, selected: Int): List<String> = options.mapIndexed { index, label ->

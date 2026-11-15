@@ -15,6 +15,8 @@ import org.pnfolder.pnlibrary.bukkit.menu.PluginsMenu
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
+import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
+import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.link.Link
@@ -82,6 +84,8 @@ internal class BukkitControlCommand(
         library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
         mount("bus", EventBusCommand(library).definition())
         mount("tasks", TaskCommand(library).definition())
+        mount("configs", ConfigsCommand(library).definition())
+        mount("deps", DepsCommand(library).definition())
         mount("servers", ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition())
         mount("money", CurrencyCommandExecutor(currencies, scheduler).definition())
         literal("support") {

@@ -1,11 +1,12 @@
 package org.pnfolder.pnlibrary.currency
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
@@ -37,7 +38,7 @@ class CurrencyHubTest {
         val owner = hub.scope(PluginId.of("owner"), placeholders())
         val consumer = hub.scope(PluginId.of("consumer"), placeholders())
         val registration = owner.register("coins", provider(), Consumer {
-            it.access(CurrencyAccess.shared())
+            it.access(PluginAccess.shared())
         })
 
         assertSame(registration, consumer.get("owner:coins"))

@@ -20,8 +20,91 @@ public final class org/pnfolder/pnlibrary/api/config/CommentPolicy : java/lang/E
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;
 }
 
+public final class org/pnfolder/pnlibrary/api/config/ConfigAddress {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Companion;
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun everywhere ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public static final fun file (Lorg/pnfolder/pnlibrary/api/config/ConfigId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getLevel ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getRoot ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public fun hashCode ()I
+	public final fun inFile (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun inFile (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public static synthetic fun inFile$default (Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun inModule (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun inModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun isAll ()Z
+	public final fun matches (Lorg/pnfolder/pnlibrary/api/config/ConfigId;)Z
+	public static final fun module (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public static final fun module (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun overlaps (Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Z
+	public static final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public static final fun plugin (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public static final fun plugin (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigAddress$Companion {
+	public final fun everywhere ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun file (Lorg/pnfolder/pnlibrary/api/config/ConfigId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun module (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun module (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun plugin (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun plugin (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigAddress$Level : java/lang/Enum {
+	public static final field ALL Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public static final field FILE Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public static final field MODULE Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public static final field PLUGIN Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigAddress$Level;
+}
+
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigAlias : java/lang/annotation/Annotation {
 	public abstract fun value ()[Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigApply : java/lang/Enum {
+	public static final field LIVE Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public static final field RELOAD Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public static final field RESTART Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigChange {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;Ljava/util/List;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/config/ConfigChange;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigChange;Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigChange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public final fun getId ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun getPaths ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigChangeCause : java/lang/Enum {
+	public static final field EDITED Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static final field LOADED Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static final field RELOADED Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static final field RESET Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static final field SAVED Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigChangeCause;
 }
 
 public final class org/pnfolder/pnlibrary/api/config/ConfigChanges {
@@ -59,7 +142,110 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigDocument {
 	public final fun transform (Ljava/lang/String;Ljava/util/function/UnaryOperator;)Lorg/pnfolder/pnlibrary/api/config/ConfigDocument;
 }
 
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigDuration : java/lang/annotation/Annotation {
+	public abstract fun unit ()Ljava/util/concurrent/TimeUnit;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigEditException : java/lang/IllegalArgumentException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigEditResult {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;Ljava/lang/String;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigEditResult;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigEditResult;Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigEditResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrevious ()Ljava/lang/String;
+	public final fun getSetting ()Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigEditable : java/lang/annotation/Annotation {
+	public abstract fun apply ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public abstract fun description ()Ljava/lang/String;
+	public abstract fun title ()Ljava/lang/String;
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigHint : java/lang/annotation/Annotation {
+	public abstract fun examples ()[Ljava/lang/String;
+	public abstract fun format ()Ljava/lang/String;
+	public abstract fun strict ()Z
+	public abstract fun values ()[Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigId {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/config/ConfigId$Companion;
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Ljava/lang/String;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getDirectory ()Ljava/lang/String;
+	public final fun getFileName ()Ljava/lang/String;
+	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun getModuleAddress ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getRoot ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public static final fun of (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public static final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigId$Companion {
+	public final fun of (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun of (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public static synthetic fun of$default (Lorg/pnfolder/pnlibrary/api/config/ConfigId$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+}
+
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigIgnore : java/lang/annotation/Annotation {
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigInfo {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Ljava/lang/Class;Ljava/nio/file/Path;ZZLjava/time/Instant;ZLjava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Ljava/lang/Class;Ljava/nio/file/Path;ZZLjava/time/Instant;ZLjava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun component10 ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun component2 ()Ljava/lang/Class;
+	public final fun component3 ()Ljava/nio/file/Path;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/time/Instant;
+	public final fun component7 ()Z
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Ljava/lang/Class;Ljava/nio/file/Path;ZZLjava/time/Instant;ZLjava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;)Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;Lorg/pnfolder/pnlibrary/api/config/ConfigId;Ljava/lang/Class;Ljava/nio/file/Path;ZZLjava/time/Instant;ZLjava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddress ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getExists ()Z
+	public final fun getFile ()Ljava/nio/file/Path;
+	public final fun getId ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun getLoadedAt ()Ljava/time/Instant;
+	public final fun getModelType ()Ljava/lang/Class;
+	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun getModuleAddress ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPendingApply ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getProblems ()Ljava/util/List;
+	public final fun getReadOnly ()Z
+	public final fun getRoot ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public final fun getSkippedUnknownTypes ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isLoaded ()Z
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigKey : java/lang/annotation/Annotation {
@@ -124,17 +310,23 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigOptions {
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;Z)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Z)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;
+	public final fun component10 ()Z
 	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;
 	public final fun component3 ()Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;
 	public final fun component4 ()Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;
 	public final fun component5 ()Z
 	public final fun component6 ()Lorg/pnfolder/pnlibrary/api/config/ConfigSteps;
 	public final fun component7 ()Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;
+	public final fun component8 ()Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
+	public final fun component9 ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;Z)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;ZLorg/pnfolder/pnlibrary/api/config/ConfigSteps;Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBackups ()Z
 	public final fun getComments ()Lorg/pnfolder/pnlibrary/api/config/CommentPolicy;
@@ -142,6 +334,9 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigOptions {
 	public final fun getMissingFile ()Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;
 	public final fun getMissingValues ()Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;
 	public final fun getNaming ()Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;
+	public final fun getReadOnly ()Z
+	public final fun getRoot ()Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public final fun getUnknownTypes ()Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
 	public final fun getUnknownValues ()Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -155,6 +350,10 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigOptions$Builder {
 	public final fun missingFile (Lorg/pnfolder/pnlibrary/api/config/MissingFilePolicy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun missingValues (Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun naming (Lorg/pnfolder/pnlibrary/api/config/ConfigNamingStrategy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
+	public final fun readOnly (Z)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
+	public static synthetic fun readOnly$default (Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
+	public final fun root (Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
+	public final fun unknownTypes (Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun unknownValues (Lorg/pnfolder/pnlibrary/api/config/UnknownValuePolicy;)Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 	public final fun withoutVersion ()Lorg/pnfolder/pnlibrary/api/config/ConfigOptions$Builder;
 }
@@ -196,18 +395,39 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/config/Con
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigRequired : java/lang/annotation/Annotation {
 }
 
+public final class org/pnfolder/pnlibrary/api/config/ConfigRoot : java/lang/Enum {
+	public static final field EXTERNAL Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public static final field PLUGIN Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public static final field PLUGINS Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public static final field SERVER Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getPrefix ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigRoot;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigScope : java/lang/AutoCloseable {
 	public abstract fun close ()V
+	public abstract fun extensions (Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
+	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public abstract fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public abstract fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
 	public abstract fun getSize ()I
+	public abstract fun list ()Ljava/util/List;
 	public abstract fun loadAll ()V
-	public abstract fun publishType (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
+	public abstract fun publishSerializer (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializer;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerRegistration;
+	public abstract fun publishType (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
 	public abstract fun reloadAll ()V
+	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public abstract fun saveAll ()V
 	public abstract fun serializer (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializer;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
+	public fun serializerFor (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializer;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
 	public fun type (Ljava/lang/Class;Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public abstract fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public abstract fun yaml (Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Supplier;Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;Lorg/pnfolder/pnlibrary/api/config/ConfigValueValidator;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public fun yamlAt (Ljava/nio/file/Path;Ljava/lang/Class;Ljava/util/function/Supplier;Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public static synthetic fun yamlAt$default (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;Ljava/nio/file/Path;Ljava/lang/Class;Ljava/util/function/Supplier;Lorg/pnfolder/pnlibrary/api/config/ConfigOptions;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigSecret : java/lang/annotation/Annotation {
@@ -249,6 +469,98 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigSerializ
 	public abstract fun serialize (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializationContext;)Ljava/lang/Object;
 }
 
+public final class org/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder {
+	public final fun everywhere ()Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerBuilder;
+	public final fun register ()Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerRegistration;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigSerializerInfo {
+	public fun <init> (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)V
+	public final fun component1 ()Ljava/lang/Class;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun component3 ()I
+	public final fun component4 ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun copy (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerInfo;Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOwner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getPriority ()I
+	public final fun getTarget ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun getType ()Ljava/lang/Class;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigSerializerRegistration : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getOwner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public abstract fun getPriority ()I
+	public abstract fun getTarget ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public abstract fun getType ()Ljava/lang/Class;
+	public abstract fun isActive ()Z
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigSetting {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/lang/String;DLjava/util/concurrent/TimeUnit;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/lang/String;DLjava/util/concurrent/TimeUnit;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()D
+	public final fun component12 ()Ljava/util/concurrent/TimeUnit;
+	public final fun component13 ()Ljava/lang/String;
+	public final fun component14 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/lang/Double;
+	public final fun component8 ()Ljava/lang/Double;
+	public final fun component9 ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/lang/String;DLjava/util/concurrent/TimeUnit;Ljava/lang/String;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/lang/String;DLjava/util/concurrent/TimeUnit;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigSetting;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApply ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun getChoices ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getDuration ()Ljava/util/concurrent/TimeUnit;
+	public final fun getExamples ()Ljava/util/List;
+	public final fun getFormat ()Ljava/lang/String;
+	public final fun getKind ()Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public final fun getMax ()Ljava/lang/Double;
+	public final fun getMin ()Ljava/lang/Double;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getStep ()D
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUnit ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigSettingKind : java/lang/Enum {
+	public static final field BOOLEAN Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static final field CHOICE Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static final field DECIMAL Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static final field INTEGER Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static final field TEXT Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigSettingKind;
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/config/ConfigStep : java/lang/annotation/Annotation {
+	public abstract fun step ()D
+	public abstract fun unit ()Ljava/lang/String;
+}
+
 public class org/pnfolder/pnlibrary/api/config/ConfigSteps {
 	public static final field BASE_VERSION I
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/config/ConfigSteps$Companion;
@@ -278,42 +590,41 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/config/Con
 	public abstract fun type ()Ljava/lang/Class;
 }
 
-public final class org/pnfolder/pnlibrary/api/config/ConfigTypeAccess {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Companion;
-	public synthetic fun <init> (ZLjava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun allows (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Z
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-	public static final fun everyone ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun getAllLibraryPlugins ()Z
-	public final fun getAllowedPatterns ()Ljava/util/Set;
-	public final fun getAllowedPlugins ()Ljava/util/Set;
-	public final fun getDeniedPlugins ()Ljava/util/Set;
-	public static final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-	public static final fun plugins ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-}
-
-public final class org/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder {
-	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-	public final fun allowAll ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun deny ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess$Builder;
-	public final fun everyone ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-	public final fun plugins ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;
-}
-
 public final class org/pnfolder/pnlibrary/api/config/ConfigTypeBuilder {
-	public final fun access (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
-	public final fun access (Lorg/pnfolder/pnlibrary/api/config/ConfigTypeAccess;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun alias ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun everywhere ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun into (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun register ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigTypeInfo {
+	public fun <init> (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)V
+	public final fun component1 ()Ljava/lang/Class;
+	public final fun component2 ()Ljava/lang/Class;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun component6 ()I
+	public final fun component7 ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public final fun copy (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ConfigTypeInfo;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAliases ()Ljava/util/Set;
+	public final fun getBaseType ()Ljava/lang/Class;
+	public final fun getImplementation ()Ljava/lang/Class;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOwner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getPriority ()I
+	public final fun getTarget ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigTypeRegistration : java/lang/AutoCloseable {
@@ -322,6 +633,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigTypeRegi
 	public abstract fun getImplementation ()Ljava/lang/Class;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getOwner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public abstract fun getTarget ()Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;
 	public abstract fun isActive ()Z
 }
 
@@ -353,7 +665,21 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigValueVal
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigurationService {
+	public abstract fun all ()Ljava/util/List;
+	public fun byModel (Ljava/lang/Class;)Ljava/util/List;
+	public fun find (Ljava/lang/String;)Ljava/util/List;
+	public abstract fun find (Lorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Ljava/util/List;
+	public fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public abstract fun get (Lorg/pnfolder/pnlibrary/api/config/ConfigId;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
+	public fun require (Lorg/pnfolder/pnlibrary/api/config/ConfigId;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public abstract fun scope (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
+	public abstract fun serializers ()Ljava/util/List;
+	public abstract fun types (Ljava/lang/Class;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigurationServiceKt {
+	public static final fun extensions (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/DatabaseField : java/lang/annotation/Annotation {
@@ -384,11 +710,17 @@ public final class org/pnfolder/pnlibrary/api/config/DatabaseRole : java/lang/En
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ManagedConfig : java/lang/AutoCloseable {
 	public fun close ()V
+	public fun edit (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigEditResult;
 	public abstract fun get ()Ljava/lang/Object;
+	public fun getId ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public fun getInfo ()Lorg/pnfolder/pnlibrary/api/config/ConfigInfo;
+	public fun getSettings ()Ljava/util/List;
 	public fun getValue ()Ljava/lang/Object;
 	public abstract fun isLoaded ()Z
 	public abstract fun load ()Lorg/pnfolder/pnlibrary/api/config/ConfigLoadResult;
 	public fun loadValue ()Ljava/lang/Object;
+	public fun onChanged ([Ljava/util/function/Consumer;)Ljava/lang/AutoCloseable;
+	public fun onReloadRequired ([Ljava/util/function/Consumer;)Ljava/lang/AutoCloseable;
 	public abstract fun reload ()Lorg/pnfolder/pnlibrary/api/config/ConfigLoadResult;
 	public fun reloadValue ()Ljava/lang/Object;
 	public abstract fun resetToDefaults ()Ljava/lang/Object;
@@ -414,6 +746,29 @@ public final class org/pnfolder/pnlibrary/api/config/MissingValuePolicy : java/l
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/MissingValuePolicy;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ReloadRequest {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/util/List;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/config/ReloadRequest;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/config/ReloadRequest;Lorg/pnfolder/pnlibrary/api/config/ConfigId;Lorg/pnfolder/pnlibrary/api/config/ConfigApply;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ReloadRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApply ()Lorg/pnfolder/pnlibrary/api/config/ConfigApply;
+	public final fun getId ()Lorg/pnfolder/pnlibrary/api/config/ConfigId;
+	public final fun getSettings ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/UnknownTypePolicy : java/lang/Enum {
+	public static final field FAIL Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
+	public static final field SKIP Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/UnknownTypePolicy;
 }
 
 public final class org/pnfolder/pnlibrary/api/config/UnknownValuePolicy : java/lang/Enum {

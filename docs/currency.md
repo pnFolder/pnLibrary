@@ -105,7 +105,7 @@ val coins = module.currencies.register("coins") { definition ->
 По умолчанию валюту видит только её владелец. Чтобы открыть доступ:
 
 ```kotlin
-currency.access(CurrencyAccess.shared())                    // всем плагинам pnLibrary
+currency.access(PluginAccess.shared())                    // всем плагинам pnLibrary
 currency.access { it.owner().allow("pnshop").allowMatching("pn*").deny("pnbeta") }
 ```
 

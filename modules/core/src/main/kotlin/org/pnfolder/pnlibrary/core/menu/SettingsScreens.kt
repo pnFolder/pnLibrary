@@ -20,6 +20,7 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
         val builder = frame(Menus.chest(title("Настройки")).rows(SMALL_ROWS + 1), SMALL_ROWS + 1)
         howItWorks(builder)
         autoForAll(builder, all)
+        downloadsForMissing(builder)
         pauseForAll(builder, all)
         builder.button(SMALL_BACK + 9, backItem(), go { routes.home(it) })
         show(player, builder.build())
@@ -61,6 +62,28 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
                 allowed(who, SETTINGS) {
                     val done = if (everyoneAuto) "Автозагрузка выключена для всех плагинов." else "Автозагрузка включена для всех плагинов."
                     routes.everyone(who, done) { routes.setAutomatic(it, !everyoneAuto, who) }
+                }
+            },
+        )
+    }
+
+    private fun downloadsForMissing(builder: MenuBuilder) {
+        val automatic = data.downloadsAutomatic() ?: return
+        builder.button(
+            13,
+            icon(
+                Icons.TOGGLE, "HOPPER", "Недостающие плагины",
+                Style.lore(
+                    wrap("Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.", WRAP_WIDTH, 4),
+                    emptyList(), Style.left(if (automatic) "выключить" else "включить"),
+                    extra = Style.choices(listOf("скачивать самому", "только сообщать"), if (automatic) 0 else 1),
+                ),
+                alternative = "REDSTONE_TORCH_ON", good = automatic, muted = !automatic,
+            ),
+            go { who ->
+                allowed(who, SETTINGS) {
+                    data.setDownloadsAutomatic(!automatic)
+                    settings(who)
                 }
             },
         )

@@ -1,7 +1,8 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.pnfolder.pnlibrary.api.placeholders.ExternalPlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCacheScope
@@ -29,8 +30,8 @@ class PlaceholderEntry<T : Any>(
     override val key: PlaceholderKey<T>,
     private val resolver: (PlaceholderRequest) -> CompletionStage<T?>,
     private val updater: PlaceholderUpdater<T>?,
-    val access: PlaceholderAccess,
-    private val updateAccess: PlaceholderAccess,
+    val access: PluginAccess,
+    private val updateAccess: PluginAccess,
     private val cachePolicy: PlaceholderCachePolicy,
     private val fallback: T?,
     private val adapterLookup: (String) -> PlaceholderAdapter?,

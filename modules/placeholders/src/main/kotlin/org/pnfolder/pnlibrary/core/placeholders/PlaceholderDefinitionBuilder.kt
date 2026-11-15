@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.placeholders.AsyncPlaceholderResolver
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
@@ -33,8 +33,8 @@ class PlaceholderDefinitionBuilder<T : Any>(
     private var defaultFormat: String? = null
     private var resolver: ((PlaceholderRequest) -> CompletionStage<T?>)? = null
     private var updater: PlaceholderUpdater<T>? = null
-    private var access = PlaceholderAccess.ownerOnly()
-    private var updateAccess = PlaceholderAccess.ownerOnly()
+    private var access = PluginAccess.ownerOnly()
+    private var updateAccess = PluginAccess.ownerOnly()
     private var cachePolicy = PlaceholderCachePolicy.none()
     private var fallback: T? = null
     private val publications = mutableListOf<PlaceholderPublication>()
@@ -49,11 +49,11 @@ class PlaceholderDefinitionBuilder<T : Any>(
     }
 
     override fun update(updater: PlaceholderUpdater<T>) = apply { this.updater = updater }
-    override fun updateAccess(access: PlaceholderAccess) = apply { this.updateAccess = access }
-    override fun access(access: PlaceholderAccess) = apply { this.access = access }
+    override fun updateAccess(access: PluginAccess) = apply { this.updateAccess = access }
+    override fun access(access: PluginAccess) = apply { this.access = access }
 
-    override fun access(configure: Consumer<PlaceholderAccess.Builder>) = apply {
-        access = PlaceholderAccess.builder().also(configure::accept).build()
+    override fun access(configure: Consumer<PluginAccess.Builder>) = apply {
+        access = PluginAccess.builder().also(configure::accept).build()
     }
 
     override fun cache(policy: PlaceholderCachePolicy) = apply { cachePolicy = policy }

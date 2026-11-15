@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderInfo
@@ -48,9 +49,15 @@ internal interface RuntimeResources {
     /** Starts the waiting task with this id at once for an administrator; the task may forbid it. */
     fun runTaskNow(id: String): TaskControl
 
+    /** Downloads of missing plugin dependencies, or `null` when the runtime has none. */
+    fun dependencyDownloads(): DirectDownloads? = null
+
     /** The whole event behind a [JournalGroup.id], or `null` when it is no longer in the journal. */
     fun journalDetail(id: String): JournalDetail?
 }
+
+/** Missing-dependency downloads of this server. */
+internal fun PnLibrary.dependencyDownloads(): DirectDownloads? = (this as? RuntimeResources)?.dependencyDownloads()
 
 /** Every live and retained task of every plugin; empty when the runtime has no task service. */
 fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = (this as? RuntimeResources)?.taskSnapshots().orEmpty()

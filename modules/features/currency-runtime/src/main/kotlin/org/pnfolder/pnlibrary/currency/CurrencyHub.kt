@@ -1,7 +1,8 @@
 package org.pnfolder.pnlibrary.currency
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
+
 import org.pnfolder.pnlibrary.api.currency.Currency
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyBalanceMutation
 import org.pnfolder.pnlibrary.api.currency.CurrencyCapability
@@ -47,7 +48,7 @@ internal class CurrencyHub(
     /** Creates the per-plugin view of this registry; call once per plugin that registers or resolves currencies. */
     fun scope(owner: PluginId, placeholders: PlaceholderService): CurrencyService = Scope(owner, placeholders)
 
-    override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration =
+    override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: PluginAccess): CurrencyRegistration =
         install(owner, name, provider, access, emptySet())
 
     override fun get(reference: String): Currency? {
@@ -79,7 +80,7 @@ internal class CurrencyHub(
         owner: PluginId,
         name: String,
         provider: CurrencyProvider,
-        access: CurrencyAccess,
+        access: PluginAccess,
         requestedAliases: Set<String>,
     ): Entry {
         check(!closed.get()) { "Currency registry is closed" }
@@ -165,7 +166,7 @@ internal class CurrencyHub(
     private inner class Entry(
         override val key: CurrencyKey,
         private val provider: CurrencyProvider,
-        val access: CurrencyAccess,
+        val access: PluginAccess,
         private val registeredAliases: Set<String>,
     ) : CurrencyRegistration {
         private val attachments = Collections.synchronizedList(mutableListOf<AutoCloseable>())

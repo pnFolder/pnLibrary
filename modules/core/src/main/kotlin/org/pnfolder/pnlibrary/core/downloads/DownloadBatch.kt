@@ -25,6 +25,7 @@ internal class DownloadBatch(
     private val dependenciesStaged: (List<FileDownload>) -> Unit,
     private val failed: (List<FileDownload>, Throwable) -> Unit,
     private val remove: (DownloadBatch) -> Unit,
+    private val automaticAllowed: () -> Boolean = { configuration.automatic },
 ) : DownloadRegistration {
     private val stateLock = Any()
     private val closed = AtomicBoolean(false)
@@ -59,7 +60,7 @@ internal class DownloadBatch(
         if (!configuration.enabled) return blocked(promise, "система загрузок отключена")
         if (selectedFiles.isEmpty()) {
             if (automaticPolicy && declarations.isNotEmpty()) {
-                return blocked(promise, "автозагрузка запрещена в downloads.yml")
+                return blocked(promise, "автозагрузка выключена (включить: /pn deps auto on)")
             }
             promise.complete(snapshots())
             return promise
@@ -89,7 +90,7 @@ internal class DownloadBatch(
     }
 
     private fun selectFiles(declarations: List<FileDownload>, automaticPolicy: Boolean): List<FileDownload> =
-        if (automaticPolicy && !configuration.automatic) {
+        if (automaticPolicy && !automaticAllowed()) {
             declarations.filter(FileDownload::forceAutomaticDownload)
         } else {
             declarations

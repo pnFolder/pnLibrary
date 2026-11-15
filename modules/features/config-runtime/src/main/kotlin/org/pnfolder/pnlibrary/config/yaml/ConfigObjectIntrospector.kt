@@ -71,7 +71,7 @@ internal class ConfigObjectIntrospector(
         }
     }
 
-    private fun isSection(raw: Class<*>): Boolean = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
+    fun isSection(raw: Class<*>): Boolean = !raw.isPrimitive && !raw.isEnum && !raw.isArray && !isScalar(raw) &&
         !raw.name.startsWith("java.") && !raw.name.startsWith("kotlin.")
 
     /** The databases marked `@BackupDatabase` in [type] (the class may carry several), with the dotted YAML path of each. */

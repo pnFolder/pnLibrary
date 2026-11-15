@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigProblem
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigTextForm
+import org.pnfolder.pnlibrary.api.config.UnknownTypePolicy
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
@@ -36,7 +37,7 @@ import java.lang.reflect.Array as ReflectArray
  *
  * @param type root configuration class
  * @param defaults factory for a pristine root object on every decode
- * @param serializers serializers keyed by supported Java type
+ * @param serializers the serializers keyed by supported Java type, asked again on every use so that additions count
  * @param runtimeTypes current external polymorphic type registrations
  * @param consumer plugin namespace resolving unqualified external types
  * @param options naming and document-generation policy
@@ -45,7 +46,7 @@ import java.lang.reflect.Array as ReflectArray
 internal class AnnotatedYamlCodec<T : Any>(
     private val type: Class<T>,
     private val defaults: Supplier<T>,
-    private val serializers: Map<Class<*>, ConfigSerializer<*>>,
+    private val serializers: () -> Map<Class<*>, ConfigSerializer<*>>,
     private val runtimeTypes: () -> List<RuntimeConfigType>,
     private val consumer: String,
     private val options: ConfigOptions,
@@ -85,14 +86,29 @@ internal class AnnotatedYamlCodec<T : Any>(
      * polymorphic types, and classes that cannot be instantiated
      */
     override fun decode(yaml: String): T {
-        val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
-        serializerResolver.forType(type)?.let {
-            @Suppress("UNCHECKED_CAST")
-            return it.deserialize(loaded, context(type, "", emptyList(), defaults.get())) as T
+        skippedNow.clear()
+        try {
+            val loaded = this.yaml.load<Any?>(yaml) ?: linkedMapOf<String, Any?>()
+            serializerResolver.forType(type)?.let {
+                @Suppress("UNCHECKED_CAST")
+                return it.deserialize(loaded, context(type, "", emptyList(), defaults.get())) as T
+            }
+            require(loaded is Map<*, *>) { "Root value of ${type.name} must be a YAML object" }
+            return defaults.get().also { populate(it, type, loaded, "") }
+        } finally {
+            skippedUnknownTypes = skippedNow.toList()
         }
-        require(loaded is Map<*, *>) { "Root value of ${type.name} must be a YAML object" }
-        return defaults.get().also { populate(it, type, loaded, "") }
     }
+
+    private val skippedNow = mutableListOf<String>()
+
+    /**
+     * List elements the last [decode] skipped because their `type` is unknown (only with
+     * [UnknownTypePolicy.SKIP]). Each entry names the element and the word.
+     */
+    @Volatile
+    var skippedUnknownTypes: List<String> = emptyList()
+        private set
 
     /** Evaluates declarative validation annotations without mutating [value]. */
     fun validate(value: T): List<ConfigProblem> = schemaInspector.validate(value, type)
@@ -219,8 +235,19 @@ internal class AnnotatedYamlCodec<T : Any>(
         targetType: Type, rawType: Class<*>, value: List<*>, path: String, annotations: List<Annotation>,
     ): Any {
         val elementType = (targetType as? ParameterizedType)?.actualTypeArguments?.getOrNull(0) ?: Any::class.java
-        val converted = value.mapIndexed { index, item ->
-            located("$path[$index]") { convert(item, elementType, path = "$path[$index]", annotations = annotations) }
+        val skipUnknown = options.unknownTypes == UnknownTypePolicy.SKIP
+        val converted = value.mapIndexedNotNull { index, item ->
+            try {
+                located("$path[$index]") { convert(item, elementType, path = "$path[$index]", annotations = annotations) }
+            } catch (error: IllegalArgumentException) {
+                val unknown = generateSequence<Throwable>(error) { it.cause }.filterIsInstance<UnknownConfigTypeException>().firstOrNull()
+                if (!skipUnknown || unknown == null) throw error
+                // The element stays in the file; only the copy in memory goes without it.
+                val note = "$path[$index]: ${unknown.message}"
+                skippedNow += note
+                warning("Skipped $note. The element stays in the file and is read again when the type appears.")
+                null
+            }
         }
         return introspector.collection(rawType, converted, path)
     }

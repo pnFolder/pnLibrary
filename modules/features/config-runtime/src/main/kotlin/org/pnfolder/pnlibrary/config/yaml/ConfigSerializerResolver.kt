@@ -14,8 +14,10 @@ import java.lang.reflect.Field
  * A serializer instance declared by an annotation is created once and then reused.
  */
 internal class ConfigSerializerResolver(
-    private val registered: Map<Class<*>, ConfigSerializer<*>>,
+    private val registeredNow: () -> Map<Class<*>, ConfigSerializer<*>>,
 ) {
+    constructor(registered: Map<Class<*>, ConfigSerializer<*>>) : this({ registered })
+
     private val annotationInstances = mutableMapOf<Class<out ConfigSerializer<*>>, ConfigSerializer<*>>()
 
     /** The serializer for [type]: an annotation on the class, then an exact registration, then a supertype one. */
@@ -25,6 +27,7 @@ internal class ConfigSerializerResolver(
             ?.value
             ?.java
             ?.let(::annotationInstance)
+        val registered = registeredNow()
         val exact = registered[type]
         val assignable = registered.entries
             .firstOrNull { (supportedType, _) -> supportedType.isAssignableFrom(type) }
