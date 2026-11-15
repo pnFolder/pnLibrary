@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.engine.FreezeDuration
+import org.pnfolder.pnlibrary.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.CompletionStage

@@ -49,7 +49,7 @@
 ```
 
 ## Где что
-- `modules/`: api, core, common, runtime-spi, updates, bootstrap, console, features (config, currency, localization).
+- `modules/`: api, core, common, spi, updates, bootstrap, console, features (config, currency, localization).
 - `platforms/`: bukkit, bungee, velocity, loader.
 - `.pnlibrary/releases.json` и `.pnlibrary/changelogs/<версия>.md`: каталог релизов библиотеки.
 - `integration/`: инструкция и заготовка `.pnlibrary` для плагинов на pnLibrary.
@@ -73,7 +73,7 @@
 - Осталось: проверка на живых базах и серверах, релиз `0.1.0-dev.3`, идея отпечатка сервера, вес `universal` 5,6 МБ.
 
 ### 2026-11-05 (логгер, прокси, тесты)
-- Логгер один: конфиги, интеграции Bukkit и перезапуск пишут через `PnLogger` (`PlatformPnLogger` в `runtime-spi`), серьёзное попадает в чёрный ящик; у `info`/`debug` можно передать исключение. Общая сборка связи прокси вынесена в `core/proxy/ProxyLink` с откатом при сбое запуска. Меню Bukkit перенесены в пакет `menu`.
+- Логгер один: конфиги, интеграции Bukkit и перезапуск пишут через `PnLogger` (`PlatformPnLogger` в `spi`), серьёзное попадает в чёрный ящик; у `info`/`debug` можно передать исключение. Общая сборка связи прокси вынесена в `core/proxy/ProxyLink` с откатом при сбое запуска. Меню Bukkit перенесены в пакет `menu`.
 - Перезапуск без `restart-script`: сервер останавливается, дальше его поднимает панель или start.sh, это не ошибка.
 - FastStats оставлен как был (`ErrorTracker.contextAware()`), правку откатили по просьбе.
 - Тесты: миграция конфигов, кадры связи и `LinkSecret`, откат обновления после сбоя публикации, задачи, скрытие секретов в отчёте. Ошибок не нашли.

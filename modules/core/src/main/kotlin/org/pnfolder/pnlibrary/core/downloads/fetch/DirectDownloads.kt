@@ -20,7 +20,7 @@ import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingGroup
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPreferences
-import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata

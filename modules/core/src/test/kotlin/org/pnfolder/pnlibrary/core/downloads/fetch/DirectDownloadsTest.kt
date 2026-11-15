@@ -13,8 +13,8 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI

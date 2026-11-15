@@ -13,10 +13,10 @@ import org.pnfolder.pnlibrary.core.placeholders.builtin.GlobalPlaceholderValueSt
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
-import org.pnfolder.pnlibrary.core.updates.service.UpdateServiceImpl
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
+import org.pnfolder.pnlibrary.updates.service.UpdateServiceImpl
 import java.nio.file.Path
 
 /** Creates the feature services of the library runtime (services, configs, updates and so on). */

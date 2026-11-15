@@ -30,7 +30,7 @@ import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
-import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
+import org.pnfolder.pnlibrary.updates.history.BackupItemText
 
 private const val DATABASE_BUTTONS = 3
 private const val DATABASE_FIRST = 15

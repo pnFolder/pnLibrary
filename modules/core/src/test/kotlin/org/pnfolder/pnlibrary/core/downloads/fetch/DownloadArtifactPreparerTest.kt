@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path

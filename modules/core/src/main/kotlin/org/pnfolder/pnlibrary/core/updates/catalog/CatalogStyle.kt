@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateChannelLabels
+import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate

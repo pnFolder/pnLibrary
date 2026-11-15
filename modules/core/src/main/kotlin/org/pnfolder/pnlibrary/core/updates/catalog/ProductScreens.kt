@@ -7,9 +7,9 @@ import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateChannelLabels.channelColor
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateChannelLabels.channelHint
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateChannelLabels.channelName
+import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelColor
+import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelHint
+import org.pnfolder.pnlibrary.updates.policy.UpdateChannelLabels.channelName
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId

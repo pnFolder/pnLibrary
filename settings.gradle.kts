@@ -4,7 +4,7 @@ include(
     // Public contracts and shared code.
     ":modules:common",
     ":modules:api",
-    ":modules:runtime-spi",
+    ":modules:spi",
     ":modules:console",
     // Runtime.
     ":modules:core",

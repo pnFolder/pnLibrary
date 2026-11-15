@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
+import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
 import java.util.UUID
 
 /** The chat reminder of proxies: who gets it, how often, and the text. It reads known state and never asks GitHub. */

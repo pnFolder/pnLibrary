@@ -13,7 +13,7 @@ modules/api, modules/common, features/*-api      публичный контра
 platforms/*/api                                  контракты конкретной платформы (меню, предметы, ...)
       ▲
       │ реализует
-modules/core + внутренние модули ► modules/runtime-spi
+modules/core + внутренние модули ► modules/spi
                                                  рантайм: команды, метрики, отчёты, сборка частей;
                                                  updates вынесен в свои модули
       ▲                        ▲
@@ -79,7 +79,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 |---|---|
 | `modules/common` | общие помощники JVM: `AtomicFiles`, `Digests`, `RussianText`, версии Minecraft и Java |
 | `modules/api` | публичный API: команды, задачи, события, конфиги, обновления, диагностика, метрики, чат |
-| `modules/runtime-spi` | контракт адаптера платформы и общие части адаптеров |
+| `modules/spi` | контракт адаптера платформы и общие части адаптеров |
 | `modules/core` | реализация рантайма; внутри крупные пакеты разложены по подпапкам: `menu` (`data`, `screens`, `style`), `link` (`wire`, `remote`, `report`), `placeholders` (`entries`, `formatters`, `builtin`), `downloads` (`fetch`, `settings`, `dependencies`), `upload` |
 | `modules/updates` | обновления: каталог релизов, выбор версий, установка, откат; от `core` не зависит, `core` подключает её и передаёт тему консоли |
 | `modules/console` | карточки и деревья для консоли (Java, без зависимостей) |
@@ -114,7 +114,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `core.journal` (модуль `journal`) | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
 | `core.upload` | загрузка зашифрованных отчётов |
-| `core.updates.*` (модуль `updates`) | `catalog` команды и страницы, `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
+| `updates.*` (модуль `updates`) и `core.updates.catalog` (в `core`) | `core.updates.catalog` команды и страницы; `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |

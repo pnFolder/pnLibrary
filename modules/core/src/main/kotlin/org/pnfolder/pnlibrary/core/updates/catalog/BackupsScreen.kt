@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.updates.history.BackupItemText
+import org.pnfolder.pnlibrary.updates.history.BackupItemText
 import java.time.Instant
 import java.time.ZoneId
 

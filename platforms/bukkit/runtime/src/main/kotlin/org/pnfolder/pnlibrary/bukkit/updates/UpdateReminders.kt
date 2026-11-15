@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
+import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
 import java.time.Duration
 
 /**

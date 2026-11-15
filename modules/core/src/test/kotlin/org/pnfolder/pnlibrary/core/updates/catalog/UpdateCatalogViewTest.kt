@@ -26,7 +26,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
-import org.pnfolder.pnlibrary.core.updates.install.ComponentOperation
+import org.pnfolder.pnlibrary.updates.install.ComponentOperation
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID

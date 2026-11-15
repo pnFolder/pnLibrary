@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.core.menu.style.timeLeft
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
 import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
-import org.pnfolder.pnlibrary.core.updates.policy.UpdateDefaults
+import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
 import java.time.Duration
 import java.time.Instant
 

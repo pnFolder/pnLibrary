@@ -9,7 +9,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-core" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:common"))
     api(project(":modules:updates"))
     implementation(project(":modules:features:currency-runtime"))

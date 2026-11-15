@@ -9,7 +9,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.downloads.DirectDownloadSource
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
-import org.pnfolder.pnlibrary.core.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.net.URI
 import java.nio.file.Path
 import java.time.Duration

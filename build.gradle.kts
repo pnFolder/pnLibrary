@@ -155,7 +155,7 @@ val verifyPublicModuleBoundaries = tasks.register("verifyPublicModuleBoundaries"
     doLast {
         val signatureModules = subprojects.filter { module ->
             module.file("api").listFiles()?.any { it.extension == "api" } == true
-        }.map { it.path }.toSet() - ":modules:runtime-spi"
+        }.map { it.path }.toSet() - ":modules:spi"
         check(signatureModules == publicModuleDependencies.keys) {
             "Public module registry and signature modules differ: " +
                 "${(signatureModules - publicModuleDependencies.keys) + (publicModuleDependencies.keys - signatureModules)}"
@@ -177,14 +177,14 @@ tasks.named("check") {
     dependsOn(
         verifyPublicModuleBoundaries,
         publicModuleDependencies.keys.map { "$it:apiCheck" },
-        ":modules:runtime-spi:apiCheck",
+        ":modules:spi:apiCheck",
     )
 }
 
 dependencies {
     dokka(project(":modules:common"))
     dokka(project(":modules:api"))
-    dokka(project(":modules:runtime-spi"))
+    dokka(project(":modules:spi"))
     dokka(project(":modules:core"))
     dokka(project(":modules:updates"))
     dokka(project(":modules:features:currency-api"))

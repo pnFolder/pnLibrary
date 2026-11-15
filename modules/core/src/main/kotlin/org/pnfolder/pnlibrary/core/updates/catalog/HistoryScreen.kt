@@ -7,7 +7,7 @@ import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.updates.install.ComponentOperation
+import org.pnfolder.pnlibrary.updates.install.ComponentOperation
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
