@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.updates.history.BackupItemText
 import org.pnfolder.pnlibrary.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.PrivateFiles
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.updates.service.UpdateHealthReport

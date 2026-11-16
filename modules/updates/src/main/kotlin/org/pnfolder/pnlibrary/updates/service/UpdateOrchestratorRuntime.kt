@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.updates.install.ComponentLedger
 import org.pnfolder.pnlibrary.updates.install.ComponentOperation
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import java.util.Collections
 import java.util.concurrent.CompletableFuture

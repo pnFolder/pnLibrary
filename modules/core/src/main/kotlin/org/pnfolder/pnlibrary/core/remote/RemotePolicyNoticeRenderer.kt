@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 
 /** Prints the console card with the result of a remote compatibility check. */

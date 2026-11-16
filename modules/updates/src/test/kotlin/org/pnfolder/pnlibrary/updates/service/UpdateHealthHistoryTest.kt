@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal
 import org.pnfolder.pnlibrary.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import java.net.URI
 import java.nio.file.Files

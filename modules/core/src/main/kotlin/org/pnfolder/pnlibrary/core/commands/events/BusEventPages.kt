@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.chatPager
 import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.core.text.shortName
 
 /** Chat pages describing bus events. */
 internal class BusEventPages(private val library: PnLibrary) {

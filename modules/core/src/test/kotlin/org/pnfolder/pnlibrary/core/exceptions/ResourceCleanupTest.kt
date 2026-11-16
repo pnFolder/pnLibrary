@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.cleanup
+package org.pnfolder.pnlibrary.core.exceptions
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame

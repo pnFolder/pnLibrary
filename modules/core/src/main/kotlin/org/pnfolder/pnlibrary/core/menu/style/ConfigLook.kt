@@ -5,6 +5,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigSetting
 import org.pnfolder.pnlibrary.api.config.ConfigSettingKind
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /**
  * How the configuration screens look: the icon, the name and the lines of every kind of button.

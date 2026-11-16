@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.TrustedHosts
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.util.UUID
 

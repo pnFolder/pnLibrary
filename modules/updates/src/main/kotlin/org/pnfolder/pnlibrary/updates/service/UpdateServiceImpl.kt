@@ -28,7 +28,7 @@ import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.updates.install.UpdateGraphResolver
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateAutomaticPolicy
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides

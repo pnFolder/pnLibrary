@@ -4,22 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
-
-/** Splits [text] into lines of at most [width] characters at spaces. */
-internal fun wrapText(text: String, width: Int): List<String> {
-    val lines = mutableListOf<String>()
-    var current = StringBuilder()
-    text.split(' ').forEach { word ->
-        if (current.isNotEmpty() && current.length + 1 + word.length > width) {
-            lines += current.toString()
-            current = StringBuilder()
-        }
-        if (current.isNotEmpty()) current.append(' ')
-        current.append(word)
-    }
-    if (current.isNotEmpty()) lines += current.toString()
-    return lines
-}
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** The label and the color that mark records of [level]. */
 internal fun levelStyle(level: JournalLevel) = when (level) {

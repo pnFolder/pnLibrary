@@ -25,14 +25,14 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.clockStamp
-import org.pnfolder.pnlibrary.core.menu.style.dayTitle
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.section
-import org.pnfolder.pnlibrary.core.menu.style.shortName
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.dayTitle
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
+import org.pnfolder.pnlibrary.core.text.wrapText
 import java.time.LocalDate
 
 /** Menu screens for event bus overview, events and listeners. */

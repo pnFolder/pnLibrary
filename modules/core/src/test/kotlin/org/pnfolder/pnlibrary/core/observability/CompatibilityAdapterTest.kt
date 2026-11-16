@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 
 class CompatibilityAdapterTest {

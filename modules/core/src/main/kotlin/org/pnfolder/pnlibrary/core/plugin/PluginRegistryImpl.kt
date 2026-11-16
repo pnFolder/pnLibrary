@@ -36,7 +36,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads

@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.lang.reflect.Proxy
 

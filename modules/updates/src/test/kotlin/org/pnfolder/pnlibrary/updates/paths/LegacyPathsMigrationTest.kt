@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.updates.layout
+package org.pnfolder.pnlibrary.updates.paths
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -16,7 +16,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
-class LegacyLayoutMigrationTest {
+class LegacyPathsMigrationTest {
     @TempDir
     lateinit var directory: Path
 
@@ -27,7 +27,7 @@ class LegacyLayoutMigrationTest {
     private fun write(relative: String, text: String): Path =
         plugin.resolve(relative).also { Files.createDirectories(it.parent); Files.writeString(it, text) }
 
-    private fun migrate() = LegacyLayoutMigration(paths, warnings::add).run()
+    private fun migrate() = LegacyPathsMigration(paths, warnings::add).run()
 
     @Test
     fun `old state is moved into data and the old places are gone`() {

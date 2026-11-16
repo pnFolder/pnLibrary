@@ -8,6 +8,8 @@ import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.EventInspector
 import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.text.NANOS_PER_MICRO
+import org.pnfolder.pnlibrary.core.text.shortName
 
 /** Chat pages with event trace output. */
 internal class BusTracePages(private val library: PnLibrary) {

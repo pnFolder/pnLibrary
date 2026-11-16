@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI

@@ -9,7 +9,7 @@ import java.nio.file.Path
 /**
  * Reads plugin configuration files for support reports, with the values each report must hide.
  *
- * File confinement is done by [SecureConfigurationFileReader], syntax by [ConfigurationDocumentCodec], and
+ * File confinement is done by [SecureConfigReader], syntax by [ConfigurationDocumentCodec], and
  * the hiding rules by [ConfigRedaction], built from the global settings and the file's own declaration.
  *
  * @param dataFolder default trusted root for relative configuration paths
@@ -20,7 +20,7 @@ internal class ConfigReader(
     private val globalConfig: PnLibraryConfig = PnLibraryConfig(),
 ) {
     private val redactor = DiagnosticRedactor()
-    private val secureFileReader = SecureConfigurationFileReader(MAX_FILE_SIZE_BYTES)
+    private val secureFileReader = SecureConfigReader(MAX_FILE_SIZE_BYTES)
     private val documentCodec = ConfigurationDocumentCodec(redactor)
 
     /** Text configuration prepared for a plaintext local report. */

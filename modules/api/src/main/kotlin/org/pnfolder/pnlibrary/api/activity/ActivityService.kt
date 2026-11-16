@@ -2,16 +2,6 @@ package org.pnfolder.pnlibrary.api.activity
 
 import java.nio.file.Path
 
-/** Relative importance used for filtering and retaining recorded activity. */
-enum class ActivitySeverity {
-    TRACE,
-    INFO,
-    NOTICE,
-    WARNING,
-    ERROR,
-    CRITICAL
-}
-
 /** Files selected for one activity record before they are persisted. */
 typealias ActivityFile = Path
 

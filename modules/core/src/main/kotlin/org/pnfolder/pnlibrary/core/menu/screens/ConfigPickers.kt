@@ -18,13 +18,13 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
-import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.clockTime
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** Writes [text] into a setting, then runs [after] with the viewer; the screens that edit a value share it. */
 internal typealias SettingWriter = (MenuViewer, ConfigSetting, String, (MenuViewer) -> Unit) -> Unit

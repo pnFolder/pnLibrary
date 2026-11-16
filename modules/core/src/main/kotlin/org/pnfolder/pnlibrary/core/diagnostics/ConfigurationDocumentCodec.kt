@@ -12,7 +12,7 @@ import java.util.Properties
  *
  * The codec deliberately produces a neutral tree of maps, lists, scalar values,
  * and `null`. It performs no path validation or secret filtering; those concerns
- * belong to [SecureConfigurationFileReader] and [ConfigReader], respectively.
+ * belong to [SecureConfigReader] and [ConfigReader], respectively.
  * Unknown extensions are represented by a bounded `raw` value.
  */
 internal class ConfigurationDocumentCodec(

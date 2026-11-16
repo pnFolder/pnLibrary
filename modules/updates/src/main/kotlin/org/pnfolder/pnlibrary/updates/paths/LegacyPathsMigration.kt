@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.updates.layout
+package org.pnfolder.pnlibrary.updates.paths
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -14,7 +14,7 @@ import java.nio.file.Path
  * Moves the state of older versions, which lay directly in the plugin folder, into `data`, and merges the two old
  * settings files into one. It never overwrites, never throws and reports what it could not do through [warning].
  */
-class LegacyLayoutMigration(
+class LegacyPathsMigration(
     private val paths: LibraryPaths,
     private val warning: (String) -> Unit = {},
 ) {

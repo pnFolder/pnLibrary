@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.menu.data.MenuData
 import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
 import org.pnfolder.pnlibrary.core.menu.style.BACK

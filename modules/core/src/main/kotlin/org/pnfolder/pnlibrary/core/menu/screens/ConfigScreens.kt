@@ -20,9 +20,9 @@ import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
-import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 private const val CONFIGS_EDIT = "pnlibrary.configs.edit"
 

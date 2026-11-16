@@ -13,7 +13,7 @@ import java.nio.file.Path
  *
  * @param maximumBytes largest accepted file size in bytes
  */
-internal class SecureConfigurationFileReader(
+internal class SecureConfigReader(
     private val maximumBytes: Long = DEFAULT_MAXIMUM_BYTES,
 ) {
     /** Result of one confined file read. Exactly one of [content] and [error] is set. */

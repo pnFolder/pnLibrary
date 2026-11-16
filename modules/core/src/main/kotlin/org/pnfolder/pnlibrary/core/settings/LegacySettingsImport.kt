@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.settings
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor

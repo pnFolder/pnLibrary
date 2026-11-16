@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.observability.ComponentStatus
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

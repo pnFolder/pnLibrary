@@ -25,7 +25,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
 import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration

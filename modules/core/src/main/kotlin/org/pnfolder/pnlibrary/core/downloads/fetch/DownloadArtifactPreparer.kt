@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient

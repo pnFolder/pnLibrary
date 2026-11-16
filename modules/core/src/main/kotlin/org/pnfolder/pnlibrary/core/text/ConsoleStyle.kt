@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.ui
+package org.pnfolder.pnlibrary.core.text
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor

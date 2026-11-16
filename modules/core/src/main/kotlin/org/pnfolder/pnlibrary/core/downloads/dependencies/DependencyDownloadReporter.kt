@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
 import org.pnfolder.pnlibrary.core.downloads.DownloadFailureInterpreter
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata
 import java.io.IOException

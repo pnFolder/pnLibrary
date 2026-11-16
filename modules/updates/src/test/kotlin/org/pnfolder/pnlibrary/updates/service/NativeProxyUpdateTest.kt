@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Files

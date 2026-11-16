@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.cleanup
+package org.pnfolder.pnlibrary.core.exceptions
 
 /** The innermost cause of this failure, or the failure itself when it has none. */
 internal fun Throwable.rootCause(): Throwable = generateSequence(this) { it.cause }.last()

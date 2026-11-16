@@ -32,7 +32,7 @@ import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.wrapText
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 
 /** Menu screens for scheduled tasks. */

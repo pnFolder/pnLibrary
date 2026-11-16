@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 

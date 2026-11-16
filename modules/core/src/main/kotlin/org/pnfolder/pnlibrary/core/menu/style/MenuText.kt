@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu.style
 
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.text.BAR_WIDTH
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -9,10 +10,6 @@ import java.util.Locale
 
 private const val HOURS_PER_DAY = 24
 private const val MINUTES_PER_HOUR = 60
-private const val WRAP_LINES = 8
-private const val NANOS_PER_MICRO = 1_000L
-private const val NANOS_PER_MILLI = 1_000_000L
-private val DAY_YEAR: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
 private const val SECONDS_PER_MINUTE = 60L
 
 internal fun timeLeft(span: Duration): String {
@@ -25,11 +22,6 @@ internal fun timeLeft(span: Duration): String {
         else -> "${minutes.coerceAtLeast(1)} мин"
     }
 }
-
-internal fun nanosText(nanos: Long): String =
-    if (nanos >= NANOS_PER_MILLI) "%.1f мс".format(nanos / NANOS_PER_MILLI.toDouble()) else "%.1f мкс".format(nanos / NANOS_PER_MICRO.toDouble())
-
-internal fun shortName(name: String): String = name.substringAfterLast('.')
 
 internal fun clockTime(moment: Instant): String = format(moment, "HH:mm")
 
@@ -51,35 +43,7 @@ internal fun ago(moment: Instant): String {
     }
 }
 
-internal fun dayTitle(date: LocalDate, today: LocalDate): String = when (date) {
-    today -> "Сегодня"
-    today.minusDays(1) -> "Вчера"
-    else -> (if (date.year == today.year) DAY else DAY_YEAR).format(date)
-}
-
 internal fun progressBar(value: Long, busiest: Long): String {
     val width = ((value * BAR_WIDTH + busiest - 1) / busiest.coerceAtLeast(1)).toInt().coerceIn(1, BAR_WIDTH)
     return "█".repeat(width)
-}
-
-internal fun wrapText(text: String, width: Int = WRAP_WIDTH, limit: Int = WRAP_LINES): List<String> {
-    val lines = ArrayList<String>()
-    for (raw in text.lines()) {
-        var line = StringBuilder()
-        for (word in raw.trim().split(' ')) {
-            if (line.isNotEmpty() && line.length + 1 + word.length > width) {
-                lines += line.toString()
-                line = StringBuilder()
-            }
-            var rest = word
-            while (rest.length > width) {
-                lines += rest.take(width)
-                rest = rest.drop(width)
-            }
-            if (line.isNotEmpty()) line.append(' ')
-            line.append(rest)
-        }
-        lines += line.toString()
-    }
-    return if (lines.size > limit) lines.take(limit) + "…" else lines
 }

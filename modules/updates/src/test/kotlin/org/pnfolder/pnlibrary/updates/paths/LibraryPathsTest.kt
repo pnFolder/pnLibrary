@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.updates.layout
+package org.pnfolder.pnlibrary.updates.paths
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

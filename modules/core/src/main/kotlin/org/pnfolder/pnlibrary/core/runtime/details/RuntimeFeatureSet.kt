@@ -13,11 +13,11 @@ import org.pnfolder.pnlibrary.core.placeholders.builtin.GlobalPlaceholderValueSt
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateTiming
 import org.pnfolder.pnlibrary.updates.service.UpdateServiceImpl
 

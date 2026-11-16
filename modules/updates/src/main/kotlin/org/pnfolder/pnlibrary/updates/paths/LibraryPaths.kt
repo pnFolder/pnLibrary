@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.updates.layout
+package org.pnfolder.pnlibrary.updates.paths
 
 import java.nio.file.Path
 

@@ -16,14 +16,14 @@ import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
-import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
+import org.pnfolder.pnlibrary.core.text.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.timeLeft
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
 import java.time.Duration

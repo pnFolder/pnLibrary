@@ -8,7 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 
-class SecureConfigurationFileReaderTest {
+class SecureConfigReaderTest {
     @TempDir
     lateinit var temporaryDirectory: Path
 
@@ -17,7 +17,7 @@ class SecureConfigurationFileReaderTest {
         val expected = "enabled: true\n".toByteArray()
         Files.write(temporaryDirectory.resolve("config.yml"), expected)
 
-        val result = SecureConfigurationFileReader().read(temporaryDirectory, "config.yml")
+        val result = SecureConfigReader().read(temporaryDirectory, "config.yml")
 
         assertArrayEquals(expected, result.content)
         assertNull(result.error)
@@ -25,7 +25,7 @@ class SecureConfigurationFileReaderTest {
 
     @Test
     fun `rejects traversal and forbidden extensions`() {
-        val reader = SecureConfigurationFileReader()
+        val reader = SecureConfigReader()
         Files.write(temporaryDirectory.resolve("cache.db"), byteArrayOf(1))
 
         val traversal = reader.read(temporaryDirectory, "../outside.yml")
@@ -39,7 +39,7 @@ class SecureConfigurationFileReaderTest {
     fun `rejects files larger than the configured byte budget`() {
         Files.write(temporaryDirectory.resolve("large.yml"), ByteArray(5))
 
-        val result = SecureConfigurationFileReader(maximumBytes = 4)
+        val result = SecureConfigReader(maximumBytes = 4)
             .read(temporaryDirectory, "large.yml")
 
         assertEquals("[file exceeds size limit of 4 bytes (5 bytes)]", result.error)

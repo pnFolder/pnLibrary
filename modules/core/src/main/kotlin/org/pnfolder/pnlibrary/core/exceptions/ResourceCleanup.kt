@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.core.cleanup
+package org.pnfolder.pnlibrary.core.exceptions
 
 /** Executes lifecycle cleanup steps without abandoning later resources after a failure. */
 internal object ResourceCleanup {

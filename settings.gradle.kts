@@ -15,7 +15,7 @@ include(
     ":modules:features:config-runtime",
     ":modules:features:currency-api",
     ":modules:features:currency-runtime",
-    ":modules:features:minecraft-localization-api",
+    ":modules:features:localization-api",
     // Platforms.
     ":platforms:loader",
     ":platforms:bukkit:api",

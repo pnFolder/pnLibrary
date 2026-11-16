@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.services.ServiceScope
 
 /** Per-module resources (tasks, events, services, config, placeholders and so on) closed together with the module. */

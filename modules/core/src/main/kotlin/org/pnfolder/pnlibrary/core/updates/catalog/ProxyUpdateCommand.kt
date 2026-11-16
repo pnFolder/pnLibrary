@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import java.time.Duration
 import java.util.UUID
 

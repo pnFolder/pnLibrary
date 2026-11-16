@@ -12,6 +12,9 @@ import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.chatPager
 import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.core.text.DAY
+import org.pnfolder.pnlibrary.core.text.dayTitle
+import org.pnfolder.pnlibrary.core.text.shortName
 
 /** Chat pages with recent bus history. */
 internal class BusHistoryPages(private val library: PnLibrary) {

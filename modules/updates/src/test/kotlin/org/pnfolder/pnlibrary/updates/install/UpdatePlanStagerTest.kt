@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path

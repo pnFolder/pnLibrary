@@ -4,7 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.link.remote.DataCall
 import org.pnfolder.pnlibrary.core.link.remote.DataHandler
 import org.pnfolder.pnlibrary.core.menu.style.BUS

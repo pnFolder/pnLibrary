@@ -2,8 +2,6 @@ package org.pnfolder.pnlibrary.core.menu.style
 
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 import java.time.Duration
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 internal val ROUTES = UpdateCatalogRoutes("/pn updates", update = { product -> "/pn update $product" }, check = "/pn check")
 internal const val SETTINGS = MenuPermissions.UPDATES_SETTINGS
@@ -32,9 +30,6 @@ internal const val PLACEHOLDERS = MenuPermissions.PLACEHOLDERS
 internal const val CONFIGS = "pnlibrary.configs"
 internal const val DETAIL_ROWS = 5
 internal const val DETAIL_BACK = 40
-internal const val WRAP_WIDTH = 44
-internal const val BAR_WIDTH = 12
-internal val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
 internal const val TITLE_LIMIT = 30
 /** Whether the menu may change the update channel; only `dev` works for now, so the choice is switched off. */
 internal val HOLDS = listOf(

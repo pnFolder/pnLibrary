@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.menu.screens
 
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens

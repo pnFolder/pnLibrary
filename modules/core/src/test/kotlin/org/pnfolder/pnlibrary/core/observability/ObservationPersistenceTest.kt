@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.observability.Observation
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption

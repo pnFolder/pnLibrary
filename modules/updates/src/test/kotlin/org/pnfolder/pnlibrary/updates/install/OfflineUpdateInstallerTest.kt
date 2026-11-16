@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.*
 import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock
 import java.nio.file.Files
 import java.nio.file.Path

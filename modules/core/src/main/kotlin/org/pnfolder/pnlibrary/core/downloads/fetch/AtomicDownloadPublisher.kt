@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.downloads.fetch
 
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path

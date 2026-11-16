@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.observability.ObservationKeys
 import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.time.Instant
 

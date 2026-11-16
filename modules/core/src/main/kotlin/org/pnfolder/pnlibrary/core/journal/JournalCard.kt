@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** The detail card of one event, or the timeline of its occurrences when [repeats] is set. */
 internal fun journalCard(

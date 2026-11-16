@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.core.downloads.settings.downloads
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 

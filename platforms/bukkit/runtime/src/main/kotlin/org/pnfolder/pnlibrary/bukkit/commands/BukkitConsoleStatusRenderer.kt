@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.updates.policy.color
 import org.pnfolder.pnlibrary.updates.policy.title
 import java.time.Duration

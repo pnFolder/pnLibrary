@@ -31,7 +31,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.commands.settings.SettingsCommand
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
@@ -79,8 +79,8 @@ import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
-import org.pnfolder.pnlibrary.updates.layout.LegacyLayoutMigration
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LegacyPathsMigration
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.ZoneId
@@ -116,7 +116,7 @@ internal class PnLibraryImpl(
     init {
         val warn = { text: String -> platform.logging.log(owner, LogLevel.WARNING, text) }
         // The old files are moved into data and read once, before the settings are used.
-        LegacyLayoutMigration(paths, warn).run()
+        LegacyPathsMigration(paths, warn).run()
         settings = SettingsStore(paths.settings, warn).also { LegacySettingsImport(paths, warn).run(it) }
         config = presetConfig ?: settings.config()
         DisplayZone.zone = ZoneId.of(settings.current().timeZone)
