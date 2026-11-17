@@ -2,6 +2,9 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 
 /**
@@ -19,20 +22,20 @@ internal object PaperCommandSupport {
     private const val PAPER_LIFECYCLE = "io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents"
 
     /** Returns the registrar to use: the Paper one when it can run here, otherwise [classic]. */
-    fun choose(plugin: Plugin, classic: NativeCommandRegistrar<CommandSender>): NativeCommandRegistrar<CommandSender> {
+    fun choose(plugin: Plugin, classic: NativeCommandRegistrar<CommandSender>, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer): NativeCommandRegistrar<CommandSender> {
         if (System.getProperty(SWITCH)?.equals("false", ignoreCase = true) == true) return classic
         if (!present(PAPER_COMMANDS, plugin) || !present(PAPER_LIFECYCLE, plugin)) return classic
         return try {
             @Suppress("UNCHECKED_CAST")
             Class.forName(REGISTRAR, true, plugin.javaClass.classLoader)
-                .getConstructor(Plugin::class.java, NativeCommandRegistrar::class.java)
-                .newInstance(plugin, classic) as NativeCommandRegistrar<CommandSender>
+                .getConstructor(Plugin::class.java, NativeCommandRegistrar::class.java, Function0::class.java)
+                .newInstance(plugin, classic, pnLogger) as NativeCommandRegistrar<CommandSender>
         } catch (error: Exception) {
-            plugin.logger.info("Paper's command API is not used (${error.javaClass.simpleName}); using the classic command map")
+            logBuffer.log(LogLevel.INFO, "Paper's command API is not used (${error.javaClass.simpleName}); using the classic command map")
             classic
         } catch (error: LinkageError) {
             // Java older than 21 cannot load the Paper module, and a different Paper API can miss a class.
-            plugin.logger.info("Paper's command API is not used (${error.javaClass.simpleName}); using the classic command map")
+            logBuffer.log(LogLevel.INFO, "Paper's command API is not used (${error.javaClass.simpleName}); using the classic command map")
             classic
         }
     }

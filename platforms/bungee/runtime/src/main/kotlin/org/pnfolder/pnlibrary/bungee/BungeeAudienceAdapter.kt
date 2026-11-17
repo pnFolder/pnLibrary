@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
 import java.util.UUID
 
 /** Converts native proxy recipients to portable audiences using legacy chat serialization. */
@@ -21,15 +22,17 @@ internal class BungeeAudienceAdapter(
 
     override fun console(): AudienceSender = wrap(plugin.proxy.console)
 
-    override fun player(uniqueId: UUID): LibraryPlayer? = plugin.proxy.getPlayer(uniqueId)?.let(BungeeLibraryPlayer::of)
+    override fun player(uniqueId: UUID): NetworkPlayer? =
+        plugin.proxy.getPlayer(uniqueId)?.let(BungeeNetworkPlayer::of)
 
     override fun sender(native: Any): AudienceSender? = when (native) {
-        is ProxiedPlayer -> BungeeLibraryPlayer.of(native)
+        is ProxiedPlayer -> BungeeNetworkPlayer.of(native)
         is CommandSender -> wrap(native)
         else -> null
     }
 
-    override fun onlinePlayers(): List<LibraryPlayer> = plugin.proxy.players.map(BungeeLibraryPlayer::of)
+    override fun onlinePlayers(): List<NetworkPlayer> =
+        plugin.proxy.players.map(BungeeNetworkPlayer::of)
 
     private fun wrap(sender: CommandSender): AudienceSender = object : AudienceSender {
         override val id get() = sender.name

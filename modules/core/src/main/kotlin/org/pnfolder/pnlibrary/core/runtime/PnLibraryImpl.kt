@@ -18,6 +18,7 @@ import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
+import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
@@ -200,6 +201,7 @@ internal class PnLibraryImpl(
     override val expansions: ExpansionManager get() = features.expansions
     override val events: EventService get() = eventService
     override val platforms: PlatformProvider get() = platformProvider
+    override val proxy: NetworkProxy? = platform.networkProxy
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
     override val placeholderValues: PlaceholderValueStore get() = features.placeholderValues
 

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.velocity
+package org.pnfolder.pnlibrary.velocity.log
 
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager

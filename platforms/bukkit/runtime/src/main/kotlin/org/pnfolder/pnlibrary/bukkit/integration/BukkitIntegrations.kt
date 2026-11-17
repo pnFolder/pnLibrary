@@ -24,8 +24,8 @@ internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
         val context = IntegrationContext(plugin, runtime)
         integrations = listOf(
             PlaceholderApiIntegration(context),
-            CurrencyIntegration(context, "Vault", "vault", "money", BukkitCurrencyAdapters::vault),
-            CurrencyIntegration(context, "PlayerPoints", "playerpoints", "points", BukkitCurrencyAdapters::playerPoints),
+            CurrencyIntegration(context, "Vault", "vault", "money") { plugin, log -> BukkitCurrencyAdapters.vault(plugin, log) },
+            CurrencyIntegration(context, "PlayerPoints", "playerpoints", "points") { plugin, log -> BukkitCurrencyAdapters.playerPoints(plugin, log) },
         )
         connectAll()
     }

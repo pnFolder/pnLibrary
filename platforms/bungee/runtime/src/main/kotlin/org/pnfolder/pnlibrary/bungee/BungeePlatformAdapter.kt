@@ -3,7 +3,9 @@ package org.pnfolder.pnlibrary.bungee
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.bungee.commands.BungeeCommandAdapter
 import org.pnfolder.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory
@@ -24,6 +26,7 @@ import java.util.logging.Logger
 internal class BungeePlatformAdapter(
     /** The pnLibrary plugin; internal work such as global tasks belongs to it. */
     val plugin: Plugin,
+    private val pnLogger: () -> PnLogger,
 ) : ProxyPlatformAdapter(plugin) {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
@@ -53,7 +56,9 @@ internal class BungeePlatformAdapter(
         get() = plugin.proxy.name.ifBlank { type.displayName }
 
     override val metricsFactory: PlatformMetricsFactory =
-        BungeeMetricsFactory()
+        BungeeMetricsFactory(pnLogger)
+
+    override val networkProxy: BungeeNetworkProxy = BungeeNetworkProxy(plugin.proxy)
 
     override val commandAdapter: PlatformCommandAdapter =
         BungeeCommandAdapter(plugin)

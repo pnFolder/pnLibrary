@@ -12,50 +12,32 @@ import org.pnfolder.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
  * Handle tracking, one-shot release and shutdown come from [TrackingPlatformTaskAdapter].
  */
 internal class VelocityTaskAdapter internal constructor(
-    private val describeOwner: (Any?) -> String,
     private val warning: (String) -> Unit,
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
 ) : TrackingPlatformTaskAdapter() {
 
-    /**
-     * Creates an adapter backed by Velocity's scheduler. [describeOwner] names the plugin that asked for a task,
-     * and [warning] receives a notice every time an entity task is run on the proxy scheduler instead.
-     */
-    constructor(server: ProxyServer, describeOwner: (Any?) -> String, warning: (String) -> Unit) : this(
-        describeOwner = describeOwner,
+    /** Adapts [plugin] (a registered Velocity plugin) to the native scheduler; entity tasks fall back to the proxy scheduler with a [warning]. */
+    constructor(server: ProxyServer, plugin: Any, warning: (String) -> Unit) : this(
         warning = warning,
         nativeSchedule = { request ->
-            val owner = requireNotNull(request.owner) { "Velocity tasks require a native plugin owner" }
-            require(server.pluginManager.fromInstance(owner).isPresent) {
+            require(server.pluginManager.fromInstance(plugin).isPresent) {
                 "Task owner must be a registered Velocity plugin"
             }
-            val builder = server.scheduler.buildTask(owner, request.callback)
-
-            if (!request.delay.isZero) {
-                builder.delay(request.delay)
-            }
+            val builder = server.scheduler.buildTask(plugin, request.callback)
+            if (!request.delay.isZero) builder.delay(request.delay)
             request.interval?.let(builder::repeat)
 
             val task = builder.schedule()
-            PlatformTaskHandle {
-                task.cancel()
-                true
-            }
+            PlatformTaskHandle { task.cancel(); true }
         },
     )
 
     override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle = nativeSchedule(request)
 
-    /**
-     * Velocity has no entity scheduler, so an entity task runs on the proxy scheduler instead, and every such
-     * call writes a warning that names the plugin which asked for it.
-     */
+    /** Velocity has no entity scheduler, so entity tasks run on the proxy scheduler and emit a [warning]. */
     override fun beforeSchedule(request: PlatformTaskRequest) {
         if (request.executionKind == TaskExecution.Kind.ENTITY) {
-            warning(
-                "Плагин ${describeOwner(request.owner)} запросил задачу, привязанную к игроку. " +
-                    "Velocity такие задачи не поддерживает: задача выполнена на общем планировщике прокси.",
-            )
+            warning("Запрошена задача, привязанная к игроку. Velocity такие задачи не поддерживает: задача выполнена на общем планировщике прокси.")
         }
     }
 }

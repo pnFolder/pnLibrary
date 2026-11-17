@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
@@ -36,7 +37,6 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -49,6 +49,8 @@ internal class BukkitPlatformAdapter(
     val plugin: Plugin,
     audienceService: BukkitAudienceService,
     private val link: Link = Link.OFF,
+    private val pnLogger: () -> PnLogger,
+    private val logBuffer: PnLoggerBuffer,
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
@@ -92,10 +94,10 @@ internal class BukkitPlatformAdapter(
     }
 
     override val metricsFactory: PlatformMetricsFactory =
-        BukkitMetricsFactory()
+        BukkitMetricsFactory(pnLogger)
 
     override val commandAdapter: PlatformCommandAdapter =
-        BukkitCommandAdapter(audienceService, plugin)
+        BukkitCommandAdapter(audienceService, plugin, pnLogger, logBuffer)
 
     override val audienceAdapter: PlatformAudienceAdapter =
         BukkitAudienceAdapter(audienceService)
@@ -135,7 +137,7 @@ internal class BukkitPlatformAdapter(
 
     override fun disableOwner(owner: Any): Boolean {
         val installed = plugins.requireInstalled(owner, "Disabled owner")
-        BukkitDependentGuard.disableDependentsOf(installed) { plugin.logger.warning(it) }
+        BukkitDependentGuard.disableDependentsOf(installed) { pnLogger().warning(it) }
         Bukkit.getPluginManager().disablePlugin(installed)
         return true
     }
@@ -143,8 +145,8 @@ internal class BukkitPlatformAdapter(
     /** Disables dependents as they enable and switches [owner] off once the server has started. */
     override fun disableDependents(owner: Any): Boolean {
         if (owner !== plugin) return false
-        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }
-            .onFailure { plugin.logger.log(Level.SEVERE, "Could not watch plugins that depend on pnLibrary", it) }
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { pnLogger().warning(it) }.arm() }
+            .onFailure { pnLogger().error("Could not watch plugins that depend on pnLibrary", it) }
             .isSuccess
     }
 

@@ -74,19 +74,6 @@ class ScheduledTasksTest {
     }
 
     @Test
-    fun `native task request retains scope owner identity`() {
-        val adapter = RecordingAdapter()
-        val owner = Any()
-        val service = ScheduledTasks(adapter)
-        try {
-            service.scope(owner).schedule(spec("owned"))
-            assertSame(owner, adapter.requests.single().owner)
-        } finally {
-            service.close()
-        }
-    }
-
-    @Test
     fun `task can cancel itself and native handle is cancelled`() {
         val adapter = RecordingAdapter()
         val service = ScheduledTasks(adapter)
@@ -306,7 +293,9 @@ class ScheduledTasksTest {
         var closed = false
             private set
 
-        override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
+        override fun buildTask() = PlatformTaskBuilder(::dispatch)
+
+        private fun dispatch(request: PlatformTaskRequest): PlatformTaskHandle {
             requests += request
             val failure = if (handles.size == failingCancelIndex) IllegalStateException("native cancellation failed") else null
             val handle = NativeHandle(failure)

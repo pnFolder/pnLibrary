@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.velocity
+package org.pnfolder.pnlibrary.velocity.link
 
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PluginMessageEvent

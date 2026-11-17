@@ -41,66 +41,45 @@ interface LoggingService {
 }
 
 /**
- * Plugin-bound logger whose warnings and errors may be included in diagnostic reports.
+ * Plugin-bound logger that writes to the console and the black box (journal, diagnostics buffer, error report).
  *
- * Messages are plain platform-console text. Implementations add the logger name and may
- * aggregate repeated diagnostic incidents before writing to the native console.
+ * Every line reaches the black box. Pass [context] to attach structured key-value facts that are stored alongside
+ * the message in the journal and appear in support reports.
  */
 interface PnLogger {
-    /**
-     * Writes one line at [level] and decides where it goes. The console always gets it. With [record] `true` (what every
-     * short form below uses) it also goes into the black box: the diagnostics buffer, the journal and, for an
-     * error with an exception, the error report. With [record] `false` it is console only and leaves no trace.
-     */
-    fun log(level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true)
+    /** Writes one line at [level] to the console and the black box. [context] is stored as extra key-value facts. */
+    fun log(level: LogLevel, message: String, error: Throwable? = null, context: Map<String, Any?> = emptyMap())
 
-    /** Writes normal operational information to the console and the black box. */
-    fun info(message: String) = log(LogLevel.INFO, message, null, true)
+    fun info(message: String) = log(LogLevel.INFO, message)
+    fun info(message: String, error: Throwable?) = log(LogLevel.INFO, message, error)
+    fun info(message: String, context: Map<String, Any?>) = log(LogLevel.INFO, message, context = context)
 
-    /** Writes normal operational information; with [record] `false` it stays out of the black box. */
-    fun info(message: String, record: Boolean) = log(LogLevel.INFO, message, null, record)
+    fun success(message: String) = log(LogLevel.SUCCESS, message)
+    fun success(message: String, context: Map<String, Any?>) = log(LogLevel.SUCCESS, message, context = context)
 
-    /** Writes normal operational information together with the [error] that explains it, kept with its stack trace. */
-    fun info(message: String, error: Throwable?) = log(LogLevel.INFO, message, error, true)
+    fun warning(message: String) = log(LogLevel.WARNING, message)
+    fun warning(message: String, error: Throwable?) = log(LogLevel.WARNING, message, error)
+    fun warning(message: String, context: Map<String, Any?>) = log(LogLevel.WARNING, message, context = context)
+    fun warning(message: String, error: Throwable?, context: Map<String, Any?>) = log(LogLevel.WARNING, message, error, context)
 
-    /** Writes positive completion or readiness information to the console and the black box. */
-    fun success(message: String) = log(LogLevel.SUCCESS, message, null, true)
+    fun error(message: String) = log(LogLevel.ERROR, message)
+    fun error(message: String, error: Throwable?) = log(LogLevel.ERROR, message, error)
+    fun error(message: String, error: Throwable?, context: Map<String, Any?>) = log(LogLevel.ERROR, message, error, context)
 
-    /** Writes positive completion information; with [record] `false` it stays out of the black box. */
-    fun success(message: String, record: Boolean) = log(LogLevel.SUCCESS, message, null, record)
+    /** Writes a failure that stops the plugin from working; always reaches the black box regardless of retention. */
+    fun critical(message: String, error: Throwable? = null) = log(LogLevel.CRITICAL, message, error)
+    fun critical(message: String, error: Throwable?, context: Map<String, Any?>) = log(LogLevel.CRITICAL, message, error, context)
 
-    /** Writes a recoverable problem requiring attention to the console and the black box. */
-    fun warning(message: String) = log(LogLevel.WARNING, message, null, true)
-
-    /** Writes a recoverable problem; with [record] `false` it stays out of the black box. */
-    fun warning(message: String, record: Boolean) = log(LogLevel.WARNING, message, null, record)
-
-    /** Writes a recoverable problem with the [error] that caused it, so the report keeps the stack trace. */
-    fun warning(message: String, error: Throwable?) = log(LogLevel.WARNING, message, error, true)
-
-    /** Writes a recoverable problem with its [error]; with [record] `false` it stays out of the black box. */
-    fun warning(message: String, error: Throwable?, record: Boolean) = log(LogLevel.WARNING, message, error, record)
-
-    /** Writes a failure to the console and the black box. */
-    fun error(message: String) = log(LogLevel.ERROR, message, null, true)
-
-    /** Writes a failure with its original [error], which the report keeps with the stack trace. */
-    fun error(message: String, error: Throwable?) = log(LogLevel.ERROR, message, error, true)
-
-    /** Writes a failure with its [error]; with [record] `false` it stays out of the black box. */
-    fun error(message: String, error: Throwable?, record: Boolean) = log(LogLevel.ERROR, message, error, record)
-
-    /** Writes a failure that stops the plugin from working, with the [error] behind it, to the console and the black box. */
-    fun critical(message: String, error: Throwable? = null) = log(LogLevel.CRITICAL, message, error, true)
+    /** Writes a detail for a support report only; the console stays quiet. */
+    fun debug(message: String) = log(LogLevel.DEBUG, message)
+    fun debug(message: String, error: Throwable?) = log(LogLevel.DEBUG, message, error)
+    fun debug(message: String, context: Map<String, Any?>) = log(LogLevel.DEBUG, message, context = context)
 
     /**
-     * Writes a detail for a support report only: the black box keeps it and the console stays quiet. Use it where the
-     * old code logged at `FINE`.
+     * Records a line in the black box at [level] without printing to the console.
+     * Use to replay buffered pre-startup entries after the library has initialised.
      */
-    fun debug(message: String) = log(LogLevel.DEBUG, message, null, true)
-
-    /** Writes a detail for a support report together with its [error]; the console stays quiet. */
-    fun debug(message: String, error: Throwable?) = log(LogLevel.DEBUG, message, error, true)
+    fun record(level: LogLevel, message: String, error: Throwable? = null) = debug(message, error)
 }
 
 /**

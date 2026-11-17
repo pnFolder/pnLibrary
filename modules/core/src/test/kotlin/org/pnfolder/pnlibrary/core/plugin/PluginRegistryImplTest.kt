@@ -54,6 +54,7 @@ import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.lang.reflect.Proxy
@@ -397,12 +398,8 @@ class PluginRegistryImplTest {
 
     @Test
     fun `sibling modules receive isolated task scopes`() {
-        val nativeOwners = mutableListOf<Any?>()
         val native = object : PlatformTaskAdapter {
-            override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
-                nativeOwners += request.owner
-                return PlatformTaskHandle { true }
-            }
+            override fun buildTask() = PlatformTaskBuilder { PlatformTaskHandle { true } }
         }
         val tasks = ScheduledTasks(native)
         val owner = Any()
@@ -414,8 +411,6 @@ class PluginRegistryImplTest {
         val spec = TaskSpec.builder().action { }.build()
         val firstTask = first.tasks.schedule(spec)
         val secondTask = second.tasks.schedule(spec)
-        assertSame(owner, nativeOwners[0])
-        assertSame(owner, nativeOwners[1])
         first.close()
         assertTrue(firstTask.isCancelled)
         assertFalse(secondTask.isCancelled)

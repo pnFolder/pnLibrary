@@ -14,7 +14,6 @@ import org.pnfolder.pnlibrary.core.link.wire.DataChunks
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
 import org.pnfolder.pnlibrary.core.link.wire.LinkSecret
 import java.util.UUID
-import java.util.logging.Level
 
 /**
  * Sends this server's report to the proxy over the link channel, every half minute while a player is online.
@@ -94,7 +93,7 @@ internal class BukkitLinkReporter(
             carrier.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encode(LinkReports.build(library, platform, players.size), key))
         }.onSuccess { reportFailing = false }.onFailure {
             // The report repeats every half minute; the first failure is enough until one succeeds again.
-            if (!reportFailing) plugin.logger.log(Level.SEVERE, "Could not send the status report to the proxy", it)
+            if (!reportFailing) library.logging.logger(plugin, "Reporter").error("Could not send the status report to the proxy", it)
             reportFailing = true
         }
     }

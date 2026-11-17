@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.spi.platform
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
 
 /**
  * Shared lifecycle of the proxy adapters: startup gate, native log observation, replies and shutdown.
@@ -11,6 +12,12 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel
  * @param owner identifies the uncaught-exception observer
  */
 abstract class ProxyPlatformAdapter(owner: Any) : PlatformAdapter {
+
+    abstract override val networkProxy: NetworkProxy
+
+    /** Logs a warning through this adapter's log handler. */
+    fun warn(message: String) = logHandler(this, LogLevel.WARNING, message, null)
+
     /** Registrations and shutdown state of this adapter. */
     protected val lifecycle = PlatformLifecycle()
     private val startup = StartupGate(lifecycle, ::executeGlobal)

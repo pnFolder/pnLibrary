@@ -11,12 +11,12 @@ import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNode
 import org.pnfolder.pnlibrary.api.commands.SenderRule
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Level
 
 /**
  * Registers portable commands through Paper's Brigadier command API, falling back to [fallback], the classic
@@ -32,6 +32,7 @@ import java.util.logging.Level
 class PaperNativeCommandRegistrar(
     private val plugin: Plugin,
     private val fallback: NativeCommandRegistrar<CommandSender>,
+    private val pnLogger: () -> PnLogger,
 ) : NativeCommandRegistrar<CommandSender> {
     /** One registered command with the handlers needed to publish it either natively or through the fallback. */
     private class Entry(
@@ -85,11 +86,7 @@ class PaperNativeCommandRegistrar(
             val meta = (entry.owner ?: plugin).pluginMeta
             registrar.register(meta, node, "pnLibrary portable command", entry.command.aliases.toList())
         } catch (error: Exception) {
-            plugin.logger.log(
-                Level.WARNING,
-                "Command /${entry.command.name} could not use Paper's command API; using the classic command map",
-                error,
-            )
+            pnLogger().warning("Command /${entry.command.name} could not use Paper's command API; using the classic command map", error)
             entry.fallbackRegistration = fallback.register(entry.owner ?: plugin, entry.command, entry.execute, entry.suggest)
         }
     }
@@ -125,7 +122,7 @@ class PaperNativeCommandRegistrar(
             return entry.suggest(source.sender, line.label, line.arguments.toTypedArray()).whenComplete { _, error ->
                 // Tab runs on every keystroke, so one report per command is enough.
                 if (error != null && entry.suggestionFailureReported.compareAndSet(false, true)) {
-                    plugin.logger.log(Level.SEVERE, "Tab completion of /${entry.command.name} failed", error)
+                    pnLogger().error("Tab completion of /${entry.command.name} failed", error)
                 }
             }
         }

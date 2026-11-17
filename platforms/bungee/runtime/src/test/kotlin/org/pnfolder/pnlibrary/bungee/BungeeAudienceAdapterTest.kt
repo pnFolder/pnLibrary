@@ -90,7 +90,7 @@ class BungeeAudienceAdapterTest {
 
     @Test
     fun `a player can read messages and the action bar but nothing a backend must render`() {
-        val library = BungeeLibraryPlayer.of(player("Alex"))
+        val library = BungeeNetworkPlayer.of(player("Alex"))
         assertEquals(setOf(PlayerCapability.MESSAGE, PlayerCapability.ACTION_BAR), library.capabilities)
         assertEquals(Delivery.Unsupported, library.playSound(mock(Sound::class.java)))
     }

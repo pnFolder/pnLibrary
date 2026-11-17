@@ -9,7 +9,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -73,9 +72,10 @@ internal class ManagedTask(
     /** Starts a waiting task now, on its own execution context, and leaves its schedule as it was. */
     fun runNow(): Boolean {
         if (status != TaskStatus.SCHEDULED) return false
-        adapter.schedule(
-            PlatformTaskRequest(spec.execution.kind, spec.execution.target, Duration.ZERO, null, Runnable { runRequested() }, owner = owner),
-        )
+        adapter.buildTask()
+            .task { runRequested() }
+            .execution(spec.execution.kind, spec.execution.target)
+            .schedule()
         return true
     }
 

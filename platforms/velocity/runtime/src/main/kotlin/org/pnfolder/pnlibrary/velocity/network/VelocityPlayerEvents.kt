@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.velocity
+package org.pnfolder.pnlibrary.velocity.network
 
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe

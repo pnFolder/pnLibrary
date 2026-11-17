@@ -14,6 +14,8 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.core.commands.MAIN_THREAD_SUGGESTION_MILLIS
@@ -38,8 +40,8 @@ internal class BukkitCommandAdapter internal constructor(
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
     /** Creates the native registrar, preferring Paper's command API where the server has it, and the audience bridge. */
-    constructor(audiences: BukkitAudienceService, plugin: Plugin) : this(
-        nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar()),
+    constructor(audiences: BukkitAudienceService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
+        nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar(), pnLogger, logBuffer),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
         { audiences.nativeTransportAvailable },
     )

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.velocity
+package org.pnfolder.pnlibrary.velocity.diagnostics
 
 import com.velocitypowered.api.proxy.ProxyServer
 import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector

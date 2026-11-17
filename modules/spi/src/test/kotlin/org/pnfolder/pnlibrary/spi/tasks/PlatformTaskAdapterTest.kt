@@ -20,9 +20,9 @@ class PlatformTaskAdapterTest {
     @Test
     fun `unsupported adapter rejects registration`() {
         assertThrows(UnsupportedOperationException::class.java) {
-            UnsupportedPlatformTaskAdapter.schedule(
+            UnsupportedPlatformTaskAdapter.buildTask().from(
                 PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {}),
-            )
+            ).schedule()
         }
     }
 
@@ -42,7 +42,7 @@ class PlatformTaskAdapterTest {
 
         try {
             val future = executor.submit<PlatformTaskHandle> {
-                adapter.schedule(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {}))
+                adapter.buildTask().from(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {})).schedule()
             }
             check(entered.await(2, TimeUnit.SECONDS))
             adapter.close()

@@ -19,15 +19,18 @@ internal class ModuleLogging(
     private val diagnostics: PlatformSnapshotProvider,
     private val identity: PlatformIdentity,
     private val diagnosticLogs: DiagnosticLogBuffer? = null,
-    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?, Map<String, Any?>) -> Unit)? = null,
     private val capture: DiagnosticCapture = DiagnosticCapture(ownership, logging, diagnosticLogs, journal),
 ) : LoggingService {
     private data class Row(val status: String, val label: String, val detail: String, val error: Throwable?)
     private enum class MessageKind { GENERIC, ENABLED, DISABLED }
 
     override fun logger(owner: Any, name: String): PnLogger = object : PnLogger {
-        override fun log(level: LogLevel, message: String, error: Throwable?, record: Boolean) =
-            capture.write(owner, level, "[$name] $message", error, record)
+        override fun log(level: LogLevel, message: String, error: Throwable?, context: Map<String, Any?>) =
+            capture.write(owner, level, "[$name] $message", error, true, context)
+
+        override fun record(level: LogLevel, message: String, error: Throwable?) =
+            capture.captureOnly(owner, level, "[$name] $message", error)
     }
 
     override fun box(owner: Any, title: String): MessageBox =

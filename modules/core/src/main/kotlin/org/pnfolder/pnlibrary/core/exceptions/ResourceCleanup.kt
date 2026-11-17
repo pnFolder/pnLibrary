@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.exceptions
 
 /** Executes lifecycle cleanup steps without abandoning later resources after a failure. */
-internal object ResourceCleanup {
+object ResourceCleanup {
     /**
      * Runs every [steps] action and attaches failures to [primary].
      *

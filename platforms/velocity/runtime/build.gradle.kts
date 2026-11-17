@@ -145,7 +145,7 @@ val generateVelocityDescriptor by tasks.registering {
             |            LibraryLoader.load(manager, loader, settings, RuntimeLibraries.VELOCITY);
             |            Class<?> type = Class.forName(RUNTIME, true, loader);
             |            Constructor<?> constructor = type.getConstructors()[0];
-            |            runtime = constructor.newInstance(this, server, logger, dataDirectory);
+            |            runtime = constructor.newInstance(this, server, dataDirectory);
             |            invoke("onInitialize", event);
             |        } catch (Exception | LinkageError failure) {
             |            runtime = null;

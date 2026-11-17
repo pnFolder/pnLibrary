@@ -3,16 +3,18 @@ package org.pnfolder.pnlibrary.velocity
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
-import com.velocitypowered.api.scheduler.ScheduledTask
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo
-import org.pnfolder.pnlibrary.core.proxy.ProxyLink
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
+import org.pnfolder.pnlibrary.core.link.LinkReceiver
+import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntime
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
-import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder
+import org.pnfolder.pnlibrary.core.runtime.ProxyRuntime
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform
-import org.slf4j.Logger
+import org.pnfolder.pnlibrary.velocity.link.VelocityLinkListener
+import org.pnfolder.pnlibrary.velocity.metrics.VelocityMetricsFactory
+import org.pnfolder.pnlibrary.velocity.network.VelocityPlayerEvents
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 /**
  * Velocity runtime behind the generated `PnLibraryVelocityPlugin` descriptor class.
@@ -24,127 +26,67 @@ import java.util.concurrent.TimeUnit
 internal class VelocityRuntime(
     private val owner: Any,
     private val server: ProxyServer,
-    private val logger: Logger,
     private val dataDirectory: Path,
 ) {
+    private var proxyRuntime: ProxyRuntime? = null
     private var runtimeHost: PnLibraryRuntimeHost? = null
     private var playerEvents: VelocityPlayerEvents? = null
-    private var linkListener: VelocityLinkListener? = null
-    private var link: ProxyLink? = null
-    private var networkTask: ScheduledTask? = null
-    private var reminderTask: ScheduledTask? = null
 
-    /**
-     * Starts the shared runtime when Velocity announces proxy initialization.
-     *
-     * @param event lifecycle signal supplied by Velocity; its payload is not required
-     */
-    @Suppress("UNUSED_PARAMETER")
-    fun onInitialize(event: ProxyInitializeEvent) {
+    /** Starts the shared runtime when Velocity announces proxy initialization. */
+    fun onInitialize(@Suppress("UNUSED_PARAMETER") event: ProxyInitializeEvent) {
         check(runtimeHost == null) { "Velocity runtime is already initialized" }
         try {
             open()
         } catch (error: Throwable) {
-            // Whatever opened before the failure must not stay registered on a proxy that goes on without us.
             runCatchingNonFatal(::close).onFailure(error::addSuppressed)
             throw error
         }
     }
 
     private fun open() {
+        var metricsLogger: PnLogger? = null
         val adapter = VelocityPlatformAdapter(
             plugin = owner,
             proxy = server,
-            metricsFactory = VelocityMetricsFactory(server, logger, dataDirectory),
+            metricsFactory = VelocityMetricsFactory(server, dataDirectory) { metricsLogger!! },
             dataFolder = dataDirectory,
-            logger = logger,
         )
-        val started = PnLibraryRuntimeHost.launchPlatform(
-            owner,
-            adapter,
-            VelocityPlatform::class.java,
-            VelocityPlatformServices(server),
-            adapter::markReady,
-        )
-        runtimeHost = started
-        val listener = VelocityPlayerEvents(started.library)
+        val host = PnLibraryRuntime.builder()
+            .owner(owner)
+            .adapter(adapter)
+            .platform<VelocityPlatform>(object : VelocityPlatform { override val proxy get() = server })
+            .launch(adapter::markReady)
+        runtimeHost = host
+        metricsLogger = host.library.logging.logger(owner, "Metrics")
+
+        val proxy = ProxyRuntime(adapter, ::registerLinkListener, adapter.networkProxy::describePlugin)
+        proxyRuntime = proxy
+        proxy.start(host)
+
+        playerEvents = VelocityPlayerEvents(host.library).also { server.eventManager.register(owner, it) }
+    }
+
+    private fun registerLinkListener(receiver: LinkReceiver): AutoCloseable {
+        val listener = VelocityLinkListener(receiver)
         server.eventManager.register(owner, listener)
-        playerEvents = listener
-        connectLink(started)
-        remindAdministrators(started)
+        return AutoCloseable { server.eventManager.unregisterListener(owner, listener) }
     }
 
-    /** Repeats the update notice in chat to administrators; the interval is fixed in code and cannot be turned off. */
-    private fun remindAdministrators(started: PnLibraryRuntimeHost) {
-        reminderTask = server.scheduler.buildTask(owner, Runnable {
-            server.allPlayers.filter { ProxyUpdateReminder.canSee(it::hasPermission) }.forEach { ProxyUpdateReminder.send(started.library, it.uniqueId) }
-        }).delay(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).repeat(ProxyUpdateReminder.INTERVAL_SECONDS, TimeUnit.SECONDS).schedule()
-    }
-
-    /** Opens the link to the game servers and, when it is secured, starts announcing this proxy. */
-    private fun connectLink(started: PnLibraryRuntimeHost) {
-        val proxyLink = ProxyLink(
-            library = started.library,
-            folder = dataDirectory,
-            warn = logger::warn,
-            transport = { name, bytes ->
-                server.getServer(name).map { it.sendPluginMessage(VelocityLinkListener.CHANNEL, bytes) }.orElse(false)
-            },
-            describe = { instance ->
-                instance?.let { server.pluginManager.fromInstance(it).orElse(null)?.description }?.let { description ->
-                    OwnerInfo(description.name.orElse(description.id), description.version.orElse(null), description.authors)
-                }
-            },
-            holds = { viewer, permission -> server.getPlayer(viewer).map { it.hasPermission(permission) }.orElse(false) },
-            platformName = { "Velocity ${server.version.version}" },
-            players = { server.playerCount },
-            broadcast = { message -> server.allServers.forEach { runCatchingNonFatal { it.sendPluginMessage(VelocityLinkListener.CHANNEL, message) } } },
-        )
-        link = proxyLink
-        val listener = VelocityLinkListener(proxyLink.receiver)
-        server.channelRegistrar.register(VelocityLinkListener.CHANNEL)
-        server.eventManager.register(owner, listener)
-        linkListener = listener
-        if (proxyLink.announces) {
-            networkTask = server.scheduler.buildTask(owner, Runnable(proxyLink::announce))
-                .delay(ProxyLink.NETWORK_DELAY_SECONDS, TimeUnit.SECONDS)
-                .repeat(ProxyLink.NETWORK_PERIOD_SECONDS, TimeUnit.SECONDS)
-                .schedule()
-        }
-    }
-
-    /**
-     * Closes the runtime before the proxy completes shutdown.
-     *
-     * @param event lifecycle signal supplied by Velocity; its payload is not required
-     */
-    @Suppress("UNUSED_PARAMETER")
-    fun onShutdown(event: ProxyShutdownEvent) = close()
+    /** Closes the runtime before the proxy completes shutdown. */
+    fun onShutdown(@Suppress("UNUSED_PARAMETER") event: ProxyShutdownEvent) = close()
 
     private fun close() {
-        playerEvents?.let { release("player events") { server.eventManager.unregisterListener(owner, it) } }
-        playerEvents = null
-        networkTask?.cancel()
-        reminderTask?.cancel()
-        reminderTask = null
-        networkTask = null
-        linkListener?.let { release("link listener") { server.eventManager.unregisterListener(owner, it) } }
-        linkListener = null
-        link?.let { release("link", it::close) }
-        link = null
-        release("link channel") { server.channelRegistrar.unregister(VelocityLinkListener.CHANNEL) }
+        val events = playerEvents
+        val proxy = proxyRuntime
         val host = runtimeHost
+        playerEvents = null
+        proxyRuntime = null
         runtimeHost = null
-        host?.close()
-    }
 
-    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
-    private fun release(part: String, action: () -> Unit) {
-        runCatchingNonFatal(action).onFailure { logger.error("Could not stop $part", it) }
+        ResourceCleanup.closeAll(
+            { events?.let { server.eventManager.unregisterListener(owner, it) } },
+            { proxy?.close() },
+            { host?.close() },
+        )
     }
 }
-
-/** Native-backed Velocity platform API installed by the Velocity runtime. */
-private class VelocityPlatformServices(
-    override val proxy: ProxyServer,
-) : VelocityPlatform

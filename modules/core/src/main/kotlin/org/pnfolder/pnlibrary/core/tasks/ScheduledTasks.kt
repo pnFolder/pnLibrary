@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashMap
@@ -104,10 +103,12 @@ internal class ScheduledTasks(
                 val managed = newTask(owner, scopeToken, spec)
                 active[managed.id] = managed
                 val native = try {
-                    adapter.schedule(PlatformTaskRequest(
-                        spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable { managed.invoke() },
-                        owner = owner,
-                    ))
+                    val builder = adapter.buildTask()
+                        .task { managed.invoke() }
+                        .execution(spec.execution.kind, spec.execution.target)
+                        .delay(spec.delay)
+                    spec.interval?.let(builder::every)
+                    builder.schedule()
                 } catch (error: Throwable) {
                     active.remove(managed.id)
                     throw error

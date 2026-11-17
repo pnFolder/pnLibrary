@@ -47,7 +47,7 @@ internal class SupportRuntime(
     private val config: PnLibraryConfig,
     paths: LibraryPaths,
     private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
-    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?, Map<String, Any?>) -> Unit)? = null,
     private val onRuntimeError: (Any, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(paths)

@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
+import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import java.io.Closeable
@@ -77,6 +78,9 @@ interface PnLibrary : Closeable {
 
     /** Type-safe native API for the active Bukkit, Bungee, or Velocity runtime. */
     val platforms: PlatformProvider
+
+    /** The proxy layer; null when running on a game server instead of a proxy. */
+    val proxy: NetworkProxy?
 
     /**
      * Runtime-detected placeholder bridges such as PlaceholderAPI.

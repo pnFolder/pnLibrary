@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.bukkit.inventory
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 
 /** Native inventory access must run on the player's owning thread, including bulk cleanup. */
@@ -16,7 +17,7 @@ internal interface MenuExecution {
  * Runs menu actions on the thread that owns the player: immediately when already there, otherwise
  * scheduled on the player's region (Folia) or the main thread.
  */
-internal class NativeMenuExecution(private val plugin: Plugin) : MenuExecution {
+internal class NativeMenuExecution(private val plugin: Plugin, private val pnLogger: () -> PnLogger) : MenuExecution {
     private val scheduler = ServerScheduler(plugin)
 
     override fun requireOwner(player: Player) {
@@ -30,7 +31,7 @@ internal class NativeMenuExecution(private val plugin: Plugin) : MenuExecution {
         }
         // A disabled plugin may not schedule anything; the server closes the views itself.
         if (!plugin.isEnabled) {
-            plugin.logger.warning("Menu tracking was cleared during shutdown; native views require server/player cleanup")
+            pnLogger().warning("Menu tracking was cleared during shutdown; native views require server/player cleanup")
             return
         }
         scheduler.onPlayer(player, Runnable(action))

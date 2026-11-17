@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.velocity
+package org.pnfolder.pnlibrary.velocity.network
 
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.proxy.ConsoleCommandSource
@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
 import java.util.UUID
 
 /** Adapts Velocity command sources and players to pnLibrary audiences. */
@@ -19,17 +20,17 @@ internal class VelocityAudienceAdapter(
 
     override fun console(): AudienceSender = wrap(server.consoleCommandSource)
 
-    override fun player(uniqueId: UUID): LibraryPlayer? =
-        server.getPlayer(uniqueId).orElse(null)?.let(VelocityLibraryPlayer::of)
+    override fun player(uniqueId: UUID): NetworkPlayer? =
+        server.getPlayer(uniqueId).orElse(null)?.let(VelocityNetworkPlayer::of)
 
     override fun sender(native: Any): AudienceSender? = when (native) {
-        is Player -> VelocityLibraryPlayer.of(native)
+        is Player -> VelocityNetworkPlayer.of(native)
         is CommandSource -> wrap(native)
         else -> null
     }
 
-    override fun onlinePlayers(): List<LibraryPlayer> =
-        server.allPlayers.map(VelocityLibraryPlayer::of)
+    override fun onlinePlayers(): List<NetworkPlayer> =
+        server.allPlayers.map(VelocityNetworkPlayer::of)
 
     private fun wrap(source: CommandSource): AudienceSender = object : AudienceSender {
         override val id: String = source.toString()

@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.time.Duration
@@ -125,7 +126,9 @@ class ManagedTaskTest {
     private class FakeAdapter : PlatformTaskAdapter {
         val requests = mutableListOf<PlatformTaskRequest>()
 
-        override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
+        override fun buildTask() = PlatformTaskBuilder(::dispatch)
+
+        private fun dispatch(request: PlatformTaskRequest): PlatformTaskHandle {
             requests += request
             return object : PlatformTaskHandle {
                 override fun cancel() = true

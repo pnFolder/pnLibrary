@@ -20,7 +20,7 @@ class BukkitTaskAdapterTest {
     fun `one shot task is released after callback`() {
         val adapter = RecordingTaskAdapter()
         val request = PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {})
-        val handle = adapter.schedule(request)
+        val handle = adapter.buildTask().from(request).schedule()
         assertEquals(1, adapter.active)
         adapter.callback!!.run()
         assertEquals(true, handle.cancel())
