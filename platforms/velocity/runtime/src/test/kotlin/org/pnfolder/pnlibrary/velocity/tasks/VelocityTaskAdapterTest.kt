@@ -59,7 +59,7 @@ class VelocityTaskAdapterTest {
 
         assertEquals(2, scheduled)
         assertEquals(2, warnings.size)
-        assertTrue(warnings.all { it.contains("игроку") })
+        assertTrue(warnings.all { it.contains("Entity-bound") })
     }
 
     @Test

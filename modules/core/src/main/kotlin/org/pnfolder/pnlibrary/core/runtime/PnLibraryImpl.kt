@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime
 
+import org.pnfolder.pnlibrary.core.plugin.LibraryWords
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
@@ -166,6 +166,7 @@ internal class PnLibraryImpl(
             val handles = listOfNotNull(diagnostics.reportConfigFile(file), set.updates.databaseSources.register(file))
             AutoCloseable { handles.forEach(AutoCloseable::close) }
         }
+        LibraryWords.register(set.configurations.scope(owner))
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,
@@ -191,7 +192,6 @@ internal class PnLibraryImpl(
     private val platformProvider = NativePlatform()
 
     override val observability get() = support.service
-    override val activity: ActivityService get() = support.service
     override val metrics: MetricsService get() = metricsService
     override val configurations: ConfigurationService get() = features.configurations
     override val updates: UpdateService get() = features.updates

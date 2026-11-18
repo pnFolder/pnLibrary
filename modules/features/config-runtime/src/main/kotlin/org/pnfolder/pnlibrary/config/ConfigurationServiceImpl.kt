@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigSerializerInfo
 import org.pnfolder.pnlibrary.api.config.ConfigSerializerRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigTypeInfo
 import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
+import org.pnfolder.pnlibrary.api.config.ConfigTypeConflict
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
@@ -354,6 +355,7 @@ class ConfigurationServiceImpl(
         override fun <T : Any> publishType(
             baseType: Class<T>, implementation: Class<out T>, name: String,
             aliases: Set<String>, priority: Int, target: ConfigAddress?,
+            conflict: ConfigTypeConflict,
         ): ConfigTypeRegistration {
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val where = target ?: ConfigAddress.module(plugin, module)
@@ -378,16 +380,26 @@ class ConfigurationServiceImpl(
             )
             synchronized(runtimeTypes) {
                 check(!scopeClosed.get()) { "Configuration scope is closed" }
-                runtimeTypes.filter {
+                val clashing = runtimeTypes.filter {
                     it.isActive && it.baseType == baseType && it.target.overlaps(where) && it.words().any { word -> word in words }
-                }.forEach { other ->
-                    require(other.owner != plugin) {
+                }
+                if (clashing.isNotEmpty() && conflict == ConfigTypeConflict.KEEP) {
+                    registration.deactivate()
+                    return registration
+                }
+                clashing.forEach { other ->
+                    val replaceable = conflict == ConfigTypeConflict.REPLACE && (other.owner == plugin || other.priority < priority)
+                    require(replaceable || other.owner != plugin) {
                         "Plugin $plugin already published configuration type '$normalizedName' for ${baseType.name}"
                     }
                     // The plugin that owns the file keeps its own words; an addition can only add new ones.
-                    require(where.isAll || other.owner != where.plugin) {
+                    require(where.isAll || other.owner != where.plugin || replaceable) {
                         "Configuration type word '${other.words().first { word -> word in words }}' of ${baseType.simpleName} belongs to plugin ${where.plugin}"
                     }
+                }
+                // Another plugin's word with the same or a higher priority stays; priority decides which one wins.
+                if (conflict == ConfigTypeConflict.REPLACE) {
+                    clashing.filter { it.owner == plugin || it.priority < priority }.forEach { it.close() }
                 }
                 runtimeTypes += registration
             }

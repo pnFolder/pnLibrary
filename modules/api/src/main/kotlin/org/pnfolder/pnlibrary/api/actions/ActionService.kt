@@ -2,46 +2,79 @@ package org.pnfolder.pnlibrary.api.actions
 
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.api.checks.Requirement
+import org.pnfolder.pnlibrary.api.requirements.Requirement
+import org.pnfolder.pnlibrary.api.requirements.expression.ExpressionFunction
 import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
 
 /**
- * Creates plugin-bound action contexts and executes already deserialized action graphs.
+ * Creates the contexts of one module's scenarios, and keeps the actions, requirements and functions the plugin
+ * defined by name.
  *
- * Implementations supply infrastructure such as text parsing, logging, and task scope.
- * The service does not own action definitions and does not catch execution failures.
+ * It holds no scenarios itself: the plugin keeps its parsed `List<Action>` and starts it for a player.
+ *
+ * ```kotlin
+ * module.actions.define("give-kit") { ctx ->           // later: - { type: call, name: give-kit, args: { kit: starter } }
+ *     kits.give(ctx.player, ctx.format("[kit]"))
+ *     ActionResult.Done
+ * }
+ * module.actions.defineRequirement("is-vip", Requirement { ctx -> Verdict.of(ctx.player.hasPermission("vip"), "VIP only") })
+ * module.actions.defineFunction("kills") { ctx, _ -> stats.kills(ctx.player.uniqueId) }   // kills() in expressions
+ *
+ * val result = module.actions.execute(config.onBuy, player, values = mapOf("item" to "diamond"))
+ * ```
  */
 interface ActionService {
     /**
-     * Creates a fresh context for one logical invocation.
+     * Creates a fresh context for one run.
      *
-     * @param player player that triggered or owns the invocation
-     * @param allPlayers wider dynamic audience available to targeted actions
-     * @param values named values exposed to conditions
-     * @param serializerType default parser for text-producing actions
-     * @param templates named action lists that `[run]` actions can call
-     * @param checks named requirements from the plugin's `checks:` block, used by `if` and `require`
+     * @param player player the run is for
+     * @param allPlayers audience for actions aimed at everyone; the player alone by default
+     * @param values named values texts and requirements can read as `[name]`
+     * @param serializerType default format of printed text
      */
     fun context(
         player: LibraryPlayer,
-        allPlayers: LibraryAudience,
+        allPlayers: LibraryAudience = player,
         values: Map<String, Any?> = emptyMap(),
         serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
-        templates: Map<String, List<Action>> = emptyMap(),
-        checks: Map<String, Requirement> = emptyMap(),
     ): ActionContext
 
-    /** Executes one [action] immediately with [context]. */
-    fun execute(context: ActionContext, action: Action) = action.execute(context)
-
-    /** Executes [actions] immediately and sequentially with [context]. */
-    fun execute(context: ActionContext, actions: Iterable<Action>) = context.execute(actions)
-
-    /** Builds a context for [player] and [allPlayers] and executes [actions] with it; [values] become context values. */
+    /** Creates a context and runs [actions] as one scenario; see [ActionContext.execute]. */
     fun execute(
+        actions: List<Action>,
         player: LibraryPlayer,
-        allPlayers: LibraryAudience,
-        actions: Iterable<Action>,
+        allPlayers: LibraryAudience = player,
         values: Map<String, Any?> = emptyMap(),
-    ) = execute(context(player, allPlayers, values), actions)
+    ): ActionResult = context(player, allPlayers, values).execute(actions)
+
+    /**
+     * Gives [action] a [name] so that scenarios can run it with `type: call`, passing `args` as values.
+     * Names are lowercase letters, digits, dots, hyphens and underscores.
+     *
+     * @param scope how far the name reaches
+     * @param conflict what to do when the name is taken
+     * @return a handle that removes the definition when closed
+     */
+    fun define(
+        name: String,
+        action: Action,
+        scope: DefinitionScope = DefinitionScope.MODULE,
+        conflict: DefinitionConflict = DefinitionConflict.FAIL,
+    ): AutoCloseable
+
+    /** Gives [requirement] a [name] for `type: ref` and for [org.pnfolder.pnlibrary.api.requirements.RequirementContext.requirement]. */
+    fun defineRequirement(
+        name: String,
+        requirement: Requirement,
+        scope: DefinitionScope = DefinitionScope.MODULE,
+        conflict: DefinitionConflict = DefinitionConflict.FAIL,
+    ): AutoCloseable
+
+    /** Adds [function] to the expression language under [name], for example `kills()`. Built-in names cannot be taken. */
+    fun defineFunction(
+        name: String,
+        function: ExpressionFunction,
+        scope: DefinitionScope = DefinitionScope.MODULE,
+        conflict: DefinitionConflict = DefinitionConflict.FAIL,
+    ): AutoCloseable
 }

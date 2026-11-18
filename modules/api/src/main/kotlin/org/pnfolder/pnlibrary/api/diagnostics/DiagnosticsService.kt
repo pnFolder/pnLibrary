@@ -38,13 +38,11 @@ interface DiagnosticsService {
     fun register(plugin: String, contributor: DiagnosticsContributor): DiagnosticRegistration
 
     /**
-     * Registers [contributor] and associates it with [dataDirectory] when supported.
+     * Registers [contributor] and associates it with the plugin data directory [dataDirectory].
      *
-     * The default implementation preserves compatibility with service implementations predating
-     * per-plugin directories and delegates to [register] without using [dataDirectory].
+     * The library uses [dataDirectory] to locate plugin-owned files that belong in diagnostic reports.
      */
-    fun register(plugin: String, dataDirectory: Path, contributor: DiagnosticsContributor): DiagnosticRegistration =
-        register(plugin, contributor)
+    fun register(plugin: String, dataDirectory: Path, contributor: DiagnosticsContributor): DiagnosticRegistration
 
     /**
      * Updates or creates a component status entry visible in diagnostic reports.

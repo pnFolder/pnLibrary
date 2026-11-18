@@ -23,6 +23,8 @@ import java.util.UUID
 import java.util.logging.Logger
 
 class PlayerCommandReplyTest {
+    private fun buffer() = PnLoggerBuffer(Logger.getAnonymousLogger()) { null }
+
     private fun plugin(): Plugin = mock(Plugin::class.java).also {
         `when`(it.logger).thenReturn(Logger.getAnonymousLogger())
         `when`(it.server).thenReturn(mock(Server::class.java))
@@ -32,7 +34,7 @@ class PlayerCommandReplyTest {
     fun `Paper command reply targets the actual player and preserves click events`() {
         val player = mock(Player::class.java, withSettings().extraInterfaces(Audience::class.java))
         val provider = mock(BukkitAudiences::class.java)
-        val service = BukkitAudienceService(plugin(), provider)
+        val service = BukkitAudienceService(plugin(), buffer(), provider)
         val message = Component.text("[История]").clickEvent(ClickEvent.runCommand("/pn updates history"))
         try {
             service.player(player).sendMessage(message)
@@ -49,7 +51,7 @@ class PlayerCommandReplyTest {
         `when`(player.uniqueId).thenReturn(id)
         val provider = mock(BukkitAudiences::class.java)
         `when`(provider.player(id)).thenReturn(Audience.empty())
-        val service = BukkitAudienceService(plugin(), provider)
+        val service = BukkitAudienceService(plugin(), buffer(), provider)
         try {
             service.player(player).sendMessage(Component.text("Каталог pnLibrary"))
             verify(player).sendMessage("Каталог pnLibrary")
@@ -61,7 +63,7 @@ class PlayerCommandReplyTest {
         val plugin = plugin()
         val player = mock(Player::class.java, withSettings().extraInterfaces(Audience::class.java))
         val provider = mock(BukkitAudiences::class.java)
-        val service = BukkitAudienceService(plugin, provider)
+        val service = BukkitAudienceService(plugin, buffer(), provider)
         val library = mock(PnLibrary::class.java)
         val updates = mock(UpdateService::class.java)
         `when`(library.updates).thenReturn(updates)

@@ -27,7 +27,7 @@ val context = registration.registerModule("main")      // ModuleContext моду
 | Команды | дерево команд без `plugin.yml`, ошибки, подсказки | [commands.md](commands.md) |
 | События | шина с приоритетами, `/pn bus`, история вызовов, экспорт | [events.md](events.md) |
 | Конфигурации | код-первые YAML с комментариями и проверкой | [configuration.md](configuration.md) |
-| Действия и проверки | списки действий и условий в YAML | [actions.md](actions.md), [checks.md](checks.md) |
+| Действия и проверки | списки действий и условий в YAML | [actions.md](actions.md) |
 | Плейсхолдеры | типизированные значения `%плагин_ключ%` | [placeholders.md](placeholders.md) |
 | Задачи | отложенные и повторяющиеся, в том числе Folia | [tasks.md](tasks.md) |
 | Диагностика | отчёты `/pn debug`, журнал `/pn events` | [diagnostics.md](diagnostics.md) |

@@ -1,13 +1,12 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.activity.ActivityCategory
-import org.pnfolder.pnlibrary.api.activity.ActivitySeverity
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
 import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
@@ -55,11 +54,12 @@ internal class SupportRuntime(
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(
-            type = "RUNTIME_ERROR",
-            category = ActivityCategory.ERROR,
-            severity = ActivitySeverity.ERROR,
-            source = logOwner.javaClass.name,
-            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ObservationRequest(
+                source = logOwner.javaClass.name,
+                message = "RUNTIME_ERROR",
+                level = ObservationLevel.ERROR,
+                data = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ),
         )
         onRuntimeError(logOwner, error)
     }

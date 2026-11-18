@@ -120,7 +120,7 @@ class CommandRegistryTest {
         ).toCompletableFuture().join()
 
         assertEquals("builders", selected)
-        assertEquals(listOf("Команда не выполнилась."), sender.messages.map(::textOf))
+        assertEquals(listOf("Не удалось выполнить команду."), sender.messages.map(::textOf))
         assertTrue(platform.errors.any { it.message == "private predicate" })
     }
 
@@ -228,7 +228,7 @@ class CommandRegistryTest {
         val suggestions = native.dispatcher
             .suggest(native.command, context(sender)).toCompletableFuture().join()
 
-        assertEquals(listOf("Команда не выполнилась."), sender.messages.map(::textOf))
+        assertEquals(listOf("Не удалось выполнить команду."), sender.messages.map(::textOf))
         assertTrue(suggestions.isEmpty())
         assertEquals(2, platform.errors.size)
         assertTrue(platform.errors.any { it.message == "private detail" })

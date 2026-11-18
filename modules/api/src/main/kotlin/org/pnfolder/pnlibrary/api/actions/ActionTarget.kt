@@ -1,12 +1,10 @@
 package org.pnfolder.pnlibrary.api.actions
 
-/**
- * Built-in audience selectors used by configurable actions.
- */
+/** Who a message, title or sound of an action goes to. */
 enum class ActionTarget {
-    /** The player that triggered the action execution. */
+    /** The player the scenario runs for. */
     PLAYER,
 
-    /** Every player exposed by the current [ActionContext]. */
+    /** Everyone the scenario was started for, see [ActionContext.allPlayers]. */
     ALL_PLAYERS,
 }

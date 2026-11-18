@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.audience
 
+import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import org.bukkit.Server
@@ -28,7 +29,7 @@ class BukkitLibraryPlayerTest {
     private val server = mock(Server::class.java)
     private val console = mock(ConsoleCommandSender::class.java)
     private val player = mock(Player::class.java)
-    private val library = BukkitLibraryPlayer(player, BukkitAudienceService(plugin(), null))
+    private val library = BukkitLibraryPlayer(player, BukkitAudienceService(plugin(), PnLoggerBuffer(java.util.logging.Logger.getAnonymousLogger()) { null }, null))
     private val bell = Sound.sound(Key.key("minecraft:block.note_block.bell"), Sound.Source.MASTER, 1f, 1f)
 
     init {

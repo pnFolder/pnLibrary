@@ -42,6 +42,7 @@ import org.pnfolder.pnlibrary.core.commands.CommandService
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
+import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
@@ -91,6 +92,7 @@ internal class PluginRegistryImpl(
     libraryVersion: String? = null,
 ) : PluginRegistry {
 
+    private val scenarioDefinitions = ScenarioDefinitions()
     private val plugins = IdentityHashMap<Any, Plugin>()
     private val productDescriptors = linkedMapOf<String, ProductDescriptor>().apply {
         libraryVersion?.let(SemanticVersion::tryParse)?.let { put(PnLibraryIdentity.PRODUCT_ID, ProductDescriptor.library(it.toString())) }
@@ -281,7 +283,7 @@ internal class PluginRegistryImpl(
             isClosed = { isClosed },
         )
         override val messages: PluginMessages = ModuleMessages(owner, logging)
-        override val actions: ActionService = ModuleActionService(resources)
+        override val actions: ActionService = ModuleActionService(resources, scenarioDefinitions, key.value)
 
         override fun close() {
             parent.detach(id)?.closeInternal()

@@ -1,9 +1,5 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.activity.ActivityAttachment
-import org.pnfolder.pnlibrary.api.activity.ActivityEvent
-import org.pnfolder.pnlibrary.api.activity.ActivityQuery
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
@@ -18,19 +14,12 @@ import org.pnfolder.pnlibrary.api.observability.ObservationRequest
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 
-/**
- * One entry point for diagnostics, observations, activity history, attachments,
- * component status, and support reports.
- *
- * [PnLibrary.diagnostics][org.pnfolder.pnlibrary.api.runtime.PnLibrary.diagnostics],
- * [PnLibrary.activity][org.pnfolder.pnlibrary.api.runtime.PnLibrary.activity] and
- * [PnLibrary.observability][org.pnfolder.pnlibrary.api.runtime.PnLibrary.observability] are this one object seen
- * through three interfaces. Storage and retention stay inside [ObservabilityRuntime].
- */
+// PnLibrary.diagnostics and PnLibrary.observability are this one object seen through two interfaces.
+// Storage and retention stay inside ObservabilityRuntime.
 internal class ObservabilityHub(
     private val diagnostics: DiagnosticsRegistry,
     private val runtime: ObservabilityRuntime,
-) : DiagnosticsService, ActivityService, ObservabilityService {
+) : DiagnosticsService, ObservabilityService {
     override val apiVersion: Int
         get() = diagnostics.apiVersion
 
@@ -93,53 +82,7 @@ internal class ObservabilityHub(
     override fun createReport(request: ObservabilityReportRequest): ObservabilityReport =
         runtime.createReport(request)
 
-    override fun record(event: ActivityEvent): ActivityEvent {
-        val observation = runtime.record(event.toObservationRequest())
-        return event.copy(eventId = observation.id, timestamp = observation.timestamp)
-    }
-
-    override fun recent(query: ActivityQuery): List<ActivityEvent> =
-        runtime.recent(query.toObservationQuery()).map(Observation::toActivityEvent)
-
-    override fun attach(
-        eventId: String,
-        name: String,
-        contentType: String,
-        bytes: ByteArray,
-    ): ActivityAttachment = runtime.attachBytes(
-        observationId = eventId,
-        name = name,
-        contentType = contentType,
-        bytes = bytes,
-    ).toLegacyAttachment(eventId)
-
-    override fun attachFile(
-        eventId: String,
-        path: Path,
-        contentType: String,
-    ): ActivityAttachment = runtime.attachFile(eventId, path).toLegacyAttachment(eventId)
-
-    override fun exportJournal(): ByteArray = runtime.reportSnapshot().journal
-
-    override fun exportAttachments(): Map<String, ByteArray> = runtime.reportSnapshot().attachments
-
-    override fun exportAttachmentManifest(): ByteArray = runtime.reportSnapshot().attachmentManifest
-
-    override fun clear() {
-        runtime.clear()
-    }
-
     override fun close() {
         runtime.close()
     }
-
-    private fun StoredAttachment.toLegacyAttachment(eventId: String): ActivityAttachment =
-        ActivityAttachment(
-            id = id,
-            eventId = eventId,
-            name = originalName,
-            contentType = contentType,
-            size = size,
-            sha256 = sha256,
-        )
 }

@@ -2,6 +2,17 @@
 
 ## Ветка next (0.1.0-dev)
 
+### Новая система действий и требований
+- `api.actions` переписан: `Action.run` возвращает `ActionResult` (`Done`, `Stopped`, `Failed`). Ошибка шага откатывает прошлые шаги через `ActionContext.onUndo`; блок `attempt` ловит ошибку и показывает сообщение.
+- `api.checks` заменён на `api.requirements`: `Requirement` отвечает `Verdict.Met` или `Verdict.Unmet(reason)`, значения берутся из контекста, плейсхолдеров pnLibrary и PlaceholderAPI. Списание денег — действие `charge` (`give`, требование `balance`), слова добавляет сама библиотека для всех плагинов.
+- Выражения: `Expression` (математика, логика, функции, плейсхолдеры), требование `expression`, текст `{= ... }`, действия `set`, `call`, `random`, обработчики ошибок по коду в `attempt`, именованные `define`/`defineRequirement`/`defineFunction` (на модуль или на библиотеку, с политикой конфликтов).
+- Удалены `ActionNode`, `ActionText`, форматы DeluxeMenus, шаблоны `run`, `group`, `require` со старыми полями, `InternalPnLibraryApi`. Несовместимое изменение API.
+
+### Убран Activity API
+- Удалены `PnLibrary.activity`, `ActivityService`, `ActivityEvent` и остальные типы пакета `api.activity`. Вместо них `PnLibrary.observability`:
+  `capture { }` для события, `failure(error)` для ошибки, `recent(query)` для чтения. Несовместимое изменение API.
+- Слои игроков: `AudienceSender` и `PlayerCapability` вынесены в отдельные файлы, `PlayerEffects.kt` разделён на `PlayerEffect` и `PlayerParticle`.
+
 ### Настройки библиотеки без файлов
 - `config.yml` и `downloads.yml` больше не читаются. Все настройки меняются командой `/pn settings list|get|set|reset` (право `pnlibrary.settings`)
   и в меню «Настройки» → «Параметры библиотеки»; значения лежат в `data/settings.json`, список настроек один (`SettingsRegistry`), описание в

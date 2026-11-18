@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.runtime
 
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
@@ -45,9 +44,6 @@ interface PnLibrary : Closeable {
 
     /** Observations, component status and support reports. */
     val observability: ObservabilityService
-
-    /** Local bounded activity journal used by diagnostics and support reports. */
-    val activity: ActivityService
 
     /** Managed bStats sessions; every plugin supplies its own project ID. */
     val metrics: MetricsService

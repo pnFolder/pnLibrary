@@ -33,7 +33,7 @@ data class UpdateActor(val kind: Kind, val id: String, val name: String) {
     companion object {
         /** Internal scheduled work, not an administrator command. */
         @JvmField val SYSTEM = UpdateActor(Kind.SYSTEM, "system", PnLibraryIdentity.NAME)
-        /** Compatibility calls which did not supply an initiator. */
+        /** Calls that did not supply an initiator. */
         @JvmField val UNKNOWN = UpdateActor(Kind.UNKNOWN, "unknown", "Unknown")
     }
 }
