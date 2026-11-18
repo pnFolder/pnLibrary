@@ -8,15 +8,7 @@ import java.nio.charset.StandardCharsets
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-/**
- * Builds the deterministic ZIP layout encrypted inside a `.pnsupport` container.
- *
- * Entry paths are relative and traversal-safe. Content is copied at insertion,
- * the uncompressed byte budget is enforced before ZIP compression, and [build]
- * does not mutate builder state, so repeated builds produce equivalent archives.
- *
- * @param maximumUncompressedBytes total payload budget before ZIP compression
- */
+// Content is copied at insertion and build() does not mutate state, so repeated builds are equivalent.
 internal class SupportArchiveBuilder(
     private val maximumUncompressedBytes: Long = Long.MAX_VALUE,
 ) {
@@ -32,12 +24,6 @@ internal class SupportArchiveBuilder(
 
     fun text(path: String, value: String) = bytes(path, value.toByteArray(StandardCharsets.UTF_8))
 
-    /**
-     * Adds or replaces one archive entry using a defensive copy of [value].
-     *
-     * @throws IllegalArgumentException for an empty/traversing path or if the new
-     * aggregate payload exceeds the configured uncompressed byte budget
-     */
     fun bytes(path: String, value: ByteArray) {
         val safe = path.replace('\\', '/').trimStart('/').also {
             require(it.isNotBlank() && ".." !in it.split('/')) { "Invalid diagnostic archive path: $path" }
@@ -51,7 +37,6 @@ internal class SupportArchiveBuilder(
         payloadBytes = nextSize
     }
 
-    /** Creates a ZIP containing all entries and an SHA-256 checksum manifest. */
     fun build(): ByteArray {
         val checksums = entries.mapValues { (_, bytes) -> Digests.sha256(bytes) }
         val archiveEntries = entries + mapOf(

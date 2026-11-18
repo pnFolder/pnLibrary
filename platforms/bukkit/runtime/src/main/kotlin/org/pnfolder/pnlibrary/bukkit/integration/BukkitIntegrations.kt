@@ -11,12 +11,6 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
-/**
- * Connects optional integrations as their plugins come and go, without a server restart.
- *
- * Every event is cheap: [BukkitIntegration.connect] checks availability and does nothing when the
- * integration is already connected.
- */
 internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
     private var integrations: List<BukkitIntegration> = emptyList()
 

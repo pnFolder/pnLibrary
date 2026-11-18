@@ -18,16 +18,11 @@ import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage
 
-/** Result of resolving a command line against the command tree. */
 internal sealed class CommandRoute {
-    /** Resolved command that can be run. */
     data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
-
-    /** Resolution failure with the nodes reached so far. */
     data class Problem(val error: CommandError, val nodes: List<CommandNode>) : CommandRoute()
 }
 
-/** Parses and completes immutable command trees without knowing the native server platform. */
 internal class CommandTreeRouter {
     fun route(command: CommandDefinition, context: CommandContext): CommandRoute {
         var node = command.root
@@ -70,7 +65,6 @@ internal class CommandTreeRouter {
         else problem(IncompleteCommand(usage(path, node, routed)), nodes)
     }
 
-    /** Why the sender may not enter [node], or `null` when it may. */
     private fun blocked(node: CommandNode, context: CommandContext): CommandError? {
         if (!allowed(node, context)) return NoPermission(node.permission.orEmpty())
         return when (node.senderRule) {
@@ -86,7 +80,7 @@ internal class CommandTreeRouter {
         var node = command.root
         val values = LinkedHashMap<String, Any>()
         var routed = context.copy(parsedValues = values.toMap())
-        if (!allowed(node, routed)) return completedSuggestions(emptyList())
+        if (!canSuggest(node, routed)) return completedSuggestions(emptyList())
         val consumed = if (context.arguments.isEmpty()) emptyList() else context.arguments.dropLast(1)
         val partial = if (context.arguments.isEmpty()) context.currentInput else context.arguments.last()
 
@@ -96,7 +90,7 @@ internal class CommandTreeRouter {
             val child = childFor(node, token)
                 ?: return if (node.acceptsExtraArguments) node.suggestions.suggest(routed.copy(currentInput = partial))
                 else completedSuggestions(emptyList())
-            if (!allowed(child, routed)) return completedSuggestions(emptyList())
+            if (!canSuggest(child, routed)) return completedSuggestions(emptyList())
             if (child.kind == CommandNodeKind.ARGUMENT) {
                 val parsed = parse(child, token) ?: return completedSuggestions(emptyList())
                 values[child.name] = parsed
@@ -115,12 +109,12 @@ internal class CommandTreeRouter {
     private fun lastSuggestions(node: CommandNode, suggestionContext: CommandContext, partial: String): CompletionStage<List<String>> {
         val literals = node.children.asSequence()
             .filter { it.kind == CommandNodeKind.LITERAL }
-            .filter { allowed(it, suggestionContext) }
+            .filter { canSuggest(it, suggestionContext) }
             .map { it.name }
             .filter { it.startsWith(partial, ignoreCase = true) }
             .toList()
         val argument = node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
-            ?.takeIf { allowed(it, suggestionContext) }
+            ?.takeIf { canSuggest(it, suggestionContext) }
         val stage = when {
             argument != null -> argument.suggestions.suggest(suggestionContext).thenApply { it + builtInSuggestions(argument) }
             node.children.isEmpty() || node.acceptsExtraArguments -> node.suggestions.suggest(suggestionContext)
@@ -149,12 +143,23 @@ internal class CommandTreeRouter {
         return permissionAllowed && node.availability.isAvailable(context)
     }
 
+    // allowed() checks only permission; senderRule is checked separately in route() via blocked().
+    // Suggestions must respect senderRule too — otherwise console sees player-only tab completions.
+    private fun canSuggest(node: CommandNode, context: CommandContext): Boolean {
+        if (!allowed(node, context)) return false
+        return when (node.senderRule) {
+            SenderRule.PLAYER -> !context.sender.isConsole
+            SenderRule.CONSOLE -> context.sender.isConsole
+            SenderRule.ANY -> true
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun parse(node: CommandNode, token: String): Any? =
         (node.argumentType as? ArgumentType<Any>)?.parse(token)
 
     private fun usage(path: List<String>, node: CommandNode, context: CommandContext): String {
-        val accessible = node.children.filter { allowed(it, context) }
+        val accessible = node.children.filter { canSuggest(it, context) }
         val suffix = when {
             accessible.isEmpty() -> ""
             accessible.size == 1 -> " " + display(accessible.single())

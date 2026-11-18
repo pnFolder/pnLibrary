@@ -11,23 +11,16 @@ import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-/**
- * Binary block format of a journal file.
- *
- * A file is a sequence of blocks with no file header, so any prefix of a file stays readable:
- * ```
- * block := u32 payloadLength | u32 crc32(payload) | payload
- * payload := gzip( u32 recordCount, record* )
- * record := i64 timeMillis | utf level | utf source | utf type | utf message | u16 detailCount | (utf key | utf value)*
- * ```
- * Each block is independently compressed and checksummed. A damaged block is skipped by its length,
- * and a truncated tail (power loss during a write) is ignored, so earlier blocks always survive.
- */
+// A file is a sequence of blocks with no file header, so any prefix stays readable:
+//   block   := u32 payloadLength | u32 crc32(payload) | payload
+//   payload := gzip( u32 recordCount, record* )
+//   record  := i64 timeMillis | utf level | utf source | utf type | utf message | u16 detailCount | (utf key | utf value)*
+// A damaged block is skipped by its length; a truncated tail (power loss mid-write) is ignored,
+// so earlier blocks always survive.
 object JournalBlockCodec {
     private const val HEADER_BYTES = 8
     private const val MAX_PAYLOAD_BYTES = 16 * 1024 * 1024
 
-    /** Packs [records] into one checksummed block that can be appended to a segment file. */
     fun encode(records: List<JournalRecord>): ByteArray {
         val raw = ByteArrayOutputStream()
         GZIPOutputStream(raw).use { gzip ->
@@ -48,17 +41,14 @@ object JournalBlockCodec {
         return block.toByteArray()
     }
 
-    /**
-     * Decodes every intact block in [bytes]. Blocks with a bad checksum or unreadable payload are skipped;
-     * decoding stops at the first incomplete block, which is what an interrupted write leaves behind.
-     */
+    // Stops at the first incomplete block, which is what an interrupted write leaves behind.
     fun decodeAll(bytes: ByteArray): List<JournalRecord> {
         val result = mutableListOf<JournalRecord>()
         visit(ByteArrayInputStream(bytes), bytes.size.toLong()) { result += it }
         return result
     }
 
-    /** Streams intact blocks under a byte budget, retaining one compressed block at a time. */
+    // Retains one compressed block at a time; bad-checksum blocks are skipped.
     fun visit(stream: InputStream, maximumBytes: Long, record: (JournalRecord) -> Unit) {
         val input = DataInputStream(stream)
         var remaining = maximumBytes

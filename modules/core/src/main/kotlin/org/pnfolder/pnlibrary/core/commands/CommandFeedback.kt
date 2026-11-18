@@ -28,16 +28,11 @@ internal const val DEFAULT_USAGE = "Использование: {usage}"
 
 internal typealias ErrorHandlers = Map<Class<out CommandError>, CommandErrorHandler<*>>
 
-/**
- * Handlers that a plugin, or one module of it, sets for all of its commands. A module's scope has its plugin's scope
- * as [parent], so the chain runs subcommand, command, module, plugin, then the library's standard. The handlers are
- * read on every error, so a plugin may set them at any time.
- */
+// A module's scope chains to its plugin's scope, so the error waterfall runs: node → module → plugin → library.
 internal class CommandFeedbackScope(val parent: CommandFeedbackScope? = null) {
     val handlers = ConcurrentHashMap<Class<out CommandError>, CommandErrorHandler<*>>()
 }
 
-/** The handler for [error] among [handlers]: the one of its own class, else of the nearest base class, else `null`. */
 internal fun handlerFor(handlers: ErrorHandlers, error: CommandError): CommandErrorHandler<CommandError>? {
     var type: Class<*>? = error.javaClass
     while (type != null && CommandError::class.java.isAssignableFrom(type)) {
@@ -49,14 +44,7 @@ internal fun handlerFor(handlers: ErrorHandlers, error: CommandError): CommandEr
     return null
 }
 
-/**
- * The library's own standard answers, the last link of the chain, taken from the library's settings: one place that gives
- * every plugin the same wording and sound until a plugin chooses otherwise. An error with its own default message
- * says that; any other is answered with the text of its nearest built-in base class, and the last resort is the
- * text for [CommandFailed].
- *
- * @property deniedSound sound played with the denial text, or `null` for none
- */
+// Last link of the error chain; falls back through base classes and uses CommandFailed text as a last resort.
 internal class StandardCommandFeedback(
     deniedMessage: String = DEFAULT_NO_PERMISSION,
     val deniedSound: Sound? = null,
@@ -102,6 +90,8 @@ internal fun standardCommandFeedback(config: PnLibraryConfig): StandardCommandFe
     playerNotFoundMessage = config.playerNotFoundMessage,
     playerOnlyMessage = config.playerOnlyMessage,
     consoleOnlyMessage = config.consoleOnlyMessage,
+    cooldownMessage = config.cooldownMessage,
+    failedMessage = config.commandFailedMessage,
 )
 
 internal fun CommandSender.chatNotice(tone: ChatTone, text: String, detail: String? = null) {
@@ -123,7 +113,7 @@ internal fun CommandSender.usageNotice(text: String, help: List<String> = emptyL
     val command = USAGE_COMMAND.find(text)?.value?.substringBefore('<')?.trimEnd()
     if (command != null && kit.reader.interactive) {
         line = line.clickEvent(ClickEvent.suggestCommand("$command "))
-            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
+            .hoverEvent(kit.tooltip(kit.text("Click to insert command", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
     }
     send(line)
     help.forEach { send(kit.text("    $it", ChatPalette.LABEL)) }

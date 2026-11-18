@@ -1,12 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.lifecycle
 
-/**
- * The fixed order in which a composed runtime releases its services.
- *
- * Plugins close first, shared services follow, and the provider, platform, and owner hooks run
- * last. Every step runs even when an earlier one fails; failures are rethrown together by
- * [RuntimeShutdown].
- */
+// Every step runs even when an earlier one fails; all failures are rethrown together by RuntimeShutdown.
 internal class RuntimeShutdownPlan(
     private val plugins: AutoCloseable,
     private val commands: AutoCloseable,

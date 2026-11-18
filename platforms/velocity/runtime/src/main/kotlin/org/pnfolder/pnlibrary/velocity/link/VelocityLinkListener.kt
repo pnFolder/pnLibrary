@@ -7,9 +7,7 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
 
-/** Takes the reports that game servers send on the pnLibrary link channel; messages from players are dropped. */
 internal class VelocityLinkListener(private val receiver: LinkReceiver) {
-    /** Handles every message on the link channel and passes the ones from game servers to the receiver. */
     @Subscribe
     fun onMessage(event: PluginMessageEvent) {
         if (event.identifier != CHANNEL) return
@@ -20,7 +18,6 @@ internal class VelocityLinkListener(private val receiver: LinkReceiver) {
     }
 
     companion object {
-        /** The link channel as Velocity names it. */
         val CHANNEL: MinecraftChannelIdentifier = MinecraftChannelIdentifier.from(LinkCodec.CHANNEL)
     }
 }

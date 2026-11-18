@@ -12,12 +12,6 @@ import org.pnfolder.pnlibrary.api.proxy.NetworkServer
 import java.net.InetSocketAddress
 import java.util.UUID
 
-/**
- * [NetworkPlayer] backed by a Velocity [Player].
- *
- * Adventure components and sounds are forwarded natively. Effects and particles are
- * server-side operations the proxy cannot perform and return [Delivery.Unsupported].
- */
 internal class VelocityNetworkPlayer(
     internal val native: Player,
 ) : NetworkPlayer {

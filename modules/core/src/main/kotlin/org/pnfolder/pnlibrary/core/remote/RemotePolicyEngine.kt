@@ -13,7 +13,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator
 
-/** Shared source loader used by every platform adapter. */
 internal class RemotePolicyEngine(private val compilers: PolicyCompilers) {
 
     fun check(url: String, context: RemotePolicyContext): RemotePolicyResult {

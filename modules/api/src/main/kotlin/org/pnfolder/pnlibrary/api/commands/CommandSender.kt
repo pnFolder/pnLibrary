@@ -5,38 +5,33 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 
-/** Platform-neutral command sender exposed to command handlers. */
+/**
+ * Whoever ran a command: the console or a player. It is an [AudienceSender] with output suited to commands.
+ *
+ * ```kotlin
+ * command("ping") {
+ *     execute { ctx -> ctx.sender.send(Component.text("pong")) }
+ * }
+ * ```
+ */
 interface CommandSender : AudienceSender {
-    /** Stable identity used for cooldowns and audit records. */
-    override val id: String
-
-    /** Human-readable sender name. */
-    override val name: String
-
-    /** Whether this sender represents the server console. */
-    override val isConsole: Boolean
-
     /**
      * Whether clickable and hoverable chat components reach this sender intact.
      *
-     * False for the console, and for players on a server whose chat transport fell back to plain text. Senders
-     * for which it is false should be shown text that does not rely on buttons.
+     * `false` for the console, and for players on a server whose chat fell back to plain text; show such senders
+     * text that does not rely on buttons.
      */
     val supportsInteraction: Boolean
         get() = !isConsole
 
-    /** Returns whether this sender has [permission]. */
-    override fun hasPermission(permission: String): Boolean
-
     /** Sends one Adventure component to this sender. */
     fun send(message: Component)
 
-    /** Sends [text] as a normal chat message. */
     override fun sendMessage(text: Component) = send(text)
 
-    /** Falls back to chat output when the platform has no specialized action bar adapter. */
+    // Falls back to chat when the platform has no action bar for generic senders.
     override fun actionBar(text: Component) = send(text)
 
-    /** Returns [Delivery.Unsupported] because generic command senders cannot play sounds. */
+    // Generic command senders cannot play sounds.
     override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
 }

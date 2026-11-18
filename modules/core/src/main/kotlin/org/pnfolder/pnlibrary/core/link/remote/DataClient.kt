@@ -9,12 +9,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 
-/**
- * The questions this server asked and has no answer to yet.
- *
- * @param key the shared key, or null when the link is off
- * @param uplink sends a question to the proxy; false when nobody can carry it
- */
 class DataClient(
     private val key: ByteArray?,
     private val timeoutSeconds: Long = TIMEOUT_SECONDS,
@@ -29,10 +23,6 @@ class DataClient(
     private val waiting = ConcurrentHashMap<UUID, Pending>()
     private val timeouts = LinkTimeouts("pnlibrary-link-data")
 
-    /**
-     * Asks [target] for [method]. The future holds the answer, or fails with a [DataException] when the server is not
-     * reachable, does not answer in time or refuses.
-     */
     fun call(target: String, viewer: String, method: String, args: String): CompletableFuture<String> {
         val future = CompletableFuture<String>()
         if (key == null) {
@@ -58,7 +48,6 @@ class DataClient(
         return future
     }
 
-    /** Takes one piece of an answer; completes the question when the last one arrives. */
     fun accept(chunk: DataChunk) {
         val pending = waiting[chunk.id] ?: return
         pending.pieces[chunk.index] = chunk.bytes

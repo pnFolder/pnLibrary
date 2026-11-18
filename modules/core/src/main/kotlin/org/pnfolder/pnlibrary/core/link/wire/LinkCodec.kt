@@ -18,27 +18,13 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
-/**
- * Writes and reads the signed messages of the link between a game server and the proxy.
- *
- * A message is the report followed by an HMAC-SHA256 of everything before it, made with the key both sides share.
- * A message with a wrong signature, an unknown version or a time too far from now is dropped, so a player who
- * sends bytes on the channel by hand cannot pose as a server.
- */
+// Message format: body + HMAC-SHA256(body, sharedKey). Wrong signature, bad version, or stale time → dropped.
+// A player sending raw bytes on the channel cannot pose as a server.
 object LinkCodec {
-    /** The plugin message channel the link uses between servers and the proxy. */
     const val CHANNEL = "pnlibrary:link"
-
-    /** Longer lists are cut so the message stays under the plugin message limit. */
     const val MAX_PLUGINS = 150
-
-    /** The most plugins listed per server in a network map, before the map is cut further to fit the frame. */
     const val MAX_NETWORK_PLUGINS = 40
-
-    /** A plugin message may not be larger than this. */
     const val MAX_FRAME_BYTES = 32_000
-
-    /** The most servers listed in a network map. */
     const val MAX_SERVERS = 30
 
     private const val MAX_GROUPS = 30
@@ -56,25 +42,18 @@ object LinkCodec {
     private val TOLERANCE: Duration = Duration.ofMinutes(2)
     private val hmac: FrameSigner = CachedHmac()
 
-    /** Encodes and signs a server report with [key]. */
     fun encode(report: LinkReport, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(VERSION)
         ReportWire.write(out, report, MAX_PLUGINS)
     }
 
-    /** Reads [message], or returns null when the signature, the version or the time is wrong. */
     fun decode(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): LinkReport? =
         verified(message, key, hmac) { input ->
             if (input.readUnsignedByte() != VERSION) return@verified null
             ReportWire.read(input).takeIf { fresh(it.sentAt, now) }
         }
 
-    /**
-     * Encodes the network map and signs it with [key].
-     *
-     * Servers refuse plugin messages over 32767 bytes and kick the player who carried one, so when the map is larger
-     * than [MAX_FRAME_BYTES] the plugin lists, then the groups and the servers are cut until it fits.
-     */
+    // Servers kick the player who delivers an oversized plugin message, so we halve limits until it fits.
     fun encodeNetwork(network: NetworkReport, key: ByteArray): ByteArray {
         var plugins = MAX_NETWORK_PLUGINS
         var items = MAX_GROUP_ITEMS
@@ -130,7 +109,6 @@ object LinkCodec {
 
     private fun readNames(input: DataInputStream): Set<String> = List(input.readInt().coerceIn(0, MAX_GROUP_ITEMS)) { input.readUTF() }.toSet()
 
-    /** Reads a network map, or returns null when the signature, the version or the time is wrong. */
     fun decodeNetwork(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): NetworkReport? =
         verified(message, key, hmac) { input ->
             if (input.readUnsignedByte() != NETWORK_VERSION) return@verified null
@@ -144,7 +122,6 @@ object LinkCodec {
             NetworkReport(proxy, servers, proxy.sentAt, groups)
         }
 
-    /** Encodes and signs a remote update request with [key]. */
     fun encodeRequest(request: RemoteRequest, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(REQUEST_VERSION)
         out.writeLong(request.id.mostSignificantBits)
@@ -157,7 +134,6 @@ object LinkCodec {
         out.writeUTF(request.product.orEmpty().take(MAX_TEXT))
     }
 
-    /** Reads a remote request, or returns null when the signature, the version, the time or the action is wrong. */
     fun decodeRequest(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteRequest? =
         verified(message, key, hmac) { input -> if (input.readUnsignedByte() == REQUEST_VERSION) readRequest(input, now) else null }
 
@@ -173,7 +149,6 @@ object LinkCodec {
         return RemoteRequest(id, target, origin, actor, action, input.readUTF().ifEmpty { null }, sentAt)
     }
 
-    /** Encodes and signs the answer to a remote request with [key]. */
     fun encodeResult(result: RemoteResult, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(RESULT_VERSION)
         out.writeLong(result.id.mostSignificantBits)
@@ -184,7 +159,6 @@ object LinkCodec {
         out.writeUTF(result.text.take(MAX_RESULT_TEXT))
     }
 
-    /** Reads the answer to a remote request, or returns null when the signature, the version or the time is wrong. */
     fun decodeResult(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): RemoteResult? =
         verified(message, key, hmac) { input -> if (input.readUnsignedByte() == RESULT_VERSION) readResult(input, now) else null }
 
@@ -195,7 +169,6 @@ object LinkCodec {
         return RemoteResult(id, input.readUTF(), input.readBoolean(), input.readUTF(), sentAt)
     }
 
-    /** Encodes and signs a data question with [key]. */
     fun encodeCall(call: DataCall, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CALL_VERSION)
         out.writeLong(call.id.mostSignificantBits)
@@ -210,7 +183,6 @@ object LinkCodec {
         out.write(args)
     }
 
-    /** Reads a question, or returns null when the signature, the version or the time is wrong. */
     fun decodeCall(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): DataCall? =
         verified(message, key, hmac) { input -> if (input.readUnsignedByte() == CALL_VERSION) readCall(input, now) else null }
 
@@ -226,7 +198,6 @@ object LinkCodec {
         return DataCall(id, target, origin, viewer, method, args, sentAt)
     }
 
-    /** Encodes and signs one piece of an answer with [key]. */
     fun encodeChunk(chunk: DataChunk, key: ByteArray): ByteArray = signed(key) { out ->
         out.writeByte(CHUNK_VERSION)
         out.writeLong(chunk.id.mostSignificantBits)
@@ -240,7 +211,6 @@ object LinkCodec {
         out.write(chunk.bytes)
     }
 
-    /** Reads one piece of an answer, or returns null when the signature, the version, the time or the numbers are wrong. */
     fun decodeChunk(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): DataChunk? =
         verified(message, key, hmac) { input -> if (input.readUnsignedByte() == CHUNK_VERSION) readChunk(input, now) else null }
 
@@ -257,7 +227,6 @@ object LinkCodec {
         return DataChunk(id, to, ok, index, count, bytes, sentAt)
     }
 
-    /** Reads a message of any kind a server may send to the proxy, checking the signature once; null when anything is wrong. */
     fun decodeFrame(message: ByteArray, key: ByteArray, now: Instant = Instant.now()): LinkFrame? = decodeFrame(message, key, now, hmac)
 
     internal fun decodeFrame(message: ByteArray, key: ByteArray, now: Instant, signer: FrameSigner): LinkFrame? =

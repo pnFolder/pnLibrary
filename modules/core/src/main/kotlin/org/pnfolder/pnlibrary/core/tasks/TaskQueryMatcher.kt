@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.core.tasks
 import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 
-/** Applies every optional [TaskQuery] criterion to a task snapshot. */
 internal object TaskQueryMatcher {
     fun matches(snapshot: TaskSnapshot, query: TaskQuery): Boolean =
         matchesIdentity(snapshot, query) &&

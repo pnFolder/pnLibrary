@@ -9,18 +9,10 @@ import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 
-/**
- * The finished tasks kept on disk, one tab-separated line each, so the history survives a restart.
- *
- * The first line holds the format version. Lines of the first format (16 fields) still load, with the newer fields at
- * their defaults. A line that cannot be read is skipped, so a damaged file never stops
- * the server from starting. Text fields escape tab, line break and backslash.
- */
+// Older format (16 fields) still loads; newer fields default. Unreadable lines are skipped silently.
 internal class TaskHistoryStore(private val file: Path) {
-    /** The saved snapshots, oldest first; empty when there is no file or it cannot be read. */
     fun load(): List<TaskSnapshot> = TsvRecords.read(file).mapNotNull { fields -> runCatching { parse(fields) }.getOrNull() }
 
-    /** Replaces the file with [snapshots]; a failure is ignored because the history is only a convenience. */
     fun save(snapshots: List<TaskSnapshot>) {
         TsvRecords.write(file, HEADER, snapshots.map(::format))
     }

@@ -4,11 +4,13 @@ import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandError
+import org.pnfolder.pnlibrary.api.commands.CommandFailed
 import org.pnfolder.pnlibrary.api.commands.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.CommandNode
 import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.NoPermission
+import org.pnfolder.pnlibrary.api.commands.SenderRule
 import org.pnfolder.pnlibrary.api.commands.completedExecution
 import org.pnfolder.pnlibrary.api.commands.completedSuggestions
 import org.pnfolder.pnlibrary.api.logging.LogLevel
@@ -27,11 +29,6 @@ import java.util.concurrent.atomic.AtomicLong
 
 internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав для этой команды."
 
-/**
- * Registers, routes and runs portable commands, and answers a problem from the most specific level that has an
- * answer: the subcommand, the command, the plugin module, the plugin as a whole, and last [standard], the library's
- * own wording from the library's settings.
- */
 internal class CommandRegistry(
     private val commandAdapter: PlatformCommandAdapter,
     private val logging: PlatformLogging,
@@ -120,10 +117,7 @@ internal class CommandRegistry(
         }
     }
 
-    /**
-     * A command that stopped with a [CommandFailure] reports an error of its own: it is answered through the same
-     * levels as any other. Anything else is an unexpected error, which is logged and shown as a failure.
-     */
+    // CommandFailure = intentional error, answered through the normal chain. Anything else is logged and shown as a failure.
     private fun failed(registration: Registration, executable: CommandRoute.Executable, error: Throwable) {
         val failure = generateSequence(error) { it.cause }.filterIsInstance<CommandFailure>().firstOrNull()
         if (failure == null) {
@@ -133,12 +127,8 @@ internal class CommandRegistry(
         answer(registration, executable.context, failure.error, executable.path.asReversed())
     }
 
-    /**
-     * Answers [error] from the most specific level that can: the nodes from the deepest involved up to the command,
-     * then the plugin module, then the plugin, then the library standard. On each level the handler of the error's
-     * own class comes first, then the one of its nearest base class; at a node, a plain no-permission text counts as
-     * a handler.
-     */
+    // Error waterfall: deepest node → parent nodes → module → plugin → library standard.
+    // At each level the handler for the exact error class wins, then the nearest base class.
     private fun answer(registration: Registration, context: CommandContext, error: CommandError, nodes: List<CommandNode>) {
         fun handledBy(handlers: ErrorHandlers): Boolean {
             val handler = handlerFor(handlers, error) ?: return false
@@ -160,15 +150,20 @@ internal class CommandRegistry(
     private fun helpFor(node: CommandNode?, context: CommandContext): List<String> {
         if (node == null) return emptyList()
         val ways = node.children
-            .filter { it.description.isNotEmpty() && it.permission.let { needed -> needed == null || context.sender.hasPermission(needed) } }
+            .filter { child ->
+                child.description.isNotEmpty() &&
+                    child.permission.let { needed -> needed == null || context.sender.hasPermission(needed) } &&
+                    when (child.senderRule) {
+                        SenderRule.PLAYER -> !context.sender.isConsole
+                        SenderRule.CONSOLE -> context.sender.isConsole
+                        SenderRule.ANY -> true
+                    }
+            }
             .map { (if (it.kind == CommandNodeKind.ARGUMENT) "<${it.name}>" else it.name) + " — " + it.description.first() }
         return node.description + ways
     }
 
-    /**
-     * Runs a plugin's reaction. When it throws, the failure is logged and `false` returned so the next level answers;
-     * the sender never sees a broken handler's error.
-     */
+    // A broken handler logs and returns false so the next level answers — the sender never sees handler exceptions.
     private inline fun react(registration: Registration, reaction: () -> Unit): Boolean =
         try {
             reaction()
@@ -218,7 +213,7 @@ internal class CommandRegistry(
             failuresByCommand[commandName] = (failuresByCommand[commandName] ?: 0L) + 1L
         }
         logging.log(owner, LogLevel.ERROR, "Command execution failed", error)
-        context.sender.chatNotice(ChatTone.FAILURE, "Команда не выполнилась.")
+        standard.answer(context, CommandFailed())
     }
 
     private fun suggestionFailed(owner: Any, error: Throwable) {
@@ -250,7 +245,7 @@ internal class CommandRegistry(
         }
     }
 
-    /** Only the wrapper a dependent stage adds is removed; the cause of the command's own exception stays with it. */
+    // Strips the CompletionException wrapper added by the stage; keeps the original cause.
     private fun unwrap(error: Throwable): Throwable = if (error is CompletionException) error.cause ?: error else error
 
     private inner class Registration(

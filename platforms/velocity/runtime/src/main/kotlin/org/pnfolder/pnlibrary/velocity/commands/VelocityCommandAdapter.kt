@@ -13,13 +13,11 @@ import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
 import java.util.concurrent.CompletionStage
 
-/** Bridges portable pnLibrary commands to the native Velocity command manager. */
 internal class VelocityCommandAdapter internal constructor(
     override val registrar: NativeCommandRegistrar<CommandSource>,
     private val audience: (CommandSource) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    /** Registers commands in the command manager of [server]; senders are converted with [audiences]. */
     constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->

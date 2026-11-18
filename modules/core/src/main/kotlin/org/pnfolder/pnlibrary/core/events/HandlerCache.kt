@@ -3,12 +3,8 @@ package org.pnfolder.pnlibrary.core.events
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-/**
- * Sorted listeners per event class. Adding or closing a subscription for type T drops only the cached
- * lists of classes that T matches, so churn on one event never slows the others. A list built while a
- * change was happening is returned for that call but not cached. Weak keys let an unloaded plugin's
- * event classes be collected when nothing listens to them.
- */
+// Invalidating T drops only entries for classes T matches, so churn on one event never slows others.
+// Lists built during a change are returned but not cached. Weak keys allow plugin class GC.
 class HandlerCache<S : Any>(
     private val all: () -> Sequence<S>,
     private val matches: (S, Class<*>) -> Boolean,
@@ -17,12 +13,11 @@ class HandlerCache<S : Any>(
     private val generation = AtomicLong()
     private val cache = WeakHashMap<Class<*>, List<S>>()
 
-    /** The most recently used lookup, readable without a lock: hot events repeat the same class. */
+    // Hot events repeat the same class — the last-used entry is a lock-free fast path.
     private class Last<S>(val type: Class<*>, val handlers: List<S>)
 
     @Volatile private var last: Last<S>? = null
 
-    /** Forgets cached lists affected by a subscription to [changed]; `null` forgets everything. */
     fun invalidate(changed: Class<*>?) {
         synchronized(cache) {
             generation.incrementAndGet()
@@ -31,7 +26,6 @@ class HandlerCache<S : Any>(
         }
     }
 
-    /** The handlers that receive an event of [type], cached until a handler of a related type changes. */
     fun handlersFor(type: Class<*>): List<S> {
         last?.let { if (it.type === type) return it.handlers }
         val before = generation.get()

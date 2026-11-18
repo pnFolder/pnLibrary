@@ -6,12 +6,11 @@ import java.nio.file.Path
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Names and listing of segment files `<level>-<yyyy-MM-dd>[-segment].pnj` in one journal folder. */
+// Segment files are named `<level>-<yyyy-MM-dd>[-segment].pnj`.
 internal class JournalFiles(private val directory: Path) {
-    /** Directory listings made so far; each one costs a system call per file, so callers keep it rare. */
+    // Each listing costs a system call per file, so callers keep it rare.
     val listings = AtomicInteger()
 
-    /** Every segment file, sorted by name. */
     fun all(): List<Path> {
         if (!Files.isDirectory(directory)) return emptyList()
         listings.incrementAndGet()

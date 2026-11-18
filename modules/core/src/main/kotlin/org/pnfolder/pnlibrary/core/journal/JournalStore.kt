@@ -12,23 +12,9 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicLong
 
-/**
- * Durable, local journal of everything the library and its plugins report.
- *
- * Records are grouped by event date into bounded segments named `<level>-<yyyy-MM-dd>[-segment].pnj`.
- * Legacy daily files remain readable. Reads keep only the selected newest records in memory and
- * scan at most [maximumReadBytes]; summary exposes an exhausted budget. Retention also caps disk use.
- * Appends write whole blocks to the end of the record day's file; the current segment is tracked in memory,
- * so the folder is listed only on the first use of a day and when the disk budget is checked.
- * ERROR records are forced to disk before [append] returns, so a crash right after an error cannot lose it.
- *
- * Retention is per level: each level's files are removed once they are older than that level's limit,
- * so an error is kept longer than a routine info line.
- *
- * @param directory journal folder, created on first use
- * @param retention maximum age of files per level
- * @param clock source of the current date for file names and pruning
- */
+// Segments: `<level>-<yyyy-MM-dd>[-n].pnj`; active segment tracked in memory so the folder is listed only on first use per day.
+// ERROR blocks are forced to disk before append() returns — a crash right after cannot lose an error record.
+// Retention is per level so errors are kept longer than routine info lines.
 class JournalStore(
     private val directory: Path,
     private val retention: Map<JournalLevel, Duration>,
@@ -52,26 +38,15 @@ class JournalStore(
     private var lastEnforcedAtMillis = clock.millis()
     private var newSegmentStarted = false
 
-    /** Directory listings made so far; tests use it to prove that appends do not scan the folder. */
+    // Tests use it to prove that appends do not scan the folder.
     val directoryListings: Int get() = files.listings.get()
 
-    /** Blocks appended so far; one per chunk, not per record. */
+    // One per chunk, not per record.
     val blocksWritten = AtomicLong()
 
-    /**
-     * Writes [record] as one block to the file of its day and level.
-     *
-     * Old files are pruned once per day here, so a server that runs for weeks without a restart still
-     * honours the retention limits.
-     */
     fun append(record: JournalRecord) = appendAll(listOf(record)) { _, error -> throw error }
 
-    /**
-     * Writes [records] with one block per level, day and [BATCH_RECORDS] records, so a burst costs one
-     * compression and one file open instead of one per record. A record that cannot be encoded is handed to
-     * [rejected] and the rest is still written; I/O failures propagate. ERROR blocks are forced to disk
-     * before this returns.
-     */
+    // One block per level/day/BATCH_RECORDS so a burst costs one compress + one file open, not one per record.
     @Synchronized
     fun appendAll(records: List<JournalRecord>, rejected: (JournalRecord, Throwable) -> Unit) {
         if (records.isEmpty()) return
@@ -116,7 +91,7 @@ class JournalStore(
         blocksWritten.incrementAndGet()
     }
 
-    /** The segment that takes [size] more bytes: the cached current one, or a new file when there is none or it is full; a new file triggers a disk budget check. */
+    // A new segment triggers an async disk-budget check to avoid accumulating too many files.
     private fun segmentFor(level: JournalLevel, date: LocalDate, size: Int): Segment {
         if (loadedDays.add(date)) loadDay(date)
         val key = level to date
@@ -127,7 +102,6 @@ class JournalStore(
         return Segment(files.pathOf(level, date, number), 0).also { active[key] = it }
     }
 
-    /** Reads the folder once to learn the newest segment of every level on [date]. */
     private fun loadDay(date: LocalDate) {
         val all = files.all()
         for (level in JournalLevel.values()) {
@@ -136,14 +110,6 @@ class JournalStore(
         }
     }
 
-    /**
-     * Returns records that match the filters, newest first, at most [limit] of them.
-     *
-     * @param levels levels to include; an empty set means every level
-     * @param source exact source name, or `null` for every source
-     * @param sinceMillis earliest time to include, or `null` for no lower bound
-     * @param type record type to return; with `null` every type except [JournalRecord.STATS_TYPE]
-     */
     fun read(
         levels: Set<JournalLevel> = emptySet(),
         source: String? = null,
@@ -152,10 +118,6 @@ class JournalStore(
         type: String? = null,
     ): List<JournalRecord> = reader.readSnapshot(levels, source, sinceMillis, limit, type).records
 
-    /**
-     * Counts and retention per level for diagnostic reports. It holds no message text, so it is safe to share:
-     * for each level the number of records in the last 24 hours, the time of the newest one, and the retention.
-     */
     fun summary(): Map<String, Any?> {
         val since = clock.millis() - Duration.ofHours(24).toMillis()
         return JournalLevel.values().associate { level ->
@@ -173,7 +135,6 @@ class JournalStore(
         }
     }
 
-    /** Deletes segments past the retention of their level, then enforces the disk budget; returns the number of files removed. */
     @Synchronized
     fun prune(): Int {
         if (!Files.isDirectory(directory)) return 0
@@ -194,7 +155,7 @@ class JournalStore(
         return removed + enforceDiskBudget(survivors)
     }
 
-    /** Evicts oldest files first, but routine levels before ERROR so the disk budget never drops errors early. */
+    // Routine levels evicted before ERROR — the disk budget must never force-remove error records early.
     private fun enforceDiskBudget(all: List<Path>): Int {
         lastEnforcedAtMillis = clock.millis()
         newSegmentStarted = false
@@ -211,20 +172,17 @@ class JournalStore(
         return removed
     }
 
-    /** Deleted files may be the cached ones, so the next append looks at the folder again. */
     private fun forgetSegments() {
         active.clear()
         loadedDays.clear()
     }
 
     private companion object {
-        /** Records counted per level in [summary]; more than this is reported as "at least". */
+        // More than SUMMARY_LIMIT records in 24 h is reported as "at least".
         const val SUMMARY_LIMIT = 10_000
-
-        /** Most records in one block, far below the decoder's limit of 10 000. */
+        // Far below the decoder's limit of 10 000.
         const val BATCH_RECORDS = 256
-
-        /** The disk budget is checked at least this often even when no new segment starts. */
+        // Disk budget is checked at least this often even when no new segment starts.
         const val ENFORCE_INTERVAL_MILLIS = 60_000L
     }
 

@@ -6,17 +6,11 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
 
-/**
- * Adapts pnLibrary task requests to the native Velocity scheduler.
- *
- * Handle tracking, one-shot release and shutdown come from [TrackingPlatformTaskAdapter].
- */
 internal class VelocityTaskAdapter internal constructor(
     private val warning: (String) -> Unit,
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
 ) : TrackingPlatformTaskAdapter() {
 
-    /** Adapts [plugin] (a registered Velocity plugin) to the native scheduler; entity tasks fall back to the proxy scheduler with a [warning]. */
     constructor(server: ProxyServer, plugin: Any, warning: (String) -> Unit) : this(
         warning = warning,
         nativeSchedule = { request ->
@@ -34,10 +28,10 @@ internal class VelocityTaskAdapter internal constructor(
 
     override fun scheduleNative(request: PlatformTaskRequest): PlatformTaskHandle = nativeSchedule(request)
 
-    /** Velocity has no entity scheduler, so entity tasks run on the proxy scheduler and emit a [warning]. */
+    // Velocity has no entity scheduler; entity tasks fall back to the proxy scheduler.
     override fun beforeSchedule(request: PlatformTaskRequest) {
         if (request.executionKind == TaskExecution.Kind.ENTITY) {
-            warning("Запрошена задача, привязанная к игроку. Velocity такие задачи не поддерживает: задача выполнена на общем планировщике прокси.")
+            warning("Entity-bound task requested on Velocity, which has no entity scheduler; running on the proxy scheduler instead.")
         }
     }
 }

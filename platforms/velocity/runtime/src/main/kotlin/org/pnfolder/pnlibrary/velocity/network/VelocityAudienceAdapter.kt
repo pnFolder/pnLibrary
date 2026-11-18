@@ -13,7 +13,6 @@ import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
 import java.util.UUID
 
-/** Adapts Velocity command sources and players to pnLibrary audiences. */
 internal class VelocityAudienceAdapter(
     private val server: ProxyServer,
 ) : PlatformAudienceAdapter {

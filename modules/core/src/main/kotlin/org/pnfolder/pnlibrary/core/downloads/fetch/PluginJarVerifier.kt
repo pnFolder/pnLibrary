@@ -9,7 +9,6 @@ import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.nio.file.Path
 import java.util.jar.JarFile
 
-/** Verifies that a downloaded plugin JAR declares the expected identity and version. */
 internal class PluginJarVerifier(
     private val platform: PlatformIdentity,
 ) {
