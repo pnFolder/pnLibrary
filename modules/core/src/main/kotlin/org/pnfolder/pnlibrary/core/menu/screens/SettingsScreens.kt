@@ -19,7 +19,6 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
-import org.pnfolder.pnlibrary.core.text.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.timeLeft
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle

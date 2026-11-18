@@ -1,8 +1,11 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.inspect.trace
 
+import java.time.Instant
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.ResultedEvent
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import java.time.Instant
 
 /**
  * One finished dispatch of an event, recorded while tracing is enabled for its type.

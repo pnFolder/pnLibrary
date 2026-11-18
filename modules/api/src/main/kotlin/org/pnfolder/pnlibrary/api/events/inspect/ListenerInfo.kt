@@ -1,5 +1,6 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.inspect
 
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 

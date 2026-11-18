@@ -1,8 +1,8 @@
-package org.pnfolder.pnlibrary.core.events
+package org.pnfolder.pnlibrary.core.events.inspect
 
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventHandler
-import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.events.listener.EventHandler
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier

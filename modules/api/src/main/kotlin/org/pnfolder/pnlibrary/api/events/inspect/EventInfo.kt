@@ -1,6 +1,7 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.inspect
 
 import java.time.Instant
+import org.pnfolder.pnlibrary.api.events.Event
 
 /**
  * Summary of one event type, returned by [EventInspector.events].

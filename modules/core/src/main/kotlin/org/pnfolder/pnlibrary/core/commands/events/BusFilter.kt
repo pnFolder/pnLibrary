@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.events
 
-import org.pnfolder.pnlibrary.api.events.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 
 /** A way to narrow the event list: the word typed after `/pn bus`, its label on the tab, and which events it keeps. */
 internal enum class BusFilter(val word: String, val label: String, private val test: (EventInfo) -> Boolean) {

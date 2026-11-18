@@ -1,11 +1,13 @@
-package org.pnfolder.pnlibrary.core.events
+package org.pnfolder.pnlibrary.core.events.player
 
+import java.util.UUID
+import java.util.function.Consumer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
 import org.pnfolder.pnlibrary.api.events.player.PlayerJoinedEvent
@@ -13,8 +15,7 @@ import org.pnfolder.pnlibrary.api.events.player.PlayerLeftEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLifecycleEvent
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import java.util.UUID
-import java.util.function.Consumer
+import org.pnfolder.pnlibrary.core.events.EventDispatcher
 
 class PlayerLifecyclePublisherTest {
     private val id = UUID.randomUUID()

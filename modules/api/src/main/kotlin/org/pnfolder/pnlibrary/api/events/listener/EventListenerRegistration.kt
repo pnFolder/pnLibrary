@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.listener
 
 /** Registration containing every annotated handler discovered on one listener. */
 interface EventListenerRegistration : AutoCloseable {

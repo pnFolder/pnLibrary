@@ -1,5 +1,11 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.inspect
 
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.ResultedEvent
+import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
@@ -62,10 +68,10 @@ interface EventInspector {
      * @param eventType class name of one event, or `null` for all
      * @return one entry per hour and event that was called
      */
-    fun hourly(eventType: String? = null): List<EventHour> = emptyList()
+    fun hourly(eventType: String? = null): List<EventHour>
 
     /** How many asynchronous events were accepted and still wait for a free thread. */
-    fun asyncQueued(): Int = 0
+    fun asyncQueued(): Int
 
     /**
      * Writes the per-day and per-hour counters to a file next to the history file.
@@ -73,7 +79,7 @@ interface EventInspector {
      * @param json `true` for a JSON file, `false` for CSV
      * @return the file written, or `null` when the history is off or cannot be written
      */
-    fun exportHistory(json: Boolean = false): java.nio.file.Path? = null
+    fun exportHistory(json: Boolean = false): java.nio.file.Path?
 
     /**
      * Starts recording every dispatch of [eventType] and its subclasses, keeping the latest

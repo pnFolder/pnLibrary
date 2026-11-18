@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.listener
 
 /**
  * Handle for one typed listener registration.

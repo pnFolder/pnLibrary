@@ -1,24 +1,5 @@
 package org.pnfolder.pnlibrary.core.events
 
-import org.pnfolder.pnlibrary.api.events.DispatchMode
-import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventDay
-import org.pnfolder.pnlibrary.api.events.EventHour
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.EventListenerRegistration
-import org.pnfolder.pnlibrary.api.events.EventScope
-import org.pnfolder.pnlibrary.api.events.EventService
-import org.pnfolder.pnlibrary.api.events.EventSubscription
-import org.pnfolder.pnlibrary.api.events.EventTrace
-import org.pnfolder.pnlibrary.api.events.InternalEventApi
-import org.pnfolder.pnlibrary.api.events.Listener
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
-import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
-import org.pnfolder.pnlibrary.common.lang.Failures
-import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
@@ -28,6 +9,31 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.LongAdder
 import java.util.function.Consumer
 import java.util.function.Supplier
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.InternalEventApi
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.events.listener.EventHandler
+import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
+import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
+import org.pnfolder.pnlibrary.api.events.listener.Listener
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
+import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
+import org.pnfolder.pnlibrary.common.lang.Failures
+import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.events.inspect.EventCounters
+import org.pnfolder.pnlibrary.core.events.inspect.EventHandlerInspector
+import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
+import org.pnfolder.pnlibrary.core.events.inspect.trace.EventTracer
+import org.pnfolder.pnlibrary.core.events.registration.ListenerRegistration
 
 class EventDispatcher(
     private val history: EventHistory? = null,

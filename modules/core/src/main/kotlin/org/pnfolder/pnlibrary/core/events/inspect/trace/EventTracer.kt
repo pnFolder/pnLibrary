@@ -1,8 +1,8 @@
-package org.pnfolder.pnlibrary.core.events
+package org.pnfolder.pnlibrary.core.events.inspect.trace
 
-import org.pnfolder.pnlibrary.api.events.DispatchMode
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventTrace
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.events.ResultedEvent
 import java.time.Instant
 import java.util.ArrayDeque

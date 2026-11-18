@@ -4,11 +4,11 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.config.ConfigEditResult
 import org.pnfolder.pnlibrary.api.config.ConfigId
 import org.pnfolder.pnlibrary.api.config.ConfigSetting
-import org.pnfolder.pnlibrary.api.events.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.EventDescription
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventTrace
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateActor

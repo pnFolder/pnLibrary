@@ -8,20 +8,6 @@ import org.pnfolder.pnlibrary.api.requirements.RequirementContext
 import org.pnfolder.pnlibrary.api.requirements.Verdict
 import java.math.BigDecimal
 
-/*
- * Money in scenarios: the words `charge`, `give` and `balance`, registered by the library for every plugin.
- *
- * ```yaml
- * on-buy:
- *   - type: attempt
- *     do:
- *       - { type: charge, currency: money, amount: 100 }       # takes 100, gives it back if a later step fails
- *       - { type: command, command: 'give [player] diamond 1' }
- *     fail:
- *       - { type: message, messages: ['&cCould not buy: [error]'] }
- * ```
- */
-
 private fun RequirementContext.currencyOrNull(reference: String): Currency? =
     service(CurrencyService::class.java)?.get(reference.trim())
 
@@ -48,6 +34,17 @@ private fun CurrencyResult.failure(currency: Currency, amount: BigDecimal): Acti
  * message. After a successful charge the values `[paid]` and `[balance]` are available to later texts.
  *
  * Money is taken through the currency service, so it blocks the calling thread until the provider answers.
+ *
+ * ```yaml
+ * - type: attempt
+ *   do:
+ *     - { type: charge, currency: money, amount: 100 }
+ *     - { type: command, command: 'give [player] diamond 1' }
+ *   fail:
+ *     - { type: message, messages: ['&cCould not buy: [error]'] }
+ * ```
+ *
+ * The words `charge`, `give` and `balance` are registered by the library for every plugin.
  *
  * @property currency currency reference, as in [CurrencyService.get]
  * @property amount positive amount; may be a placeholder such as `{shop:price}`

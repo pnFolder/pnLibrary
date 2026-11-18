@@ -1,5 +1,9 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.listener
 
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
 /**
@@ -30,6 +34,24 @@ class EventListenerBuilder<E : Event> internal constructor(
     /** Registers [listener] with the configured options and returns the live subscription. */
     fun listen(listener: Consumer<E>): EventSubscription =
         scope.subscribe(eventType, priority, ignoreDenied, listener)
+
+    /**
+     * Registers [listener] to run for the first matching event only, then removes it.
+     * Closing the returned subscription before that cancels it.
+     */
+    fun listenOnce(listener: Consumer<E>): EventSubscription {
+        val fired = AtomicBoolean()
+        val self = AtomicReference<EventSubscription?>()
+        val subscription = scope.subscribe(eventType, priority, ignoreDenied) { event: E ->
+            if (fired.compareAndSet(false, true)) {
+                self.get()?.close()
+                listener.accept(event)
+            }
+        }
+        self.set(subscription)
+        if (fired.get()) subscription.close()
+        return subscription
+    }
 }
 
 /** Starts building a subscription to [E] in this scope. */

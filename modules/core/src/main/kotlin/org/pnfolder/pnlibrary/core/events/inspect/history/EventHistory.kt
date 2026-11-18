@@ -1,7 +1,7 @@
-package org.pnfolder.pnlibrary.core.events
+package org.pnfolder.pnlibrary.core.events.inspect.history
 
-import org.pnfolder.pnlibrary.api.events.EventDay
-import org.pnfolder.pnlibrary.api.events.EventHour
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.io.AtomicFiles

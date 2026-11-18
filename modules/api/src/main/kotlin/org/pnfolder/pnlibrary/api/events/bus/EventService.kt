@@ -1,10 +1,16 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.bus
 
-import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import java.util.function.Consumer
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
+import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
+import org.pnfolder.pnlibrary.api.events.listener.Listener
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
+import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /**
  * Process-wide platform-independent event bus.

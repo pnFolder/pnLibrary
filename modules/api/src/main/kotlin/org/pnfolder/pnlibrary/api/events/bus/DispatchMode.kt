@@ -1,4 +1,6 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.bus
+
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 
 /**
  * How an event was dispatched, shown by [EventTrace] and `/pn bus`.

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.stats
 
-import org.pnfolder.pnlibrary.api.events.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.TaskStatus
 import org.pnfolder.pnlibrary.core.journal.JournalLevel

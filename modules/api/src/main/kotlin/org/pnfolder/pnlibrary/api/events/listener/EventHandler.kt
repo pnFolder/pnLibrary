@@ -1,4 +1,6 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.listener
+
+import org.pnfolder.pnlibrary.api.events.Event
 
 /**
  * Marks a method as an event handler.

@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.api.events
 
-import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
+import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 
 /**
  * Base class for every event published through the library event system.

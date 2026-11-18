@@ -45,8 +45,10 @@ import java.util.Collections
  * @property logger plugin logger for warnings
  * @property tasks task scope for delayed work
  * @property serializerType default text format of printed text
+ * @param values named values texts and requirements read as `[name]`
  * @param services services handed over directly, by exact type
  * @param serviceLookup fallback for services registered elsewhere, such as in the module's service scope
+ * @param lookup actions, requirements and functions plugins defined by name
  * @property placeholders placeholder service, or `null` when the runtime has none
  */
 class ActionContext(
@@ -64,8 +66,6 @@ class ActionContext(
 ) : RequirementContext {
     private val runtimeValues = LinkedHashMap(values)
     private val undoSteps = ArrayList<Pair<String, () -> Unit>>()
-
-    // ---- running
 
     /**
      * Runs [actions] as one scenario: in order, until one stops or fails.
@@ -109,7 +109,6 @@ class ActionContext(
             .build())
     }
 
-    // ---- undo
 
     /**
      * Registers how to take back what the current step did, for example giving a charge back.
@@ -136,7 +135,6 @@ class ActionContext(
         }
     }
 
-    // ---- services and values
 
     override fun <T : Any> service(type: Class<T>): T? = (services[type] ?: serviceLookup(type))?.let(type::cast)
 
@@ -180,7 +178,6 @@ class ActionContext(
     /** The audience an action aimed at [target] sends to. */
     fun target(target: ActionTarget): LibraryAudience = if (target == ActionTarget.PLAYER) player else allPlayers
 
-    // ---- text
 
     /** Fills in the placeholders of [text] (see [format]), then parses it with [type] or [serializerType]. */
     fun component(text: String, type: ComponentSerializerType? = null): Component =

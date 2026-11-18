@@ -1,8 +1,8 @@
-package org.pnfolder.pnlibrary.core.events
+package org.pnfolder.pnlibrary.core.events.registration
 
-import org.pnfolder.pnlibrary.api.events.EventListenerRegistration
-import org.pnfolder.pnlibrary.api.events.EventSubscription
-import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
+import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** All the subscriptions made for the handlers of one listener object; closing it closes every one. */

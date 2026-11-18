@@ -22,8 +22,8 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventHandler
-import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.events.listener.EventHandler
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
 import org.pnfolder.pnlibrary.api.logging.PnLogger
@@ -56,7 +56,6 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.lang.reflect.Proxy
 import java.nio.file.Paths
 import java.util.function.Consumer

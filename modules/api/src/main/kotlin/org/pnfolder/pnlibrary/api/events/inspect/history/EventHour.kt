@@ -1,6 +1,8 @@
-package org.pnfolder.pnlibrary.api.events
+package org.pnfolder.pnlibrary.api.events.inspect.history
 
 import java.time.LocalDateTime
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
 
 /**
  * How often one event type was called during one hour, returned by [EventInspector.hourly].

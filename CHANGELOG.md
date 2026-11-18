@@ -2,6 +2,10 @@
 
 ## Ветка next (0.1.0-dev)
 
+### События по папкам
+- Пакет `api.events` разложен: корень (`Event`, `ResultedEvent`, `EventDescription`), `bus` (`EventService`, `EventScope`, `DispatchMode`), `listener` (`Listener`, `EventHandler`, `EventPriority`, `EventSubscription`, `EventListenerRegistration`, `EventListenerBuilder`, `subscribe`), `inspect` (`EventInspector`, `EventInfo`, `ListenerInfo`), `inspect.history` (`EventDay`, `EventHour`), `inspect.trace` (`EventTrace`), `player`. В `core.events`: `registration`, `player`, `inspect`, `inspect.history`, `inspect.trace`.
+- `EventInspector`: убраны заглушки по умолчанию у `hourly`, `asyncQueued`, `exportHistory`. Новое: `on<E>().listenOnce { }` слушает только первое событие. Несовместимое изменение API.
+
 ### Новая система действий и требований
 - `api.actions` переписан: `Action.run` возвращает `ActionResult` (`Done`, `Stopped`, `Failed`). Ошибка шага откатывает прошлые шаги через `ActionContext.onUndo`; блок `attempt` ловит ошибку и показывает сообщение.
 - `api.checks` заменён на `api.requirements`: `Requirement` отвечает `Verdict.Met` или `Verdict.Unmet(reason)`, значения берутся из контекста, плейсхолдеров pnLibrary и PlaceholderAPI. Списание денег — действие `charge` (`give`, требование `balance`), слова добавляет сама библиотека для всех плагинов.

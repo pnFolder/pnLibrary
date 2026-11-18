@@ -1517,44 +1517,19 @@ public final class org/pnfolder/pnlibrary/api/downloads/FileDownloads$Companion 
 	public final fun builder ()Lorg/pnfolder/pnlibrary/api/downloads/FileDownloads$Builder;
 }
 
-public final class org/pnfolder/pnlibrary/api/events/DispatchMode : java/lang/Enum {
-	public static final field ASYNC Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-	public static final field SYNC Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-}
-
 public abstract class org/pnfolder/pnlibrary/api/events/Event {
 	public fun <init> ()V
-	public final fun bindDispatch (Lorg/pnfolder/pnlibrary/api/events/DispatchMode;Ljava/lang/Thread;)V
+	public final fun bindDispatch (Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;Ljava/lang/Thread;)V
 	public final fun callEvent ()Z
 	public final fun callEventAsync ()Ljava/util/concurrent/CompletionStage;
 	public final fun callEventAsync (Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;
 	public static synthetic fun callEventAsync$default (Lorg/pnfolder/pnlibrary/api/events/Event;Ljava/util/concurrent/Executor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 	public final fun getDenyReason ()Lnet/kyori/adventure/text/Component;
-	public final fun getDispatchMode ()Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
+	public final fun getDispatchMode ()Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
 	public final fun getDispatchThread ()Ljava/lang/Thread;
 	public fun getEventName ()Ljava/lang/String;
 	public final fun isAllowed ()Z
 	public final fun isAsync ()Z
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventDay {
-	public fun <init> (Ljava/time/LocalDate;Ljava/lang/String;JJ)V
-	public final fun component1 ()Ljava/time/LocalDate;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()J
-	public final fun component4 ()J
-	public final fun copy (Ljava/time/LocalDate;Ljava/lang/String;JJ)Lorg/pnfolder/pnlibrary/api/events/EventDay;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventDay;Ljava/time/LocalDate;Ljava/lang/String;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventDay;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCalls ()J
-	public final fun getDate ()Ljava/time/LocalDate;
-	public final fun getDenied ()J
-	public final fun getEventType ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/events/EventDescription : java/lang/annotation/Annotation {
@@ -1562,217 +1537,7 @@ public abstract interface annotation class org/pnfolder/pnlibrary/api/events/Eve
 	public abstract fun usage ()Ljava/lang/String;
 }
 
-public abstract interface annotation class org/pnfolder/pnlibrary/api/events/EventHandler : java/lang/annotation/Annotation {
-	public abstract fun ignoreDenied ()Z
-	public abstract fun priority ()I
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventHour {
-	public fun <init> (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)V
-	public final fun component1 ()Ljava/time/LocalDateTime;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()J
-	public final fun component4 ()J
-	public final fun copy (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)Lorg/pnfolder/pnlibrary/api/events/EventHour;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventHour;Ljava/time/LocalDateTime;Ljava/lang/String;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventHour;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCalls ()J
-	public final fun getDenied ()J
-	public final fun getEventType ()Ljava/lang/String;
-	public final fun getHour ()Ljava/time/LocalDateTime;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventInfo {
-	public fun <init> (Ljava/lang/String;IJJLjava/time/Instant;)V
-	public synthetic fun <init> (Ljava/lang/String;IJJLjava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()I
-	public final fun component3 ()J
-	public final fun component4 ()J
-	public final fun component5 ()Ljava/time/Instant;
-	public final fun copy (Ljava/lang/String;IJJLjava/time/Instant;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventInfo;Ljava/lang/String;IJJLjava/time/Instant;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCalls ()J
-	public final fun getDenied ()J
-	public final fun getEventType ()Ljava/lang/String;
-	public final fun getLastCalledAt ()Ljava/time/Instant;
-	public final fun getListeners ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/EventInspector {
-	public fun asyncQueued ()I
-	public abstract fun clearTraces ()V
-	public abstract fun disableTracing (Ljava/lang/Class;)V
-	public abstract fun enableTracing (Ljava/lang/Class;I)V
-	public static synthetic fun enableTracing$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/Class;IILjava/lang/Object;)V
-	public fun event (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/EventInfo;
-	public abstract fun eventType (Ljava/lang/String;)Ljava/lang/Class;
-	public abstract fun events ()Ljava/util/List;
-	public fun exportHistory (Z)Ljava/nio/file/Path;
-	public static synthetic fun exportHistory$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;ZILjava/lang/Object;)Ljava/nio/file/Path;
-	public abstract fun getHistoryDays ()I
-	public abstract fun history (Ljava/lang/String;)Ljava/util/List;
-	public static synthetic fun history$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
-	public fun hourly (Ljava/lang/String;)Ljava/util/List;
-	public static synthetic fun hourly$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
-	public fun listenerCount (Ljava/lang/Class;)I
-	public abstract fun listeners ()Ljava/util/List;
-	public abstract fun listeners (Ljava/lang/Class;)Ljava/util/List;
-	public fun listeners (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Ljava/util/List;
-	public static synthetic fun listeners$default (Lorg/pnfolder/pnlibrary/api/events/EventInspector;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;ILjava/lang/Object;)Ljava/util/List;
-	public fun plugins (Ljava/lang/Class;)Ljava/util/List;
-	public abstract fun tracedEvents ()Ljava/util/List;
-	public abstract fun traces ()Ljava/util/List;
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventListenerBuilder {
-	public final fun ignoreDenied ()Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
-	public final fun listen (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventListenerBuilderKt {
-	public static final fun on (Lorg/pnfolder/pnlibrary/api/events/EventScope;Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/EventListenerBuilder;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/EventListenerRegistration : java/lang/AutoCloseable {
-	public abstract fun close ()V
-	public abstract fun getHandlerCount ()I
-	public abstract fun getListener ()Lorg/pnfolder/pnlibrary/api/events/Listener;
-	public abstract fun isClosed ()Z
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventPriority {
-	public static final field HIGH I
-	public static final field HIGHEST I
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/events/EventPriority;
-	public static final field LOW I
-	public static final field LOWEST I
-	public static final field MONITOR I
-	public static final field NORMAL I
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/EventScope : java/lang/AutoCloseable {
-	public abstract fun callEvent (Lorg/pnfolder/pnlibrary/api/events/Event;)Lorg/pnfolder/pnlibrary/api/events/Event;
-	public abstract fun close ()V
-	public abstract fun getPluginId ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public abstract fun isClosed ()Z
-	public abstract fun register (Lorg/pnfolder/pnlibrary/api/events/Listener;)Lorg/pnfolder/pnlibrary/api/events/EventListenerRegistration;
-	public fun subscribe (Ljava/lang/Class;ILjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-	public abstract fun subscribe (Ljava/lang/Class;IZLjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-	public fun subscribe (Ljava/lang/Class;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/EventService : java/lang/AutoCloseable {
-	public abstract fun callEvent (Lorg/pnfolder/pnlibrary/api/events/Event;)Lorg/pnfolder/pnlibrary/api/events/Event;
-	public abstract fun callEventAsync (Lorg/pnfolder/pnlibrary/api/events/Event;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun callEventAsync (Lorg/pnfolder/pnlibrary/api/events/Event;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun close ()V
-	public abstract fun getInspector ()Lorg/pnfolder/pnlibrary/api/events/EventInspector;
-	public fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/events/Listener;)Lorg/pnfolder/pnlibrary/api/events/EventListenerRegistration;
-	public abstract fun scope (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/events/EventScope;
-	public abstract fun scope (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/events/EventScope;
-	public fun subscribe (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/Class;IZLjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-	public fun subscribe (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/Class;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/EventSubscription;
-	public abstract fun unregisterAll (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)V
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/EventSubscription : java/lang/AutoCloseable {
-	public abstract fun close ()V
-	public abstract fun isClosed ()Z
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventTrace {
-	public fun <init> (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/DispatchMode;Ljava/lang/String;Ljava/time/Instant;)V
-	public synthetic fun <init> (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/DispatchMode;Ljava/lang/String;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Z
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Ljava/time/Instant;
-	public final fun copy (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/DispatchMode;Ljava/lang/String;Ljava/time/Instant;)Lorg/pnfolder/pnlibrary/api/events/EventTrace;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventTrace;Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/DispatchMode;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventTrace;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAllowed ()Z
-	public final fun getAt ()Ljava/time/Instant;
-	public final fun getEventName ()Ljava/lang/String;
-	public final fun getMode ()Lorg/pnfolder/pnlibrary/api/events/DispatchMode;
-	public final fun getResult ()Ljava/lang/String;
-	public final fun getSteps ()Ljava/util/List;
-	public final fun getThread ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/events/EventTrace$Step {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
-	public final fun component3 ()I
-	public final fun component4 ()Z
-	public final fun component5 ()Z
-	public final fun component6 ()J
-	public final fun component7 ()Ljava/lang/String;
-	public final fun component8 ()Ljava/lang/String;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/events/EventTrace$Step;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/EventTrace$Step;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/EventTrace$Step;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getChangedResult ()Z
-	public final fun getFailed ()Z
-	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
-	public final fun getNanos ()J
-	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public final fun getPriority ()I
-	public final fun getResultAfter ()Ljava/lang/String;
-	public final fun getResultBefore ()Ljava/lang/String;
-	public final fun getSkipped ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public abstract interface annotation class org/pnfolder/pnlibrary/api/events/InternalEventApi : java/lang/annotation/Annotation {
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/events/Listener {
-}
-
-public final class org/pnfolder/pnlibrary/api/events/ListenerInfo {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJ)V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJ)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public final fun component10 ()J
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()I
-	public final fun component5 ()Z
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()J
-	public final fun component8 ()J
-	public final fun component9 ()J
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJ)Lorg/pnfolder/pnlibrary/api/events/ListenerInfo;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/ListenerInfo;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/ListenerInfo;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAverageNanos ()J
-	public final fun getEventType ()Ljava/lang/String;
-	public final fun getFailures ()J
-	public final fun getIgnoreDenied ()Z
-	public final fun getInvocations ()J
-	public final fun getMaxNanos ()J
-	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
-	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public final fun getPriority ()I
-	public final fun getSource ()Ljava/lang/String;
-	public final fun getTotalNanos ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class org/pnfolder/pnlibrary/api/events/ResultedEvent : org/pnfolder/pnlibrary/api/events/Event {
@@ -1813,6 +1578,242 @@ public final class org/pnfolder/pnlibrary/api/events/ResultedEvent$GenericResult
 
 public abstract interface class org/pnfolder/pnlibrary/api/events/ResultedEvent$Result {
 	public abstract fun isAllowed ()Z
+}
+
+public final class org/pnfolder/pnlibrary/api/events/bus/DispatchMode : java/lang/Enum {
+	public static final field ASYNC Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+	public static final field SYNC Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/bus/EventScope : java/lang/AutoCloseable {
+	public abstract fun callEvent (Lorg/pnfolder/pnlibrary/api/events/Event;)Lorg/pnfolder/pnlibrary/api/events/Event;
+	public abstract fun close ()V
+	public abstract fun getPluginId ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public abstract fun isClosed ()Z
+	public abstract fun register (Lorg/pnfolder/pnlibrary/api/events/listener/Listener;)Lorg/pnfolder/pnlibrary/api/events/listener/EventListenerRegistration;
+	public fun subscribe (Ljava/lang/Class;ILjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public abstract fun subscribe (Ljava/lang/Class;IZLjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public fun subscribe (Ljava/lang/Class;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/bus/EventService : java/lang/AutoCloseable {
+	public abstract fun callEvent (Lorg/pnfolder/pnlibrary/api/events/Event;)Lorg/pnfolder/pnlibrary/api/events/Event;
+	public abstract fun callEventAsync (Lorg/pnfolder/pnlibrary/api/events/Event;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun callEventAsync (Lorg/pnfolder/pnlibrary/api/events/Event;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun close ()V
+	public abstract fun getInspector ()Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;
+	public fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/events/listener/Listener;)Lorg/pnfolder/pnlibrary/api/events/listener/EventListenerRegistration;
+	public abstract fun scope (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/events/bus/EventScope;
+	public abstract fun scope (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/events/bus/EventScope;
+	public fun subscribe (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/Class;IZLjava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public fun subscribe (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/Class;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public abstract fun unregisterAll (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)V
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/EventInfo {
+	public fun <init> (Ljava/lang/String;IJJLjava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;IJJLjava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;IJJLjava/time/Instant;)Lorg/pnfolder/pnlibrary/api/events/inspect/EventInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInfo;Ljava/lang/String;IJJLjava/time/Instant;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/EventInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCalls ()J
+	public final fun getDenied ()J
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getLastCalledAt ()Ljava/time/Instant;
+	public final fun getListeners ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/inspect/EventInspector {
+	public abstract fun asyncQueued ()I
+	public abstract fun clearTraces ()V
+	public abstract fun disableTracing (Ljava/lang/Class;)V
+	public abstract fun enableTracing (Ljava/lang/Class;I)V
+	public static synthetic fun enableTracing$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;Ljava/lang/Class;IILjava/lang/Object;)V
+	public fun event (Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/inspect/EventInfo;
+	public abstract fun eventType (Ljava/lang/String;)Ljava/lang/Class;
+	public abstract fun events ()Ljava/util/List;
+	public abstract fun exportHistory (Z)Ljava/nio/file/Path;
+	public static synthetic fun exportHistory$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;ZILjava/lang/Object;)Ljava/nio/file/Path;
+	public abstract fun getHistoryDays ()I
+	public abstract fun history (Ljava/lang/String;)Ljava/util/List;
+	public static synthetic fun history$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+	public abstract fun hourly (Ljava/lang/String;)Ljava/util/List;
+	public static synthetic fun hourly$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+	public fun listenerCount (Ljava/lang/Class;)I
+	public abstract fun listeners ()Ljava/util/List;
+	public abstract fun listeners (Ljava/lang/Class;)Ljava/util/List;
+	public fun listeners (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Ljava/util/List;
+	public static synthetic fun listeners$default (Lorg/pnfolder/pnlibrary/api/events/inspect/EventInspector;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;ILjava/lang/Object;)Ljava/util/List;
+	public fun plugins (Ljava/lang/Class;)Ljava/util/List;
+	public abstract fun tracedEvents ()Ljava/util/List;
+	public abstract fun traces ()Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/ListenerInfo {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJ)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJ)V
+	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun component10 ()J
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()J
+	public final fun component8 ()J
+	public final fun component9 ()J
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJ)Lorg/pnfolder/pnlibrary/api/events/inspect/ListenerInfo;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/ListenerInfo;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/lang/String;IZLjava/lang/String;JJJJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/ListenerInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAverageNanos ()J
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getFailures ()J
+	public final fun getIgnoreDenied ()Z
+	public final fun getInvocations ()J
+	public final fun getMaxNanos ()J
+	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getPriority ()I
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTotalNanos ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/history/EventDay {
+	public fun <init> (Ljava/time/LocalDate;Ljava/lang/String;JJ)V
+	public final fun component1 ()Ljava/time/LocalDate;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun copy (Ljava/time/LocalDate;Ljava/lang/String;JJ)Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventDay;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventDay;Ljava/time/LocalDate;Ljava/lang/String;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventDay;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCalls ()J
+	public final fun getDate ()Ljava/time/LocalDate;
+	public final fun getDenied ()J
+	public final fun getEventType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/history/EventHour {
+	public fun <init> (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)V
+	public final fun component1 ()Ljava/time/LocalDateTime;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun copy (Ljava/time/LocalDateTime;Ljava/lang/String;JJ)Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventHour;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventHour;Ljava/time/LocalDateTime;Ljava/lang/String;JJILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/history/EventHour;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCalls ()J
+	public final fun getDenied ()J
+	public final fun getEventType ()Ljava/lang/String;
+	public final fun getHour ()Ljava/time/LocalDateTime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace {
+	public fun <init> (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;Ljava/lang/String;Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;Ljava/lang/String;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;Ljava/lang/String;Ljava/time/Instant;)Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace;Ljava/lang/String;ZLjava/lang/String;Ljava/util/List;Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowed ()Z
+	public final fun getAt ()Ljava/time/Instant;
+	public final fun getEventName ()Ljava/lang/String;
+	public final fun getMode ()Lorg/pnfolder/pnlibrary/api/events/bus/DispatchMode;
+	public final fun getResult ()Ljava/lang/String;
+	public final fun getSteps ()Ljava/util/List;
+	public final fun getThread ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace$Step {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun component2 ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()J
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun copy (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace$Step;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace$Step;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;IZZJLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/events/inspect/trace/EventTrace$Step;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangedResult ()Z
+	public final fun getFailed ()Z
+	public final fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public final fun getNanos ()J
+	public final fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public final fun getPriority ()I
+	public final fun getResultAfter ()Ljava/lang/String;
+	public final fun getResultBefore ()Ljava/lang/String;
+	public final fun getSkipped ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class org/pnfolder/pnlibrary/api/events/listener/EventHandler : java/lang/annotation/Annotation {
+	public abstract fun ignoreDenied ()Z
+	public abstract fun priority ()I
+}
+
+public final class org/pnfolder/pnlibrary/api/events/listener/EventListenerBuilder {
+	public final fun ignoreDenied ()Lorg/pnfolder/pnlibrary/api/events/listener/EventListenerBuilder;
+	public final fun listen (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public final fun listenOnce (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/events/listener/EventSubscription;
+	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/events/listener/EventListenerBuilder;
+}
+
+public final class org/pnfolder/pnlibrary/api/events/listener/EventListenerBuilderKt {
+	public static final fun on (Lorg/pnfolder/pnlibrary/api/events/bus/EventScope;Ljava/lang/Class;)Lorg/pnfolder/pnlibrary/api/events/listener/EventListenerBuilder;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/listener/EventListenerRegistration : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getHandlerCount ()I
+	public abstract fun getListener ()Lorg/pnfolder/pnlibrary/api/events/listener/Listener;
+	public abstract fun isClosed ()Z
+}
+
+public final class org/pnfolder/pnlibrary/api/events/listener/EventPriority {
+	public static final field HIGH I
+	public static final field HIGHEST I
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/api/events/listener/EventPriority;
+	public static final field LOW I
+	public static final field LOWEST I
+	public static final field MONITOR I
+	public static final field NORMAL I
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/listener/EventSubscription : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun isClosed ()Z
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/events/listener/Listener {
 }
 
 public final class org/pnfolder/pnlibrary/api/events/player/PlayerJoinedEvent : org/pnfolder/pnlibrary/api/events/player/PlayerLifecycleEvent {
@@ -2640,7 +2641,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext 
 	public abstract fun getDiagnostics ()Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticRegistration;
 	public abstract fun getDownloads ()Lorg/pnfolder/pnlibrary/api/downloads/DownloadRegistration;
 	public abstract fun getErrors ()Lorg/pnfolder/pnlibrary/api/metrics/ErrorReporter;
-	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/EventScope;
+	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/bus/EventScope;
 	public fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
 	public abstract fun getId ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
 	public abstract fun getKey ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
@@ -3242,7 +3243,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/runtime/PnLibrary : j
 	public abstract fun getConfiguration ()Lorg/pnfolder/pnlibrary/api/runtime/PnLibraryConfig;
 	public abstract fun getConfigurations ()Lorg/pnfolder/pnlibrary/api/config/ConfigurationService;
 	public abstract fun getDiagnostics ()Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticsService;
-	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/EventService;
+	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/bus/EventService;
 	public abstract fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
 	public abstract fun getLogging ()Lorg/pnfolder/pnlibrary/api/logging/LoggingService;
 	public abstract fun getMetrics ()Lorg/pnfolder/pnlibrary/api/metrics/MetricsService;

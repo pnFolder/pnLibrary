@@ -6,7 +6,7 @@ import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.event.EventHandler
 import net.md_5.bungee.event.EventPriority
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
+import org.pnfolder.pnlibrary.core.events.player.PlayerLifecyclePublisher
 
 internal class BungeePlayerEvents(private val library: PnLibrary) : Listener {
 

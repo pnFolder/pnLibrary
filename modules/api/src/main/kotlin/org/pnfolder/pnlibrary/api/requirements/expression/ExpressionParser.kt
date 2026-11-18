@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.requirements.expression
 
-import org.pnfolder.pnlibrary.api.requirements.RequirementContext
 import org.pnfolder.pnlibrary.api.requirements.expression.Expression.Companion.format
 import org.pnfolder.pnlibrary.api.requirements.expression.Expression.Companion.normalize
 import org.pnfolder.pnlibrary.api.requirements.expression.Expression.Companion.number

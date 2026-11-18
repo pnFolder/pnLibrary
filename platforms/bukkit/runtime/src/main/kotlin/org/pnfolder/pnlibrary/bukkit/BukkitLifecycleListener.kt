@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.bukkit.audience.JoinNoticeDelivery
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateReminders
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.events.PlayerLifecyclePublisher
+import org.pnfolder.pnlibrary.core.events.player.PlayerLifecyclePublisher
 import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import java.util.concurrent.CopyOnWriteArrayList
