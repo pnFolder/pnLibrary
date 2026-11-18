@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bungee
+package org.pnfolder.pnlibrary.bungee.network
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -15,12 +15,6 @@ import org.pnfolder.pnlibrary.api.proxy.NetworkServer
 import java.net.InetSocketAddress
 import java.util.UUID
 
-/**
- * [NetworkPlayer] backed by a BungeeCord [ProxiedPlayer].
- *
- * Components are converted to legacy Bungee chat format. Effects and particles are
- * server-side operations the proxy cannot perform and return [Delivery.Unsupported].
- */
 @Suppress("DEPRECATION")
 internal class BungeeNetworkPlayer(
     internal val native: ProxiedPlayer,
@@ -40,13 +34,11 @@ internal class BungeeNetworkPlayer(
 
     override fun hasPermission(permission: String): Boolean = native.hasPermission(permission)
 
-    override fun sendMessage(text: Component) {
+    override fun sendMessage(text: Component) =
         native.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(text)))
-    }
 
-    override fun actionBar(text: Component) {
+    override fun actionBar(text: Component) =
         native.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(text)))
-    }
 
     override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
     override fun applyEffect(effect: PlayerEffect): Delivery = Delivery.Unsupported

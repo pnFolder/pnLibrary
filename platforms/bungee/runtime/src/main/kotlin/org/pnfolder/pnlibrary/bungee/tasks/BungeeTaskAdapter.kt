@@ -6,16 +6,11 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter
 import java.util.concurrent.TimeUnit
 
-/**
- * Adapts portable task requests to BungeeCord's asynchronous scheduler.
- *
- * BungeeCord has no main-thread or entity-region scheduler. Every execution kind uses the
- * same native scheduler; completed one-shot tasks are released from lifecycle tracking.
- */
-internal class BungeeTaskAdapter internal constructor(
+// BungeeCord runs every execution kind on the same asynchronous scheduler.
+internal class BungeeTaskAdapter(
     private val nativeSchedule: (PlatformTaskRequest) -> PlatformTaskHandle,
 ) : TrackingPlatformTaskAdapter() {
-    /** Schedules on the asynchronous scheduler of [plugin]'s proxy. */
+
     constructor(plugin: Plugin) : this({ request ->
         val scheduler = plugin.proxy.scheduler
         val interval = request.interval

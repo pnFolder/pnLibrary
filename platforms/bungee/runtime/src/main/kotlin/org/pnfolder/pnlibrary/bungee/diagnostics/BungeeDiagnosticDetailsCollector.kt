@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bungee
+package org.pnfolder.pnlibrary.bungee.diagnostics
 
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector
@@ -6,11 +6,10 @@ import org.pnfolder.pnlibrary.spi.platform.DiagnosticSections
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.ProxyBackend
 
-/** Collects the small set of BungeeCord facts that is useful during incident diagnosis. */
 internal class BungeeDiagnosticDetailsCollector(
     private val plugin: Plugin,
 ) {
-    /** Adds proxy plugins, backend servers and player pings to [snapshot]; sensitive values only when [includeSensitive]. */
+
     fun collect(snapshot: PlatformSnapshot, includeSensitive: Boolean): Map<String, Any?> =
         DiagnosticDetailsCollector { snapshot }.collect(includeSensitive) { details ->
             val proxy = plugin.proxy

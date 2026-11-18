@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bungee
+package org.pnfolder.pnlibrary.bungee.metrics
 
 import dev.faststats.bungee.BungeeContext
 import net.md_5.bungee.api.plugin.Plugin
@@ -10,8 +10,7 @@ import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings
 import org.pnfolder.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
 import java.io.File
 
-/** Opens independently managed bStats and FastStats sessions for BungeeCord plugins. */
-internal class BungeeMetricsFactory(private val pnLogger: () -> PnLogger) : NativePluginMetricsFactory<Plugin>(
+internal class BungeeMetricsFactory(pnLogger: () -> PnLogger) : NativePluginMetricsFactory<Plugin>(
     ownerType = Plugin::class.java,
     platformName = "BungeeCord",
     bStats = { plugin, projectId ->
@@ -23,7 +22,6 @@ internal class BungeeMetricsFactory(private val pnLogger: () -> PnLogger) : Nati
     },
 )
 
-/** Opens the bStats sender for [plugin], which is reported under the bStats [serviceId]; the sending itself is shared by every platform. */
 private fun openBStats(plugin: Plugin, serviceId: Int, pnLogger: () -> PnLogger): BStatsClient = BStatsClient(
     platform = "bungeecord",
     serviceId = serviceId,
@@ -37,5 +35,5 @@ private fun openBStats(plugin: Plugin, serviceId: Int, pnLogger: () -> PnLogger)
         data.appendField("bungeecordName", plugin.proxy.name)
     },
     warn = { message, error -> pnLogger().warning(message, error) },
-    info = pnLogger()::info,
+    info = { message -> pnLogger().info(message) },
 )

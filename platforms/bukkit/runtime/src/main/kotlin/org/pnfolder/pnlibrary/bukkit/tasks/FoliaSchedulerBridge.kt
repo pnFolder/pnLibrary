@@ -9,15 +9,9 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.spi.tasks.RetirableCallback
 import java.time.Duration
 
-/**
- * Puts a portable task on the Folia scheduler that matches its execution: asynchronous, a player's region or global.
- *
- * Region schedulers count from one tick: they refuse a delay or period of zero for delayed and repeating work, so
- * both are raised to one tick there.
- */
+// Region schedulers refuse delay/period of zero for repeating work — both are raised to one tick (see ticks()).
 internal class FoliaSchedulerBridge(private val plugin: Plugin) {
 
-    /** Schedules [request] on the matching Folia scheduler; the returned handle goes to [cancel]. */
     fun schedule(request: PlatformTaskRequest): Any {
         val native = when (request.executionKind) {
             TaskExecution.Kind.ASYNC -> scheduleAsync(request)
@@ -27,7 +21,6 @@ internal class FoliaSchedulerBridge(private val plugin: Plugin) {
         return checkNotNull(native) { "Folia did not schedule the task: the player has already left" }
     }
 
-    /** Withdraws a task returned by [schedule]. */
     fun cancel(task: Any) = Folia.cancel(task)
 
     private fun scheduleAsync(request: PlatformTaskRequest): Any? {

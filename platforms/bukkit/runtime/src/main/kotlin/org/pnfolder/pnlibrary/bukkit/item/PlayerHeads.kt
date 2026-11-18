@@ -7,7 +7,6 @@ import java.net.URI
 import java.net.URL
 import java.util.Base64
 
-/** Creates player heads from a Minecraft texture hash, URL, or Base64 texture payload. */
 internal object PlayerHeads {
     private const val TEXTURES = "https://textures.minecraft.net/texture/"
     private const val FINISHED_CAPACITY = 128
@@ -16,10 +15,9 @@ internal object PlayerHeads {
     private val modern by lazy { ModernProfileSetter.resolve(Reflection.Runtime) }
     private val legacy by lazy { LegacyProfileSetter.resolve(Reflection.Runtime) }
 
-    /** Finished heads by texture URL; callers get clones so nobody changes a shared stack. */
+    // Callers get clones so nobody mutates a shared cached stack.
     private val finished = CopyingCache<ItemStack>(FINISHED_CAPACITY) { it.clone() }
 
-    /** Invalid textures produce an untextured head. [displayName] accepts legacy color codes. */
     @JvmStatic
     fun create(texture: String?, displayName: String?): ItemStack {
         val head = skinUrl(normalizeTexture(texture))?.let(::textured) ?: playerHead()
@@ -30,7 +28,6 @@ internal object PlayerHeads {
         return head
     }
 
-    /** A head wearing the skin published under texture [hash], or `null` when this server cannot apply skins. */
     fun textured(hash: String): ItemStack? = textured(URI(TEXTURES + hash).toURL())
 
     private fun textured(url: URL): ItemStack? {
@@ -48,7 +45,6 @@ internal object PlayerHeads {
     private fun applied(meta: SkullMeta, url: URL): Boolean =
         modern?.let { tryProfile { it.apply(meta, url) } } == true || legacy?.let { tryProfile { it.apply(meta, url) } } == true
 
-    /** Removes an optional Base64 prefix and returns null for unsupported texture values. */
     @JvmStatic
     fun normalizeTexture(input: String?): String? {
         var value = input?.trim()?.takeIf { it.isNotEmpty() } ?: return null
@@ -68,7 +64,7 @@ internal object PlayerHeads {
         return ItemStack(Material.matchMaterial("SKULL_ITEM") ?: Material.STONE, 1, 3.toShort())
     }
 
-    /** Each server version supports one of the two profile APIs; a failure means "try the other one". */
+    // A failure means "try the other one" — each server version supports exactly one of the two profile APIs.
     private inline fun tryProfile(action: () -> Unit): Boolean = try {
         action()
         true

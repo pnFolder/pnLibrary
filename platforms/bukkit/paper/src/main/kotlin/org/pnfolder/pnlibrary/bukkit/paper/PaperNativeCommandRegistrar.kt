@@ -18,23 +18,16 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Registers portable commands through Paper's Brigadier command API, falling back to [fallback], the classic
- * command map, for anything the API cannot take.
- *
- * Paper builds its command tree once, when the server has loaded its plugins, and again on a datapack reload;
- * plugins may add commands only while that happens. So commands registered before then are collected and
- * registered natively in that event, and every later registration, or a command Paper refuses, goes through
- * [fallback] and still works, only without client-side validation.
- *
- * Registering a handler for this event makes Paper turn off Bukkit's `/reload`; that is Paper's rule, not ours.
- */
+// Paper builds its command tree on plugin load and on datapack reload — commands can only be added then.
+// Everything registered before that event is queued here and submitted in bulk; anything later goes through
+// [fallback] (classic command map) and still works, only without client-side validation.
+// Registering a lifecycle handler also disables Bukkit's /reload — that is Paper's rule, not ours.
+@Suppress("UnstableApiUsage")
 class PaperNativeCommandRegistrar(
     private val plugin: Plugin,
     private val fallback: NativeCommandRegistrar<CommandSender>,
     private val pnLogger: () -> PnLogger,
 ) : NativeCommandRegistrar<CommandSender> {
-    /** One registered command with the handlers needed to publish it either natively or through the fallback. */
     private class Entry(
         val owner: Plugin?,
         val command: CommandDefinition,
@@ -54,7 +47,7 @@ class PaperNativeCommandRegistrar(
     init {
         plugin.lifecycleManager.registerEventHandler(
             LifecycleEvents.COMMANDS,
-            LifecycleEventHandler<ReloadableRegistrarEvent<Commands>> { event ->
+            LifecycleEventHandler { event: ReloadableRegistrarEvent<Commands> ->
                 committed = true
                 val registrar = event.registrar()
                 entries.filter { it.active }.forEach { registerNative(registrar, it) }
@@ -62,7 +55,6 @@ class PaperNativeCommandRegistrar(
         )
     }
 
-    /** Registers [command] natively through Paper's Brigadier API on behalf of [owner]. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
@@ -94,7 +86,7 @@ class PaperNativeCommandRegistrar(
     private fun invocationOf(entry: Entry) = object : NativeInvocation<CommandSourceStack> {
         override fun execute(source: CommandSourceStack, input: String) {
             if (!entry.active) {
-                source.sender.sendMessage("Команда сейчас недоступна.")
+                source.sender.sendMessage("This command is currently unavailable.")
                 return
             }
             val line = CommandLine.of(input, keepTrailing = false)

@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bungee
+package org.pnfolder.pnlibrary.bungee.network
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component

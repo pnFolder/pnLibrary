@@ -27,19 +27,12 @@ import java.lang.reflect.Constructor
 import java.util.concurrent.CompletionStage
 import org.bukkit.command.CommandSender as NativeCommandSender
 
-/**
- * Registers portable commands and owns their native Bukkit registrations.
- *
- * Native tab completion is synchronous, so suggestion requests use a bounded one-second wait.
- * Commands are released in reverse registration order when this adapter closes.
- */
 internal class BukkitCommandAdapter internal constructor(
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
     private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    /** Creates the native registrar, preferring Paper's command API where the server has it, and the audience bridge. */
     constructor(audiences: BukkitAudienceService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
         nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar(), pnLogger, logBuffer),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
@@ -59,14 +52,13 @@ internal class BukkitCommandAdapter internal constructor(
 
 }
 
-/** Internal wrapper; native access never crosses the public command API. */
 internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
     private val audience: AudienceSender,
     private val transportAvailable: () -> Boolean = { true },
 ) : CommandSender, AudienceSender by audience {
 
-    /** Buttons work for players only while the Adventure transport is in use; the fallback sends plain text. */
+    // Buttons need the Adventure transport; without it the sender receives plain text and can't click anything.
     override val supportsInteraction: Boolean
         get() = !isConsole && transportAvailable()
 
@@ -79,7 +71,6 @@ internal class BukkitCommandSender(
     override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
-/** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
     override fun register(
         owner: Any,

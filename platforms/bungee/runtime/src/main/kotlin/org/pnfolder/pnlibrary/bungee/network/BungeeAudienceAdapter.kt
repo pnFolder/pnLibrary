@@ -1,4 +1,4 @@
-package org.pnfolder.pnlibrary.bungee
+package org.pnfolder.pnlibrary.bungee.network
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -9,12 +9,10 @@ import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
+import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 
-/** Converts native proxy recipients to portable audiences using legacy chat serialization. */
 @Suppress("DEPRECATION")
 internal class BungeeAudienceAdapter(
     private val plugin: Plugin,

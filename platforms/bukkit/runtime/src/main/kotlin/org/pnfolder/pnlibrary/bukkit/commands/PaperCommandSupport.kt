@@ -7,21 +7,14 @@ import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 
-/**
- * Chooses how commands reach the server. On a Paper server that has the Brigadier command API and runs Java 21,
- * the Paper module registers them natively, so the client validates arguments and shows hints. Everywhere else,
- * and whenever anything about that fails, the classic registrar is used, so commands always work.
- *
- * Start the server with `-Dpnlibrary.native-commands=false` to skip the native path. Registering natively makes
- * Paper turn off Bukkit's `/reload`, which some servers may prefer to keep.
- */
+// -Dpnlibrary.native-commands=false skips the Paper path.
+// Registering natively makes Paper disable Bukkit's /reload — servers that rely on it should use this flag.
 internal object PaperCommandSupport {
     private const val SWITCH = "pnlibrary.native-commands"
     private const val REGISTRAR = "org.pnfolder.pnlibrary.bukkit.paper.PaperNativeCommandRegistrar"
     private const val PAPER_COMMANDS = "io.papermc.paper.command.brigadier.Commands"
     private const val PAPER_LIFECYCLE = "io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents"
 
-    /** Returns the registrar to use: the Paper one when it can run here, otherwise [classic]. */
     fun choose(plugin: Plugin, classic: NativeCommandRegistrar<CommandSender>, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer): NativeCommandRegistrar<CommandSender> {
         if (System.getProperty(SWITCH)?.equals("false", ignoreCase = true) == true) return classic
         if (!present(PAPER_COMMANDS, plugin) || !present(PAPER_LIFECYCLE, plugin)) return classic
