@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.platform
 
-import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory

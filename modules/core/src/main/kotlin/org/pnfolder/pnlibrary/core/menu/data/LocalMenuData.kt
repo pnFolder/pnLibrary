@@ -10,12 +10,12 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
@@ -100,6 +100,9 @@ class LocalMenuData(
     override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<Boolean> =
         library.updates.setChannel(product, channel, actor).thenApply { true }
 
+    override fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<Boolean> =
+        library.updates.setJavaBuild(product, java, actor).thenApply { true }
+
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
         library.updates.setHeld(product, duration, actor).thenApply { true }
 
@@ -117,6 +120,10 @@ class LocalMenuData(
     override fun journalDetail(id: String): JournalDetail? = library.journalDetail(id)
 
     override fun tasks(): List<TaskSnapshot> = library.taskSnapshots()
+
+    override fun modules(): List<ModuleInfo> = ModuleInfo.all(library)
+
+    override fun moduleAction(key: String, action: String): ModuleInfo = ModuleInfo.apply(library, key, action)
 
     override fun runTask(id: String): TaskControl = library.runTaskNow(id)
 

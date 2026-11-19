@@ -4,6 +4,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.*
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
+import org.pnfolder.pnlibrary.api.tasks.spec.schedule
+import org.pnfolder.pnlibrary.api.tasks.spec.spawn
 import org.pnfolder.pnlibrary.core.tasks.ScheduledTasks
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.tasks.*
@@ -82,6 +90,179 @@ class ScheduledTasksTest {
         adapter.fire(0)
         assertEquals(TaskStatus.CANCELLED, handle.status)
         assertTrue(adapter.handles[0].cancelled.get())
+    }
+
+    @Test
+    fun `the context reports the run, the plan, the settings and cancels after a limit`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val seen = mutableListOf<String>()
+        val handle = scope.schedule(TaskSpec.builder().name("ctx").key("k").tag("t").interval(Duration.ofSeconds(1))
+            .action { c ->
+                seen += "${c.runNumber}:${c.isFirstRun}:${c.every(2)}:${c.key}:${c.tags}:${c.isRepeating}:${c.previousStartedAt != null}"
+                check(!c.lag.isNegative)
+                check(c.snapshot().runCount == c.runNumber)
+                c.cancelAfter(3)
+            }.build())
+
+        repeat(3) { adapter.fire(0) }
+
+        assertEquals(listOf("1:true:false:k:[t]:true:false", "2:false:true:k:[t]:true:true", "3:false:false:k:[t]:true:true"), seen)
+        assertEquals(TaskStatus.CANCELLED, handle.status)
+    }
+
+    @Test
+    fun `a task starts a follow-up that stays in the same scope`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val ran = mutableListOf<String>()
+        scope.schedule(TaskSpec.builder().name("parent").action { c ->
+            c.later(Duration.ofSeconds(5)) { ran += "later" }
+        }.build())
+
+        adapter.fire(0)
+
+        assertEquals(2, adapter.requests.size)
+        assertEquals(Duration.ofSeconds(5), adapter.requests[1].delay)
+        val child = scope.query(TaskQuery.builder().tag("subtask").build()).single()
+        assertEquals("parent / later", child.name)
+        adapter.fire(1)
+        assertEquals(listOf("later"), ran)
+    }
+
+    @Test
+    fun `each run of a repeating task is planned one interval after the previous start`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val planned = mutableListOf<java.time.Instant>()
+        scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(10)).action { planned += it.scheduledAt }.build())
+
+        repeat(2) { adapter.fire(0) }
+
+        assertTrue(planned[1].isAfter(planned[0].plusSeconds(9)))
+    }
+
+    @Test
+    fun `a run that starts later than max lag is skipped`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val ran = AtomicBoolean()
+        val handle = scope.schedule(TaskSpec.builder().maxLag(Duration.ofMillis(1)).interval(Duration.ofSeconds(1))
+            .action { ran.set(true) }.build())
+
+        Thread.sleep(30)
+        adapter.fire(0)
+
+        assertFalse(ran.get())
+        assertEquals(1, handle.snapshot().skippedCount)
+        assertEquals(TaskStatus.SCHEDULED, handle.status)
+    }
+
+    @Test
+    fun `a repeating task survives tolerated failures in a row and then fails`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val handle = scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(1)).tolerateFailures(2)
+            .action { error("boom") }.build())
+
+        adapter.fire(0)
+        adapter.fire(0)
+        assertEquals(TaskStatus.SCHEDULED, handle.status)
+        adapter.fire(0)
+
+        assertEquals(TaskStatus.FAILED, handle.status)
+        assertEquals(3, handle.snapshot().failedCount)
+    }
+
+    @Test
+    fun `a success resets the failure count`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        var fail = true
+        val handle = scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(1)).tolerateFailures(1)
+            .action { if (fail) error("boom") }.build())
+
+        adapter.fire(0)
+        fail = false
+        adapter.fire(0)
+        fail = true
+        adapter.fire(0)
+
+        assertEquals(TaskStatus.SCHEDULED, handle.status)
+    }
+
+    @Test
+    fun `a lag handler hears about a late run and can skip it`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val heard = mutableListOf<org.pnfolder.pnlibrary.api.tasks.info.TaskLag>()
+        val ran = AtomicBoolean()
+        val handle = scope.schedule(TaskSpec.builder().interval(Duration.ofMillis(10))
+            .onLag(Duration.ofMillis(5)) { lag -> heard += lag; org.pnfolder.pnlibrary.api.tasks.run.LagResponse.SKIP }
+            .action { ran.set(true) }.build())
+
+        Thread.sleep(50)
+        adapter.fire(0)
+
+        assertFalse(ran.get())
+        assertEquals(1, heard.size)
+        assertTrue(heard[0].missedRuns >= 3)
+        assertTrue(handle.snapshot().worstLag!! >= Duration.ofMillis(40))
+        assertEquals(1, handle.snapshot().skippedCount)
+    }
+
+    @Test
+    fun `a lag handler can cancel the task for good`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val ran = AtomicBoolean()
+        val handle = scope.schedule(TaskSpec.builder().interval(Duration.ofMillis(10))
+            .onLag(Duration.ofMillis(5)) { org.pnfolder.pnlibrary.api.tasks.run.LagResponse.CANCEL }
+            .action { ran.set(true) }.build())
+
+        Thread.sleep(50)
+        adapter.fire(0)
+
+        assertFalse(ran.get())
+        assertEquals(TaskStatus.CANCELLED, handle.status)
+        assertNull(handle.snapshot().nextRunAt)
+    }
+
+    @Test
+    fun `a lag handler that throws does not stop the run`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val ran = AtomicBoolean()
+        scope.schedule(TaskSpec.builder().interval(Duration.ofMillis(10))
+            .onLag(Duration.ofMillis(1)) { error("handler broke") }
+            .action { ran.set(true) }.build())
+
+        Thread.sleep(20)
+        adapter.fire(0)
+
+        assertTrue(ran.get())
+    }
+
+    @Test
+    fun `a subtask knows its parent and a linked one is cancelled with it`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val parent = scope.schedule(TaskSpec.builder().name("parent").interval(Duration.ofSeconds(1)).action { c ->
+            if (c.runNumber == 1L) {
+                c.repeat(3, Duration.ofSeconds(1)) { }
+                c.later(Duration.ofSeconds(1)) { }
+            }
+        }.build())
+
+        adapter.fire(0)
+
+        val children = scope.query(TaskQuery.builder().tag("subtask").build())
+        assertEquals(2, children.size)
+        assertTrue(children.all { it.parentId == parent.id })
+        parent.cancel()
+        val states = scope.query(TaskQuery.builder().tag("subtask").build()).associate { it.name to it.status }
+        assertEquals(TaskStatus.CANCELLED, states["parent / repeat"])
+        assertEquals(TaskStatus.SCHEDULED, states["parent / later"])
     }
 
     @Test
@@ -281,6 +462,75 @@ class ScheduledTasksTest {
 
         assertEquals(1, runs)
         assertEquals(TaskStatus.FAILED, task.status)
+    }
+
+    private class RewardTask(private val log: MutableList<String>) : org.pnfolder.pnlibrary.api.tasks.spec.ScheduledTask() {
+        override val name = "Награда"
+        override val delay: Duration = Duration.ofMinutes(1)
+        override val cancelWithParent = true
+        override fun run(context: org.pnfolder.pnlibrary.api.tasks.run.TaskContext) { log += "reward" }
+    }
+
+    /** The examples of `docs/tasks.md`: if they stop compiling or working, the documentation is wrong. */
+    @Test
+    fun `a task built with the DSL starts subtasks of every kind`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val log = mutableListOf<String>()
+        scope.schedule {
+            name = "Ивент"
+            key = "event"
+            conflictPolicy = TaskConflictPolicy.REPLACE
+            tag("event")
+            execution = org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution.global()
+            interval = Duration.ofSeconds(1)
+            maxLag = Duration.ofSeconds(10)
+            tolerateFailures = 3
+            condition { true }
+            cancelWhen { false }
+            whenLate(Duration.ofSeconds(1)) { log += "late" }
+            onLag(Duration.ofSeconds(2)) { org.pnfolder.pnlibrary.api.tasks.run.LagResponse.RUN }
+            run { ctx ->
+                if (ctx.isFirstRun) {
+                    ctx.spawn {
+                        name = "Таймер"
+                        interval = Duration.ofSeconds(1)
+                        cancelWithParent = true
+                        run { log += "tick" }
+                    }
+                    ctx.spawn(RewardTask(log))
+                    ctx.later(Duration.ofSeconds(5)) { log += "later" }
+                    ctx.repeat(2, Duration.ofSeconds(1)) { log += "repeat" }
+                }
+            }
+        }
+
+        adapter.fire(0)
+
+        val all = scope.query(TaskQuery.all())
+        val parent = all.single { it.name == "Ивент" }
+        val children = all.filter { it.parentId == parent.id }
+        assertEquals(setOf("Таймер", "Награда", "Ивент / later", "Ивент / repeat"), children.map { it.name }.toSet())
+    }
+
+    @Test
+    fun `a ready spec can be started as a subtask many times`() {
+        val adapter = RecordingAdapter()
+        val scope = ScheduledTasks(adapter).scope(Any())
+        val timer = TaskSpec.builder().name("Таймер").cancelWithParent(true).action { }.build()
+        scope.schedule(
+            TaskSpec.builder()
+                .name("Ивент")
+                .whenLate(Duration.ofSeconds(1)) { }
+                .onLag(Duration.ofSeconds(2)) { org.pnfolder.pnlibrary.api.tasks.run.LagResponse.SKIP }
+                .action { ctx -> ctx.spawn(timer); ctx.spawn(timer) }
+                .build(),
+        )
+
+        adapter.fire(0)
+
+        assertEquals(3, adapter.requests.size)
+        assertEquals(2, scope.query(TaskQuery.all()).count { it.parentId != null })
     }
 
     private fun spec(name: String) = TaskSpec.builder().name(name).action { }.build()

@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.stats
 
 import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
-import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import java.time.Duration
 

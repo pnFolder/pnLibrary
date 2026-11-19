@@ -11,11 +11,11 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.ItemQuery
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
-import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.player.ItemQuery
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import org.pnfolder.pnlibrary.bukkit.currency.configured
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import org.pnfolder.pnlibrary.common.lang.Failures

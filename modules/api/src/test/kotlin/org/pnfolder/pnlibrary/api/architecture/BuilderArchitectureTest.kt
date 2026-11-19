@@ -2,19 +2,19 @@ package org.pnfolder.pnlibrary.api.architecture
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.config.ConfigOptions
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
-import org.pnfolder.pnlibrary.api.tasks.TaskQuery
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import java.lang.reflect.Modifier
 
 class BuilderArchitectureTest {

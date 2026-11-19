@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.dependencies.DependencyBuilder
 import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
-import org.pnfolder.pnlibrary.api.dependencies.ManagedProductDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 
 class DependencyBuilderTest {

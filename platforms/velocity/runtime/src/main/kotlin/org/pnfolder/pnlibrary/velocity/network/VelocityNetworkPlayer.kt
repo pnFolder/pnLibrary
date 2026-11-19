@@ -4,11 +4,11 @@ import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
-import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
-import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
-import org.pnfolder.pnlibrary.api.proxy.NetworkServer
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer
+import org.pnfolder.pnlibrary.api.network.NetworkServer
 import java.net.InetSocketAddress
 import java.util.UUID
 

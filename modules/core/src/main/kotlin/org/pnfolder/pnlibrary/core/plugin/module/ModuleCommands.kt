@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
-import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
-import org.pnfolder.pnlibrary.core.commands.CommandService
+import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope
+import org.pnfolder.pnlibrary.core.commands.engine.CommandService
 
 /** The commands one module registered, so closing the module takes them all back. */
 internal class ModuleCommands(

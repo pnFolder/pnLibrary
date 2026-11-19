@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 

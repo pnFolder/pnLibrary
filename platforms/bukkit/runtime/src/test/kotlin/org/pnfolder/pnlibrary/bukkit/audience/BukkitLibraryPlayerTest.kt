@@ -19,8 +19,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import java.time.Duration
 import java.util.UUID
 import java.util.logging.Logger

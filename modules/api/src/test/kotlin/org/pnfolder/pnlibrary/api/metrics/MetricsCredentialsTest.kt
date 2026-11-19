@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.metrics
 
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows

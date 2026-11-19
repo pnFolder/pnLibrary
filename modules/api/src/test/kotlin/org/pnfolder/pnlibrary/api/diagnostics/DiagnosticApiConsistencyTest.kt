@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.diagnostics
 
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test

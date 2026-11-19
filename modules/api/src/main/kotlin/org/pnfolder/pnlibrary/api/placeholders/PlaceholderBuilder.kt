@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.AsyncPlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import java.util.function.Consumer
 

@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderFormatter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderProvider
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity

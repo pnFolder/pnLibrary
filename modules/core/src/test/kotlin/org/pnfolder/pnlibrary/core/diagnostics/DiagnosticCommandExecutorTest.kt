@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandEvent
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
+import org.pnfolder.pnlibrary.core.diagnostics.command.DiagnosticCommandEvent
+import org.pnfolder.pnlibrary.core.diagnostics.command.DiagnosticCommandExecutor
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.toRuntimeContext
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter

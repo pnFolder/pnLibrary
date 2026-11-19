@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.exceptions.rootCause
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
@@ -105,6 +105,12 @@ class UpdateCatalogCommands(
                     argument("value", ArgumentType.string()) {
                         suggests { settings.available().map { it.name.lowercase(Locale.ROOT) } + UpdateCatalogSettingsCommands.DEFAULT_CHANNEL }
                         executes(settings::setChannel)
+                    }
+                }
+                literal("java") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { listOf("8", "11", "17", "21", UpdateCatalogSettingsCommands.DEFAULT_CHANNEL) }
+                        executes(settings::setJava)
                     }
                 }
                 literal("auto") {

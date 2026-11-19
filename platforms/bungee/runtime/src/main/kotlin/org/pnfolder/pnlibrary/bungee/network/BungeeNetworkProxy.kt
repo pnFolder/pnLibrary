@@ -3,9 +3,9 @@ package org.pnfolder.pnlibrary.bungee.network
 import net.md_5.bungee.api.ProxyServer
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
-import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
-import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
-import org.pnfolder.pnlibrary.api.proxy.NetworkServer
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
+import org.pnfolder.pnlibrary.api.network.NetworkServer
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import java.util.UUID
 

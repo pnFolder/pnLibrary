@@ -1,14 +1,15 @@
 package org.pnfolder.pnlibrary.updates.service
 
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateArtifact
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateArtifact
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
 import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
@@ -33,6 +34,8 @@ internal class RegisteredUpdate(
     private val stagePlan: (UpdatePlanSnapshot) -> CompletionStage<UpdatePlanSnapshot>,
     private val onClose: (RegisteredUpdate) -> Unit,
     private val effectiveAutomatic: () -> Boolean = { request.automaticDownload },
+    private val platform: PlatformType? = null,
+    private val chosenJava: () -> Int? = { null },
 ) : UpdateRegistration {
     val product: String = descriptor.id.value
     val version: String = descriptor.version.toString()
@@ -93,6 +96,10 @@ internal class RegisteredUpdate(
         val selection = ReleaseChannelSelector.select(descriptor.id, releases, channel)
         val latest = selection.latestAllowed
         val current = descriptor.version
+        val builds = latest?.artifacts.orEmpty()
+            .filter { (platform == null || it.matchesPlatform(platform)) && it.supports(JavaRuntime.feature) }
+            .map { it.minimumJava }.distinct().sorted()
+        val recommended = descriptor.minimumJava.takeIf { it in builds } ?: builds.maxOrNull()
         state.set(
             UpdateSnapshot(
                 product = product,
@@ -110,6 +117,9 @@ internal class RegisteredUpdate(
                 availableReleases = selection.all
                     .sortedByDescending(ProductRelease::version)
                     .map { release -> ReleaseSummary(release.version.toString(), release.channel, release.publishedAt, release.changelogUrl) },
+                javaBuilds = builds,
+                javaBuild = chosenJava(),
+                recommendedJava = recommended,
             ),
         )
     }
@@ -121,6 +131,7 @@ internal class RegisteredUpdate(
                 old.product, old.currentVersion, old.latestVersion, selectedChannel(), old.state, old.currentJava,
                 old.requiredJava, effectiveAutomatic(), old.releaseUrl, old.message, old.latestChangelogUrl,
                 old.supportedApi, old.availableReleases,
+                old.javaBuilds, chosenJava(), old.recommendedJava,
             )
         }
     }

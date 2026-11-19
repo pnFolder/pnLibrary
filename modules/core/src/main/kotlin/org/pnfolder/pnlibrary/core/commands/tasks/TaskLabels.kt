@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.commands.tasks
 
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import java.time.Duration
 import java.time.Instant
@@ -30,8 +30,6 @@ object TaskLabels {
     }
 
     /** Whether the task can still run, so it can be cancelled. */
-    fun isActive(status: TaskStatus): Boolean = status == TaskStatus.SCHEDULED || status == TaskStatus.RUNNING
-
     fun activity(task: TaskSnapshot): Instant = listOfNotNull(task.lastStartedAt, task.lastCompletedAt, task.createdAt).max()
 
     fun isToday(task: TaskSnapshot): Boolean =
@@ -39,8 +37,37 @@ object TaskLabels {
 
     fun title(task: TaskSnapshot): String = task.name ?: task.key ?: task.id.value.take(SHORT_ID)
 
+    /** Name of the task that started [task], or `null` for a task scheduled directly. */
+    fun parent(task: TaskSnapshot, all: Collection<TaskSnapshot>): String? =
+        task.parentId?.let { id -> all.firstOrNull { it.id == id }?.let(::title) ?: "уже завершена" }
+
+    /** Tasks with no parent in [all], the top level of the list. */
+    fun roots(all: List<TaskSnapshot>): List<TaskSnapshot> {
+        val ids = all.mapTo(HashSet()) { it.id }
+        return all.filter { it.parentId == null || it.parentId !in ids }
+    }
+
+    /** Tasks started by [task]. */
+    fun childrenOf(task: TaskSnapshot, all: Collection<TaskSnapshot>): List<TaskSnapshot> = all.filter { it.parentId == task.id }
+
+    /** `3, активных 1` for the subtasks of [task]. */
+    fun childrenLine(task: TaskSnapshot, all: Collection<TaskSnapshot>): String {
+        val children = childrenOf(task, all)
+        return "${children.size}, активных ${children.count { it.isActive }}"
+    }
+
+    /** How many tasks were started by [task]. */
+    fun children(task: TaskSnapshot, all: Collection<TaskSnapshot>): Int = all.count { it.parentId == task.id }
+
+    /** Text about a noticeable delay such as a server freeze, or `null` when the task ran on time. */
+    fun lag(task: TaskSnapshot): String? {
+        val worst = task.worstLag?.takeIf { it >= NOTABLE_LAG } ?: return null
+        val last = task.lastLag ?: Duration.ZERO
+        return "последнее ${span(last)}, наибольшее ${span(worst)}"
+    }
+
     fun stopAnswer(task: TaskSnapshot): String = when {
-        !isActive(task.status) -> "нет, задача уже ${label(task.status)}"
+        !task.isActive -> "нет, задача уже ${label(task.status)}"
         !task.cancellable -> "нет, плагин запретил"
         else -> "да"
     }
@@ -92,4 +119,5 @@ object TaskLabels {
     private const val HOURS_PER_DAY = 24L
 
     const val SHORT_ID = 8
+    private val NOTABLE_LAG: Duration = Duration.ofSeconds(1)
 }

@@ -14,10 +14,10 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
-import org.pnfolder.pnlibrary.api.commands.ArgumentSpec
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandNode
-import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentSpec
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 

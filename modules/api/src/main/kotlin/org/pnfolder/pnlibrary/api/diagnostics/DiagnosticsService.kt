@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.diagnostics
 
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 import java.nio.file.Path
 
 /**

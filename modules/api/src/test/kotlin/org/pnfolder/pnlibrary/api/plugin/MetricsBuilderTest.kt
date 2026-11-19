@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.MetricsBuilder
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsBuilder
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.util.function.Supplier

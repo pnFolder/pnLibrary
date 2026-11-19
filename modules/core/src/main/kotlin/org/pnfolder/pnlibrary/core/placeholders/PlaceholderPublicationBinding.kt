@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.ExternalPlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.Locale

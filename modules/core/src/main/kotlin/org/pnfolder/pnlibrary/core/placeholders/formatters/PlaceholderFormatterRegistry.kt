@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders.formatters
 
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderFormatter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import java.util.Locale

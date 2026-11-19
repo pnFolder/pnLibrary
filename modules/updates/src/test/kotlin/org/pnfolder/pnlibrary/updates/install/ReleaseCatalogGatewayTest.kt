@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.updates.CatalogSource
+import org.pnfolder.pnlibrary.api.updates.request.CatalogSource
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalogClient

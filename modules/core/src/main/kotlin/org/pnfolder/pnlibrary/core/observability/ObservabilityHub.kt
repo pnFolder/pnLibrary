@@ -1,16 +1,16 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.observability.ComponentStatus
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
-import org.pnfolder.pnlibrary.api.observability.Observation
-import org.pnfolder.pnlibrary.api.observability.ObservationQuery
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 

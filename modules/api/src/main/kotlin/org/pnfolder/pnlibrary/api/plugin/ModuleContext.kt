@@ -1,11 +1,16 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
+import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.actions.ActionService
-import org.pnfolder.pnlibrary.api.commands.CommandBuilder
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
+import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
@@ -14,7 +19,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.events.bus.EventScope
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.services.ServiceManager
@@ -47,7 +52,7 @@ interface ModuleContext : AutoCloseable {
 
     /** Builds a command whose lifecycle belongs to this module. */
     fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
-        registerCommand(org.pnfolder.pnlibrary.api.commands.command(name, configure))
+        registerCommand(command(name, configure))
 
     /** Registry-wide stable identity used by shared services and diagnostics. */
     val key: PluginId
@@ -103,6 +108,9 @@ interface ModuleContext : AutoCloseable {
     val updates: UpdateRegistration?
     /** Auxiliary download registration, or `null` when none was configured. */
     val downloads: DownloadRegistration?
+    /** Switches this module on and off; the same operations as `/pn modules` and the menu. */
+    val control: ModuleControl
+        get() = throw UnsupportedOperationException("Module control is not available in this runtime")
     /** Whether this module has released all owned resources. */
     val isClosed: Boolean
     /** Releases every capability and registration owned by this module. */

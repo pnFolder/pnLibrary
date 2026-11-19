@@ -2,14 +2,14 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.exceptions.rootCause
@@ -58,6 +58,19 @@ internal class UpdateCatalogSettingsCommands(
         }
         change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
             actor -> library.updates.setChannel(product, channel, actor) }
+    }
+
+    /** `java` command: chooses the Java build of a release that has several, or `default` to let the library pick one. */
+    fun setJava(context: CommandContext) {
+        val value = context.get<String>("value")
+        val java = value.toIntOrNull()
+        if (java == null && !value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
+            context.sender.send(catalogError("Укажите версию Java, например 17, или default."))
+            return
+        }
+        change(context, "Сборка Java", { it.javaBuild?.toString() ?: "подбирается" }, java?.toString() ?: "подбирается") { product, actor ->
+            library.updates.setJavaBuild(product, java, actor)
+        }
     }
 
     /** `automatic` command: toggles automatic downloads. */

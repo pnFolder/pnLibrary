@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor

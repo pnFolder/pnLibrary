@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.updates.backup
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.frozen
 import java.time.Instant
 import java.util.UUID
@@ -35,14 +34,3 @@ class UpdateBackup(
     /** Immutable description of the complete component set restored together. */
     val components: List<UpdateBackupComponent> = components.frozen()
 }
-
-/** One saved file of a backup: what it holds, what it is called and how large it is. */
-data class UpdateBackupItem(val product: ProductId, val kind: BackupKind, val name: String, val bytes: Long)
-
-/**
- * Version information for a retained component backup.
- * @property product managed component identity
- * @property updatedVersion version originally prepared by this transaction, if known
- * @property backupVersion version stored before that update, if known
- */
-data class UpdateBackupComponent(val product: ProductId, val updatedVersion: String?, val backupVersion: String?)

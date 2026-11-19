@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.spi.platform
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
 
 /**
  * Shared lifecycle of the proxy adapters: startup gate, native log observation, replies and shutdown.

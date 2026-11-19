@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.metrics
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
-import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.error.TelemetryError
 import java.util.UUID
 
 class ErrorPipelineRedactionTest {

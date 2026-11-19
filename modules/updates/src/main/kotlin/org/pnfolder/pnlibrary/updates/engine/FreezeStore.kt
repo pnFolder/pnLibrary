@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant

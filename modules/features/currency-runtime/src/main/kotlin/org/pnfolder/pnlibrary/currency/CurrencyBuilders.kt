@@ -13,8 +13,8 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId

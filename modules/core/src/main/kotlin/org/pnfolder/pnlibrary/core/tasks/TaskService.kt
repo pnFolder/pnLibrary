@@ -2,10 +2,10 @@ package org.pnfolder.pnlibrary.core.tasks
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
-import org.pnfolder.pnlibrary.api.tasks.TaskId
-import org.pnfolder.pnlibrary.api.tasks.TaskQuery
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 
 // Owner identity (not equals) is used for scope lookup — distinct but equal objects get distinct scopes.
 internal interface TaskService : AutoCloseable {

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu
 
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport
@@ -32,6 +32,7 @@ internal interface MenuRoutes {
     fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row>
     fun labelled(label: String, text: String): List<Pair<String, String>>
     fun members(map: NetworkReport): List<NetworkServer>
+    fun modules(player: MenuViewer, plugin: String?, page: Int, back: (MenuViewer) -> Unit)
     fun network(player: MenuViewer, page: Int)
     fun ownerLine(name: String): String
     fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>>

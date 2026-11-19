@@ -3,12 +3,12 @@ package org.pnfolder.pnlibrary.core.placeholders
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.ExternalPlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterCapabilities
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterCapabilities
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 class PlaceholderPublicationBindingTest {

@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.placeholders.formatters
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 class PlaceholderFormatterRegistryTest {

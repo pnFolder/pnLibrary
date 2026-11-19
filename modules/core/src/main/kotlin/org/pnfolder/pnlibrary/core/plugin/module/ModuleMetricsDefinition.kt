@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Consumer
 

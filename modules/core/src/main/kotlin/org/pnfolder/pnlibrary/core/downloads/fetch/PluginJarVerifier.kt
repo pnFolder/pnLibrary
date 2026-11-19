@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch
 
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.yaml.snakeyaml.LoaderOptions

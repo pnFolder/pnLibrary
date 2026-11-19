@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.link.remote
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import java.time.Duration
 import java.time.Instant

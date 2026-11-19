@@ -4,8 +4,8 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import dev.faststats.Metrics
 import dev.faststats.TrackedError
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
-import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.error.TelemetryError
 import org.pnfolder.pnlibrary.core.metrics.validChartId
 import org.pnfolder.pnlibrary.internal.faststats.FastStatsBridge
 import java.util.concurrent.Callable

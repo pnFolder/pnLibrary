@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.events.player.PlayerJoinedEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLeftEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLifecycleEvent

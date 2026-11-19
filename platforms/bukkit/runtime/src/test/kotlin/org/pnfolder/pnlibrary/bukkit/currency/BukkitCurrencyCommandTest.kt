@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry

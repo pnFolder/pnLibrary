@@ -1,8 +1,14 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
@@ -108,6 +114,14 @@ interface UpdateService {
      */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
         unsupportedSetting("holding updates")
+
+    /**
+     * Chooses which Java build of [product] is installed when its release has several, for example one for Java 8 and one
+     * for Java 17. [java] must be one of [UpdateSnapshot.javaBuilds]; `null` removes the choice, so the build that matches
+     * the installed product (else the newest the server can run) is used. Does not grant permissions.
+     */
+    fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        unsupportedSetting("Java build changes")
 
     /** When the current hold of [product] ends, or null when its updates are not held. */
     fun heldUntil(product: String): Instant? = null

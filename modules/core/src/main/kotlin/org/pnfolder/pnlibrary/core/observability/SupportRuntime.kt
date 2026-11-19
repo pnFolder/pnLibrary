@@ -1,13 +1,13 @@
 package org.pnfolder.pnlibrary.core.observability
 
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
 import org.pnfolder.pnlibrary.core.observability.history.IncidentHistoryStore
 import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator
-import org.pnfolder.pnlibrary.core.observability.reportSnapshot
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
 import org.pnfolder.pnlibrary.core.upload.UploadLedger
 import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnostics
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity

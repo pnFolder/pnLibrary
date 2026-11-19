@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.api.currency
 
-import org.pnfolder.pnlibrary.api.actions.Action
-import org.pnfolder.pnlibrary.api.actions.ActionContext
-import org.pnfolder.pnlibrary.api.actions.ActionResult
-import org.pnfolder.pnlibrary.api.requirements.Requirement
-import org.pnfolder.pnlibrary.api.requirements.RequirementContext
-import org.pnfolder.pnlibrary.api.requirements.Verdict
+import org.pnfolder.pnlibrary.api.scenario.actions.Action
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
+import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
+import org.pnfolder.pnlibrary.api.scenario.requirements.RequirementContext
+import org.pnfolder.pnlibrary.api.scenario.requirements.Verdict
 import java.math.BigDecimal
 
 private fun RequirementContext.currencyOrNull(reference: String): Currency? =

@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.text
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 
 class ConsoleStyleTest {
     @Test

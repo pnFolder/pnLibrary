@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders.builtin
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueScope
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueScope
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap

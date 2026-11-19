@@ -6,12 +6,12 @@ import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
@@ -85,6 +85,9 @@ class RemoteMenuData(
     override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.SET_CHANNEL, args("product" to product, "channel" to channel?.name), actor.name) }
 
+    override fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<Boolean> =
+        later { ask<Boolean>(MenuCalls.SET_JAVA_BUILD, args("product" to product, "java" to java), actor.name) }
+
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
         later { ask<Boolean>(MenuCalls.SET_HELD, args("product" to product, "millis" to duration?.toMillis()), actor.name) }
 
@@ -103,6 +106,11 @@ class RemoteMenuData(
     override fun journalDetail(id: String): JournalDetail? = ask(MenuCalls.JOURNAL_DETAIL, args("id" to id))
 
     override fun tasks(): List<TaskSnapshot> = ask(MenuCalls.TASKS)
+
+    override fun modules(): List<ModuleInfo> = ask(MenuCalls.MODULES)
+
+    override fun moduleAction(key: String, action: String): ModuleInfo =
+        ask(MenuCalls.MODULE_ACTION, args("key" to key, "action" to action))
 
     override fun stats(): StatsSnapshot = ask(MenuCalls.STATS)
 

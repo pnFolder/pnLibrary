@@ -3,16 +3,16 @@ package org.pnfolder.pnlibrary.updates.service
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -77,6 +77,8 @@ class UpdateServiceImpl(
     private val installer = UpdateInstaller(
         identity, paths, configuration, resources.downloadHttp,
         DatabaseBackups(paths.databases, databaseSources),
+        javaChoice = { product -> overrides.javaBuild(product.value) },
+        installedJava = { product -> registrations.find(product.value)?.descriptor?.minimumJava },
     ) {
         logging.log(this, LogLevel.WARNING, it)
     }
@@ -134,6 +136,8 @@ class UpdateServiceImpl(
             effectiveAutomatic = {
                 overrides.automatic(product.id.value) ?: request.automaticDownload
             },
+            platform = identity.type,
+            chosenJava = { overrides.javaBuild(product.id.value) },
         )
         check(!closed.get()) { "Update service is closed" }
         registrations.add(registration)
@@ -166,6 +170,20 @@ class UpdateServiceImpl(
                     overrides.setChannel(registration.product, channel)
                     "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
                 }
+            }
+        }
+
+    override fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+        changeSetting(product, actor, recheck = false) { registration ->
+            val available = registration.snapshot.javaBuilds
+            require(java == null || available.isEmpty() || java in available) {
+                "Для ${registration.product} нет сборки под Java $java. Есть: ${available.joinToString()}"
+            }
+            val before = overrides.javaBuild(registration.product)
+            if (before == java) null
+            else {
+                overrides.setJavaBuild(registration.product, java)
+                if (java == null) "сборка Java: выбор снят, подбирается подходящая" else "сборка Java: ${before ?: "подбор"} → $java"
             }
         }
 

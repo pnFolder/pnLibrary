@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.menu.data
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.link.remote.DataCall
 import org.pnfolder.pnlibrary.core.link.remote.DataHandler
@@ -102,6 +102,10 @@ class MenuDataServer(
                 val channel = text("channel")?.let { name -> UpdateChannel.values().firstOrNull { it.name == name } }
                 done(data.setChannel(text("product").orEmpty(), channel, actor))
             }
+            MenuCalls.SET_JAVA_BUILD -> {
+                val java = args.get("java")?.takeIf { !it.isJsonNull }?.asInt
+                done(data.setJavaBuild(text("product").orEmpty(), java, actor))
+            }
             MenuCalls.SET_HELD -> {
                 val duration = args.get("millis")?.takeIf { !it.isJsonNull }?.asLong?.let(Duration::ofMillis)
                 done(data.setHeld(text("product").orEmpty(), duration, actor))
@@ -123,6 +127,8 @@ class MenuDataServer(
             MenuCalls.JOURNAL_GROUPS -> give(data.journalGroups(text("level"), args.get("hours")?.asInt ?: 24, args.get("limit")?.asInt ?: 200))
             MenuCalls.JOURNAL_DETAIL -> give(data.journalDetail(text("id").orEmpty()))
             MenuCalls.TASKS -> give(data.tasks())
+            MenuCalls.MODULES -> give(data.modules())
+            MenuCalls.MODULE_ACTION -> give(data.moduleAction(text("key").orEmpty(), text("action").orEmpty()))
             MenuCalls.STATS -> give(data.stats())
             MenuCalls.PLACEHOLDERS -> give(data.placeholders())
             MenuCalls.RUN_TASK -> give(data.runTask(text("id").orEmpty()))
@@ -203,6 +209,7 @@ private val REQUIRED: Map<String, String> = mapOf(
     MenuCalls.EXTRACT_BACKUP to ROLLBACK,
     MenuCalls.RUN_TASK to TASKS,
     MenuCalls.CANCEL_TASK to TASKS,
+    MenuCalls.MODULE_ACTION to MenuPermissions.MODULES,
     MenuCalls.SET_TRACING to BUS,
     MenuCalls.CLEAR_TRACES to BUS,
     MenuCalls.EDIT_GROUP to GROUPS_PERMISSION,

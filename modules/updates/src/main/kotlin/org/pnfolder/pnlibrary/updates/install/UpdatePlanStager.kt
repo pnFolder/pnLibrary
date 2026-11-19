@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.updates.install
 
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
@@ -38,6 +38,10 @@ internal class UpdatePlanStager(
     private val transaction: UpdateTransaction,
     private val maximumArtifactBytes: Long,
     private val requireSha256: Boolean = true,
+    /** The Java build the administrator chose for a product, if any. */
+    private val javaChoice: (ProductId) -> Int? = { null },
+    /** The Java version the installed build of a product was made for, if known. */
+    private val installedJava: (ProductId) -> Int? = { null },
 ) {
     /** Downloads the artifacts of [plan] and hands them to the transaction as one set for the next restart. */
     fun stage(
@@ -99,13 +103,19 @@ internal class UpdatePlanStager(
     /**
      * Keeps the variant that is installed: a universal JAR (the one the bootstrap puts into `plugins`) is replaced by the
      * newer universal one, a platform JAR by the platform one. A fresh install prefers the platform JAR, then the universal.
+     * When a release has builds for several Java versions, the one the administrator chose wins, then the one that
+     * matches the installed product.
      */
     private fun selectArtifact(
         change: ProductChange,
         release: ProductRelease,
         installedFile: String?,
     ): ArtifactDescriptor {
-        val candidates = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
+        val fitting = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
+        // The build the administrator chose, else the one that matches the installed product, else any that fits.
+        val candidates = listOfNotNull(javaChoice(change.product), installedJava(change.product))
+            .firstNotNullOfOrNull { level -> fitting.filter { it.minimumJava == level }.takeIf { it.isNotEmpty() } }
+            ?: fitting
         val universalInstalled = installedFile?.endsWith("-universal.jar", ignoreCase = true) == true
         val preferred = if (universalInstalled) PlatformType.UNIVERSAL else platform
         return candidates.firstOrNull { it.platform == preferred }

@@ -1,0 +1,114 @@
+package org.pnfolder.pnlibrary.api.dependencies.external
+
+import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
+import org.pnfolder.pnlibrary.api.internal.requireHttpsUri
+import org.pnfolder.pnlibrary.api.version.SemanticVersion
+import java.net.URI
+
+/** Required third-party plugin which may be manual-only or have an exact verified artifact. */
+class ExternalPluginDependency private constructor(builder: Builder) : PluginDependency {
+    /** Returns this dependency as its external representation. */
+    override val external: ExternalPluginDependency get() = this
+    /** Third-party plugin name expected from the native platform. */
+    val plugin: String = builder.plugin
+    /** Oldest accepted plugin version. */
+    val minimumVersion: SemanticVersion = builder.minimumVersion
+    /** Accepted semantic-version interval. */
+    override val versions: VersionConstraint = builder.versions()
+    /** Administrator-facing download page, when declared. */
+    val downloadPage: URI? = builder.downloadPage
+    /** Exact downloadable artifact, when automatic installation is possible. */
+    val artifact: ExternalArtifact? = builder.artifact
+    /** Whether staged JAR metadata must match [plugin]. */
+    val verifyPluginId: Boolean = builder.verifyPluginId
+    /** Whether staged JAR metadata must satisfy [versions]. */
+    val verifyVersion: Boolean = builder.verifyVersion
+    /** Whether absence blocks the declaring product. */
+    override val required: Boolean = builder.required
+    /** Administrator/automatic download policy. */
+    override val downloadPolicy: DownloadPolicy = builder.downloadPolicy
+        ?: if (builder.artifact != null) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
+
+    /** Fluent builder for an [ExternalPluginDependency]. */
+    class Builder internal constructor(
+        internal val plugin: String,
+        internal val minimumVersion: SemanticVersion,
+    ) {
+        internal var downloadPage: URI? = null
+        internal var artifact: ExternalArtifact? = null
+        internal var required = true
+        internal var maximumInclusive: SemanticVersion? = null
+        internal var maximumExclusive: SemanticVersion? = null
+        internal var downloadPolicy: DownloadPolicy? = null
+        internal val mirrors = mutableListOf<URI>()
+        internal var verifyPluginId = true
+        internal var verifyVersion = true
+
+        /** Sets the page where the administrator can download the plugin by hand. */
+        fun downloadPage(url: String): Builder = apply {
+            downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
+        }
+
+        /** Sets a direct download with its expected size and SHA-256 checksum. */
+        fun artifact(url: String, size: Long, sha256: String): Builder = apply {
+            artifact = ExternalArtifact(URI.create(url), size, sha256)
+        }
+        /** Sets a direct download URL without an integrity check. */
+        fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+
+        /** Adds another HTTPS address of the same file; without a checksum the copies are compared with each other. */
+        fun mirror(value: String): Builder = apply { mirrors += requireHttpsUri(value, "Mirror must use HTTPS") }
+
+        /** Sets whether the plugin refuses to start without this dependency. */
+        fun required(value: Boolean): Builder = apply { required = value }
+
+        /** Sets the highest accepted plugin version, inclusive. */
+        fun maximumVersion(value: String): Builder = apply { maximumInclusive = SemanticVersion.parse(value) }
+
+        /** Sets the upper version bound, exclusive. */
+        fun maximumVersionExclusive(value: String): Builder = apply { maximumExclusive = SemanticVersion.parse(value) }
+
+        /** Sets how a missing or outdated plugin is downloaded. */
+        fun downloadPolicy(value: DownloadPolicy): Builder = apply { downloadPolicy = value }
+
+        /** Selects automatic or manual download policy. */
+        fun automaticDownload(value: Boolean): Builder = apply {
+            downloadPolicy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
+        }
+        /** Enables or disables staged plugin-ID verification. */
+        fun verifyPluginId(value: Boolean): Builder = apply { verifyPluginId = value }
+
+        /** Enables or disables staged plugin-version verification. */
+        fun verifyVersion(value: Boolean): Builder = apply { verifyVersion = value }
+
+        /** Enables or disables mandatory automatic installation. */
+        fun forceAutomaticDownload(value: Boolean): Builder = apply {
+            if (value) downloadPolicy = DownloadPolicy.FORCED
+            else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = null
+        }
+
+        internal fun versions() = VersionConstraint(minimumVersion, maximumInclusive, maximumExclusive)
+
+        /** Validates and creates the immutable dependency. */
+        fun build(): ExternalPluginDependency {
+            require(downloadPage != null || artifact != null) { "External dependency requires a download page or artifact" }
+            require(artifact != null || downloadPolicy == null || downloadPolicy == DownloadPolicy.MANUAL) {
+                "A download page cannot be installed automatically"
+            }
+            artifact = artifact?.let { ExternalArtifact(it.uri, it.size, it.sha256, mirrors.toList()) }
+            versions()
+            return ExternalPluginDependency(this)
+        }
+    }
+
+    companion object {
+        /** Starts a dependency for [plugin] with the supplied minimum version. */
+        @JvmStatic
+        fun builder(plugin: String, minimumVersion: String): Builder {
+            require(plugin.isNotBlank()) { "External plugin name must not be blank" }
+            return Builder(plugin.trim(), SemanticVersion.parse(minimumVersion))
+        }
+    }
+}

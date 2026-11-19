@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.api.updates.release
 
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.requireProvidedApi
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion

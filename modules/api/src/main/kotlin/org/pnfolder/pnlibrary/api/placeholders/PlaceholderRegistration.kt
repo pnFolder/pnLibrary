@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /**

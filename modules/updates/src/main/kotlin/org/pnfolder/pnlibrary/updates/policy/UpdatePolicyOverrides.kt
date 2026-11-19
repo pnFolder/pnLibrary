@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.policy
 
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore
 
@@ -18,6 +18,7 @@ internal class UpdatePolicyOverrides(
         val channels: Map<String, UpdateChannel>,
         val automatic: Map<String, Boolean>,
         val allPlugins: Boolean? = null,
+        val javaBuilds: Map<String, Int> = emptyMap(),
     )
 
     @Volatile
@@ -25,6 +26,16 @@ internal class UpdatePolicyOverrides(
 
     /** The channel chosen for [product] at runtime, or null when the default decides. */
     fun channel(product: String): UpdateChannel? = state.channels[product]
+
+    /** The Java build chosen for [product], or null when the recommended one is used. */
+    fun javaBuild(product: String): Int? = state.javaBuilds[product]
+
+    /** Remembers the Java build [java] for [product], or forgets the choice when it is null. */
+    @Synchronized
+    fun setJavaBuild(product: String, java: Int?) {
+        state = state.copy(javaBuilds = if (java == null) state.javaBuilds - product else state.javaBuilds + (product to java))
+        save()
+    }
 
     /** The automatic-download choice for [product] at runtime, or null when the default decides. */
     fun automatic(product: String): Boolean? = state.automatic[product]
@@ -65,6 +76,7 @@ internal class UpdatePolicyOverrides(
             }.toMap(),
             automatic = stored.automatic,
             allPlugins = stored.allPlugins,
+            javaBuilds = stored.javaBuilds,
         )
     }
 
@@ -75,6 +87,7 @@ internal class UpdatePolicyOverrides(
                 channels = saved.channels.mapValues { (_, channel) -> channel.name },
                 automatic = saved.automatic,
                 allPlugins = saved.allPlugins,
+                javaBuilds = saved.javaBuilds,
             )
         }
     }

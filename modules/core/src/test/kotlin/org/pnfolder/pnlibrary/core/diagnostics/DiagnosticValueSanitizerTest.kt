@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 
 class DiagnosticValueSanitizerTest {
     private val sanitizer = DiagnosticValueSanitizer()

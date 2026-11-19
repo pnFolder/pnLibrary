@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.spi.tasks
 
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import java.time.Duration
 
 /** Native cancellation handle returned by a platform scheduler. */

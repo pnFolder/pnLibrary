@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.bukkit.tasks
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.compat.Folia
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest

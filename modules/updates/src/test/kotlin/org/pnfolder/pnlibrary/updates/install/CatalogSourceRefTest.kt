@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.updates.install
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.updates.CatalogSource
-import org.pnfolder.pnlibrary.api.updates.CatalogSource.RefType
+import org.pnfolder.pnlibrary.api.updates.request.CatalogSource
+import org.pnfolder.pnlibrary.api.updates.request.CatalogSource.RefType
 
 class CatalogSourceRefTest {
     @Test

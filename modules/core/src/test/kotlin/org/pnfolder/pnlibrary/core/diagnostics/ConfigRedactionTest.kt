@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
+import org.pnfolder.pnlibrary.core.diagnostics.config.ConfigRedaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

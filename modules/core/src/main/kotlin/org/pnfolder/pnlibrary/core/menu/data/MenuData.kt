@@ -7,13 +7,13 @@ import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
@@ -131,6 +131,9 @@ interface MenuData {
     /** Sets the update channel of [product]; null returns it to the default. */
     fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<Boolean>
 
+    /** Chooses the Java build of [product]; null returns it to the recommended one. */
+    fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<Boolean>
+
     /** Pauses updates of [product] for [duration]; null lifts the pause. */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean>
 
@@ -175,6 +178,13 @@ interface MenuData {
     fun downloadsAutomatic(): Boolean? = null
 
     fun setDownloadsAutomatic(value: Boolean) {}
+
+    /** The modules of the plugins on this server; none when this server cannot switch them. */
+    fun modules(): List<ModuleInfo> = emptyList()
+
+    /** Runs one of [ModuleInfo.ACTIONS] on the module [key] and returns how the module looks afterwards. */
+    fun moduleAction(key: String, action: String): ModuleInfo =
+        throw UnsupportedOperationException("Модули переключаются на самом сервере")
 
     fun runTask(id: String): TaskControl
 

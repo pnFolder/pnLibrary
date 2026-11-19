@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.diagnostics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import java.nio.file.Path
 

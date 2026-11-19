@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.bukkit.integration
 import dev.faststats.bukkit.BukkitContext
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.core.metrics.NativePluginMetricsFactory
+import org.pnfolder.pnlibrary.core.metrics.factory.NativePluginMetricsFactory
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsMetricsSession
 import org.pnfolder.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
 

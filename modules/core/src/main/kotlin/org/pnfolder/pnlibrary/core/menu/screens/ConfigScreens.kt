@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.config.ConfigApply
 import org.pnfolder.pnlibrary.api.config.ConfigEditException
 import org.pnfolder.pnlibrary.api.config.ConfigId

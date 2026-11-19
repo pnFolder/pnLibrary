@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.link
 
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.common.io.TsvRecords
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 import java.nio.file.Path

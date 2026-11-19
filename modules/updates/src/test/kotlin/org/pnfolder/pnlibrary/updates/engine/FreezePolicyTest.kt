@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.updates.engine
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock

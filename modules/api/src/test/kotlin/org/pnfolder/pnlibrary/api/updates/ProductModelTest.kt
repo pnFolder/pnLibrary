@@ -1,8 +1,10 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 
 class ProductModelTest {
     @Test

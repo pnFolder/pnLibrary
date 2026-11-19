@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.audiences
 
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import java.util.UUID
 
 /**

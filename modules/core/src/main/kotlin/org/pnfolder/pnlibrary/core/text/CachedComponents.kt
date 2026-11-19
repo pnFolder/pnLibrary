@@ -5,11 +5,11 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.text.ComponentCachePolicy
-import org.pnfolder.pnlibrary.api.text.ComponentCacheScope
-import org.pnfolder.pnlibrary.api.text.ComponentCacheStatistics
-import org.pnfolder.pnlibrary.api.text.ComponentSerializer
-import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
+import org.pnfolder.pnlibrary.api.text.cache.ComponentCachePolicy
+import org.pnfolder.pnlibrary.api.text.cache.ComponentCacheScope
+import org.pnfolder.pnlibrary.api.text.cache.ComponentCacheStatistics
+import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializer
+import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.text.ComponentTemplate
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal

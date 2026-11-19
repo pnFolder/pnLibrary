@@ -4,7 +4,7 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import java.util.UUID
 
 /** Native audience lookup boundary implemented by each platform runtime. */

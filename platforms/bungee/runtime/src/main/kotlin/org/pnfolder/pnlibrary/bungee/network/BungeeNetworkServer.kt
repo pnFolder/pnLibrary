@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.bungee.network
 
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.config.ServerInfo
-import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
-import org.pnfolder.pnlibrary.api.proxy.NetworkServer
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer
+import org.pnfolder.pnlibrary.api.network.NetworkServer
 import java.net.InetSocketAddress
 
 @Suppress("DEPRECATION")

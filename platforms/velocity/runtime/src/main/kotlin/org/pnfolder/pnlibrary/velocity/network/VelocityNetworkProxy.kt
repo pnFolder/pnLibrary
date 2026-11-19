@@ -5,9 +5,9 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import com.velocitypowered.api.proxy.server.RegisteredServer
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
-import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
-import org.pnfolder.pnlibrary.api.proxy.NetworkProxy
-import org.pnfolder.pnlibrary.api.proxy.NetworkServer
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
+import org.pnfolder.pnlibrary.api.network.NetworkServer
 import java.net.InetSocketAddress
 import java.util.UUID
 

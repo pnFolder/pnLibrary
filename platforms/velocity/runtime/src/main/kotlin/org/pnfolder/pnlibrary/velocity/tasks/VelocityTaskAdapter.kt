@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.velocity.tasks
 
 import com.velocitypowered.api.proxy.ProxyServer
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.spi.tasks.TrackingPlatformTaskAdapter

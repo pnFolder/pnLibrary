@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.logging.MessageBox
-import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 
 /**
  * A lifecycle card that lets the plugin hide the rows pnLibrary adds by itself before any of its own rows are added.

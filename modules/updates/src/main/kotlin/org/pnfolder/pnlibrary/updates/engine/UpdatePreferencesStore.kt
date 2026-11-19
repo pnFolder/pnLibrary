@@ -10,7 +10,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * The administrator's update choices in one file: release channels, automatic download and component pauses.
+ * The administrator's update choices in one file: release channels, Java builds, automatic download and component pauses.
  *
  * Several owners edit their own sections of the same file, so there is one in-memory model and one lock; every change
  * is read, modified and written back under that lock, and a save never discards what another owner stored.
@@ -25,6 +25,7 @@ internal class UpdatePreferencesStore(
         val automatic: Map<String, Boolean> = emptyMap(),
         val allPlugins: Boolean? = null,
         val freezes: Map<String, Long> = emptyMap(),
+        val javaBuilds: Map<String, Int> = emptyMap(),
     )
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
@@ -56,6 +57,7 @@ internal class UpdatePreferencesStore(
                 automatic = root.getAsJsonObject("automatic")?.entrySet().orEmpty().associate { (product, value) -> product to value.asBoolean },
                 allPlugins = root.get("allPlugins")?.takeIf { !it.isJsonNull }?.asBoolean,
                 freezes = root.getAsJsonObject("freezes")?.entrySet().orEmpty().associate { (product, value) -> product to value.asLong },
+                javaBuilds = root.getAsJsonObject("javaBuilds")?.entrySet().orEmpty().associate { (product, value) -> product to value.asInt },
             )
         } catch (error: Exception) {
             warning("Unreadable update settings $fileName: ${error.javaClass.simpleName}")
@@ -69,6 +71,7 @@ internal class UpdatePreferencesStore(
             add("channels", JsonObject().also { node -> value.channels.toSortedMap().forEach { (p, c) -> node.addProperty(p, c) } })
             add("automatic", JsonObject().also { node -> value.automatic.toSortedMap().forEach { (p, a) -> node.addProperty(p, a) } })
             add("freezes", JsonObject().also { node -> value.freezes.toSortedMap().forEach { (p, e) -> node.addProperty(p, e) } })
+            add("javaBuilds", JsonObject().also { node -> value.javaBuilds.toSortedMap().forEach { (p, j) -> node.addProperty(p, j) } })
         }
         AtomicFiles.write(file, gson.toJson(json).toByteArray(UTF_8))
     }

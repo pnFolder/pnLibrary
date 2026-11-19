@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.api.plugin
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
+import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
@@ -35,6 +36,23 @@ interface PluginRegistration : AutoCloseable {
         id: ModuleId,
         configure: Consumer<PluginBuilder> = Consumer { },
     ): ModuleContext
+
+    /**
+     * Registers a module that the library can switch: [module]'s `onEnable` runs right away (unless an administrator
+     * switched this module off for good), and later `/pn modules` and the menu call its hooks.
+     */
+    fun registerModule(
+        id: ModuleId,
+        module: PluginModule,
+        configure: Consumer<PluginBuilder> = Consumer { },
+    ): ModuleContext = throw UnsupportedOperationException("Module control is not available in this runtime")
+
+    /** Normalizes [id] and registers a switchable module; see [registerModule]. */
+    fun registerModule(
+        id: String,
+        module: PluginModule,
+        configure: Consumer<PluginBuilder> = Consumer { },
+    ): ModuleContext = registerModule(ModuleId.of(id), module, configure)
 
     /** Normalizes [id] and registers a logical module. */
     fun registerModule(

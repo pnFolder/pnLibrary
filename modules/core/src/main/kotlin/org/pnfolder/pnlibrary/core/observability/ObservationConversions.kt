@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
 
 internal fun DiagnosticLevel.toObservationLevel(): ObservationLevel = when (this) {
     DiagnosticLevel.INFO -> ObservationLevel.INFO

@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.util.Collections
 import java.util.function.Consumer

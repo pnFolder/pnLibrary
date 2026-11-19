@@ -3,18 +3,18 @@ package org.pnfolder.pnlibrary.core.commands.tasks
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.commands.chatPager
-import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
@@ -73,7 +73,7 @@ class TaskCommand(private val library: PnLibrary) {
         }
         literal("cancel") {
             argument("id", ArgumentType.string()) {
-                suggests { library.taskSnapshots().filter { TaskLabels.isActive(it.status) }.map { it.id.value.take(TaskLabels.SHORT_ID) } }
+                suggests { library.taskSnapshots().filter { it.isActive }.map { it.id.value.take(TaskLabels.SHORT_ID) } }
                 executes { cancel(it, it.get<String>("id")) }
             }
         }
@@ -93,7 +93,8 @@ class TaskCommand(private val library: PnLibrary) {
 
     private fun list(context: CommandContext, period: TaskPeriod, state: TaskState, requestedPage: Int) {
         val kit = kit(context)
-        val all = library.taskSnapshots().sortedByDescending { TaskLabels.activity(it) }
+        val everything = library.taskSnapshots().sortedByDescending { TaskLabels.activity(it) }
+        val all = TaskLabels.roots(everything)
         val inPeriod = all.filter(period::keep)
         val shown = inPeriod.filter(state::keep)
         val pages = pageCount(shown.size, PAGE_SIZE)
@@ -104,7 +105,12 @@ class TaskCommand(private val library: PnLibrary) {
         lines += tabs(kit, "Какие", TaskState.values().toList(), state, { it.label }, { s -> inPeriod.count(s::keep) }) { "$ROOT ${period.word} ${it.word}" }
         lines += kit.blank()
         if (shown.isEmpty()) lines += kit.note("Здесь пока пусто.", ChatPalette.FAINT)
-        shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { lines += row(kit, it) }
+        shown.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { task ->
+            lines += row(kit, task, everything)
+            TaskLabels.childrenOf(task, everything).take(CHILD_PREVIEW).forEach { lines += child(kit, it) }
+            val more = TaskLabels.children(task, everything) - CHILD_PREVIEW
+            if (more > 0) lines += kit.text("      … и ещё $more подзадач, откройте задачу", ChatPalette.FAINT)
+        }
         if (pages > 1) {
             lines += kit.blank()
             lines += chatPager(kit, "$ROOT ${period.word} ${state.word}", page, pages)
@@ -144,7 +150,7 @@ class TaskCommand(private val library: PnLibrary) {
         return line
     }
 
-    private fun row(kit: ChatKit, task: TaskSnapshot): Component {
+    private fun row(kit: ChatKit, task: TaskSnapshot, all: Collection<TaskSnapshot>): Component {
         val title = kit.text(" ").append(kit.text(kit.glyph('●'), TaskLabels.color(task.status)))
             .append(kit.text(" ${TaskLabels.title(task)}", ChatPalette.ACCENT))
             .append(kit.text("  ${TaskLabels.label(task.status)}", TaskLabels.color(task.status)))
@@ -153,6 +159,8 @@ class TaskCommand(private val library: PnLibrary) {
             .append(kit.dot()).append(kit.text(runs, ChatPalette.SOFT))
             .append(kit.dot()).append(kit.text(TaskLabels.ago(TaskLabels.activity(task)), ChatPalette.FAINT))
         if (task.lastFailure != null) facts = facts.append(kit.dot()).append(kit.text("ошибка", ChatPalette.DANGER))
+        TaskLabels.parent(task, all)?.let { facts = facts.append(kit.dot()).append(kit.text("↳ $it", ChatPalette.SOFT)) }
+        TaskLabels.lag(task)?.let { facts = facts.append(kit.dot()).append(kit.text("лаг", ChatPalette.DANGER)) }
         val lines = mutableListOf(title, facts)
         task.description?.let { lines += kit.text("    ${it.take(DESCRIPTION_PREVIEW)}", ChatPalette.LABEL) }
         val block = lines.drop(1).fold(lines.first()) { all, line -> all.append(Component.newline()).append(line) }
@@ -168,6 +176,15 @@ class TaskCommand(private val library: PnLibrary) {
         return block.hoverEvent(kit.tooltip(*hover.toTypedArray())).clickEvent(ClickEvent.runCommand("$ROOT view ${task.id.value}"))
     }
 
+    private fun child(kit: ChatKit, task: TaskSnapshot): Component {
+        val line = kit.text("    ↳ ", ChatPalette.FAINT).append(kit.text(kit.glyph('●'), TaskLabels.color(task.status)))
+            .append(kit.text(" ${TaskLabels.title(task)}", ChatPalette.TEXT))
+            .append(kit.text("  ${TaskLabels.label(task.status)}", TaskLabels.color(task.status)))
+        val withLag = TaskLabels.lag(task)?.let { line.append(kit.dot()).append(kit.text("лаг", ChatPalette.DANGER)) } ?: line
+        if (!kit.reader.interactive) return withLag
+        return withLag.clickEvent(ClickEvent.runCommand("$ROOT view ${task.id.value}"))
+    }
+
     private fun view(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val lines = mutableListOf(
             kit.blank(),
@@ -178,9 +195,10 @@ class TaskCommand(private val library: PnLibrary) {
         if (task.description == null && task.usage == null) {
             lines += kit.note("Плагин не описал эту задачу. Описание задаётся в TaskSpec: description и usage.", ChatPalette.FAINT)
         }
-        lines += TaskDetail.who(kit, task)
+        lines += TaskDetail.who(kit, task, library.taskSnapshots())
         lines += TaskDetail.whenLines(kit, task)
         lines += TaskDetail.rights(kit, task)
+        lines += TaskDetail.subtasks(kit, task, library.taskSnapshots())
         task.lastFailure?.let {
             lines += kit.blank()
             lines += kit.section("Ошибка")
@@ -199,7 +217,7 @@ class TaskCommand(private val library: PnLibrary) {
     }
 
     private fun stop(kit: ChatKit, task: TaskSnapshot): Component? {
-        if (TaskLabels.isActive(task.status) && task.cancellable) {
+        if (task.isActive && task.cancellable) {
             return kit.button("остановить", "$ROOT cancel ${task.id.value}", "Остановить задачу", ChatPalette.DANGER)
         }
         return closed(kit, "остановка закрыта", TaskLabels.stopAnswer(task))
@@ -238,5 +256,6 @@ class TaskCommand(private val library: PnLibrary) {
         private const val ROOT = "/pn tasks"
         private const val PAGE_SIZE = 6
         private const val DESCRIPTION_PREVIEW = 70
+        private const val CHILD_PREVIEW = 3
     }
 }

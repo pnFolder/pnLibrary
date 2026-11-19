@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.chat
 
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+
 /**
  * One short message of a command, rendered by [ChatKit.notice].
  *

@@ -9,7 +9,7 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import org.pnfolder.pnlibrary.api.proxy.NetworkPlayer
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer
 import java.util.UUID
 
 internal class VelocityAudienceAdapter(

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder
@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.core.menu.style.CONFIGS
 import org.pnfolder.pnlibrary.core.menu.style.HOME_CLOSE
 import org.pnfolder.pnlibrary.core.menu.style.HOME_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_HOURS
 import org.pnfolder.pnlibrary.core.menu.style.JOURNAL_LIMIT
 import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
@@ -102,6 +103,11 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             32,
             section(Icons.CLOCK, "CLOCK", "Задачи плагинов", "Что плагины делают по расписанию и для чего.", "Всего" to "${data.tasks().size}"),
             go { allowed(it, TASKS) { routes.tasks(it, TaskPeriod.TODAY, TaskState.ALL, 0) } },
+        )
+        builder.button(
+            30,
+            section(Icons.TOOLS, "CHEST", "Модули плагинов", "Включить, выключить или перезапустить модули.", "Всего" to "${data.modules().size}"),
+            go { who -> allowed(who, MenuPermissions.MODULES) { routes.modules(who, null, 0) { routes.home(it) } } },
         )
         builder.button(
             31,

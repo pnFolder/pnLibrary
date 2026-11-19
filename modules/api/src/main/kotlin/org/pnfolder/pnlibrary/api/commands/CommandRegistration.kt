@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.commands
 
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+
 /** Closeable handle for one live native command registration. */
 interface CommandRegistration : AutoCloseable {
     /** Portable definition represented by this registration. */

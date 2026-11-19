@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
 import java.util.UUID
 
 /** Checks how proxy senders and players are converted to portable audiences. */

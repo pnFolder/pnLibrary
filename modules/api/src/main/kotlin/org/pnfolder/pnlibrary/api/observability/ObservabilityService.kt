@@ -1,5 +1,13 @@
 package org.pnfolder.pnlibrary.api.observability
 
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationScope
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+
 /**
  * Records operational history, tracks current component state, and creates
  * support reports from one consistent data source.

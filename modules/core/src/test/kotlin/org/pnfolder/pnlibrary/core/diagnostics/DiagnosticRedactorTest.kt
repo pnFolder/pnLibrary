@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.diagnostics
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 
 class DiagnosticRedactorTest {
 

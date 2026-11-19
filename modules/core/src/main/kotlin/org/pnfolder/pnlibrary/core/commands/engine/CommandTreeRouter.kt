@@ -1,0 +1,175 @@
+package org.pnfolder.pnlibrary.core.commands.engine
+
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentSpec
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.error.ConsoleOnly
+import org.pnfolder.pnlibrary.api.commands.error.IncompleteCommand
+import org.pnfolder.pnlibrary.api.commands.error.NoPermission
+import org.pnfolder.pnlibrary.api.commands.error.PlayerOnly
+import org.pnfolder.pnlibrary.api.commands.definition.SenderRule
+import org.pnfolder.pnlibrary.api.commands.error.UnknownArgument
+import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
+import java.util.LinkedHashMap
+import java.util.Locale
+import java.util.concurrent.CompletionStage
+
+internal sealed class CommandRoute {
+    data class Executable(val node: CommandNode, val context: CommandContext, val path: List<CommandNode>) : CommandRoute()
+    data class Problem(val error: CommandError, val nodes: List<CommandNode>) : CommandRoute()
+}
+
+internal class CommandTreeRouter {
+    fun route(command: CommandDefinition, context: CommandContext): CommandRoute {
+        var node = command.root
+        val nodes = mutableListOf(node)
+        val values = LinkedHashMap<String, Any>()
+        var routed = context.copy(parsedValues = values.toMap())
+        blocked(node, routed)?.let { return problem(it, nodes) }
+        val path = mutableListOf(command.name)
+
+        var index = 0
+        while (index < context.arguments.size) {
+            val token = context.arguments[index]
+            val child = childFor(node, token)
+            if (child == null) {
+                if (node.acceptsExtraArguments && node.isExecutable) return CommandRoute.Executable(node, routed, nodes)
+                return problem(UnknownArgument(usage(path, node, routed), token), nodes)
+            }
+            nodes += child
+            blocked(child, routed)?.let { return problem(it, nodes) }
+            if (child.kind == CommandNodeKind.ARGUMENT) {
+                // A greedy argument takes the rest of the line as one value and ends the walk.
+                val greedy = child.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY
+                val text = if (greedy) context.arguments.drop(index).joinToString(" ") else token
+                val parsed = parse(child, text) ?: return problem(
+                    (child.argumentType ?: ArgumentType.string()).error(usage(path, node, routed), child.name, text),
+                    nodes,
+                )
+                values[child.name] = parsed
+                path += "<${child.name}>"
+                if (greedy) index = context.arguments.size - 1
+            } else {
+                path += child.name
+            }
+            node = child
+            routed = context.copy(parsedValues = values.toMap())
+            index++
+        }
+
+        return if (node.isExecutable) CommandRoute.Executable(node, routed, nodes)
+        else problem(IncompleteCommand(usage(path, node, routed)), nodes)
+    }
+
+    private fun blocked(node: CommandNode, context: CommandContext): CommandError? {
+        if (!allowed(node, context)) return NoPermission(node.permission.orEmpty())
+        return when (node.senderRule) {
+            SenderRule.PLAYER -> if (context.sender.isConsole) PlayerOnly() else null
+            SenderRule.CONSOLE -> if (!context.sender.isConsole) ConsoleOnly() else null
+            SenderRule.ANY -> null
+        }
+    }
+
+    private fun problem(error: CommandError, nodes: List<CommandNode>) = CommandRoute.Problem(error, nodes.asReversed())
+
+    fun suggest(command: CommandDefinition, context: CommandContext): CompletionStage<List<String>> {
+        var node = command.root
+        val values = LinkedHashMap<String, Any>()
+        var routed = context.copy(parsedValues = values.toMap())
+        if (!canSuggest(node, routed)) return completedSuggestions(emptyList())
+        val consumed = if (context.arguments.isEmpty()) emptyList() else context.arguments.dropLast(1)
+        val partial = if (context.arguments.isEmpty()) context.currentInput else context.arguments.last()
+
+        consumed.forEach { token ->
+            // Everything typed after a greedy argument still belongs to that argument.
+            if (node.argumentType?.spec?.kind == ArgumentSpec.Kind.GREEDY) return@forEach
+            val child = childFor(node, token)
+                ?: return if (node.acceptsExtraArguments) node.suggestions.suggest(routed.copy(currentInput = partial))
+                else completedSuggestions(emptyList())
+            if (!canSuggest(child, routed)) return completedSuggestions(emptyList())
+            if (child.kind == CommandNodeKind.ARGUMENT) {
+                val parsed = parse(child, token) ?: return completedSuggestions(emptyList())
+                values[child.name] = parsed
+            }
+            node = child
+            routed = context.copy(parsedValues = values.toMap(), currentInput = partial)
+        }
+
+        return lastSuggestions(node, routed.copy(currentInput = partial), partial)
+    }
+
+    private fun childFor(node: CommandNode, token: String): CommandNode? =
+        node.children.firstOrNull { it.kind == CommandNodeKind.LITERAL && it.name.equals(token, ignoreCase = true) }
+            ?: node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+
+    private fun lastSuggestions(node: CommandNode, suggestionContext: CommandContext, partial: String): CompletionStage<List<String>> {
+        val literals = node.children.asSequence()
+            .filter { it.kind == CommandNodeKind.LITERAL }
+            .filter { canSuggest(it, suggestionContext) }
+            .map { it.name }
+            .filter { it.startsWith(partial, ignoreCase = true) }
+            .toList()
+        val argument = node.children.firstOrNull { it.kind == CommandNodeKind.ARGUMENT }
+            ?.takeIf { canSuggest(it, suggestionContext) }
+        val stage = when {
+            argument != null -> argument.suggestions.suggest(suggestionContext).thenApply { it + builtInSuggestions(argument) }
+            node.children.isEmpty() || node.acceptsExtraArguments -> node.suggestions.suggest(suggestionContext)
+            else -> completedSuggestions(emptyList())
+        }
+        return stage.thenApply { dynamic ->
+            (literals + dynamic.filter { it.startsWith(partial, ignoreCase = true) }).distinct()
+        }
+    }
+
+    private fun builtInSuggestions(argument: CommandNode): List<String> {
+        val spec = argument.argumentType?.spec ?: return emptyList()
+        return when (spec.kind) {
+            ArgumentSpec.Kind.CHOICE -> spec.choices
+            ArgumentSpec.Kind.BOOLEAN -> listOf("true", "false")
+            else -> emptyList()
+        }
+    }
+
+    private fun allowed(node: CommandNode, context: CommandContext): Boolean {
+        val permission = node.permission
+        val permissionAllowed = permission == null ||
+            (context.sender.isConsole && node.consoleBypassesPermission) ||
+            context.sender.hasPermission(permission) ||
+            node.alsoPermissions.any { context.sender.hasPermission(it) }
+        return permissionAllowed && node.availability.isAvailable(context)
+    }
+
+    // allowed() checks only permission; senderRule is checked separately in route() via blocked().
+    // Suggestions must respect senderRule too — otherwise console sees player-only tab completions.
+    private fun canSuggest(node: CommandNode, context: CommandContext): Boolean {
+        if (!allowed(node, context)) return false
+        return when (node.senderRule) {
+            SenderRule.PLAYER -> !context.sender.isConsole
+            SenderRule.CONSOLE -> context.sender.isConsole
+            SenderRule.ANY -> true
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parse(node: CommandNode, token: String): Any? =
+        (node.argumentType as? ArgumentType<Any>)?.parse(token)
+
+    private fun usage(path: List<String>, node: CommandNode, context: CommandContext): String {
+        val accessible = node.children.filter { canSuggest(it, context) }
+        val suffix = when {
+            accessible.isEmpty() -> ""
+            accessible.size == 1 -> " " + display(accessible.single())
+            else -> " {" + accessible.joinToString("|") { display(it) } + "}"
+        }
+        return "/${path.joinToString(" ")}$suffix"
+    }
+
+    private fun display(node: CommandNode): String = when (node.kind) {
+        CommandNodeKind.ARGUMENT -> "<${node.name}>"
+        else -> node.name.lowercase(Locale.ROOT)
+    }
+}

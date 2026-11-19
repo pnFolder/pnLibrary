@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.core.commands.CommandRoute
-import org.pnfolder.pnlibrary.core.commands.CommandTreeRouter
+import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
+import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import java.nio.file.Path

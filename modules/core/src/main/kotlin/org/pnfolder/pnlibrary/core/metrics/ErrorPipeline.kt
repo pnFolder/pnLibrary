@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.metrics
 
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
-import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.error.TelemetryError
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.concurrent.ConcurrentHashMap

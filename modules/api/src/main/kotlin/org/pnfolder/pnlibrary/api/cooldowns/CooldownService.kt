@@ -4,32 +4,6 @@ import java.time.Duration
 import java.util.UUID
 
 /**
- * Result of an atomic cooldown acquisition attempt. Create it with [allowed] or [denied].
- *
- * @property allowed whether the caller acquired a new cooldown
- * @property remaining time left on the existing cooldown when denied, otherwise zero
- */
-class CooldownResult private constructor(
-    val allowed: Boolean,
-    val remaining: Duration,
-) {
-    /** Renders as `allowed` or `denied: <remaining>`. */
-    override fun toString(): String = if (allowed) "allowed" else "denied: $remaining"
-
-    companion object {
-        private val ALLOWED = CooldownResult(true, Duration.ZERO)
-
-        /** Returns the shared result meaning no cooldown is active. */
-        @JvmStatic
-        fun allowed(): CooldownResult = ALLOWED
-
-        /** Returns a denied result with the time left on the active cooldown. */
-        @JvmStatic
-        fun denied(remaining: Duration): CooldownResult = CooldownResult(false, remaining)
-    }
-}
-
-/**
  * Plugin-scoped, thread-safe cooldown storage based on monotonic elapsed time.
  *
  * Action names are trimmed and compared case-insensitively. Durations must not be

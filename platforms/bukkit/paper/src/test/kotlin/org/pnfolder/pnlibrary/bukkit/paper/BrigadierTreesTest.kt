@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -96,7 +96,7 @@ class BrigadierTreesTest {
             override fun suggest(source: Set<String>, input: String): CompletionStage<List<String>> =
                 CompletableFuture.completedFuture(emptyList())
 
-            override fun allowed(source: Set<String>, node: org.pnfolder.pnlibrary.api.commands.CommandNode): Boolean =
+            override fun allowed(source: Set<String>, node: org.pnfolder.pnlibrary.api.commands.definition.CommandNode): Boolean =
                 node.permission == null || node.permission in source
         }
         val dispatcher = CommandDispatcher<Set<String>>()

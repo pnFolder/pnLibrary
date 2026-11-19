@@ -1,26 +1,11 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
-
-/** Converts a resolved typed value into the string requested by a format expression. */
-fun interface PlaceholderFormatter<T : Any> {
-    /** Formats [value] using parsed [arguments] and the original [request]. */
-    fun format(value: T, arguments: List<String>, request: PlaceholderRequest): String
-}
-
-/**
- * Applies a textual assignment to a typed placeholder-owned value.
- *
- * The owner validates and converts the supplied value, persists it in its own storage, and
- * returns the resulting typed value. Throwing rejects the update.
- */
-fun interface PlaceholderUpdater<T : Any> {
-    /** Updates the backing value and returns its new typed representation. */
-    fun update(request: PlaceholderRequest, value: String): T?
-}
 
 /**
  * Plugin-scoped registry and resolution facade for typed placeholders.
@@ -57,14 +42,4 @@ interface PlaceholderService : AutoCloseable {
     fun provider(pluginId: PluginId): PlaceholderProvider
     /** Returns the adapter registry owned by this plugin scope. */
     fun adapters(): PlaceholderAdapterRegistry
-}
-
-/** Consumer view restricted to placeholders owned by one plugin. */
-interface PlaceholderProvider {
-    /** Plugin whose keys are addressed by this provider. */
-    val pluginId: PluginId
-    /** Resolves [key] as the current service owner, applying its access policy. */
-    fun resolve(key: String, playerId: UUID? = null): CompletionStage<Any?>
-    /** Returns the target plugin's keys visible to the current consumer. */
-    fun keys(): Set<String>
 }

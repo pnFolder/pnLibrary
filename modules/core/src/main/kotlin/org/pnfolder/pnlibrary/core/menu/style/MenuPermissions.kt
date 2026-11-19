@@ -12,6 +12,7 @@ internal object MenuPermissions {
     const val EVENTS_VIEW = "pnlibrary.events.view"
     const val EVENTS_BUS = "pnlibrary.events.bus"
     const val TASKS = "pnlibrary.tasks"
+    const val MODULES = "pnlibrary.modules"
     const val STATS = "pnlibrary.stats"
     const val PLACEHOLDERS = "pnlibrary.placeholders"
     const val DEBUG = "pnlibrary.debug"
@@ -20,6 +21,6 @@ internal object MenuPermissions {
 
     val ALL = listOf(
         ADMIN, SERVERS, UPDATES_VIEW, UPDATES_DOWNLOAD, UPDATES_ROLLBACK, UPDATES_SETTINGS, UPDATES_RESTART,
-        EVENTS_VIEW, EVENTS_BUS, TASKS, STATS, PLACEHOLDERS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS,
+        EVENTS_VIEW, EVENTS_BUS, TASKS, MODULES, STATS, PLACEHOLDERS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS,
     )
 }
