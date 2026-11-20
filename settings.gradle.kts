@@ -4,14 +4,9 @@ include(
     // Public contracts and shared code.
     ":modules:common",
     ":modules:api",
-    ":modules:runtime-spi",
+    ":modules:spi",
     ":modules:console",
     // Runtime.
-    ":modules:link",
-    ":modules:placeholders",
-    ":modules:events",
-    ":modules:upload",
-    ":modules:journal",
     ":modules:core",
     ":modules:updates",
     ":modules:bootstrap",
@@ -20,7 +15,7 @@ include(
     ":modules:features:config-runtime",
     ":modules:features:currency-api",
     ":modules:features:currency-runtime",
-    ":modules:features:minecraft-localization-api",
+    ":modules:features:localization-api",
     // Platforms.
     ":platforms:loader",
     ":platforms:bukkit:api",

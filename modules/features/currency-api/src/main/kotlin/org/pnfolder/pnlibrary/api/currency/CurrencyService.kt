@@ -1,12 +1,13 @@
 package org.pnfolder.pnlibrary.api.currency
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import java.util.function.Consumer
 
 /**
  * Plugin-owned facade for registering and discovering currencies.
  *
  * Unqualified references resolve inside the owning plugin. Cross-plugin references use
- * canonical `owner:name` form and are filtered through [CurrencyAccess]. Closing the
+ * canonical `owner:name` form and are filtered through [PluginAccess]. Closing the
  * service closes every registration created through it.
  */
 interface CurrencyService : AutoCloseable {

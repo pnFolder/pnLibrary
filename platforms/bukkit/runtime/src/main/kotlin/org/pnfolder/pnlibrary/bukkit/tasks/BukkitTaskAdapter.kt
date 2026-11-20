@@ -4,7 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitScheduler
 import org.bukkit.scheduler.BukkitTask
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
@@ -18,12 +18,6 @@ private const val NANOS_PER_TICK = 50_000_000.0
 internal fun durationToTicks(value: Duration): Long =
     if (value.isZero) 0 else ceil(value.toNanos() / NANOS_PER_TICK).toLong().coerceAtLeast(1)
 
-/**
- * Owns scheduled tasks and adapts requests to Bukkit or Folia.
- *
- * Ordinary Bukkit executes entity and global tasks on the primary thread. Folia dispatches
- * entity tasks to their player scheduler and global tasks to the global-region scheduler.
- */
 internal class BukkitTaskAdapter(
     private val plugin: Plugin,
 ) : TrackingPlatformTaskAdapter() {
@@ -34,7 +28,6 @@ internal class BukkitTaskAdapter(
         return NativeHandle(native)
     }
 
-    /** Routes ordinary Bukkit requests to asynchronous or primary-thread scheduling. */
     private fun scheduleBukkit(request: PlatformTaskRequest): Any {
         val scheduler = Bukkit.getScheduler()
         val delay = durationToTicks(request.delay)

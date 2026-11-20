@@ -1,11 +1,12 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
+/** Checks that a module's declared plugin dependencies are present and downloadable. */
 internal class ModuleDependencyValidator(
     private val platform: PlatformOwnership,
     private val downloadsAvailable: () -> Boolean,

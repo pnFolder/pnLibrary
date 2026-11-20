@@ -1,5 +1,10 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCachePolicy
+import org.pnfolder.pnlibrary.api.placeholders.model.AsyncPlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import java.util.function.Consumer
 
 /** Fluent definition of one typed placeholder before it enters the service registry. */
@@ -11,18 +16,22 @@ interface PlaceholderBuilder<T : Any> {
     /** Selects an asynchronous resolver, replacing any previously configured resolver. */
     fun resolveAsync(resolver: AsyncPlaceholderResolver<T>): PlaceholderBuilder<T>
 
+    /** Sets the callback that lets this placeholder be changed through the update API. */
     fun update(updater: PlaceholderUpdater<T>): PlaceholderBuilder<T>
 
-    fun updateAccess(access: PlaceholderAccess): PlaceholderBuilder<T>
+    /** Restricts which plugins may change this placeholder's value. */
+    fun updateAccess(access: PluginAccess): PlaceholderBuilder<T>
 
-    fun access(access: PlaceholderAccess): PlaceholderBuilder<T>
+    /** Sets which plugins may read this placeholder. */
+    fun access(access: PluginAccess): PlaceholderBuilder<T>
 
     /** Builds and sets a consumer access policy with the Java-friendly callback. */
-    fun access(configure: Consumer<PlaceholderAccess.Builder>): PlaceholderBuilder<T>
+    fun access(configure: Consumer<PluginAccess.Builder>): PlaceholderBuilder<T>
 
     /** Configures result caching for this placeholder. */
     fun cache(policy: PlaceholderCachePolicy): PlaceholderBuilder<T>
 
+    /** Value used when the resolver returns null. */
     fun fallback(value: T): PlaceholderBuilder<T>
 
     /**

@@ -5,9 +5,14 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.observability.Observation
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
+import org.pnfolder.pnlibrary.core.observability.store.AttachmentStore
+import org.pnfolder.pnlibrary.core.observability.store.ObservationJournal
+import org.pnfolder.pnlibrary.core.observability.store.retained
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -17,10 +22,10 @@ class ObservationPersistenceTest {
     fun `journal reloads valid observations and skips malformed lines`() {
         val root = Files.createTempDirectory("observations")
         val observation = Observation.from(ObservationRequest(message = "started"), timestamp = 100)
-        ObservationJournal(root, clock = { 100 }).use { it.append(observation) }
-        Files.writeString(root.resolve("observability/observations.jsonl"), "not-json\n", StandardOpenOption.APPEND)
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { 100 }).use { it.append(observation) }
+        Files.writeString(root.resolve("observations.jsonl"), "not-json\n", StandardOpenOption.APPEND)
 
-        ObservationJournal(root, clock = { 100 }).use { journal ->
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { 100 }).use { journal ->
             assertEquals(listOf(observation), journal.recent())
         }
     }
@@ -31,9 +36,9 @@ class ObservationPersistenceTest {
         val source = root.resolve("server.log").also { Files.writeString(it, "secret") }
         val observation = Observation.from(ObservationRequest(message = "failed", files = listOf(source)))
 
-        ObservationJournal(root).use { it.append(observation) }
+        ObservationJournal(root.resolve("observations.jsonl")).use { it.append(observation) }
 
-        ObservationJournal(root).use { journal ->
+        ObservationJournal(root.resolve("observations.jsonl")).use { journal ->
             assertEquals("failed", journal.recent().single().message)
         }
     }
@@ -83,7 +88,7 @@ class ObservationPersistenceTest {
             timestamp = 1,
         )
 
-        val retained = ObservationRetention.active(listOf(oldInfo, oldCritical), now)
+        val retained = listOf(oldInfo, oldCritical).retained(now)
 
         assertEquals(listOf(oldCritical), retained)
     }
@@ -92,7 +97,7 @@ class ObservationPersistenceTest {
     fun `runtime removes expired observations during startup`() {
         val root = Files.createTempDirectory("observation-retention")
         val old = Observation.from(ObservationRequest(message = "expired"), timestamp = 1)
-        ObservationJournal(root, clock = { 1 }).use { it.append(old) }
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { 1 }).use { it.append(old) }
 
         val runtime = ObservationRuntimeFixture.openAfterThirtyDays(root)
 
@@ -104,7 +109,7 @@ class ObservationPersistenceTest {
         val root = Files.createTempDirectory("observation-live-retention")
         val old = Observation.from(ObservationRequest(message = "expired"), timestamp = 1)
         val current = Observation.from(ObservationRequest(message = "current"), timestamp = 30L * 24 * 60 * 60 * 1000)
-        ObservationJournal(root, clock = { current.timestamp }).use { journal ->
+        ObservationJournal(root.resolve("observations.jsonl"), clock = { current.timestamp }).use { journal ->
             journal.append(old)
             journal.append(current)
 
@@ -112,9 +117,43 @@ class ObservationPersistenceTest {
         }
     }
 
+    @Test
+    fun `author retention overrides level in both directions`() {
+        val day = 24L * 60 * 60 * 1000
+        var now = 0L
+        val runtime = ObservabilityRuntime(LibraryPaths(Files.createTempDirectory("observation-keep")), clock = { now })
+        runtime.capture {
+            message("short critical"); level(ObservationLevel.CRITICAL); keepFor(java.time.Duration.ofDays(2))
+        }
+        runtime.capture {
+            message("long info"); level(ObservationLevel.INFO); keepFor(java.time.Duration.ofDays(365))
+        }
+        runtime.capture { message("plain info") }
+
+        now = 10 * day
+        runtime.maintain()
+
+        assertEquals(listOf("long info"), runtime.recent().map { it.message })
+        assertEquals(365 * day, runtime.recent().single().data["pn.keepUntilMs"]!!.toLong())
+        assertTrue(runtime.recent().single().data.keys.none { it == "pn.keepForMs" })
+    }
+
+    @Test
+    fun `report journal has readable dates and expiry`() {
+        val root = Files.createTempDirectory("observation-report")
+        val runtime = ObservabilityRuntime(LibraryPaths(root), clock = { 0 })
+        runtime.capture { plugin("pnMarket"); source("auction"); message("lot lost"); keepFor(java.time.Duration.ofDays(1)) }
+
+        val line = String(runtime.reportSnapshot().journal, Charsets.UTF_8)
+
+        assertTrue(line.contains("\"timeUtc\":\"1970-01-01T00:00:00Z\""), line)
+        assertTrue(line.contains("\"expiresUtc\":\"1970-01-02T00:00:00Z\""), line)
+        assertTrue(line.contains("\"source\":\"auction\""), line)
+    }
+
     private object ObservationRuntimeFixture {
         fun openAfterThirtyDays(root: Path): ObservabilityRuntime = ObservabilityRuntime(
-            root,
+            LibraryPaths(root),
             clock = { 30L * 24 * 60 * 60 * 1000 },
         )
     }

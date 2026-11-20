@@ -64,7 +64,7 @@ function Get-RepositoryApiDeclarations {
             Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') } |
             ForEach-Object { $_.Split('=')[0].Trim() })
         $result = @()
-        foreach ($module in @($modules + 'modules/runtime-spi')) {
+        foreach ($module in @($modules + 'modules/spi')) {
             foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $module 'api') -Filter '*.api')) {
                 $result += [IO.Path]::GetRelativePath((Get-Location).Path, $file.FullName).Replace('\', '/')
             }

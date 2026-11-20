@@ -1,10 +1,11 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
+/** Resolves the product descriptor of a module from its definition or the native plugin. */
 internal class ModuleProductResolver(
     private val platform: PlatformOwnership,
 ) {

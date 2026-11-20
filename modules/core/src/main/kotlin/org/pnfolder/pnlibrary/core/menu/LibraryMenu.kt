@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu
 
+import org.pnfolder.pnlibrary.core.menu.data.MenuData
+
 /**
  * The inventory menu of `/pn gui`: everything the update commands do, on several connected screens.
  *
@@ -21,4 +23,7 @@ class LibraryMenu(
     fun home(player: MenuViewer) = router.home(player)
 
     fun open(player: MenuViewer) = router.open(player)
+
+    /** Opens the list of values of the choice setting [key], only those that contain [filter]; for `/pn settings pick`. */
+    fun pickSetting(player: MenuViewer, key: String, filter: String) = router.pick(player, key, filter)
 }

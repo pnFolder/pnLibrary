@@ -6,7 +6,8 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference
 /** Tracks the files of one download request and runs at most one download of them at a time. */
 internal class DownloadBatch(
     private val request: FileDownloads,
-    private val configuration: DownloadConfiguration,
+    private val configuration: () -> DownloadConfiguration,
     private val executor: Executor,
     private val managerIsClosed: () -> Boolean,
     private val install: (List<FileDownload>, beforePublish: () -> Unit) -> Unit,
@@ -25,6 +26,7 @@ internal class DownloadBatch(
     private val dependenciesStaged: (List<FileDownload>) -> Unit,
     private val failed: (List<FileDownload>, Throwable) -> Unit,
     private val remove: (DownloadBatch) -> Unit,
+    private val automaticAllowed: () -> Boolean = { configuration().automatic },
 ) : DownloadRegistration {
     private val stateLock = Any()
     private val closed = AtomicBoolean(false)
@@ -56,10 +58,10 @@ internal class DownloadBatch(
         }
 
         val selectedFiles = selectFiles(declarations, automaticPolicy)
-        if (!configuration.enabled) return blocked(promise, "система загрузок отключена")
+        if (!configuration().enabled) return blocked(promise, "система загрузок отключена")
         if (selectedFiles.isEmpty()) {
             if (automaticPolicy && declarations.isNotEmpty()) {
-                return blocked(promise, "автозагрузка запрещена в downloads.yml")
+                return blocked(promise, "автозагрузка выключена (включить: /pn deps auto on)")
             }
             promise.complete(snapshots())
             return promise
@@ -89,7 +91,7 @@ internal class DownloadBatch(
     }
 
     private fun selectFiles(declarations: List<FileDownload>, automaticPolicy: Boolean): List<FileDownload> =
-        if (automaticPolicy && !configuration.automatic) {
+        if (automaticPolicy && !automaticAllowed()) {
             declarations.filter(FileDownload::forceAutomaticDownload)
         } else {
             declarations

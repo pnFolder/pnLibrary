@@ -1,7 +1,8 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 
+/** Renders task snapshots as maps for the diagnostics report. */
 internal object RuntimeTaskDetails {
     fun entries(snapshots: List<TaskSnapshot>): List<Map<String, Any?>> =
         snapshots.map { task ->

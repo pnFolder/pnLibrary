@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.api.updates;
 
 import org.junit.jupiter.api.Test;
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

@@ -6,9 +6,12 @@ internal class JdbcCurrencySchema(tablePrefix: String) {
         require(tablePrefix.matches(PREFIX_PATTERN)) { "Invalid currency table prefix" }
     }
 
+    /** Table holding one balance row per currency and account. */
     val accountsTable = "${tablePrefix}_accounts"
+    /** Table holding the append-only ledger. */
     val transactionsTable = "${tablePrefix}_transactions"
 
+    /** DDL of the balances table. */
     fun createAccountsTableSql(): String = """
         CREATE TABLE IF NOT EXISTS $accountsTable (
             currency_id VARCHAR(190) NOT NULL,
@@ -18,6 +21,7 @@ internal class JdbcCurrencySchema(tablePrefix: String) {
         )
     """.trimIndent()
 
+    /** DDL of the ledger table; the unique key makes idempotent retries safe. */
     fun createTransactionsTableSql(): String = """
         CREATE TABLE IF NOT EXISTS $transactionsTable (
             transaction_id VARCHAR(36) PRIMARY KEY,
@@ -43,6 +47,7 @@ internal class JdbcCurrencySchema(tablePrefix: String) {
         )
     """.trimIndent()
 
+    /** Insert statement whose 19 placeholders follow the column order of the ledger table. */
     fun insertTransactionSql(): String = """
         INSERT INTO $transactionsTable (
             transaction_id, currency_id, transaction_type, status, amount,

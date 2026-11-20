@@ -1,25 +1,31 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.observability.ComponentStatus
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
-import org.pnfolder.pnlibrary.api.observability.Observation
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationQuery
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationKeys
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.core.observability.store.AttachmentStore
+import org.pnfolder.pnlibrary.core.observability.store.ComponentStatusRegistry
+import org.pnfolder.pnlibrary.core.observability.store.ObservationJournal
+import org.pnfolder.pnlibrary.core.observability.store.StoredAttachment
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.time.Instant
 
 /** Records observations with their attachments and component statuses, and applies retention to them. */
 internal class ObservabilityRuntime(
-    dataFolder: Path,
+    paths: LibraryPaths,
     private val clock: () -> Long = System::currentTimeMillis,
     reportFactory: ((ObservabilityReportRequest) -> ObservabilityReport)? = null,
 ) : ObservabilityService {
     private val recordLock = Any()
-    private val journal = ObservationJournal(dataFolder, clock)
-    private val attachmentStore = AttachmentStore(dataFolder)
+    private val journal = ObservationJournal(paths.observations, clock)
+    private val attachmentStore = AttachmentStore(paths.attachments)
     private val statusRegistry = ComponentStatusRegistry()
     @Volatile
     private var reportFactory = reportFactory
@@ -35,7 +41,14 @@ internal class ObservabilityRuntime(
     }
 
     override fun record(request: ObservationRequest): Observation = synchronized(recordLock) {
-        val observation = Observation.from(request, clock())
+        val timestamp = clock()
+        val keepFor = request.data[ObservationKeys.KEEP_FOR_MS]?.toLongOrNull()
+        val stored = Observation.from(request.copy(data = request.data - ObservationKeys.KEEP_FOR_MS), timestamp)
+        val observation = if (keepFor == null) {
+            stored
+        } else {
+            stored.copy(data = stored.data + (ObservationKeys.KEEP_UNTIL_MS to (timestamp + keepFor).toString()))
+        }
         request.files.forEach { file -> attachmentStore.save(observation.id, file) }
         journal.append(observation)
         observation

@@ -1,22 +1,26 @@
 # Что библиотека хранит на диске
 
-Всё лежит в папке данных pnLibrary (`plugins/pnLibrary`). Файлы нужны только для удобства: если файла нет или он повреждён, библиотека стартует как обычно и начинает записывать заново.
+Всё лежит в папке данных pnLibrary (`plugins/pnLibrary`). Собственное состояние и настройки библиотеки хранятся в одной папке `data/`, а рядом лежат только `localization/` и `link.key`. Все пути задаёт один класс `LibraryPaths`; при старте состояние старых версий переносится в `data/` само (`LegacyLayoutMigration`), существующее не перезаписывается. Файлы нужны только для удобства: если файла нет или он повреждён, библиотека стартует как обычно и начинает записывать заново.
 
 | Файл или папка | Что хранит | Формат | Как пишется |
 |---|---|---|---|
-| `config.yml` | настройки библиотеки | YAML | пользователь, при старте читается |
-| `downloads.yml` | общие настройки скачивания | YAML | пользователь |
-| `task-history.tsv` | завершённые задачи плагинов | таблица (`TsvRecords`), версия 3 | не чаще раза в 30 секунд и при остановке |
-| `event-history.tsv` | вызовы событий по дням и часам | таблица со строкой версии | не чаще раза в минуту и при остановке |
-| `event-history.csv`, `event-history.json` | выгрузка истории событий | CSV, JSON | только по кнопке выгрузки в меню или команде, не читается обратно |
-| `journal/*.pnj` | журнал сервера по уровням и дням | бинарный | по событию, старые удаляются |
-| `observability/observations.jsonl` | наблюдения за работой плагинов | JSON по строке | по событию |
-| `diagnostics/history/*.pndlog` | журнал сессии для отчёта поддержки | бинарный | в течение сессии |
-| `updates/` | каталог релизов, события обновлений, резервные копии | JSON и сами файлы | модуль обновлений |
+| `data/settings.json` | настройки библиотеки: только то, что изменил администратор (`/pn settings`, меню) | JSON | атомарно при каждом изменении, при старте читается; повреждённый файл сохраняется как `settings.json.broken` |
+| `Помощь.txt`, `Настройки.txt`, `Команды.txt` (в корне `plugins/pnLibrary`) | справка для администратора со ссылками на поддержку, обзор всех настроек с текущими значениями и список всех команд `/pn` с правами | текст UTF-8 | заново при каждом запуске, `Настройки.txt` ещё и после каждого изменения настройки; текст берётся из кода, ручные правки не сохраняются, не читаются обратно. Если JVM сервера не умеет создавать файлы с русскими именами, пишутся `HELP.txt`, `SETTINGS.txt` и `COMMANDS.txt` |
+| `link.key`, `groups.tsv` | связь с прокси и группы серверов | base64, таблица | прокси; см. ниже |
+| `data/history/task-history.tsv` | завершённые задачи плагинов | таблица (`TsvRecords`), версия 3 | не чаще раза в 30 секунд и при остановке |
+| `data/history/event-history.tsv` | вызовы событий по дням и часам | своя таблица, первая строка `# pnLibrary event history v1` | не чаще раза в минуту и при остановке |
+| `data/history/event-history.csv`, `event-history.json` | выгрузка истории событий | CSV, JSON | только по кнопке выгрузки в меню или команде, не читается обратно |
+| `data/journal/*.pnj` | журнал сервера по уровням и дням | бинарный | по событию, старые удаляются |
+| `data/observability/` (`observations.jsonl`, `attachments/`) | наблюдения за работой плагинов | JSON по строке | по событию |
+| `data/diagnostics/history/*.pndlog` | журнал сессии для отчёта поддержки | бинарный | в течение сессии |
+| `data/updates/` | каталог релизов, события обновлений, резервные копии, настройки каналов и паузы (`preferences.json`) | JSON и сами файлы | модуль обновлений |
+| `data/reports/` | созданные отчёты поддержки | zip | по команде `/pn debug` |
+| `data/upload-ledger.json` | квитанции удаления загруженных отчётов | JSON | при загрузке и удалении |
+| `data/downloads/` | состояние скачивания файлов и зависимостей | свои файлы | при скачивании |
 
 ## Единый формат таблиц
 
-Таблицы с записями (история задач, дальше и история событий) пишет один класс `TsvRecords` из `modules/common`:
+Таблицы с записями (история задач и группы серверов) пишет один класс `TsvRecords` из `modules/common`:
 
 - первая строка называет формат и версию, например `#pnlibrary-task-history 3`;
 - одна запись на строку, поля через табуляцию, табуляция, перенос строки и обратная косая внутри поля экранируются;
@@ -31,18 +35,11 @@
 - общий лимит размера и очистка старого для журнала, наблюдений и истории сессий;
 - одна страница в меню «Данные библиотеки»: что и сколько занимает, кнопка очистки каждой части.
 
-## link.key
+## link.key и groups.tsv
 
-Shared key of the link between a proxy and its game servers (`pnlibrary:link` plugin message channel). The proxy creates the file in its pnLibrary folder; copy it to the same folder on each game server and restart. A server reports its pnLibrary version, players and plugin update states every 30 seconds while a player is online; the proxy shows them in `/pn servers`. Reports are signed (HMAC-SHA256), so messages sent by players are ignored. The link only reports: nothing is run on a server.
+Лежат в папке pnLibrary на прокси; `link.key` копируют на игровые серверы. Что это и как настроить: [network.md](network.md).
 
-The proxy also sends every game server a signed map of the network every 30 seconds (its own report and the latest report of each server). A game server shows it in `/pn gui` under «Сеть»: pick the proxy or another server and see its plugins and update states. This is read-only.
-
-### Controlling another server
-
-From `/pn servers <name> check | update <plugin> | auto <plugin> on|off` (or the buttons in the «Сеть» menu) a server can ask another one to look for updates, download a plugin update or switch automatic download. The request is signed with `link.key`, goes through the proxy and is answered the same way. The person asking needs the matching permission on the server they ask from (`pnlibrary.updates.view`, `.download`, `.settings`); the receiving server trusts anyone who holds the key, so keep `link.key` private. Nothing else can be sent: no commands, no files. A request id is accepted once.
-
-## groups.tsv
-
-Группы серверов на прокси, рядом с `link.key`. Формат `#pnlibrary-groups 2`, одна запись на строку, поля через табуляцию: `group`,
-`server`, `plugin`, `extra` (группа, вид, сервер, плагин) и `skip`. Файл можно править вручную, но проще командами и меню, см.
-[Сеть и группы](network.md).
+- `link.key` — общий секрет связи (канал `pnlibrary:link`), одна строка base64, не меньше 32 байт. Игровой сервер файл только читает.
+- `groups.tsv` — группы серверов, формат `#pnlibrary-groups 2`, поля через табуляцию: группа, вид записи (`group`, `server`,
+  `plugin`, `extra`, `skip`), затем сервер или плагин (у `extra` и `skip` — сервер и плагин). Файл можно править вручную,
+  но проще командами и меню.

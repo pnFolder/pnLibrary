@@ -2,11 +2,12 @@ package org.pnfolder.pnlibrary.bungee.tasks
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.spi.tasks.*
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Checks task scheduling and lifecycle tracking on the BungeeCord scheduler. */
 class BungeeTaskAdapterTest {
     @Test
     fun `adapter forwards request and cancels native handle once`() {
@@ -18,7 +19,7 @@ class BungeeTaskAdapterTest {
         }
         val request = PlatformTaskRequest(TaskExecution.Kind.ENTITY, "player", Duration.ofSeconds(2),
             Duration.ofSeconds(3), Runnable {})
-        val handle = adapter.schedule(request)
+        val handle = adapter.buildTask().from(request).schedule()
         assertEquals(request.executionKind, seen?.executionKind)
         assertEquals(request.target, seen?.target)
         assertEquals(request.delay, seen?.delay)
@@ -36,7 +37,7 @@ class BungeeTaskAdapterTest {
             callback = request.callback
             PlatformTaskHandle { cancelled.compareAndSet(false, true) }
         }
-        adapter.schedule(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {}))
+        adapter.buildTask().from(PlatformTaskRequest(TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, Runnable {})).schedule()
         callback.run()
         adapter.close()
         assertFalse(cancelled.get())

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
 import org.pnfolder.pnlibrary.console.ReportedFailure;
 
+/** Checks the console card that {@link StartupFailure} prints when pnLibrary cannot start. */
 class StartupFailureTest {
     private static final Library LIBRARY =
             Library.builder().groupId("org.jetbrains.kotlin").artifactId("kotlin-stdlib").version("2.1.21").build();

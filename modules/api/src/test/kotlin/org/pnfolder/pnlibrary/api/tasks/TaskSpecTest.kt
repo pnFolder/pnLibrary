@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import java.time.Duration
 
 class TaskSpecTest {

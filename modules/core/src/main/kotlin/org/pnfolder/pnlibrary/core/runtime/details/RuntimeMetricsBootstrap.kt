@@ -1,13 +1,14 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
+import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 
+/** Starts the library's own metrics session and reports failure as a warning instead of failing startup. */
 internal class RuntimeMetricsBootstrap(
     private val registry: MetricsSessions,
     private val platform: PlatformIdentity,
@@ -38,7 +39,7 @@ internal class RuntimeMetricsBootstrap(
             }
         }.onFailure { error ->
             runCatchingNonFatal { openedSession?.close() }
-            warning("Metrics could not be started: ${error.message ?: error.javaClass.simpleName}")
+            warning("Metrics could not be started: ${error.message ?: "${error.javaClass.simpleName} in ${error.stackTrace.firstOrNull() ?: "unknown place"}"}")
         }.getOrNull()
     }
 

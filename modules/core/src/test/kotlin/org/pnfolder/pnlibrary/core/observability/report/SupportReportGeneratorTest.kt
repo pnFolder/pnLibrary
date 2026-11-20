@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
@@ -27,6 +27,7 @@ class SupportReportGeneratorTest {
         }
         val generator = SupportReportGenerator(
             dataFolder = temporary,
+            reportsFolder = temporary.resolve("reports"),
             config = PnLibraryConfig(upload = false, uploadMode = "disabled"),
             diagnosticsRegistry = registry,
             platformIdentity = TestPlatform(),
@@ -44,6 +45,35 @@ class SupportReportGeneratorTest {
             assertTrue("pn-diagnostic/plugins/pnclans/configuration/config.yml" in names)
             assertTrue("pn-diagnostic/plugins/runtime/logs/incidents.json" in names)
             assertTrue("pn-diagnostic/checksums.json" in names)
+        }
+    }
+
+    @Test
+    fun `config files whose names collide after cleaning get distinct archive entries`() {
+        val registry = DiagnosticsRegistry()
+        val folder = temporary.resolve("pnMarket")
+        Files.createDirectories(folder)
+        Files.writeString(folder.resolve("./config.yml"), "x: 1\n")
+        Files.writeString(folder.resolve("config.yml"), "x: 2\n")
+        registry.register("pnMarket", folder, DiagnosticContainer.builder("pnMarket").configuration("./config.yml").configuration("config.yml").build())
+        val generator = SupportReportGenerator(
+            dataFolder = temporary,
+            reportsFolder = temporary.resolve("reports"),
+            config = PnLibraryConfig(upload = false, uploadMode = "disabled"),
+            diagnosticsRegistry = registry,
+            platformIdentity = TestPlatform(),
+            platformDiagnostics = TestPlatform(),
+            encryptionCodec = null,
+            uploader = null,
+            uploadLedger = null,
+            diagnosticLogs = { emptyList() },
+        )
+
+        val result = generator.generateAndSave(DebugRequest("all", configs = true, logs = false, local = true))
+        ZipFile(result.localFile.toFile()).use { zip ->
+            val names = zip.entries().asSequence().map { it.name }.toSet()
+            assertTrue("pn-diagnostic/plugins/pnmarket/configuration/config.yml" in names)
+            assertTrue("pn-diagnostic/plugins/pnmarket/configuration/config-2.yml" in names)
         }
     }
 

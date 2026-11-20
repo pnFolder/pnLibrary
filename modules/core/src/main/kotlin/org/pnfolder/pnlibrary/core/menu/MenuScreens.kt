@@ -1,7 +1,12 @@
 package org.pnfolder.pnlibrary.core.menu
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import net.kyori.adventure.text.event.ClickEvent
+import org.pnfolder.pnlibrary.api.chat.ChatKit
+import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.core.menu.style.Row
 
 /** The helpers every screen group uses; they live in the [MenuSession] and are only forwarded here. */
 internal abstract class MenuScreens(private val session: MenuSession, protected val routes: MenuRoutes) {
@@ -29,6 +34,17 @@ internal abstract class MenuScreens(private val session: MenuSession, protected 
 
     protected fun tell(player: MenuViewer, tone: ChatTone, text: String, detail: String? = null) =
         session.tell(player, tone, text, detail)
+
+    /** Closes the menu and offers [command] to the viewer to put into the chat line; [text] tells what to type. */
+    protected fun suggestCommand(player: MenuViewer, text: String, command: String) {
+        player.close()
+        val kit = ChatKit(ChatReader.PLAYER)
+        val line = kit.mark(ChatTone.INFO).append(kit.text(text, ChatPalette.TEXT)).append(kit.text(" "))
+            .append(kit.bracketed("Ввести команду", ChatPalette.ACCENT))
+            .clickEvent(ClickEvent.suggestCommand(command))
+            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить в чат", ChatPalette.TEXT), kit.text(command.trim(), ChatPalette.LABEL)))
+        player.send(listOf(line))
+    }
 
     protected fun list(
         player: MenuViewer,

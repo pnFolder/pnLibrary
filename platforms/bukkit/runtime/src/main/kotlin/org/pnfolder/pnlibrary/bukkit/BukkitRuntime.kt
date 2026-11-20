@@ -1,9 +1,18 @@
 package org.pnfolder.pnlibrary.bukkit
 
+import org.bukkit.Server
 import org.bukkit.plugin.java.JavaPlugin
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
+import org.pnfolder.pnlibrary.bukkit.currency.error
+import org.pnfolder.pnlibrary.bukkit.entity.ArmorStandVisual
+import org.pnfolder.pnlibrary.bukkit.entity.VisualService
+import org.pnfolder.pnlibrary.bukkit.integration.BukkitIntegrations
 import org.pnfolder.pnlibrary.bukkit.inventory.BukkitMenus
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
+import org.pnfolder.pnlibrary.bukkit.item.BukkitItems
+import org.pnfolder.pnlibrary.bukkit.item.ItemService
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
@@ -22,15 +31,23 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     private var menus: BukkitMenus? = null
     private var integrations: BukkitIntegrations? = null
     private var link: BukkitLinkReporter? = null
+    private var logger: PnLogger? = null
 
     fun start() {
-        val audienceService = BukkitAudienceService(plugin)
+        var startupLogger: PnLogger? = null
+        val logBuffer = PnLoggerBuffer(plugin.logger) { startupLogger }
+        val audienceService = BukkitAudienceService(plugin, logBuffer)
         audiences = audienceService
         val network = openLink(plugin)
-        val adapter = BukkitPlatformAdapter(plugin, audienceService, network)
+        var metricsLogger: PnLogger? = null
+        val adapter = BukkitPlatformAdapter(plugin, audienceService, network, { metricsLogger!! }, logBuffer)
         try {
             val runtime = PnLibraryRuntimeHost.start(plugin, adapter)
             host = runtime
+            startupLogger = runtime.library.logging.logger(plugin, "Runtime")
+            logBuffer.flush()
+            metricsLogger = runtime.library.logging.logger(plugin, "Metrics")
+            logger = startupLogger
             installServices(runtime, adapter, audienceService)
             val optional = BukkitIntegrations(plugin)
             integrations = optional
@@ -44,25 +61,40 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     }
 
     fun stop() {
-        runCatchingNonFatal { link?.stop() }
+        release("link") { link?.stop() }
         link = null
-        runCatchingNonFatal { integrations?.stop() }
+        release("integrations") { integrations?.stop() }
         integrations = null
-        runCatchingNonFatal { menus?.close() }
+        release("menus") { menus?.close() }
         menus = null
-        runCatchingNonFatal { audiences?.close() }
+        release("audiences") { audiences?.close() }
         audiences = null
-        runCatchingNonFatal { host?.close() }
+        release("library") { host?.close() }
         host = null
+        logger = null
     }
 
-    /** Registers Bukkit-only services and the native platform view on the running runtime. */
+    /** One part failing to stop must not keep the others from stopping, but it must not vanish either. */
+    private fun release(part: String, action: () -> Unit) {
+        runCatchingNonFatal(action).onFailure { logger?.error("Could not stop $part", it) }
+    }
+
     private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, audienceService: BukkitAudienceService) {
-        val menuService = BukkitMenus(plugin, runtime.library.runtimeTaskScope())
+        val menuService = BukkitMenus(plugin, runtime.library.runtimeTaskScope(), pnLogger = { runtime.library.logging.logger(plugin, "Menus") })
         runtime.registerService(ServerInfo::class.java, adapter.serverInfo)
         runtime.registerService(MenuService::class.java, menuService)
         runtime.registerPlatform(BukkitPlatform::class.java, BukkitPlatformServices(plugin.server, adapter.serverInfo, menuService))
         runtime.registerService(BukkitAudienceService::class.java, audienceService)
         menus = menuService
     }
+}
+
+/** Native-backed Bukkit platform API installed by the Bukkit runtime. */
+private class BukkitPlatformServices(
+    override val server: Server,
+    override val serverInfo: ServerInfo,
+    override val menus: MenuService,
+) : BukkitPlatform {
+    override val items: ItemService = BukkitItems
+    override val visuals: VisualService = ArmorStandVisual.Factory
 }

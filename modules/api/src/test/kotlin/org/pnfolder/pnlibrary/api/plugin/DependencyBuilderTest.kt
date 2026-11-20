@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.dependencies.DependencyBuilder
 import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
-import org.pnfolder.pnlibrary.api.dependencies.ManagedProductDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 
 class DependencyBuilderTest {
@@ -21,7 +21,6 @@ class DependencyBuilderTest {
         }.build().single() as ExternalPluginDependency
 
         assertTrue(dependency.minimumVersion == SemanticVersion.parse("1.7.3"))
-        assertTrue(dependency.artifact?.size == null)
         assertTrue(dependency.artifact?.sha256 == null)
         assertTrue(dependency.downloadPolicy == DownloadPolicy.AUTOMATIC)
     }
@@ -58,7 +57,7 @@ class DependencyBuilderTest {
         val builder = DependencyBuilder()
         builder.plugin("Legacy") {
             it.minimumVersion("2.0.0")
-                .artifact("https://example.org/Legacy-2.0.0.jar", 128, "a".repeat(64))
+                .artifact("https://example.org/Legacy-2.0.0.jar", "a".repeat(64))
                 .downloadPolicy(DownloadPolicy.FORCED)
         }
 

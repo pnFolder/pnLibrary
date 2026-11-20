@@ -8,28 +8,25 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandNode
-import org.pnfolder.pnlibrary.api.commands.SenderRule
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
+import org.pnfolder.pnlibrary.api.commands.definition.SenderRule
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Registers portable commands through Paper's Brigadier command API, falling back to [fallback], the classic
- * command map, for anything the API cannot take.
- *
- * Paper builds its command tree once, when the server has loaded its plugins, and again on a datapack reload;
- * plugins may add commands only while that happens. So commands registered before then are collected and
- * registered natively in that event, and every later registration, or a command Paper refuses, goes through
- * [fallback] and still works, only without client-side validation.
- *
- * Registering a handler for this event makes Paper turn off Bukkit's `/reload`; that is Paper's rule, not ours.
- */
+// Paper builds its command tree on plugin load and on datapack reload — commands can only be added then.
+// Everything registered before that event is queued here and submitted in bulk; anything later goes through
+// [fallback] (classic command map) and still works, only without client-side validation.
+// Registering a lifecycle handler also disables Bukkit's /reload — that is Paper's rule, not ours.
+@Suppress("UnstableApiUsage")
 class PaperNativeCommandRegistrar(
     private val plugin: Plugin,
     private val fallback: NativeCommandRegistrar<CommandSender>,
+    private val pnLogger: () -> PnLogger,
 ) : NativeCommandRegistrar<CommandSender> {
     private class Entry(
         val owner: Plugin?,
@@ -39,6 +36,7 @@ class PaperNativeCommandRegistrar(
     ) {
         @Volatile var active = true
         @Volatile var fallbackRegistration: PlatformCommandRegistration? = null
+        val suggestionFailureReported = AtomicBoolean(false)
     }
 
     private val entries = CopyOnWriteArrayList<Entry>()
@@ -49,7 +47,7 @@ class PaperNativeCommandRegistrar(
     init {
         plugin.lifecycleManager.registerEventHandler(
             LifecycleEvents.COMMANDS,
-            LifecycleEventHandler<ReloadableRegistrarEvent<Commands>> { event ->
+            LifecycleEventHandler { event: ReloadableRegistrarEvent<Commands> ->
                 committed = true
                 val registrar = event.registrar()
                 entries.filter { it.active }.forEach { registerNative(registrar, it) }
@@ -57,7 +55,6 @@ class PaperNativeCommandRegistrar(
         )
     }
 
-    /** Registers [command] natively through Paper's Brigadier API on behalf of [owner]. */
     override fun register(
         owner: Any,
         command: CommandDefinition,
@@ -81,10 +78,7 @@ class PaperNativeCommandRegistrar(
             val meta = (entry.owner ?: plugin).pluginMeta
             registrar.register(meta, node, "pnLibrary portable command", entry.command.aliases.toList())
         } catch (error: Exception) {
-            plugin.logger.warning(
-                "Command /${entry.command.name} could not use Paper's command API " +
-                    "(${error.javaClass.simpleName}); using the classic command map",
-            )
+            pnLogger().warning("Command /${entry.command.name} could not use Paper's command API; using the classic command map", error)
             entry.fallbackRegistration = fallback.register(entry.owner ?: plugin, entry.command, entry.execute, entry.suggest)
         }
     }
@@ -92,7 +86,7 @@ class PaperNativeCommandRegistrar(
     private fun invocationOf(entry: Entry) = object : NativeInvocation<CommandSourceStack> {
         override fun execute(source: CommandSourceStack, input: String) {
             if (!entry.active) {
-                source.sender.sendMessage("Команда сейчас недоступна.")
+                source.sender.sendMessage("This command is currently unavailable.")
                 return
             }
             val line = CommandLine.of(input, keepTrailing = false)
@@ -117,7 +111,12 @@ class PaperNativeCommandRegistrar(
 
         override fun suggest(source: CommandSourceStack, input: String): CompletionStage<List<String>> {
             val line = CommandLine.of(input, keepTrailing = true)
-            return entry.suggest(source.sender, line.label, line.arguments.toTypedArray())
+            return entry.suggest(source.sender, line.label, line.arguments.toTypedArray()).whenComplete { _, error ->
+                // Tab runs on every keystroke, so one report per command is enough.
+                if (error != null && entry.suggestionFailureReported.compareAndSet(false, true)) {
+                    pnLogger().error("Tab completion of /${entry.command.name} failed", error)
+                }
+            }
         }
     }
 }

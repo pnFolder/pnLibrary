@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -19,6 +19,7 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
+/** Checks command registration, execution, tab completion and cleanup on BungeeCord. */
 class BungeeCommandAdapterTest {
     @Test
     fun `native callbacks translate sender execution and suggestions`() {

@@ -145,12 +145,12 @@ bus.plugins(ShopPurchaseEvent::class.java)       // какие плагины с
 bus.listeners(PluginId.of("shop"), ModuleId.of("cart"))  // слушатели одного модуля
 ```
 
-В игре и в консоли то же самое показывает команда `/pn bus` (право `pnlibrary.events.bus`).
+В игре и в консоли то же самое показывает команда `/pn bus` (право `pnlibrary.events.bus`). Подкоманды: `listeners`, `plugin`, `top`, `calls`, `denied`, `slow`, `errors`, `history`, `day`, `range`, `trace`/`traces`, `export` (`csv`, `json`), `clear`.
 
 ## 9. История вызовов по дням
 
 pnLibrary считает, сколько раз в какой день вызвали каждое событие и сколько вызовов были отклонены. Счётчики лежат в
-`event-history.tsv` в папке данных и переживают перезапуск; запись идёт в фоне не чаще раза в минуту и при остановке.
+`data/history/event-history.tsv` и переживают перезапуск; запись идёт в фоне не чаще раза в минуту и при остановке.
 
 ```kotlin
 val bus = PnLibraryProvider.get().events.inspector

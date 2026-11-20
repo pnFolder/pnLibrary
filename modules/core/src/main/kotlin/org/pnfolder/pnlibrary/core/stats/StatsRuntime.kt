@@ -1,18 +1,19 @@
 package org.pnfolder.pnlibrary.core.stats
 
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 
 /** The statistics of the server as one part: taking a snapshot, keeping hourly ones in the journal, and `/pn stats`. */
 internal class StatsRuntime(
     tasks: () -> List<TaskSnapshot>,
     events: () -> List<EventInfo>,
     journal: JournalStore,
+    onFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     private val collector = StatsCollector(tasks, events, journal)
-    private val recorder = StatsRecorder(collector, journal)
+    private val recorder = StatsRecorder(collector, journal, onFailure)
 
     @Volatile private var last: StatsSnapshot? = null
 

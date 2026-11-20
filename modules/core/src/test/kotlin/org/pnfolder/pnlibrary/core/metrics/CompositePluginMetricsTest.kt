@@ -3,10 +3,11 @@ package org.pnfolder.pnlibrary.core.metrics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.api.metrics.TelemetryError
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.error.TelemetryError
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.core.metrics.factory.CompositePluginMetrics
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Supplier
 

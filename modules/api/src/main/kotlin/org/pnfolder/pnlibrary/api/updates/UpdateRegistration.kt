@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.updates
 
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+
 /** Lifecycle and manual controls for one updater registration. */
 interface UpdateRegistration : AutoCloseable {
 

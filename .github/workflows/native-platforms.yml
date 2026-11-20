@@ -55,20 +55,20 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           $server = Join-Path $PWD 'build/native-software/server.jar'
-          $args = @('--console=plain', "-PnativeJavaExecutable=$env:SERVER_JAVA")
+          $gradleArgs = @('--console=plain', "-PnativeJavaExecutable=$env:SERVER_JAVA")
           if ($env:PLATFORM -in @('paper', 'folia')) {
             $eula = Join-Path $PWD 'build/native-software/eula.txt'
-            $args += @(':modules:updates:verifyNativeBukkitUpdates', "-PbukkitPlatform=$env:PLATFORM", "-PpaperServerJar=$server", "-PpaperEulaFile=$eula")
+            $gradleArgs += @(':modules:updates:verifyNativeBukkitUpdates', "-PbukkitPlatform=$env:PLATFORM", "-PpaperServerJar=$server", "-PpaperEulaFile=$eula")
           } else {
-            $args += @(':modules:updates:verifyNativeProxyUpdates', "-PnativePlatform=$env:PLATFORM", "-P$($env:PLATFORM)ServerJar=$server")
+            $gradleArgs += @(':modules:updates:verifyNativeProxyUpdates', "-PnativePlatform=$env:PLATFORM", "-P$($env:PLATFORM)ServerJar=$server")
           }
-          & ./gradlew @args
+          & ./gradlew @gradleArgs
           if ($LASTEXITCODE -ne 0) { throw 'Native platform acceptance failed' }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-${{ matrix.platform }}-java${{ inputs.java }}
           path: |
-            modules/core/build/reports/tests/verifyNative*
+            modules/updates/build/reports/tests/verifyNative*
             build/update-catalog-native/**/*.log
           if-no-files-found: ignore

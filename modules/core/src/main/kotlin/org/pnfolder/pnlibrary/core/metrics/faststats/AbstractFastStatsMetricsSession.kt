@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.core.metrics.faststats
 
 import dev.faststats.ErrorTracker
 import dev.faststats.Metrics
-import org.pnfolder.pnlibrary.api.metrics.MetricsCredentials
-import org.pnfolder.pnlibrary.core.metrics.AbstractMetricsSession
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials
+import org.pnfolder.pnlibrary.core.metrics.session.AbstractMetricsSession
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**

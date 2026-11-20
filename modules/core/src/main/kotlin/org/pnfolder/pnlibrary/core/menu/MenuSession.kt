@@ -3,10 +3,33 @@ package org.pnfolder.pnlibrary.core.menu
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
+import org.pnfolder.pnlibrary.core.menu.data.MenuData
+import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
+import org.pnfolder.pnlibrary.core.menu.style.BACK
+import org.pnfolder.pnlibrary.core.menu.style.FOOTER_END
+import org.pnfolder.pnlibrary.core.menu.style.Icons
+import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
+import org.pnfolder.pnlibrary.core.menu.style.NEXT
+import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
+import org.pnfolder.pnlibrary.core.menu.style.ROUTES
+import org.pnfolder.pnlibrary.core.menu.style.Row
+import org.pnfolder.pnlibrary.core.menu.style.Style
+import org.pnfolder.pnlibrary.core.menu.style.backItem
+import org.pnfolder.pnlibrary.core.menu.style.closeItem
+import org.pnfolder.pnlibrary.core.menu.style.footerCorners
+import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.pane
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 
+private const val LIST_ROWS = 6
+private const val REFRESH = 49
+private const val CLOSE = 53
+
+/** State of one open menu: viewer, data source and the current screen. */
 internal class MenuSession(
     val data: MenuData,
     val host: MenuHost,
@@ -15,7 +38,7 @@ internal class MenuSession(
     val remote get() = remoteName != null
 
     fun allowed(player: MenuViewer, permission: String, action: () -> Unit) {
-        if (player.hasPermission(permission) || player.hasPermission("pnlibrary.admin")) action()
+        if (player.hasPermission(permission) || player.hasPermission(MenuPermissions.ADMIN)) action()
         else tell(player, ChatTone.FAILURE, "Не хватает права.", permission)
     }
 
@@ -45,29 +68,43 @@ internal class MenuSession(
         val pages = ((total - 1) / perPage + 1).coerceAtLeast(1)
         val current = page.coerceIn(0, pages - 1)
         val shown = if (total == rows.size) rows.drop(current * perPage).take(perPage) else rows.take(perPage)
-        val builder = Menus.chest(title("$title ${current + 1}/$pages")).rows(LIST_ROWS)
+        val builder = Menus.chest(menuTitle("$title ${current + 1}/$pages")).rows(LIST_ROWS)
         shown.forEachIndexed { slot, row -> if (row.click != null) builder.button(slot, row.stack, row.click) else builder.slot(slot, row.stack) }
         if (total == 0) builder.slot(22, icon(Icons.PROBLEMS, "BARRIER", emptyText, emptyList(), muted = true))
         footerCorners(builder)
         builder.fill(pane(), 0, FOOTER_END)
         builder.button(BACK, backItem(), go { back(it) })
-        if (current > 0) {
-            val previous = icon(Icons.BACK, "ARROW", "Назад по списку", Style.lore(emptyList(), emptyList(), Style.left("страница $current")), good = true)
-            builder.button(PREVIOUS, previous, go { reopen(it, current - 1) })
-        }
-        if (current < pages - 1) {
-            val following = icon(Icons.NEXT, "ARROW", "Дальше по списку",
-                Style.lore(emptyList(), emptyList(), Style.left("страница ${current + 2}")), good = true)
-            builder.button(NEXT, following, go { reopen(it, current + 1) })
-        }
-        builder.button(
-            REFRESH,
-            icon(Icons.CHECK, "COMPASS", "Обновить список", Style.lore(listOf("Перечитать данные заново."), emptyList(), Style.left("обновить"))),
-            go { reopen(it, current) },
-        )
+        pager(builder, current, pages, perPage, total, shown.size, reopen)
         extra(builder)
         builder.button(CLOSE, closeItem(), go { it.close() })
         show(player, builder.build())
+    }
+
+    private fun pager(builder: MenuBuilder, current: Int, pages: Int, perPage: Int, total: Int, shown: Int, reopen: (MenuViewer, Int) -> Unit) {
+        val first = if (total == 0) 0 else current * perPage + 1
+        val range = "$first–${current * perPage + shown} из $total"
+        if (current > 0) {
+            val lore = Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на предыдущую"))
+            val previous = icon(null, "SPECTRAL_ARROW", "◀ Страница $current", lore, good = true)
+            builder.button(PREVIOUS, previous, go { reopen(it, current - 1) })
+        } else if (pages > 1) {
+            builder.slot(PREVIOUS, icon(null, "GRAY_DYE", "Это первая страница", emptyList(), muted = true))
+        }
+        if (current < pages - 1) {
+            val lore = Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на следующую"))
+            val following = icon(null, "SPECTRAL_ARROW", "Страница ${current + 2} ▶", lore, good = true)
+            builder.button(NEXT, following, go { reopen(it, current + 1) })
+        } else if (pages > 1) {
+            builder.slot(NEXT, icon(null, "GRAY_DYE", "Это последняя страница", emptyList(), muted = true))
+        }
+        builder.button(
+            REFRESH,
+            icon(
+                Icons.CHECK, "COMPASS", "Страница ${current + 1} из $pages",
+                Style.lore(listOf("Показано $range."), emptyList(), Style.left("обновить список")),
+            ),
+            go { reopen(it, current) },
+        )
     }
 
     fun go(action: (MenuViewer) -> Unit) = MenuClickHandler { click -> away(click.player) { action(click.player) } }
@@ -81,7 +118,7 @@ internal class MenuSession(
             try {
                 action()
             } catch (error: Exception) {
-                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", reason(error))
+                if (player != null) tell(player, ChatTone.FAILURE, "Сервер $remoteName не ответил.", error.rootMessage())
             }
         }
     }

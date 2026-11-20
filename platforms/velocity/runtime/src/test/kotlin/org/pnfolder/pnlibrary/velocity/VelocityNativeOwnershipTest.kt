@@ -11,14 +11,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
 import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter
-import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -54,14 +53,12 @@ class VelocityNativeOwnershipTest {
     }
 
     @Test
-    fun `native task is scheduled under caller plugin`() {
+    fun `native task is scheduled under the library plugin`() {
         val proxy = mock(ProxyServer::class.java, RETURNS_DEEP_STUBS)
         val owner = Any()
         whenever(proxy.pluginManager.fromInstance(owner)).thenReturn(Optional.of(mock()))
-        val adapter = VelocityTaskAdapter(proxy, { "demo" }, {})
-        val handle = adapter.schedule(PlatformTaskRequest(
-            TaskExecution.Kind.ASYNC, null, Duration.ZERO, null, Runnable {}, owner,
-        ))
+        val adapter = VelocityTaskAdapter(proxy, owner, {})
+        val handle = adapter.buildTask().task {}.execution(TaskExecution.Kind.ASYNC).schedule()
         verify(proxy.scheduler).buildTask(org.mockito.kotlin.eq(owner), any<Runnable>())
         handle.cancel()
         adapter.close()
@@ -77,9 +74,7 @@ class VelocityNativeOwnershipTest {
                 .register(owner, command("owned") {}, dispatcher)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            VelocityTaskAdapter(proxy, { "demo" }, {}).schedule(PlatformTaskRequest(
-                TaskExecution.Kind.ASYNC, null, Duration.ZERO, null, Runnable {}, owner,
-            ))
+            VelocityTaskAdapter(proxy, owner, {}).buildTask().task {}.schedule()
         }
     }
 

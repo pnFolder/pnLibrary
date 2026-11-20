@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.Proxy
 import java.math.BigDecimal
@@ -37,7 +37,7 @@ class CurrencyHubTest {
         val owner = hub.scope(PluginId.of("owner"), placeholders())
         val consumer = hub.scope(PluginId.of("consumer"), placeholders())
         val registration = owner.register("coins", provider(), Consumer {
-            it.access(CurrencyAccess.shared())
+            it.access(PluginAccess.shared())
         })
 
         assertSame(registration, consumer.get("owner:coins"))
@@ -51,6 +51,25 @@ class CurrencyHubTest {
         assertEquals(CurrencyRegistrationState.CLOSED, registration.state)
         assertNull(hub.get("owner:coins"))
         assertThrows(IllegalStateException::class.java) { registration.enable() }
+        hub.close()
+    }
+
+    @Test
+    fun `a provider that throws is reported to the owner as well as failing the call`() {
+        val reported = mutableListOf<Pair<String, Throwable>>()
+        val hub = CurrencyHub { message, error -> reported += message to error }
+        val owner = hub.scope(PluginId.of("owner"), placeholders())
+        val broken = object : CurrencyProvider, AutoCloseable {
+            override val descriptor = CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN)
+            override fun balance(account: CurrencyAccount): CompletableFuture<BigDecimal> = error("balance broke")
+            override fun close() = error("close broke")
+        }
+        val registration = owner.register("coins", broken)
+
+        assertThrows(Exception::class.java) { registration.balance(java.util.UUID.randomUUID()).toCompletableFuture().get() }
+        registration.close()
+
+        assertEquals(listOf("balance broke", "close broke"), reported.map { it.second.message })
         hub.close()
     }
 

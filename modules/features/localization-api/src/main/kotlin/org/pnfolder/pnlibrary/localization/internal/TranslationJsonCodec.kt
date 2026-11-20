@@ -1,0 +1,27 @@
+package org.pnfolder.pnlibrary.localization.internal
+
+import com.google.gson.JsonParser
+import org.pnfolder.pnlibrary.localization.TranslationException
+import java.nio.charset.StandardCharsets
+
+/**
+ * Reads a language file into a flat key-to-text map; accepts JSON objects and `key=value` lines.
+ */
+internal object TranslationJsonCodec {
+    /** Parses [bytes]; throws MALFORMED_DATA when the content is invalid or empty. */
+    fun parse(bytes: ByteArray): Map<String, String> = try {
+        val text = String(bytes, StandardCharsets.UTF_8)
+        val values = if (text.trimStart().startsWith("{")) {
+            JsonParser.parseString(text).asJsonObject.entrySet()
+                .associateTo(linkedMapOf()) { (key, value) -> key to value.asString }
+        } else {
+            text.lineSequence().map(String::trim)
+                .filter { it.isNotEmpty() && !it.startsWith('#') && '=' in it }
+                .associateTo(linkedMapOf()) { line -> line.substringBefore('=').trim() to line.substringAfter('=').trim() }
+        }
+        if (values.isEmpty()) throw IllegalArgumentException("Minecraft language table is empty")
+        values
+    } catch (error: Exception) {
+        throw TranslationException(TranslationException.Reason.MALFORMED_DATA, "Malformed Minecraft language file", error)
+    }
+}

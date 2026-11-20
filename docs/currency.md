@@ -21,7 +21,7 @@ PlayerPoints. Мосты к Vault и PlayerPoints и команда `/pn money` 
 ## 1. Взять валюту
 
 ```kotlin
-val currencies = module.currencies                 // Java: CurrencyApi.from(module)
+val currencies = module.currencies                 // import ...api.currency.currencies; Java: CurrencyApi.from(module)
 
 val money = currencies.require("vault:money")      // Vault, если он установлен
 val coins = currencies.get("coins")                // своя валюта по имени или псевдониму, либо null
@@ -105,7 +105,7 @@ val coins = module.currencies.register("coins") { definition ->
 По умолчанию валюту видит только её владелец. Чтобы открыть доступ:
 
 ```kotlin
-currency.access(CurrencyAccess.shared())                    // всем плагинам pnLibrary
+currency.access(PluginAccess.shared())                    // всем плагинам pnLibrary
 currency.access { it.owner().allow("pnshop").allowMatching("pn*").deny("pnbeta") }
 ```
 

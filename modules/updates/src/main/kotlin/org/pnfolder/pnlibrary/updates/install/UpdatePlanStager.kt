@@ -1,0 +1,127 @@
+package org.pnfolder.pnlibrary.updates.install
+
+import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
+import org.pnfolder.pnlibrary.api.version.ApiVersionRange
+import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
+import org.pnfolder.pnlibrary.updates.engine.net.ArtifactDownloader
+import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHosts
+import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
+import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact
+import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
+import java.nio.file.Path
+import java.util.UUID
+
+/**
+ * Where an installed component lives and where its update is placed for the next restart.
+ * @property currentJar the jar now in use
+ * @property updateDirectory folder the new jar is placed in
+ * @property supportedApi API versions the component accepts, null when it does not say
+ */
+internal data class InstalledUpdateTarget(
+    val currentJar: Path,
+    val updateDirectory: Path,
+    val supportedApi: ApiVersionRange? = null,
+)
+
+/** Downloads every artifact in an update plan and prepares one restart transaction. */
+internal class UpdatePlanStager(
+    private val platform: PlatformType,
+    private val paths: LibraryPaths,
+    private val http: TrustedHttpClient,
+    private val transaction: UpdateTransaction,
+    private val maximumArtifactBytes: Long,
+    private val requireSha256: Boolean = true,
+    /** The Java build the administrator chose for a product, if any. */
+    private val javaChoice: (ProductId) -> Int? = { null },
+    /** The Java version the installed build of a product was made for, if known. */
+    private val installedJava: (ProductId) -> Int? = { null },
+) {
+    /** Downloads the artifacts of [plan] and hands them to the transaction as one set for the next restart. */
+    fun stage(
+        planId: UUID,
+        plan: UpdatePlan,
+        installedTargets: Map<ProductId, InstalledUpdateTarget>,
+        configurationSnapshot: UUID? = null,
+    ) {
+        val stagingDirectory = paths.staging.resolve(planId.toString())
+        val artifacts = plan.changes.map { change ->
+            prepareArtifact(change, plan, stagingDirectory, installedTargets[change.product])
+        }
+        transaction.prepareForRestart(artifacts, planId, plan.targetApi, configurationSnapshot)
+    }
+
+    private fun prepareArtifact(
+        change: ProductChange,
+        plan: UpdatePlan,
+        stagingDirectory: Path,
+        installedTarget: InstalledUpdateTarget?,
+    ): TransactionArtifact {
+        val release = plan.selected.single { it.product == change.product }
+        val artifact = selectArtifact(change, release, installedTarget?.currentJar?.fileName?.toString())
+        require(!requireSha256 || artifact.sha256 != null) {
+            "Release artifact has no published SHA-256: ${artifact.file}"
+        }
+        val downloadUri = requireNotNull(artifact.downloadUri) {
+            "Release artifact has no verified download URL: ${artifact.file}"
+        }
+        TrustedHosts.requireDownload(downloadUri)
+        val stagedFile = stagingDirectory.resolve(change.product.value).resolve(artifact.file)
+        // The body goes straight to disk, so a large file never sits in memory.
+        http.stream(downloadUri, maximumArtifactBytes) { input ->
+            ArtifactDownloader(maximumArtifactBytes).download(openStream = { input }, destination = stagedFile)
+        }
+
+        val specification = ArtifactSpecification(
+            product = change.product,
+            version = change.to,
+            supportedApi = release.supportedApi,
+            fileName = artifact.file,
+            size = artifact.size,
+            sha256 = artifact.sha256,
+        )
+        val target = installedTarget?.updateDirectory?.resolve(installedTarget.currentJar.fileName)
+            ?: paths.serverUpdateFolder.resolve(artifact.file)
+
+        return TransactionArtifact(
+            specification = specification,
+            source = stagedFile,
+            target = target,
+            rollbackSource = installedTarget?.currentJar ?: target,
+            previousVersion = change.from?.toString(),
+            previousApi = installedTarget?.supportedApi,
+            installedTarget = installedTarget?.currentJar ?: paths.plugins.resolve(artifact.file),
+        )
+    }
+
+    /**
+     * Keeps the variant that is installed: a universal JAR (the one the bootstrap puts into `plugins`) is replaced by the
+     * newer universal one, a platform JAR by the platform one. A fresh install prefers the platform JAR, then the universal.
+     * When a release has builds for several Java versions, the one the administrator chose wins, then the one that
+     * matches the installed product.
+     */
+    private fun selectArtifact(
+        change: ProductChange,
+        release: ProductRelease,
+        installedFile: String?,
+    ): ArtifactDescriptor {
+        val fitting = release.artifacts.filter { it.matchesPlatform(platform) && it.supports(JavaRuntime.feature) }
+        // The build the administrator chose, else the one that matches the installed product, else any that fits.
+        val candidates = listOfNotNull(javaChoice(change.product), installedJava(change.product))
+            .firstNotNullOfOrNull { level -> fitting.filter { it.minimumJava == level }.takeIf { it.isNotEmpty() } }
+            ?: fitting
+        val universalInstalled = installedFile?.endsWith("-universal.jar", ignoreCase = true) == true
+        val preferred = if (universalInstalled) PlatformType.UNIVERSAL else platform
+        return candidates.firstOrNull { it.platform == preferred }
+            ?: candidates.firstOrNull { it.platform == platform }
+            ?: candidates.firstOrNull()
+            ?: error("No ${platform.id} artifact for ${change.product} ${change.to}")
+    }
+
+}

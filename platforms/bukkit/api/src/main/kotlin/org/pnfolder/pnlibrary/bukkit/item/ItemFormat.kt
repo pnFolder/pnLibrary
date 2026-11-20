@@ -36,6 +36,7 @@ class ItemFormat private constructor(
     val exact: String,
     val fields: Map<String, ItemField>,
 ) {
+    /** Returns a builder that starts with every key and field of this format. */
     fun toBuilder(): Builder = Builder().also { builder ->
         builder.material(material).amount(amount).name(name).lore(lore).enchantments(enchantments)
             .texture(*textures.toTypedArray()).exact(exact)
@@ -80,6 +81,7 @@ class ItemFormat private constructor(
         /** Reads a field of your own from [key]; it runs after the standard fields, in the order added. */
         fun field(key: String, field: ItemField): Builder = apply { fields[key(key)] = field }
 
+        /** Creates the immutable format. */
         fun build(): ItemFormat = ItemFormat(
             material, amount, name, lore, enchantments, textures, exact,
             Collections.unmodifiableMap(LinkedHashMap(fields)),

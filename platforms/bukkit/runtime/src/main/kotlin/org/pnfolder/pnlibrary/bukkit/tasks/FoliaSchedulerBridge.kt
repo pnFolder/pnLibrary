@@ -2,19 +2,14 @@ package org.pnfolder.pnlibrary.bukkit.tasks
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.compat.Folia
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.spi.tasks.RetirableCallback
 import java.time.Duration
 
-/**
- * Puts a portable task on the Folia scheduler that matches its execution: asynchronous, a player's region or global.
- *
- * Region schedulers count from one tick: they refuse a delay or period of zero for delayed and repeating work, so
- * both are raised to one tick there.
- */
+// Region schedulers refuse delay/period of zero for repeating work — both are raised to one tick (see ticks()).
 internal class FoliaSchedulerBridge(private val plugin: Plugin) {
 
     fun schedule(request: PlatformTaskRequest): Any {

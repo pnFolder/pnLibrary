@@ -9,16 +9,12 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-core" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
-    api(project(":modules:link"))
-    api(project(":modules:journal"))
-    api(project(":modules:upload"))
-    api(project(":modules:events"))
-    api(project(":modules:placeholders"))
+    implementation(project(":modules:spi"))
+    implementation(project(":modules:common"))
     api(project(":modules:updates"))
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))
-    implementation(project(":modules:features:minecraft-localization-api"))
+    implementation(project(":modules:features:localization-api"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
@@ -37,7 +33,8 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    // Without a key (a local build) the artifacts are published unsigned.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
 
     coordinates(
         groupId = "io.github.pnfolder",

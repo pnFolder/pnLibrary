@@ -8,8 +8,8 @@ import org.bstats.charts.MultiLineChart
 import org.bstats.charts.SimpleBarChart
 import org.bstats.charts.SimplePie
 import org.bstats.charts.SingleLineChart
-import org.pnfolder.pnlibrary.api.metrics.MetricsCredentials
-import org.pnfolder.pnlibrary.core.metrics.AbstractMetricsSession
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials
+import org.pnfolder.pnlibrary.core.metrics.session.AbstractMetricsSession
 
 /** Translates shared lazy chart definitions into native bStats charts. */
 class BStatsMetricsSession(

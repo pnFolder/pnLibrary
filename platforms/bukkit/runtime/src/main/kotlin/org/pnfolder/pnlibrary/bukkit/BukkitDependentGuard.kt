@@ -31,6 +31,7 @@ internal class BukkitDependentGuard(
     }
 
     companion object {
+        /** Disables every enabled plugin that depends on [owner]; used when [owner] fails to start. */
         fun disableDependentsOf(owner: Plugin, log: (String) -> Unit) {
             Bukkit.getPluginManager().plugins
                 .filter { it !== owner && it.isEnabled && dependsOn(it, owner) }

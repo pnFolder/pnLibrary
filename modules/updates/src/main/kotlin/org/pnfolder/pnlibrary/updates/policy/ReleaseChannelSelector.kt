@@ -1,0 +1,28 @@
+package org.pnfolder.pnlibrary.updates.policy
+
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
+
+/** A product's releases and the newest one its channel allows. */
+internal data class ReleaseChannelSelection(
+    val all: List<ProductRelease>,
+    val latestAllowed: ProductRelease?,
+)
+
+/** Builds the release view for one product using the channel chosen in configuration. */
+internal object ReleaseChannelSelector {
+    /** Picks the releases of [product] the channel allows. */
+    fun select(
+        product: ProductId,
+        releases: List<ProductRelease>,
+        channel: UpdateChannel,
+    ): ReleaseChannelSelection {
+        val productReleases = releases.filter { it.product == product }
+        val latestAllowed = productReleases
+            .filter { release -> channel.accepts(release.channel) }
+            .maxByOrNull(ProductRelease::version)
+
+        return ReleaseChannelSelection(productReleases, latestAllowed)
+    }
+}

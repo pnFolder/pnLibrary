@@ -64,4 +64,12 @@ class SemanticVersionTest {
     fun `rejects inverted range`() {
         assertThrows(IllegalArgumentException::class.java) { VersionRange.closed("3.0.0", "2.0.0") }
     }
+
+    @Test
+    fun `a range prints in interval notation and equal versions hash alike`() {
+        assertEquals("[2.0.0, 3.0.0]", VersionRange.closed("2.0.0", "3.0.0").toString())
+        assertEquals("(1.0.0, *]", VersionRange.greaterThan("1.0.0").toString())
+        assertEquals("[*, 2.0.0)", VersionRange.until("2.0.0").toString())
+        assertEquals(SemanticVersion.parse("1.2.3+a").hashCode(), SemanticVersion.parse("1.2.3+b").hashCode())
+    }
 }

@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.plugin.module
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import java.util.function.Consumer
 
 class ModuleDefinitionMetricsTest {

@@ -9,14 +9,8 @@ import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import java.util.Locale
 
-/** Creates remote-policy contexts from BungeeCord runtime metadata. */
 internal object BungeeRemotePolicyContextFactory {
-    /**
-     * Builds a context for [plugin] and appends caller-defined policy [values].
-     *
-     * @param plugin BungeeCord plugin that owns the policy evaluation.
-     * @param values Additional non-sensitive values exposed to policy rules.
-     */
+
     fun create(plugin: Plugin, values: Map<String, String> = emptyMap()): RemotePolicyContext {
         val proxy = plugin.proxy
         val description = plugin.description

@@ -91,6 +91,7 @@ internal class CurrencyOperationsBuilder : CurrencyOperations {
         )
     }
 
+    /** Wraps a synchronous callback result, or its exception, into an already completed stage. */
     private fun <T> completed(operation: () -> T): CompletionStage<T> = try {
         CompletableFuture.completedFuture(operation())
     } catch (error: Throwable) {
@@ -135,14 +136,29 @@ private class ConfiguredCurrencyProvider(
 
     override fun <T : Any> extension(type: Class<T>): T? = extensions[type]?.let(type::cast)
 
+    /** Result returned when the plugin did not configure the requested operation. */
     private fun unsupported() =
         CompletableFuture.completedFuture(CurrencyResult.unsupported("Operation is not configured"))
 }
 
 /** Internal capability declaration used when a provider implements optional interfaces structurally. */
 internal interface CurrencyCapabilitySource {
+    /** Operations the provider really supports, which may be fewer than the interfaces it implements. */
     val declaredCapabilities: Set<CurrencyCapability>
 }
+
+/** Stage failed with a generic message that keeps the callback's exception as the cause. */
+/** Capabilities of [provider]: those it declares, else one per optional interface it implements. */
+internal fun capabilitiesOf(provider: CurrencyProvider): Set<CurrencyCapability> =
+    if (provider is CurrencyCapabilitySource) provider.declaredCapabilities else buildSet {
+        add(CurrencyCapability.BALANCE)
+        if (provider is CurrencyDeposits) add(CurrencyCapability.DEPOSIT)
+        if (provider is CurrencyWithdrawals) add(CurrencyCapability.WITHDRAW)
+        if (provider is CurrencyBalanceMutation) add(CurrencyCapability.SET_BALANCE)
+        if (provider is CurrencyReset) add(CurrencyCapability.RESET)
+        if (provider is CurrencyTransfers) add(CurrencyCapability.TRANSFER)
+        if (provider is CurrencyFormatting) add(CurrencyCapability.FORMATTING)
+    }
 
 private fun <T> failedFuture(error: Throwable): CompletionStage<T> = CompletableFuture<T>().also {
     it.completeExceptionally(IllegalStateException("Currency operation failed", error))

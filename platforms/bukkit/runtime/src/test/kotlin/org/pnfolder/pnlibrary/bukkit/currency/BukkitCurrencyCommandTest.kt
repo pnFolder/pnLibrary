@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.Currency
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
@@ -88,7 +88,7 @@ class BukkitCurrencyCommandTest {
     }
 
     private object EmptyCurrencies : CurrencyProviderRegistry {
-        override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration =
+        override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: PluginAccess): CurrencyRegistration =
             error("not used")
         override fun get(reference: String): Currency? = null
         override fun all(): List<Currency> = emptyList()

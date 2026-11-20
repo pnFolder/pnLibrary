@@ -32,6 +32,7 @@ class FileDownload internal constructor(builder: Builder) {
         internal var destination = DownloadDestination.DATA_FOLDER
         internal var relativePath = ""
 
+        /** Sets whether a failed download stops the whole batch. */
         fun required(value: Boolean): Builder = apply { required = value }
 
         /** Enables or disables ordinary automatic downloading. */
@@ -40,7 +41,11 @@ class FileDownload internal constructor(builder: Builder) {
         /** Enables or disables mandatory automatic downloading. */
         fun forceAutomaticDownload(value: Boolean): Builder = apply { forceAutomatic = value }
 
+        /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply { source.url(value) }
+
+        /** Adds another HTTPS address of the same file; tried in order when the one before does not answer. */
+        fun mirror(value: String): Builder = apply { source.mirror(value) }
 
         /** Restricts the source to [value]. */
         fun platform(value: PlatformType): Builder = apply { source.platform(value) }
@@ -49,7 +54,14 @@ class FileDownload internal constructor(builder: Builder) {
         @JvmOverloads
         fun java(minimum: Int, maximum: Int? = null): Builder = apply { source.java(minimum, maximum) }
 
+        /** Sets the expected size and SHA-256 checksum the downloaded file must match. */
         fun integrity(size: Long, sha256: String): Builder = apply { source.integrity(size, sha256) }
+
+        /** Sets the largest accepted size of this file in bytes; without it the library-wide limit applies. */
+        fun maxBytes(value: Long): Builder = apply { source.maxBytes(value) }
+
+        /** Sets the SHA-256 checksum the downloaded file must match. */
+        fun sha256(value: String): Builder = apply { source.sha256(value) }
 
         /** Selects the destination root and confined relative path. */
         fun destination(value: DownloadDestination, relativePath: String): Builder = apply {

@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.core.menu.LibraryMenu
 import org.pnfolder.pnlibrary.core.menu.MenuHost
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
-import org.pnfolder.pnlibrary.core.menu.RemoteMenuData
+import org.pnfolder.pnlibrary.core.menu.data.RemoteMenuData
 import java.util.concurrent.ConcurrentHashMap
 
 /** What the portable menu needs from a Bukkit server. */

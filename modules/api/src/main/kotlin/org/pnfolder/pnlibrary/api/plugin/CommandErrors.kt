@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.api.plugin
 
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 
 /**
  * Kotlin form of [ModuleContext.onCommandError]: `context.onCommandError<NoMoney> { error -> sender.send(...) }`.

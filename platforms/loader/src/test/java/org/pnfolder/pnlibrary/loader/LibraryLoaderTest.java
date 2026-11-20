@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -16,9 +17,11 @@ import net.byteflux.libby.Library;
 import net.byteflux.libby.LibraryManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
+/** Checks repository order, retries and optional library groups of {@link LibraryLoader}. */
 class LibraryLoaderTest {
     // Kotlin is not on this module's classpath, which is exactly the light JAR's situation.
     private static final ClassLoader LOADER = LibraryLoaderTest.class.getClassLoader();
@@ -129,23 +132,50 @@ class LibraryLoaderTest {
 
     @Test
     void newJavaGetsTheNewCompilerAndOldJavaTheOldOne() {
-        LibraryManager modern = mock(LibraryManager.class);
-        LibraryManager legacy = mock(LibraryManager.class);
-
-        LibraryLoader.loadCompiler(modern, 21);
-        LibraryLoader.loadCompiler(legacy, 11);
-
-        verify(modern).loadLibrary(RuntimeLibraries.COMPILER_MODERN[0]);
-        verify(legacy).loadLibrary(RuntimeLibraries.COMPILER_LEGACY[0]);
+        assertSame(RuntimeLibraries.COMPILER_MODERN, LibraryLoader.librariesFor("compiler", 21));
+        assertSame(RuntimeLibraries.COMPILER_LEGACY, LibraryLoader.librariesFor("compiler", 11));
     }
 
     @Test
-    void aCompilerThatCannotBeLoadedDoesNotStopTheServer() {
+    void optionalGroupsAreLoadedOnlyWhenAsked() {
         LibraryManager manager = mock(LibraryManager.class);
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
+        verify(manager, never()).loadLibrary(RuntimeLibraries.DRIVER_MYSQL[0]);
+
+        assertEquals(true, LibraryLoader.loadOptional("mysql"));
+        verify(manager).loadLibrary(RuntimeLibraries.DRIVER_MYSQL[0]);
+        assertEquals(false, LibraryLoader.loadOptional("nothing"));
+    }
+
+    @Test
+    void anOptionalLibraryThatCannotBeLoadedDoesNotThrow() {
+        LibraryManager manager = mock(LibraryManager.class);
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
         doThrow(new RuntimeException("offline")).when(manager).loadLibrary(any(Library.class));
 
-        LibraryLoader.loadCompiler(manager, 21);
+        assertEquals(false, LibraryLoader.loadOptional("compiler"));
+    }
 
-        verify(manager, times(1)).loadLibrary(any(Library.class));
+    @Test
+    void optionalLoadsFromTwoThreadsNeverOverlap() throws Exception {
+        LibraryManager manager = mock(LibraryManager.class);
+        AtomicInteger running = new AtomicInteger();
+        AtomicInteger overlaps = new AtomicInteger();
+        doAnswer(call -> {
+            if (running.incrementAndGet() > 1) overlaps.incrementAndGet();
+            Thread.sleep(50);
+            running.decrementAndGet();
+            return null;
+        }).when(manager).loadLibrary(any(Library.class));
+        LibraryLoader.load(manager, LOADER, LibrarySettings.DEFAULT, LIBRARY);
+
+        Thread first = new Thread(() -> LibraryLoader.loadOptional("mysql"));
+        Thread second = new Thread(() -> LibraryLoader.loadOptional("postgres"));
+        first.start();
+        second.start();
+        first.join();
+        second.join();
+
+        assertEquals(0, overlaps.get());
     }
 }

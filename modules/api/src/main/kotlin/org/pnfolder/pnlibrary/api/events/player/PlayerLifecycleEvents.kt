@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.player
 
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.events.Event
 import java.util.UUID
 

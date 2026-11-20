@@ -1,23 +1,21 @@
 package org.pnfolder.pnlibrary.core.tasks
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.api.tasks.TaskConflictPolicy
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
-import org.pnfolder.pnlibrary.api.tasks.TaskId
-import org.pnfolder.pnlibrary.api.tasks.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.LinkedHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Schedules tasks through the platform adapter, grouped into per-plugin scopes and kept in a bounded history. */
 internal class ScheduledTasks(
     private val adapter: PlatformTaskAdapter,
     private val settings: TaskServiceSettings = TaskServiceSettings(),
@@ -83,14 +81,17 @@ internal class ScheduledTasks(
             active.values.filter { belongs(it.owner, it.scopeToken) }.map { it.snapshot() } +
                 history.values.filter { belongs(it.owner, it.scopeToken) }.map { it.snapshot }
         }
-        return Collections.unmodifiableList(all.filter { TaskQueryMatcher.matches(it, query) })
+        return Collections.unmodifiableList(all.filter { query.matches(it) })
     }
 
     private inner class Scope(override val owner: Any, private val scopeId: PluginId) : TaskScope {
         private val scopeToken = Any()
         private val scopeClosed = AtomicBoolean(false)
 
-        override fun schedule(spec: TaskSpec): TaskHandle {
+        override fun schedule(spec: TaskSpec): TaskHandle = scheduleUnder(spec, null)
+
+        /** Schedules [spec] as a task of this scope, started by task [parent] when there is one. */
+        private fun scheduleUnder(spec: TaskSpec, parent: TaskId?): TaskHandle {
             check(!scopeClosed.get() && !closed.get()) { "TaskScope is closed" }
             synchronized(lock) {
                 val existing = spec.key?.let { key ->
@@ -101,13 +102,15 @@ internal class ScheduledTasks(
                     TaskConflictPolicy.KEEP_EXISTING -> return existing
                     TaskConflictPolicy.REPLACE -> existing.cancel()
                 }
-                val managed = newTask(owner, scopeToken, spec)
+                val managed = newTask(owner, scopeToken, spec, ::scheduleUnder, parent)
                 active[managed.id] = managed
                 val native = try {
-                    adapter.schedule(PlatformTaskRequest(
-                        spec.execution.kind, spec.execution.target, spec.delay, spec.interval, Runnable { managed.invoke() },
-                        owner = owner,
-                    ))
+                    val builder = adapter.buildTask()
+                        .task { managed.invoke() }
+                        .execution(spec.execution.kind, spec.execution.target)
+                        .delay(spec.delay)
+                    spec.interval?.let(builder::every)
+                    builder.schedule()
                 } catch (error: Throwable) {
                     active.remove(managed.id)
                     throw error
@@ -146,8 +149,8 @@ internal class ScheduledTasks(
         }
     }
 
-    private fun newTask(owner: Any, scopeToken: Any, spec: TaskSpec) =
-        ManagedTask(owner, scopeToken, spec, adapter, errorLogger, ::archive)
+    private fun newTask(owner: Any, scopeToken: Any, spec: TaskSpec, spawn: (TaskSpec, TaskId) -> TaskHandle, parent: TaskId?) =
+        ManagedTask(owner, scopeToken, spec, adapter, errorLogger, ::archive, spawn, parent)
 
     /** Moves a finished task from the active list to the history; does nothing if it was already moved. */
     private fun archive(task: ManagedTask) {

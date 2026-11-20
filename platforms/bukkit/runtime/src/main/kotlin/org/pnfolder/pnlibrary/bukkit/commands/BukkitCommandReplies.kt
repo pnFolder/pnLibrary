@@ -4,11 +4,11 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
@@ -27,9 +27,11 @@ internal class BukkitCommandReplies(
     fun routes(reply: Reply): UpdateCatalogRoutes =
         BukkitControlCommand.ROUTES.copy(interactive = reply.supportsInteraction, ascii = reply.isConsole)
 
+    /** Sends one notice with [text] and an optional [detail] line. */
     fun say(reply: Reply, tone: ChatTone, text: String, detail: String? = null) =
         notices(reply, listOf(ChatNotice(tone, text, detail)))
 
+    /** Sends several notices in one message. */
     fun notices(reply: Reply, notices: List<ChatNotice>) =
         UpdateCatalogView.notices(notices, routes(reply)).forEach(reply::send)
 

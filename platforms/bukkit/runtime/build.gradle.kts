@@ -11,7 +11,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":modules:features:currency-api"))
     implementation(project(":platforms:bukkit:api"))
@@ -54,7 +54,8 @@ tasks.named<ProcessResources>("processResources") {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    // Without a key (a local build) the artifacts are published unsigned.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
 
     coordinates(
         groupId = "io.github.pnfolder",

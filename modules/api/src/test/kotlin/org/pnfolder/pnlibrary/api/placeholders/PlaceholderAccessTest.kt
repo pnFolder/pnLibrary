@@ -5,12 +5,13 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 class PlaceholderAccessTest {
     @Test
     fun `patterns are trimmed and matched case-insensitively`() {
-        val access = PlaceholderAccess.builder().allowMatching("  admin-*  ").deny("admin-untrusted").build()
+        val access = PluginAccess.builder().allowMatching("  admin-*  ").deny("admin-untrusted").build()
         val owner = PluginId.of("owner")
 
         assertEquals(setOf("admin-*"), access.allowedPatterns)
@@ -21,6 +22,6 @@ class PlaceholderAccessTest {
 
     @Test
     fun `blank patterns are rejected`() {
-        assertThrows(IllegalArgumentException::class.java) { PlaceholderAccess.builder().allowMatching(" ") }
+        assertThrows(IllegalArgumentException::class.java) { PluginAccess.builder().allowMatching(" ") }
     }
 }

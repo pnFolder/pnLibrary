@@ -33,6 +33,19 @@ enum class UnknownValuePolicy {
     FAIL,
 }
 
+/** What to do with a list element whose `type` is not known to a polymorphic type. */
+enum class UnknownTypePolicy {
+    /** Reject the whole file with an error that names the element. */
+    FAIL,
+
+    /**
+     * Skip the element, warn, and keep it in the file untouched. While an element is skipped the library does not
+     * rewrite the file from memory (`save`, `update`, `resetToDefaults` fail), so nothing is lost. When the type
+     * appears later, the file is read again and the element comes back. Applies to list elements.
+     */
+    SKIP,
+}
+
 /** What to do when an existing field has no code-defined comment. */
 enum class CommentPolicy {
     /** Leave the file's existing comments unchanged. */
@@ -64,6 +77,16 @@ data class ConfigOptions @JvmOverloads constructor(
     val migrations: ConfigSteps<*>? = ConfigSteps.NONE,
     /** Default conversion from source field names to YAML keys. */
     val naming: ConfigNamingStrategy = ConfigNamingStrategy.AS_DECLARED,
+    /** Policy applied to list elements whose `type` no registered implementation accepts. */
+    val unknownTypes: UnknownTypePolicy = UnknownTypePolicy.FAIL,
+    /**
+     * Folder the path is counted from. In [ConfigRoot.PLUGINS] and [ConfigRoot.SERVER] the file is somebody else's: it is
+     * never created, a backup is always made before a rewrite and unknown keys are kept, whatever the other options say.
+     * [ConfigRoot.EXTERNAL] (see `ConfigScope.yamlAt`) is an absolute path of the plugin's own choice, without those limits.
+     */
+    val root: ConfigRoot = ConfigRoot.PLUGIN,
+    /** Only read the file: nothing is created, synchronized or written, and `save` fails. Several plugins may read one file. */
+    val readOnly: Boolean = false,
 ) {
     /** Default options and the Java-friendly fluent construction entry point. */
     companion object {
@@ -85,6 +108,9 @@ data class ConfigOptions @JvmOverloads constructor(
         private var backups = true
         private var migrations: ConfigSteps<*>? = ConfigSteps.NONE
         private var naming = ConfigNamingStrategy.AS_DECLARED
+        private var unknownTypes = UnknownTypePolicy.FAIL
+        private var root = ConfigRoot.PLUGIN
+        private var readOnly = false
         /** Sets the missing-file policy. */
         fun missingFile(value: MissingFilePolicy): Builder = apply { missingFile = value }
 
@@ -109,7 +135,17 @@ data class ConfigOptions @JvmOverloads constructor(
         /** Sets the default field naming strategy. */
         fun naming(value: ConfigNamingStrategy): Builder = apply { naming = value }
 
+        /** Sets what happens to list elements with an unknown `type`. */
+        fun unknownTypes(value: UnknownTypePolicy): Builder = apply { unknownTypes = value }
+
+        /** Sets the folder the path is counted from. */
+        fun root(value: ConfigRoot): Builder = apply { root = value }
+
+        /** Makes the file read-only for the library. */
+        fun readOnly(value: Boolean = true): Builder = apply { readOnly = value }
+
         /** Creates the immutable option set. */
-        fun build(): ConfigOptions = ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations, naming)
+        fun build(): ConfigOptions =
+            ConfigOptions(missingFile, missingValues, unknownValues, comments, backups, migrations, naming, unknownTypes, root, readOnly)
     }
 }

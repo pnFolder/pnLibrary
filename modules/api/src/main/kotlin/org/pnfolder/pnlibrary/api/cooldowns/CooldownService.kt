@@ -4,36 +4,12 @@ import java.time.Duration
 import java.util.UUID
 
 /**
- * Result of an atomic cooldown acquisition attempt. Create it with [allowed] or [denied].
- *
- * @property allowed whether the caller acquired a new cooldown
- * @property remaining time left on the existing cooldown when denied, otherwise zero
- */
-class CooldownResult private constructor(
-    val allowed: Boolean,
-    val remaining: Duration,
-) {
-    /** Renders as `allowed` or `denied: <remaining>`. */
-    override fun toString(): String = if (allowed) "allowed" else "denied: $remaining"
-
-    companion object {
-        private val ALLOWED = CooldownResult(true, Duration.ZERO)
-
-        @JvmStatic
-        fun allowed(): CooldownResult = ALLOWED
-
-        /** Returns a denied result with the time left on the active cooldown. */
-        @JvmStatic
-        fun denied(remaining: Duration): CooldownResult = CooldownResult(false, remaining)
-    }
-}
-
-/**
  * Plugin-scoped, thread-safe cooldown storage based on monotonic elapsed time.
  *
  * Action names are trimmed and compared case-insensitively. Durations must not be
  * negative; a zero duration removes or immediately expires an entry. Methods that read
- * or create cooldowns fail after [close], while cleanup operations remain idempotent.
+ * or create cooldowns fail after [close], while cleanup operations remain idempotent. Expired entries are dropped
+ * as the service is used, so a subject that is never asked again does not stay in memory.
  */
 interface CooldownService : AutoCloseable {
 
@@ -57,6 +33,12 @@ interface CooldownService : AutoCloseable {
 
     /** Removes every entry owned by this service. */
     fun clear()
+
+    /** Removes every entry of [subject], such as when a player leaves; returns how many were removed. */
+    fun clear(subject: UUID): Int
+
+    /** The active cooldowns of [subject] by action with the time left, longest first; expired ones are not listed. */
+    fun active(subject: UUID): Map<String, Duration>
 
     /** Number of active entries after opportunistic expiry cleanup. */
     val size: Int

@@ -6,9 +6,11 @@ import java.util.concurrent.CompletionStage
 
 /** Mutable rendering invocation created from one serialized component template. */
 interface ComponentTemplate {
-
     /** Associates a named template token with [value]. */
     fun value(name: String, value: Any?): ComponentTemplate
+
+    /** Associates every entry of [values] with its named template token. */
+    fun values(values: Map<String, Any?>): ComponentTemplate = apply { values.forEach { (key, item) -> value(key, item) } }
 
     /** Selects the player used by player-aware placeholder resolution. */
     fun player(playerId: UUID): ComponentTemplate

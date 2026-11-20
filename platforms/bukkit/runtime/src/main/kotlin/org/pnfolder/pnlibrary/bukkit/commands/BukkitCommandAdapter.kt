@@ -12,12 +12,14 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.bukkit.BukkitAudienceAdapter
-import org.pnfolder.pnlibrary.bukkit.BukkitAudienceService
-import org.pnfolder.pnlibrary.core.commands.MAIN_THREAD_SUGGESTION_MILLIS
-import org.pnfolder.pnlibrary.core.commands.suggestionsWithin
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
+import org.pnfolder.pnlibrary.core.commands.engine.MAIN_THREAD_SUGGESTION_MILLIS
+import org.pnfolder.pnlibrary.core.commands.engine.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -25,21 +27,14 @@ import java.lang.reflect.Constructor
 import java.util.concurrent.CompletionStage
 import org.bukkit.command.CommandSender as NativeCommandSender
 
-/**
- * Registers portable commands and owns their native Bukkit registrations.
- *
- * Native tab completion is synchronous, so suggestion requests use a bounded one-second wait.
- * Commands are released in reverse registration order when this adapter closes.
- */
 internal class BukkitCommandAdapter internal constructor(
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
     private val audience: (NativeCommandSender) -> AudienceSender,
     private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    /** Creates the native registrar, preferring Paper's command API where the server has it, and the audience bridge. */
-    constructor(audiences: BukkitAudienceService, plugin: Plugin) : this(
-        nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar()),
+    constructor(audiences: BukkitAudienceService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
+        nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar(), pnLogger, logBuffer),
         { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
         { audiences.nativeTransportAvailable },
     )
@@ -57,14 +52,13 @@ internal class BukkitCommandAdapter internal constructor(
 
 }
 
-/** Internal wrapper; native access never crosses the public command API. */
 internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
     private val audience: AudienceSender,
     private val transportAvailable: () -> Boolean = { true },
 ) : CommandSender, AudienceSender by audience {
 
-    /** Buttons work for players only while the Adventure transport is in use; the fallback sends plain text. */
+    // Buttons need the Adventure transport; without it the sender receives plain text and can't click anything.
     override val supportsInteraction: Boolean
         get() = !isConsole && transportAvailable()
 
@@ -77,8 +71,6 @@ internal class BukkitCommandSender(
     override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
 }
 
-/** Native registration boundary used by the runtime and command tests. */
-/** Uses declared plugin commands where available, otherwise the legacy command map. */
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {
     override fun register(
         owner: Any,
@@ -123,7 +115,6 @@ private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<Nativ
         return field.get(Bukkit.getServer()) as CommandMap
     }
 
-    /** Constructs a native plugin command through Bukkit's non-public constructor. */
     private fun pluginCommand(name: String, owner: Plugin): PluginCommand {
         val constructor: Constructor<PluginCommand> = PluginCommand::class.java.getDeclaredConstructor(
             String::class.java,

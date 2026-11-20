@@ -2,12 +2,14 @@ package org.pnfolder.pnlibrary.api.plugin
 
 import org.pnfolder.pnlibrary.api.dependencies.DependencyBuilder
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.metrics.MetricsBuilder
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsBuilder
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadataBuilder
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginOptions
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import java.nio.file.Path
 import java.util.function.Consumer
 
@@ -18,8 +20,10 @@ import java.util.function.Consumer
  * callback returns and rolls back partial resources if any integration fails to initialize.
  */
 interface PluginBuilder {
+    /** Declares one dependency of the plugin. */
     fun depends(dependency: PluginDependency): PluginBuilder
 
+    /** Declares several dependencies of the plugin. */
     fun depends(vararg dependencies: PluginDependency): PluginBuilder {
         dependencies.forEach(::depends)
         return this
@@ -59,6 +63,7 @@ interface PluginBuilder {
         return updates(builder.build())
     }
 
+    /** Declares dependencies with the dependency DSL. */
     fun dependencies(configure: Consumer<DependencyBuilder>): PluginBuilder {
         val builder = DependencyBuilder()
         configure.accept(builder)

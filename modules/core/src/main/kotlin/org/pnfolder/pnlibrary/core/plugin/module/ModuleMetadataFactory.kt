@@ -1,11 +1,12 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 
+/** Builds module metadata from the definition, falling back to the native plugin descriptor. */
 internal class ModuleMetadataFactory(
     private val ownership: PlatformOwnership,
     private val identity: PlatformIdentity,
@@ -21,6 +22,7 @@ internal class ModuleMetadataFactory(
             platformImplementation = identity.implementationName,
             javaVersion = System.getProperty("java.version", "unknown"),
             javaFeature = JavaRuntime.feature,
+            description = definition.metadataDescription ?: nativeMetadata["description"]?.takeIf(String::isNotBlank),
         )
     }
 

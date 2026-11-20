@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.release
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 
 /**

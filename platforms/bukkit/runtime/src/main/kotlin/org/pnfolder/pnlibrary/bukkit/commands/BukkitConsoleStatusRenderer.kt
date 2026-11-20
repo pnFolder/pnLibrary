@@ -2,16 +2,17 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.Bukkit
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateChannelLabels
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
+import org.pnfolder.pnlibrary.updates.policy.color
+import org.pnfolder.pnlibrary.updates.policy.title
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
@@ -20,7 +21,6 @@ import java.util.Locale
 
 /** Builds the detailed console-only pnLibrary status card. */
 internal object BukkitConsoleStatusRenderer {
-    /** Builds the console status card from registered update snapshots. */
     fun render(entries: List<UpdateRegistration>): List<String> {
         val card = ConsoleCard.builder(ConsoleStyle.THEME, "СОСТОЯНИЕ PNFOLDER")
             .mascot("^.^", PnLibraryIdentity.NAME, "библиотека платформы")
@@ -52,7 +52,6 @@ internal object BukkitConsoleStatusRenderer {
             .render()
     }
 
-    /** Appends channel settings, release history, and the selected update. */
     private fun renderRegisteredUpdates(
         card: ConsoleCard.Builder,
         entries: List<UpdateRegistration>,
@@ -110,7 +109,6 @@ internal object BukkitConsoleStatusRenderer {
             )
     }
 
-    /** Displays the latest known release in each configured display channel. */
     private fun renderReleaseHistory(
         card: ConsoleCard.Builder,
         snapshot: UpdateSnapshot,
@@ -134,8 +132,8 @@ internal object BukkitConsoleStatusRenderer {
 
         card.blank()
         channels.forEachIndexed { index, (channel, release) ->
-            card.section(UpdateChannelLabels.channelTitle(channel).replaceFirstChar { it.titlecase(Locale.ROOT) })
-                .detail("Версия", ConsoleStyle.paint(release.version, UpdateChannelLabels.channelColor(channel)))
+            card.section(channel.title().replaceFirstChar { it.titlecase(Locale.ROOT) })
+                .detail("Версия", ConsoleStyle.paint(release.version, channel.color()))
                 .lastDetail(
                     "Опубликована",
                     release.publishedAt?.let(::publishedAtLabel) ?: "дата неизвестна",
@@ -146,7 +144,6 @@ internal object BukkitConsoleStatusRenderer {
         }
     }
 
-    /** Ensures the selected compatible release is represented in the displayed history. */
     private fun mergeSelectedRelease(
         history: MutableList<ReleaseSummary>,
         snapshot: UpdateSnapshot,
@@ -164,18 +161,15 @@ internal object BukkitConsoleStatusRenderer {
         }
     }
 
-    /** Summarizes whether a registered product has an available update. */
     private fun status(entries: List<UpdateRegistration>): String {
         val available = entries.firstOrNull { it.snapshot.hasAvailableUpdate() }?.snapshot
             ?: return "Все зарегистрированные компоненты актуальны"
         return "Доступно обновление · ${BukkitStatusLabels.channel(available)}"
     }
 
-    /** Checks whether the snapshot represents a downloadable update. */
     private fun UpdateSnapshot.hasAvailableUpdate(): Boolean =
         state == UpdateState.UPDATE_AVAILABLE
 
-    /** Combines the publication age with an absolute UTC timestamp. */
     private fun publishedAtLabel(instant: Instant): String =
         "${publishedAge(instant)} · ${UTC_DATE_TIME.format(instant)}"
 
@@ -184,7 +178,6 @@ internal object BukkitConsoleStatusRenderer {
         return "опубликована ${RussianText.ago(Duration.between(instant, Instant.now()))}"
     }
 
-    /** Formats the current instant in the console UTC format. */
     private fun utcNow(): String = UTC_DATE_TIME.format(Instant.now())
 
     private val ZERO_VERSION = SemanticVersion.parse("0.0.0")
@@ -202,7 +195,6 @@ internal object BukkitConsoleStatusRenderer {
 
 /** Shared human-readable labels used by console and in-game status output. */
 internal object BukkitStatusLabels {
-    /** Reads the JVM implementation and version from runtime properties. */
     fun javaRuntime(): String {
         val version = System.getProperty("java.version")?.trim().orEmpty()
         val vm = System.getProperty("java.vm.name")?.trim().orEmpty()
@@ -217,11 +209,9 @@ internal object BukkitStatusLabels {
             .ifBlank { System.getProperty("java.runtime.version", "unknown") }
     }
 
-    /** Returns the localized, colored channel label for a snapshot. */
     fun channel(snapshot: UpdateSnapshot): String =
-        ConsoleStyle.paint(UpdateChannelLabels.channelTitle(snapshot.channel), UpdateChannelLabels.channelColor(snapshot.channel))
+        ConsoleStyle.paint(snapshot.channel.title(), snapshot.channel.color())
 
-    /** Returns the branded library name or the registered product name. */
     fun product(product: String): String =
         if (product.equals(PnLibraryIdentity.PRODUCT_ID, true)) PnLibraryIdentity.NAME else product
 }

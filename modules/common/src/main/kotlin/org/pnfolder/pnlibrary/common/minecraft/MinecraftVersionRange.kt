@@ -89,11 +89,15 @@ data class MinecraftVersionRange(
     }
 
     /** Formats a value such as `[1.8.8, 1.12.2]`, `>=1.20.5`, or `<1.13`. */
-    override fun toString(): String = when {
-        minimum == null && maximum == null -> "all known versions"
-        minimum == null -> "${if (includeMaximum) "<=" else "<"}${maximum!!.text}"
-        maximum == null -> "${if (includeMinimum) ">=" else ">"}${minimum.text}"
-        else -> "${if (includeMinimum) "[" else "("}${minimum.text}, ${maximum.text}${if (includeMaximum) "]" else ")"}"
+    override fun toString(): String {
+        val low = minimum
+        val high = maximum
+        return when {
+            low != null && high != null -> "${if (includeMinimum) "[" else "("}${low.text}, ${high.text}${if (includeMaximum) "]" else ")"}"
+            low != null -> "${if (includeMinimum) ">=" else ">"}${low.text}"
+            high != null -> "${if (includeMaximum) "<=" else "<"}${high.text}"
+            else -> "all known versions"
+        }
     }
 
     /** Java-friendly factories for common version-range shapes. */

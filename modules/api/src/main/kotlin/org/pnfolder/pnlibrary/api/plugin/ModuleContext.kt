@@ -1,44 +1,46 @@
 package org.pnfolder.pnlibrary.api.plugin
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.actions.ActionService
-import org.pnfolder.pnlibrary.api.commands.CommandBuilder
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
-import org.pnfolder.pnlibrary.api.events.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.metrics.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
-import java.util.Locale
 
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
 interface ModuleContext : AutoCloseable {
     /** Registers a command released when this module closes. */
-    fun registerCommand(command: CommandDefinition): CommandRegistration =
-        throw UnsupportedOperationException("Module commands are not available in this runtime")
+    fun registerCommand(command: CommandDefinition): CommandRegistration
 
     /**
      * Answers errors of class [type] for every command of this module with [handler]. The most specific level
      * wins: a handler on a command or subcommand over this one, this one over the plugin-wide answer of
      * [PluginRegistration.onCommandError], over the library's standard
-     * answer from `config.yml`.
+     * answer from the library's settings.
      */
-    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
-        throw UnsupportedOperationException("Module commands are not available in this runtime")
-    }
+    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>)
 
     /** Answers errors of class [type] for every command of this module with the plain [message]. */
     fun <E : CommandError> onCommandError(type: Class<E>, message: String) {
@@ -48,7 +50,7 @@ interface ModuleContext : AutoCloseable {
 
     /** Builds a command whose lifecycle belongs to this module. */
     fun registerCommand(name: String, configure: CommandBuilder.() -> Unit): CommandRegistration =
-        registerCommand(org.pnfolder.pnlibrary.api.commands.command(name, configure))
+        registerCommand(command(name, configure))
 
     /** Registry-wide stable identity used by shared services and diagnostics. */
     val key: PluginId
@@ -71,17 +73,15 @@ interface ModuleContext : AutoCloseable {
      * version and locale one plugin loaded is cached for all. Closing this view does nothing, and keyboard layouts
      * registered through its `layouts` are removed when this module closes; no handle needs closing.
      *
-     * Available on game servers only: on a proxy this throws [UnsupportedOperationException].
+     * Backed by the library's localization expansion, which is made for game servers.
      */
     val localization: MinecraftLocalization
-        get() = throw UnsupportedOperationException("Minecraft localization is not available on this platform")
     /**
      * The library's expansions with ownership: what this module registers through it is disabled and unregistered when
      * the module closes, with no handle to keep. Lookups read the same registry as `PnLibrary.expansions`, and ids stay
      * unique across the library.
      */
     val expansions: ExpansionManager
-        get() = throw UnsupportedOperationException("Expansions are not available in this runtime")
     /** Module-bound structured logger. */
     val logger: PnLogger
     /** Module-bound configuration scope. */
@@ -104,33 +104,12 @@ interface ModuleContext : AutoCloseable {
     val updates: UpdateRegistration?
     /** Auxiliary download registration, or `null` when none was configured. */
     val downloads: DownloadRegistration?
+    /** The Maven libraries of this module; see `PluginModule.libraries()`. */
+    val libraries: ModuleLibraries
+    /** Switches this module on and off; the same operations as `/pn modules` and the menu. */
+    val control: ModuleControl
     /** Whether this module has released all owned resources. */
     val isClosed: Boolean
     /** Releases every capability and registration owned by this module. */
     override fun close()
-}
-
-/** Validated, case-insensitive local identity of a logical module. */
-class ModuleId private constructor(
-    /** Normalized lowercase module identifier. */
-    val value: String,
-) {
-    /** Returns whether [other] contains the same normalized identifier. */
-    override fun equals(other: Any?): Boolean = other is ModuleId && value == other.value
-    /** Returns the normalized identifier hash. */
-    override fun hashCode(): Int = value.hashCode()
-    /** Returns [value] without additional formatting. */
-    override fun toString(): String = value
-
-    companion object {
-        private val FORMAT = Regex("[a-z0-9][a-z0-9_.-]{0,63}")
-
-        /** Normalizes and validates [value]. */
-        @JvmStatic
-        fun of(value: String): ModuleId {
-            val normalized = value.trim().lowercase(Locale.ROOT)
-            require(FORMAT.matches(normalized)) { "Module ID must match ${FORMAT.pattern}" }
-            return ModuleId(normalized)
-        }
-    }
 }

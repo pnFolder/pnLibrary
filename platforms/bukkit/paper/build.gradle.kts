@@ -12,11 +12,11 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit-paper" }
 dependencies {
     implementation(libs.kotlin.stdlib)
     compileOnly(project(":modules:api"))
-    compileOnly(project(":modules:runtime-spi"))
+    compileOnly(project(":modules:spi"))
     compileOnly(libs.paper.api)
 
     testImplementation(project(":modules:api"))
-    testImplementation(project(":modules:runtime-spi"))
+    testImplementation(project(":modules:spi"))
     testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)

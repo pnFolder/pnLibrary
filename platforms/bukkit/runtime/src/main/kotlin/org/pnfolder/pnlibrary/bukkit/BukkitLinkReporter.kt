@@ -7,12 +7,12 @@ import org.bukkit.plugin.messaging.PluginMessageListener
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkReports
-import org.pnfolder.pnlibrary.core.link.LinkSecret
-import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.remote.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.report.LinkReports
+import org.pnfolder.pnlibrary.core.link.wire.DataChunks
+import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
+import org.pnfolder.pnlibrary.core.link.wire.LinkSecret
 import java.util.UUID
 
 /**
@@ -28,6 +28,7 @@ internal class BukkitLinkReporter(
     private val scheduler: ServerScheduler,
 ) : PluginMessageListener {
     private var task: ServerScheduler.Scheduled? = null
+    private var reportFailing = false
     private val executor = RemoteExecutor(library)
 
     fun start() {
@@ -90,6 +91,10 @@ internal class BukkitLinkReporter(
         val platform = "${Bukkit.getName()} ${Bukkit.getBukkitVersion()}"
         runCatchingNonFatal {
             carrier.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encode(LinkReports.build(library, platform, players.size), key))
+        }.onSuccess { reportFailing = false }.onFailure {
+            // The report repeats every half minute; the first failure is enough until one succeeds again.
+            if (!reportFailing) library.logging.logger(plugin, "Reporter").error("Could not send the status report to the proxy", it)
+            reportFailing = true
         }
     }
 

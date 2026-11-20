@@ -9,9 +9,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
+import org.pnfolder.pnlibrary.velocity.diagnostics.VelocityDiagnosticDetailsCollector
 import java.net.InetSocketAddress
 import java.util.Optional
 
+/** Checks the Velocity facts collected for diagnostics. */
 class VelocityDiagnosticDetailsCollectorTest {
     @Test
     fun `p95 includes high latency in a small player population`() {

@@ -3,9 +3,11 @@ package org.pnfolder.pnlibrary.core.observability
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.observability.ComponentStatus
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -15,7 +17,7 @@ class ObservabilityRuntimeTest {
     fun `capture stores one normalized observation and its files`() {
         val root = Files.createTempDirectory("observability-runtime")
         val log = root.resolve("latest.log").also { Files.writeString(it, "failure details") }
-        val runtime = ObservabilityRuntime(root, clock = { 123L })
+        val runtime = ObservabilityRuntime(LibraryPaths(root), clock = { 123L })
 
         val captured = runtime.capture {
             plugin("acceptance")
@@ -33,7 +35,7 @@ class ObservabilityRuntimeTest {
     @Test
     fun `failure is recorded once with error details`() {
         val root = Files.createTempDirectory("observability-failure")
-        val runtime = ObservabilityRuntime(root)
+        val runtime = ObservabilityRuntime(LibraryPaths(root))
 
         runtime.failure(IllegalStateException("database unavailable")) {
             plugin("acceptance")
@@ -49,7 +51,7 @@ class ObservabilityRuntimeTest {
 
     @Test
     fun `status replaces the previous value for the same component`() {
-        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-status"))
+        val runtime = ObservabilityRuntime(LibraryPaths(Files.createTempDirectory("observability-status")))
 
         runtime.status(ComponentStatus("acceptance", "database", "starting"))
         val ready = runtime.status(ComponentStatus("acceptance", "database", "ready"))
@@ -59,7 +61,7 @@ class ObservabilityRuntimeTest {
 
     @Test
     fun `concurrent captures are not lost or duplicated`() {
-        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-concurrent"))
+        val runtime = ObservabilityRuntime(LibraryPaths(Files.createTempDirectory("observability-concurrent")))
         val executor = Executors.newFixedThreadPool(8)
 
         repeat(100) { index ->
@@ -75,7 +77,7 @@ class ObservabilityRuntimeTest {
 
     @Test
     fun `analytics exposes severity timeline and status health`() {
-        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-analytics"))
+        val runtime = ObservabilityRuntime(LibraryPaths(Files.createTempDirectory("observability-analytics")))
 
         runtime.capture { plugin("alpha"); source("startup"); message("ready") }
         runtime.failure(IllegalStateException("broken")) { plugin("alpha"); source("database") }
@@ -91,7 +93,7 @@ class ObservabilityRuntimeTest {
 
     @Test
     fun `support snapshot carries analytics alongside journal`() {
-        val runtime = ObservabilityRuntime(Files.createTempDirectory("observability-snapshot"))
+        val runtime = ObservabilityRuntime(LibraryPaths(Files.createTempDirectory("observability-snapshot")))
         runtime.capture { message("startup") }
 
         val snapshot = runtime.reportSnapshot()
