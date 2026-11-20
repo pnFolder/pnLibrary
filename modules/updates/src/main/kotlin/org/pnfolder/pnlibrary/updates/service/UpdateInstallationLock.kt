@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.updates.service
 
 import org.pnfolder.pnlibrary.updates.engine.UpdatePaths
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.file.Files

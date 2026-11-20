@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.placeholders.tree.formats
 import org.pnfolder.pnlibrary.api.placeholders.tree.from
 import org.pnfolder.pnlibrary.api.placeholders.tree.list
 import org.pnfolder.pnlibrary.api.placeholders.tree.none
-import org.pnfolder.pnlibrary.api.placeholders.tree.placeholders
+import org.pnfolder.pnlibrary.api.placeholders.tree.scope.placeholders
 import org.pnfolder.pnlibrary.api.placeholders.tree.table
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.ModuleId

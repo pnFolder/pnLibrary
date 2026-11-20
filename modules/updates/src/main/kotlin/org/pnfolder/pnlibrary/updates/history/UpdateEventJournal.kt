@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.updates.history
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles

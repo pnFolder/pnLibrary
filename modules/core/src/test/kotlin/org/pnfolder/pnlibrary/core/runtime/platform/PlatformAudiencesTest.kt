@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
-import org.pnfolder.pnlibrary.api.audiences.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.PlayerParticle
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import java.util.UUID
 

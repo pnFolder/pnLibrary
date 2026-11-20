@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.spi.commands
 
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import java.util.LinkedHashSet
 import java.util.concurrent.atomic.AtomicBoolean
 

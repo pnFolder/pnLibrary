@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.nio.file.Path
 
 class DependencyDownloadRequestFactoryTest {
@@ -17,7 +18,7 @@ class DependencyDownloadRequestFactoryTest {
             .url("https://example.org/plugin.jar")
             .automaticDownload(true)
             .build()
-        val plan = DependencyDownloadRequestFactory(directory.resolve("update")).create(listOf(dependency), emptyMap())
+        val plan = DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.21.4" }.create(listOf(dependency), emptyMap())
 
         requireNotNull(plan)
         assertEquals(directory.resolve("update"), plan.request.dataDirectory)
@@ -32,9 +33,46 @@ class DependencyDownloadRequestFactoryTest {
             .automaticDownload(true)
             .build()
 
-        assertNull(DependencyDownloadRequestFactory(directory.resolve("update")).create(
+        assertNull(DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.21.4" }.create(
             listOf(dependency),
             mapOf("vault" to "1.7.3"),
         ))
+    }
+
+    @Test
+    fun `downloads the file made for this server and checks only its checksum`() {
+        val old = "a".repeat(64)
+        val modern = "b".repeat(64)
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.0")
+            .variant("https://example.org/Vault-old.jar", old, minecraftBefore = "1.20")
+            .variant("https://example.org/Vault-proxy.jar", "c".repeat(64), platforms = setOf(PlatformType.VELOCITY))
+            .variant("https://example.org/Vault-new.jar", modern, minecraftFrom = "1.20", label = "для 1.20 и новее")
+            .build()
+
+        val plan = requireNotNull(
+            DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.21.4" }.create(listOf(dependency), emptyMap()),
+        )
+        val source = plan.request.files.single().source
+        assertEquals("https://example.org/Vault-new.jar", source.uri.toString())
+        assertEquals(modern, source.sha256)
+
+        val older = DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.16.5" }
+        assertEquals(old, older.fileFor(dependency)?.sha256)
+        val unknown = DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUNGEECORD) { null }
+        assertNull(unknown.fileFor(dependency))
+    }
+
+    @Test
+    fun `a file may carry its own size limit`() {
+        val dependency = ExternalPluginDependency.builder("Vault", "1.7.0")
+            .url("https://example.org/Vault.jar")
+            .maxBytes(2_000_000)
+            .build()
+
+        val plan = requireNotNull(
+            DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { null }.create(listOf(dependency), emptyMap()),
+        )
+
+        assertEquals(2_000_000L, plan.request.files.single().source.maxBytes)
     }
 }

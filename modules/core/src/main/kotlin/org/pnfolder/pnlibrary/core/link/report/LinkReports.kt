@@ -11,7 +11,7 @@ object LinkReports {
             platform = platform,
             libraryVersion = library.version.toString(),
             players = players,
-            plugins = library.updates.all().map {
+            plugins = library.updates.products.all().map {
                 val snapshot = it.snapshot
                 val current = snapshot.currentVersion.toString()
                 LinkPlugin(snapshot.product, current, snapshot.latestVersion?.toString()?.takeIf { latest -> latest != current }, snapshot.state.name)

@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.spi.platform
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import java.util.UUID
@@ -76,7 +75,7 @@ class JulLogObserverTest {
     }
 
     @Test
-    fun `log handler writes to the owner logger at the mapped level without observing it back`() {
+    fun `log handler writes to the owner logger at the mapped level and forwards to the observer`() {
         start()
         val records = mutableListOf<LogRecord>()
         val ownerLogger = Logger.getLogger(platform.name + ".owner").apply {
@@ -96,6 +95,6 @@ class JulLogObserverTest {
 
         assertEquals(listOf(Level.SEVERE, Level.WARNING, Level.INFO), records.map { it.level })
         assertEquals(failure, records[0].thrown)
-        assertTrue(seen.isEmpty())
+        assertEquals(listOf("failed", "careful"), seen.map { it.message })
     }
 }

@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.stubbing.Answer
-import org.pnfolder.pnlibrary.api.tasks.TaskContext
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
+import org.pnfolder.pnlibrary.api.tasks.run.TaskContext
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import java.util.concurrent.atomic.AtomicReference
 

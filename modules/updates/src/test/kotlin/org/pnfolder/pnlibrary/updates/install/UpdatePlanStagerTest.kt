@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.*
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.*
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -13,7 +15,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -71,6 +73,45 @@ class UpdatePlanStagerTest {
         }
         org.junit.jupiter.api.Assertions.assertTrue(error.message!!.contains("evil.example.com"))
         assertEquals(0, downloads)
+    }
+
+    @Test
+    fun `the Java build the administrator chose wins, then the one that matches the installed product`() {
+        assertEquals("build-11.jar", downloadedBuild(choice = 11, installed = 8))
+        assertEquals("build-8.jar", downloadedBuild(choice = 8, installed = 11))
+        assertEquals("build-8.jar", downloadedBuild(choice = null, installed = 8))
+        assertEquals("build-11.jar", downloadedBuild(choice = null, installed = 11))
+        // nothing chosen and nothing known: the old behaviour, the first build that fits
+        assertEquals("build-8.jar", downloadedBuild(choice = null, installed = null))
+        // a choice no build fits is ignored in favour of the installed one
+        assertEquals("build-11.jar", downloadedBuild(choice = 99, installed = 11))
+    }
+
+    private fun downloadedBuild(choice: Int?, installed: Int?): String {
+        val root = java.nio.file.Files.createTempDirectory(directory, "choice")
+        val plugins = root.resolve("plugins")
+        val data = plugins.resolve("pnLibrary")
+        Files.createDirectories(data)
+        val current = plugins.resolve("library.jar")
+        Files.write(current, byteArrayOf(9))
+        var downloaded = ""
+        val http = object : TrustedHttpClient(Duration.ofSeconds(1), Duration.ofSeconds(1)) {
+            override fun <T> stream(uri: URI, maximumBytes: Long, reader: (java.io.InputStream) -> T): T {
+                downloaded = uri.path.substringAfterLast('/')
+                return reader(java.io.ByteArrayInputStream(bytes))
+            }
+        }
+        val artifacts = listOf(8, 11).map { java ->
+            ArtifactDescriptor("build-$java.jar", PlatformType.BUKKIT, java, null, bytes.size.toLong(), digest(),
+                URI("https://github.com/example/repo/releases/download/v2/build-$java.jar"))
+        }
+        val release = ProductRelease(product, version, UpdateChannel.STABLE, ApiVersionRange(1, 1), artifacts = artifacts)
+        val plan = UpdatePlan(1, listOf(ProductChange(product, SemanticVersion.parse("1.0.0"), version)), listOf(release))
+        val transaction = UpdateTransaction(LibraryPaths(data).transactions, ArtifactVerifier(1024), plugins)
+        UpdatePlanStager(PlatformType.BUKKIT, LibraryPaths(data), http, transaction, 1024, true, { choice }, { installed }).stage(
+            UUID.randomUUID(), plan, mapOf(product to InstalledUpdateTarget(current, plugins.resolve("update"))),
+        )
+        return downloaded
     }
 
     private fun stage(hash: String?, size: Long?, url: String = "https://github.com/example/repo/releases/download/v2/library-new.jar") {

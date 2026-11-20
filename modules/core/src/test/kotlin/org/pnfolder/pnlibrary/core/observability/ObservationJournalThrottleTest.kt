@@ -3,10 +3,13 @@ package org.pnfolder.pnlibrary.core.observability
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.observability.Observation
-import org.pnfolder.pnlibrary.api.observability.ObservationKeys
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationKeys
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.core.observability.store.MAX_OBSERVATIONS
+import org.pnfolder.pnlibrary.core.observability.store.ObservationJournal
+import org.pnfolder.pnlibrary.core.observability.store.retained
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 

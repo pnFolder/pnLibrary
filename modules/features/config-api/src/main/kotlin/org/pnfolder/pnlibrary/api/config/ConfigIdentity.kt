@@ -197,7 +197,9 @@ class ConfigAddress private constructor(
             val colon = value.indexOf(':')
             val head = if (colon < 0) value else value.substring(0, colon)
             val parts = head.split('/')
-            require(parts.size <= 2 && parts.all { it.isNotBlank() }) { "Invalid configuration address '$text': expected plugin, plugin/module or plugin/module:path" }
+            require(parts.size <= 2 && parts.all { it.isNotBlank() }) {
+                "Invalid configuration address '$text': expected plugin, plugin/module or plugin/module:path"
+            }
             val pluginId = PluginId.of(parts[0])
             if (parts.size == 1) {
                 require(colon < 0) { "Invalid configuration address '$text': a path needs a module (plugin/module:path)" }

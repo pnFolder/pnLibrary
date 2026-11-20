@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.updates.history
 
 import com.google.gson.Gson
-import org.pnfolder.pnlibrary.api.updates.ProductId
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.BackupLabel
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal

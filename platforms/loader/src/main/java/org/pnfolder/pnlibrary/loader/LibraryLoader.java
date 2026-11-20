@@ -2,6 +2,8 @@ package org.pnfolder.pnlibrary.loader;
 
 import net.byteflux.libby.Library;
 import net.byteflux.libby.LibraryManager;
+import java.nio.file.Path;
+import java.util.function.Function;
 
 /**
  * Loads the libraries a light pnLibrary JAR does not pack, through Libby.
@@ -56,6 +58,63 @@ public final class LibraryLoader {
         OptionalLoader loader = optional;
         Library[] libraries = librariesFor(id, javaFeature());
         return loader != null && libraries != null && loader.load(libraries);
+    }
+
+    /**
+     * Tells the loader how to make a Libby manager for another plugin, so a shared library of a module is added to the
+     * plugin that owns the module and not to pnLibrary. The factory returns {@code null} for an owner it cannot handle.
+     */
+    public static void useManagers(Function<Object, LibraryManager> factory) {
+        OptionalLoader loader = optional;
+        if (loader != null) {
+            loader.useManagers(factory);
+        }
+    }
+
+    /**
+     * Loads a library a module asked for, through Libby, and returns the class loader that holds it: a loader of its own
+     * named {@code owner} when {@code isolated}, otherwise {@code null} (the library joins pnLibrary's loader). Called by
+     * name from the runtime, which cannot see this module; every value is a plain string for that reason.
+     *
+     * @param sha256 hexadecimal SHA-256 of the jar, or {@code null} to skip the check
+     * @param plugin the plugin that owns the module, or {@code null}; a shared library is added to its class loader
+     * @param url a direct link to the jar, or {@code null} to build it from {@code repositories}
+     * @throws IllegalStateException with the reason when the library cannot be loaded
+     */
+    public static ClassLoader loadExternal(String owner, String group, String artifact, String version, String classifier,
+                                           String sha256, String url, String[] repositories, boolean isolated, Object plugin) {
+        OptionalLoader loader = optional;
+        if (loader == null) {
+            throw new IllegalStateException("The library loader is not started");
+        }
+        Library.Builder builder = Library.builder().groupId(group).artifactId(artifact).version(version).id(owner).isolatedLoad(isolated);
+        if (classifier != null) {
+            builder.classifier(classifier);
+        }
+        if (sha256 != null) {
+            builder.checksum(sha256);
+        }
+        if (url != null) {
+            builder.url(url);
+        }
+        for (String repository : repositories) {
+            builder.repository(repository);
+        }
+        try {
+            return loader.loadExternal(builder.build(), plugin);
+        } catch (RuntimeException failure) {
+            throw new IllegalStateException("Cannot load " + group + ":" + artifact + ":" + version + ": " + failure.getMessage(), failure);
+        }
+    }
+
+    /**
+     * The jar file of a library loaded by {@link #loadExternal}, as a path text, or {@code null} when unknown. The key is
+     * {@code group:artifact:version} or {@code group:artifact:version:classifier}.
+     */
+    public static String fileOf(String coordinates) {
+        OptionalLoader loader = optional;
+        Path file = loader == null ? null : loader.fileOf(coordinates);
+        return file == null ? null : file.toAbsolutePath().toString();
     }
 
     /** The libraries of an optional group, or {@code null} for an unknown id; {@code javaFeature} picks the compiler. */

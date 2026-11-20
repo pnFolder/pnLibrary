@@ -28,16 +28,10 @@ enum class UpdateAction {
     ROLLBACK_CONFIGS,
 }
 
-/**
- * Issues single-use grants bound to a player, update plan, revision, and action.
- *
- * Grants expire according to the supplied clock; mismatched requests cannot consume them.
- */
 class UpdateConfirmationTokens(
     private val random: SecureRandom = SecureRandom(),
     private val clock: () -> Instant = Instant::now,
 ) {
-    /** Immutable authorization captured when a token is issued. */
     data class Grant(
         val player: UUID,
         val plan: UUID,
@@ -48,7 +42,6 @@ class UpdateConfirmationTokens(
 
     private val grants = ConcurrentHashMap<String, Grant>()
 
-    /** Issues an unpredictable token for a strictly positive lifetime. */
     fun issue(
         player: UUID,
         plan: UUID,
@@ -63,7 +56,6 @@ class UpdateConfirmationTokens(
         return token
     }
 
-    /** Consumes a matching, unexpired grant atomically; a token can succeed only once. */
     fun consume(
         token: String,
         player: UUID,
@@ -80,10 +72,6 @@ class UpdateConfirmationTokens(
         return grants.remove(token, grant)
     }
 
-    /**
-     * Consumes the grant of [token] for [player] whatever its action, and returns it, or `null` when the token is
-     * unknown, expired, already used or was issued to someone else.
-     */
     fun redeem(token: String, player: UUID): Grant? {
         val grant = grants[token] ?: return null
         if (grant.player != player) return null
@@ -94,7 +82,6 @@ class UpdateConfirmationTokens(
         return grant.takeIf { grants.remove(token, it) }
     }
 
-    /** Removes expired grants and returns the number still active. */
     fun cleanup(): Int {
         val now = clock()
         grants.entries.removeIf { !now.isBefore(it.value.expiresAt) }

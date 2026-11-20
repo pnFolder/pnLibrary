@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.install
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
@@ -12,8 +12,8 @@ import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionState
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction
 import org.pnfolder.pnlibrary.updates.history.ConfigurationRestorer
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
-import org.pnfolder.pnlibrary.updates.layout.LegacyLayoutMigration
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LegacyPathsMigration
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock
 import java.nio.file.Files
 import java.nio.file.Path
@@ -37,7 +37,7 @@ object OfflineUpdateInstaller {
         val data = pluginFolder.toAbsolutePath().normalize()
         require(Files.isDirectory(data) && data.parent != null) { "Library data directory does not exist" }
         val layout = LibraryPaths(data)
-        LegacyLayoutMigration(layout) { System.err.println(it) }.run()
+        LegacyPathsMigration(layout) { System.err.println(it) }.run()
         return UpdateInstallationLock.acquire(layout).use {
             val plugins = layout.plugins
             val verifier = ArtifactVerifier(512L * 1024 * 1024)

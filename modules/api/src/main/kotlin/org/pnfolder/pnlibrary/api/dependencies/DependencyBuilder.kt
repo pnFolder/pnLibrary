@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.util.Collections
 import java.util.function.Consumer
@@ -101,10 +103,30 @@ class DependencyBuilder {
         }
         /** Sets the page where the administrator can download the plugin by hand. */
         fun downloadPage(url: String): ExternalBuilder = add { it.downloadPage(url) }
-        /** Sets a direct download with its expected size and SHA-256 checksum. */
-        fun artifact(url: String, size: Long, sha256: String): ExternalBuilder = add { it.artifact(url, size, sha256) }
+        /** Sets a direct download with the SHA-256 checksum the file must match. */
+        fun artifact(url: String, sha256: String): ExternalBuilder = add { it.artifact(url, sha256) }
         /** Sets a direct download URL without an integrity check. */
         fun url(value: String): ExternalBuilder = add { it.url(value) }
+        /** Sets the short name people read in the notice about the missing plugin. */
+        fun title(value: String): ExternalBuilder = add { it.title(value) }
+        /** Says why the plugin is needed, in a sentence or two. */
+        fun description(value: String): ExternalBuilder = add { it.description(value) }
+        /** Adds another HTTPS address of the general file. */
+        fun mirror(value: String): ExternalBuilder = add { it.mirror(value) }
+        /** Adds a file for some servers only; see [ExternalPluginDependency.Builder.variant]. */
+        @JvmOverloads
+        fun variant(
+            url: String,
+            sha256: String? = null,
+            platforms: Set<org.pnfolder.pnlibrary.api.platform.PlatformType> = emptySet(),
+            minecraftFrom: String? = null,
+            minecraftBefore: String? = null,
+            mirrors: List<String> = emptyList(),
+            label: String? = null,
+            maxBytes: Long? = null,
+        ): ExternalBuilder = add { it.variant(url, sha256, platforms, minecraftFrom, minecraftBefore, mirrors, label, maxBytes) }
+        /** Sets the largest accepted size in bytes of the general file. */
+        fun maxBytes(value: Long): ExternalBuilder = add { it.maxBytes(value) }
         /** Sets whether the plugin refuses to start without this dependency; `true` by default. */
         fun required(value: Boolean): ExternalBuilder = add { it.required(value) }
         /** Enables or disables staged plugin-ID verification. */

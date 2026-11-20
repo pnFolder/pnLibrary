@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.placeholders
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderEntry
 

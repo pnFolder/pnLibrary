@@ -72,7 +72,7 @@ tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateIde
 dependencies {
     api(project(":modules:common"))
     api(project(":modules:features:config-api"))
-    api(project(":modules:features:minecraft-localization-api"))
+    api(project(":modules:features:localization-api"))
     // Pure stdlib — no server-platform compile deps
     api(libs.kotlin.stdlib)
     api(libs.adventure.api)

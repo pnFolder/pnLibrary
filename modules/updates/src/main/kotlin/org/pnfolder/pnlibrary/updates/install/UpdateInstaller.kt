@@ -1,15 +1,15 @@
 package org.pnfolder.pnlibrary.updates.install
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.updates.history.BackupItemText
 import org.pnfolder.pnlibrary.updates.history.BackupStorage
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.PrivateFiles
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate
 import org.pnfolder.pnlibrary.updates.service.UpdateHealthReport
@@ -42,6 +42,8 @@ internal class UpdateInstaller(
     private val configuration: UpdateConfiguration,
     http: TrustedHttpClient,
     private val databases: DatabaseBackups,
+    private val javaChoice: (ProductId) -> Int? = { null },
+    private val installedJava: (ProductId) -> Int? = { null },
     private val warn: (String) -> Unit = {},
 ) {
     private val configurationsFolder = paths.configurations
@@ -64,6 +66,8 @@ internal class UpdateInstaller(
         transaction = transaction,
         maximumArtifactBytes = configuration.downloads.maxArtifactBytes,
         requireSha256 = configuration.installation.requireSha256,
+        javaChoice = javaChoice,
+        installedJava = installedJava,
     )
 
     /** Finishes or rolls back transactions a crash interrupted, then drops sets past their retention. */

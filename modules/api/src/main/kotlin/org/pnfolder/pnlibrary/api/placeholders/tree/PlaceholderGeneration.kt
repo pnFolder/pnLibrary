@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
+import org.pnfolder.pnlibrary.api.placeholders.tree.scope.BranchScope
+import org.pnfolder.pnlibrary.api.placeholders.tree.scope.GroupScope
+import org.pnfolder.pnlibrary.api.placeholders.tree.scope.checkPart
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.concurrent.CompletableFuture

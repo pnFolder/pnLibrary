@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
@@ -16,11 +16,11 @@ import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
-import org.pnfolder.pnlibrary.core.menu.style.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.settings.ChoiceSource
 import org.pnfolder.pnlibrary.core.settings.SettingTexts
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 private const val BIG_STEP = 10
 
@@ -63,7 +63,11 @@ internal class LibrarySettingsScreens(session: MenuSession, routes: MenuRoutes) 
         }
         val on = row.current == "true"
         val choices = when {
-            switch -> Style.choices(listOf(SettingTexts.switchWord(true), SettingTexts.switchWord(false)), if (on) 0 else 1, if (row.default == "true") 0 else 1)
+            switch -> Style.choices(
+                listOf(SettingTexts.switchWord(true), SettingTexts.switchWord(false)),
+                if (on) 0 else 1,
+                if (row.default == "true") 0 else 1,
+            )
             source != null -> ConfigLook.window(options, options.indexOf(row.current))
             else -> emptyList()
         }
@@ -175,7 +179,8 @@ internal class LibrarySettingsScreens(session: MenuSession, routes: MenuRoutes) 
                 host.sync {
                     when {
                         !outcome.ok -> tell(player, ChatTone.FAILURE, "Не изменено.", outcome.message)
-                        !outcome.live -> tell(player, ChatTone.WARNING, "Сохранено: ${row.title} = ${outcome.message}.", "Заработает после перезапуска сервера.")
+                        !outcome.live ->
+                            tell(player, ChatTone.WARNING, "Сохранено: ${row.title} = ${outcome.message}.", "Заработает после перезапуска сервера.")
                     }
                     librarySettings(player, page)
                 }

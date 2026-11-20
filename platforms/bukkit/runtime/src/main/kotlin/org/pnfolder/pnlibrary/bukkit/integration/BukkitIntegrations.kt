@@ -11,12 +11,6 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.bukkit.currency.BukkitCurrencyAdapters
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
 
-/**
- * Connects optional integrations as their plugins come and go, without a server restart.
- *
- * Every event is cheap: [BukkitIntegration.connect] checks availability and does nothing when the
- * integration is already connected.
- */
 internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
     private var integrations: List<BukkitIntegration> = emptyList()
 
@@ -24,8 +18,8 @@ internal class BukkitIntegrations(private val plugin: JavaPlugin) : Listener {
         val context = IntegrationContext(plugin, runtime)
         integrations = listOf(
             PlaceholderApiIntegration(context),
-            CurrencyIntegration(context, "Vault", "vault", "money", BukkitCurrencyAdapters::vault),
-            CurrencyIntegration(context, "PlayerPoints", "playerpoints", "points", BukkitCurrencyAdapters::playerPoints),
+            CurrencyIntegration(context, "Vault", "vault", "money") { plugin, log -> BukkitCurrencyAdapters.vault(plugin, log) },
+            CurrencyIntegration(context, "PlayerPoints", "playerpoints", "points") { plugin, log -> BukkitCurrencyAdapters.playerPoints(plugin, log) },
         )
         connectAll()
     }

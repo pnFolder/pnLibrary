@@ -4,6 +4,12 @@ import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.events.*
+import org.pnfolder.pnlibrary.api.events.bus.*
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.inspect.*
+import org.pnfolder.pnlibrary.api.events.listener.*
+import org.pnfolder.pnlibrary.api.events.listener.EventHandler
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -12,6 +18,20 @@ import java.lang.reflect.Proxy
 import java.util.function.Consumer
 
 class EventDispatcherTest {
+    @Test
+    fun `a one-time listener runs once and cancelling it first prevents the run`() {
+        val calls = mutableListOf<String>()
+        EventDispatcher { _, _, _ -> }.use { events ->
+            val scope = events.scope(PluginId.of("test"))
+            scope.on<TestEvent>().listenOnce { calls += "once" }
+            scope.on<TestEvent>().listenOnce { calls += "never" }.close()
+            events.callEvent(TestEvent())
+            events.callEvent(TestEvent())
+            assertEquals(listOf("once"), calls)
+            assertEquals(0, events.inspector.listenerCount(TestEvent::class.java))
+        }
+    }
+
     @Test
     fun `call returns only after listeners run in priority order`() {
         val calls = mutableListOf<String>()
@@ -355,9 +375,9 @@ class EventDispatcherTest {
             events.callEventAsync(TestEvent()).toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS)
             events.callEvent(TestEvent())
             val (async, sync) = events.inspector.traces()
-            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.ASYNC, async.mode)
+            assertEquals(org.pnfolder.pnlibrary.api.events.bus.DispatchMode.ASYNC, async.mode)
             assertEquals("pnLibrary-events", async.thread)
-            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.SYNC, sync.mode)
+            assertEquals(org.pnfolder.pnlibrary.api.events.bus.DispatchMode.SYNC, sync.mode)
             assertEquals(caller, sync.thread)
         }
     }
@@ -370,7 +390,7 @@ class EventDispatcherTest {
             val event = TestEvent()
             assertEquals(null, event.dispatchMode)
             events.callEvent(event)
-            assertEquals(org.pnfolder.pnlibrary.api.events.DispatchMode.SYNC, event.dispatchMode)
+            assertEquals(org.pnfolder.pnlibrary.api.events.bus.DispatchMode.SYNC, event.dispatchMode)
             events.callEventAsync(event).toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS)
             assertEquals("pnLibrary-events", event.dispatchThread?.name)
             assertEquals(listOf(false, true), seen.toList())

@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.tasks
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
-import org.pnfolder.pnlibrary.api.tasks.TaskId
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.core.tasks.TaskHistoryStore
 import java.nio.file.Files
 import java.nio.file.Path

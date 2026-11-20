@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.catalog.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import java.time.Duration
 import java.util.function.Supplier

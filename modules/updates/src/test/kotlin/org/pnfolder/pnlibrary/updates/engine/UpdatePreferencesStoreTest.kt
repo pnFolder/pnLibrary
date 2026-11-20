@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides
 import java.nio.file.Files
 import java.nio.file.Path

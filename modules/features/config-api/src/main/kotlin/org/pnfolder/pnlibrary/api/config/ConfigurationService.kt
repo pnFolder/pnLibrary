@@ -169,6 +169,7 @@ interface ConfigScope : AutoCloseable {
         aliases: Set<String>,
         priority: Int,
         target: ConfigAddress?,
+        conflict: ConfigTypeConflict = ConfigTypeConflict.FAIL,
     ): ConfigTypeRegistration
 
     /** Plugin that owns this scope. */

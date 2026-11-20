@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.Delivery
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import java.util.UUID
 
 class AudienceContractsTest {

@@ -1,24 +1,29 @@
 package org.pnfolder.pnlibrary.core.events
 
-import org.pnfolder.pnlibrary.api.events.DispatchMode
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventDay
-import org.pnfolder.pnlibrary.api.events.EventHour
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.EventListenerRegistration
-import org.pnfolder.pnlibrary.api.events.EventScope
-import org.pnfolder.pnlibrary.api.events.EventService
-import org.pnfolder.pnlibrary.api.events.EventSubscription
-import org.pnfolder.pnlibrary.api.events.EventTrace
 import org.pnfolder.pnlibrary.api.events.InternalEventApi
-import org.pnfolder.pnlibrary.api.events.Listener
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
+import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.concurrent.ManagedWorker
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.events.inspect.EventCounters
+import org.pnfolder.pnlibrary.core.events.inspect.EventHandlerInspector
+import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
+import org.pnfolder.pnlibrary.core.events.inspect.trace.EventTracer
+import org.pnfolder.pnlibrary.core.events.registration.ListenerRegistration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CopyOnWriteArrayList
@@ -29,7 +34,6 @@ import java.util.concurrent.atomic.LongAdder
 import java.util.function.Consumer
 import java.util.function.Supplier
 
-/** Thread-safe, mode-aware implementation of the platform-independent event bus. */
 class EventDispatcher(
     private val history: EventHistory? = null,
     private val errorLogger: (PluginId, String, Throwable) -> Unit,
@@ -127,7 +131,6 @@ class EventDispatcher(
         if (tracedAs != null && steps != null) tracer.record(tracedAs, event, steps, mode)
     }
 
-    /** A failing listener is logged and skipped; [steps] is null unless the event is traced. */
     private fun deliver(subscription: Subscription<out Event>, event: Event, steps: MutableList<EventTrace.Step>?) {
         val before = if (steps != null) tracer.resultText(event) else null
         if (subscription.ignoreDenied && !event.isAllowed) {
@@ -162,7 +165,7 @@ class EventDispatcher(
         after: String?,
     ) = EventTrace.Step(subscription.scope.plugin, subscription.scope.module, subscription.priority, skipped, failed, nanos, before, after)
 
-    /** A logger that throws must not cost the remaining listeners their turn. */
+    // A broken logger must not cost the remaining listeners their turn.
     private fun logFailure(subscription: Subscription<out Event>, event: Event, error: Throwable) {
         runCatchingNonFatal {
             errorLogger(subscription.scope.plugin, "[pnLibrary/events] Listener failed for ${event.javaClass.name}", error)
@@ -227,14 +230,13 @@ class EventDispatcher(
             synchronized(scopes) { if (scopes[pluginId] === this) scopes.remove(pluginId) }
         }
 
-        /** Closes the scope's subscriptions without taking the scope out of the dispatcher, which the caller does. */
+        // Does not remove the scope from scopes map — the caller (close/unregisterAll) does that.
         fun closeInternal() {
             if (!scopeClosed.compareAndSet(false, true)) return
             ownedSubscriptions.forEach { it.close() }
             ownedSubscriptions.clear()
         }
 
-        /** Forgets [subscription] after it closed itself. */
         fun remove(subscription: Subscription<out Event>) {
             ownedSubscriptions.remove(subscription)
         }

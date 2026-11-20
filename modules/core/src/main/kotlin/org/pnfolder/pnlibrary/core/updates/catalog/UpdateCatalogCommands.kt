@@ -1,13 +1,13 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.cleanup.rootCause
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.core.exceptions.rootCause
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
@@ -105,6 +105,12 @@ class UpdateCatalogCommands(
                     argument("value", ArgumentType.string()) {
                         suggests { settings.available().map { it.name.lowercase(Locale.ROOT) } + UpdateCatalogSettingsCommands.DEFAULT_CHANNEL }
                         executes(settings::setChannel)
+                    }
+                }
+                literal("java") {
+                    argument("value", ArgumentType.string()) {
+                        suggests { listOf("8", "11", "17", "21", UpdateCatalogSettingsCommands.DEFAULT_CHANNEL) }
+                        executes(settings::setJava)
                     }
                 }
                 literal("auto") {
@@ -215,24 +221,24 @@ class UpdateCatalogCommands(
     private fun showCatalog(context: CommandContext, updatesOnly: Boolean) {
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
-        UpdateCatalogView.catalog(library.updates.all().map { it.snapshot }, page, updatesOnly, routesFor(context))
+        UpdateCatalogView.catalog(library.updates.products.all().map { it.snapshot }, page, updatesOnly, routesFor(context))
             .forEach(context.sender::send)
     }
 
     private fun showInfo(context: CommandContext) {
         if (!ready(context)) return
         val snapshot = snapshotOf(context, context.get<String>("plugin")) ?: return
-        UpdateCatalogView.info(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(context.sender::send)
+        UpdateCatalogView.info(snapshot, routesFor(context), library.updates.settings.heldUntil(snapshot.product)).forEach(context.sender::send)
     }
 
     private fun showSettings(context: CommandContext, requested: String) {
         if (!ready(context)) return
         val snapshot = snapshotOf(context, requested) ?: return
-        UpdateCatalogView.settings(snapshot, routesFor(context), library.updates.heldUntil(snapshot.product)).forEach(context.sender::send)
+        UpdateCatalogView.settings(snapshot, routesFor(context), library.updates.settings.heldUntil(snapshot.product)).forEach(context.sender::send)
     }
 
     private fun snapshotOf(context: CommandContext, requested: String): UpdateSnapshot? {
-        val registration = library.updates.get(requested)
+        val registration = library.updates.products.get(requested)
         if (registration == null) context.sender.send(error("Плагин $requested не зарегистрирован в pnLibrary."))
         return registration?.snapshot
     }
@@ -240,8 +246,8 @@ class UpdateCatalogCommands(
     private fun showHistory(context: CommandContext, product: String?) {
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
-        val entries = library.updates.historyPage(page, product).toCompletableFuture()
-        val total = library.updates.historyCount(product).toCompletableFuture()
+        val entries = library.updates.history.page(page, product).toCompletableFuture()
+        val total = library.updates.history.count(product).toCompletableFuture()
         CompletableFuture.allOf(entries, total).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure != null) {
@@ -278,7 +284,7 @@ class UpdateCatalogCommands(
             return
         }
         val actor = sender.asUpdateActor()
-        library.updates.restoreDatabase(id, plugin, name, actor).whenComplete { _, failure ->
+        library.updates.backups.restoreDatabase(id, plugin, name, actor).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
                 else sender.send(error("Не удалось вернуть базу: ${failure.rootCause().message}"))
@@ -294,7 +300,7 @@ class UpdateCatalogCommands(
             ?: return sender.send(error("Некорректный ID резервного набора."))
         val plugin = context.get<String>("backupPlugin")
         val actor = sender.asUpdateActor()
-        library.updates.extractBackup(id, plugin, actor).whenComplete { folder, failure ->
+        library.updates.backups.extract(id, plugin, actor).whenComplete { folder, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("Файлы плагина $plugin лежат в папке: $folder"))
                 else sender.send(error("Не удалось выдать файлы: ${failure.rootCause().message}"))
@@ -308,7 +314,7 @@ class UpdateCatalogCommands(
         val id = runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
             ?: return sender.send(error("Некорректный ID резервного набора."))
         val actor = sender.asUpdateActor()
-        library.updates.deleteBackup(id, actor).whenComplete { _, failure ->
+        library.updates.backups.delete(id, actor).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure == null) sender.send(Component.text("Резервный набор $id удалён."))
                 else sender.send(error("Не удалось удалить набор: ${failure.rootCause().message}"))
@@ -320,7 +326,7 @@ class UpdateCatalogCommands(
         if (!ready(context)) return
         val page = requestedPage(context) ?: return
         val query = backupQuery(context) ?: return
-        library.updates.backups().whenComplete { backups, failure ->
+        library.updates.backups.list().whenComplete { backups, failure ->
             deliver(Runnable {
                 if (failure != null) context.sender.send(error("Не удалось прочитать резервные наборы."))
                 else UpdateCatalogView.backups(backups, page, routesFor(context), query = query).forEach(context.sender::send)

@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.backup.*
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -14,7 +16,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.*
 import org.pnfolder.pnlibrary.updates.engine.transaction.*
 import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots
 import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Files

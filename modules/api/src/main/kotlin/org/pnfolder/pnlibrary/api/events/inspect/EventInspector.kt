@@ -1,0 +1,102 @@
+package org.pnfolder.pnlibrary.api.events.inspect
+
+import org.pnfolder.pnlibrary.api.events.Event
+import org.pnfolder.pnlibrary.api.events.ResultedEvent
+import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
+import org.pnfolder.pnlibrary.api.plugin.PluginId
+
+/**
+ * Read-only view of the event bus: who listens, which events were called and what happened to them.
+ *
+ * Obtained from [EventService.inspector]. Everything here works before an event has ever been called.
+ *
+ * ```kotlin
+ * val bus = PnLibraryProvider.get().events.inspector
+ * bus.listenerCount(PurchaseEvent::class.java)
+ * bus.listeners(plugin = PluginId.of("shop")).forEach { println("${it.module} ${it.source}") }
+ * ```
+ */
+interface EventInspector {
+    /**
+     * Lists the listeners that would run for [eventType], in dispatch order. Works before the event has
+     * ever been called, so it also answers who is subscribed to an event nobody has fired yet.
+     */
+    fun listeners(eventType: Class<out Event>): List<ListenerInfo>
+
+    /** Lists every registered listener of every plugin, ordered by event type and then dispatch order. */
+    fun listeners(): List<ListenerInfo>
+
+    /** Lists the listeners of one [plugin], optionally only those of one [module]. */
+    fun listeners(plugin: PluginId, module: ModuleId? = null): List<ListenerInfo> =
+        listeners().filter { it.plugin == plugin && (module == null || it.module == module) }
+
+    /** Resolves the class of a known event by its full class name, or `null` when it is not known. */
+    fun eventType(name: String): Class<out Event>?
+
+    /** Number of listeners that would run for [eventType]. */
+    fun listenerCount(eventType: Class<out Event>): Int = listeners(eventType).size
+
+    /** Plugins that have at least one listener for [eventType], in dispatch order without repeats. */
+    fun plugins(eventType: Class<out Event>): List<PluginId> = listeners(eventType).map { it.plugin }.distinct()
+
+    /**
+     * Every event type that has a listener or has been called, with counters, ordered by name.
+     * Call counters are kept for the whole process lifetime.
+     */
+    fun events(): List<EventInfo>
+
+    /** The entry of one event type, or `null` when nobody listens to it and it was never called. */
+    fun event(eventType: Class<out Event>): EventInfo? = events().firstOrNull { it.eventType == eventType.name }
+
+    /**
+     * Per-day call counts, newest day first, for [eventType] or for every event when it is `null`. The history is
+     * kept for [historyDays] days, set by `eventHistoryDays` in the library settings, and survives restarts.
+     */
+    fun history(eventType: String? = null): List<EventDay>
+
+    /** How many days [history] reaches back; `0` means no history is kept. */
+    val historyDays: Int
+
+    /**
+     * Per-hour counters of the last [historyDays] days (at most 30), newest first and then by event name; only
+     * [eventType] when given. Empty when the history is off.
+     *
+     * @param eventType class name of one event, or `null` for all
+     * @return one entry per hour and event that was called
+     */
+    fun hourly(eventType: String? = null): List<EventHour>
+
+    /** How many asynchronous events were accepted and still wait for a free thread. */
+    fun asyncQueued(): Int
+
+    /**
+     * Writes the per-day and per-hour counters to a file next to the history file.
+     *
+     * @param json `true` for a JSON file, `false` for CSV
+     * @return the file written, or `null` when the history is off or cannot be written
+     */
+    fun exportHistory(json: Boolean = false): java.nio.file.Path?
+
+    /**
+     * Starts recording every dispatch of [eventType] and its subclasses, keeping the latest
+     * [EventTrace]s up to [capacity]. Tracing costs nothing for event types that are not traced.
+     * Results are compared through `toString()`, so give a custom [ResultedEvent.Result] a readable one.
+     */
+    fun enableTracing(eventType: Class<out Event>, capacity: Int = 32)
+
+    /** Stops recording [eventType]; recorded traces stay available until [clearTraces]. */
+    fun disableTracing(eventType: Class<out Event>)
+
+    /** Event type names that are being traced now. */
+    fun tracedEvents(): List<String>
+
+    /** Recorded dispatches, oldest first. */
+    fun traces(): List<EventTrace>
+
+    /** Forgets every recorded trace. */
+    fun clearTraces()
+}

@@ -4,12 +4,11 @@ import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-/** Makes the signature that closes every link message. */
 internal fun interface FrameSigner {
     fun sign(bytes: ByteArray, key: ByteArray): ByteArray
 }
 
-/** HMAC-SHA256 that keeps one initialised [Mac] per thread and key, because creating one is the costly part of a signature. */
+// One Mac per thread per key — Mac init is the expensive part; doFinal() resets to the initialized state for reuse.
 internal class CachedHmac(private val create: () -> Mac = { Mac.getInstance(ALGORITHM) }) : FrameSigner {
     private val perThread = ThreadLocal<Keyed>()
 

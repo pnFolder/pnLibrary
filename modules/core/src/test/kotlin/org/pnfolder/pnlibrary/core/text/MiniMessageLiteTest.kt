@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.text.ComponentSerializerType
+import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 
 class MiniMessageLiteTest {
     private data class Run(val text: String, val color: Int?, val decorations: Set<TextDecoration>)

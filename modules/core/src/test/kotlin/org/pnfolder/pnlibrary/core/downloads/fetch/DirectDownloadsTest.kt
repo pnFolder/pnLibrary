@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Proxy
 import java.net.URI
@@ -205,7 +205,8 @@ class DirectDownloadsTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloads(platform, platform, platform, platform, platform, LibraryPaths(directory.resolve("plugins/pnLibrary")), { DownloadConfiguration(automatic = automatic) }, http = http)
+        val paths = LibraryPaths(directory.resolve("plugins/pnLibrary"))
+        return DirectDownloads(platform, platform, platform, platform, platform, paths, { DownloadConfiguration(automatic = automatic) }, http = http)
     }
 
     private fun pluginJar(name: String, version: String): ByteArray = ByteArrayOutputStream().also { output ->

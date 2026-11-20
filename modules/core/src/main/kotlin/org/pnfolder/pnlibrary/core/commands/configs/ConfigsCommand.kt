@@ -1,18 +1,19 @@
 package org.pnfolder.pnlibrary.core.commands.configs
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.config.ConfigApply
 import org.pnfolder.pnlibrary.api.config.ConfigEditException
 import org.pnfolder.pnlibrary.api.config.ConfigId
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
 import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
@@ -65,7 +66,7 @@ class ConfigsCommand(private val library: PnLibrary) {
         }
     }
 
-    private fun org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder.withId(action: (CommandContext, ConfigId) -> Unit) {
+    private fun org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder.withId(action: (CommandContext, ConfigId) -> Unit) {
         argument("id", ArgumentType.string()) {
             suggests { library.configurations.all().map { it.id.toString() } }
             executes { context -> parseId(context)?.let { action(context, it) } }

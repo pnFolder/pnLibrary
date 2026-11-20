@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.updates.service
 
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateArtifact
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateArtifact
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -41,8 +41,13 @@ internal class RegistrationValidator(
                 "Configuration backup root must be a component data directory inside the plugins directory"
             }
         }
-        val artifact = request.artifactFor(JavaRuntime.feature, identity.type)
-            ?: error("No artifact of ${request.repositoryName} is registered for Java ${JavaRuntime.feature}")
+        // Without own rules the Java range the product declares is enough: the catalogue says which file fits.
+        val artifact = if (request.artifacts.isEmpty()) {
+            PluginUpdateArtifact(".*", product.minimumJava, product.maximumJava)
+        } else {
+            request.artifactFor(JavaRuntime.feature, identity.type)
+                ?: error("No artifact of ${request.repositoryName} is registered for Java ${JavaRuntime.feature}")
+        }
         require(product.version == SemanticVersion.parse(version)) {
             "Product version ${product.version} does not match native plugin version $version"
         }

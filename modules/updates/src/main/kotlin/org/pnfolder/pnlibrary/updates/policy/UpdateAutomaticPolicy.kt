@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.updates.policy
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate
 
 /** Decides whether a resolved plan may be staged without an explicit user action. */

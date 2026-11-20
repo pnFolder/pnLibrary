@@ -12,11 +12,11 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.CatalogSource
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.request.CatalogSource
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
 import org.pnfolder.pnlibrary.updates.engine.FreezeStore

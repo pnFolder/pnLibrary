@@ -1,16 +1,16 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.metrics.MetricsBuilder
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
-import org.pnfolder.pnlibrary.api.plugin.PluginMetadataBuilder
-import org.pnfolder.pnlibrary.api.plugin.PluginOptions
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadataBuilder
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginOptions
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import java.nio.file.Path
 import java.util.function.Consumer
 
@@ -26,6 +26,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     var metadataName: String? = null
     var metadataVersion: String? = null
     var metadataAuthors: String? = null
+    var metadataDescription: String? = null
     var metrics: ModuleMetricsDefinition = ModuleMetricsDefinition()
         private set
     var diagnosticsDirectory: Path? = null
@@ -149,6 +150,10 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
 
         override fun version(value: String): PluginMetadataBuilder = apply {
             definition.metadataVersion = value.requireMetadata("version")
+        }
+
+        override fun description(value: String): PluginMetadataBuilder = apply {
+            definition.metadataDescription = value.requireMetadata("description")
         }
 
         override fun authors(value: String): PluginMetadataBuilder = apply {

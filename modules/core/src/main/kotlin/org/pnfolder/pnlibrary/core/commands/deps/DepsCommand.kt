@@ -2,12 +2,12 @@ package org.pnfolder.pnlibrary.core.commands.deps
 
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.lifecycle.dependencyDownloads
@@ -53,9 +53,17 @@ class DepsCommand(private val library: PnLibrary) {
         val groups = downloads.missingGroups()
         if (groups.isEmpty()) return say(context, "Всё нужное установлено.", ChatPalette.LABEL)
         groups.forEach { group ->
-            say(context, "${group.owner} просит: ${group.items.joinToString { "${it.plugin} ${it.minimum}+" }}")
-            group.items.forEach { item -> (listOfNotNull(item.page) + item.sources).forEach { say(context, "  $it", ChatPalette.LABEL) } }
-            say(context, if (group.installable) "  Установить: /pn deps install ${group.code}" else "  Скачайте по ссылкам и положите в plugins.", ChatPalette.SOFT)
+            say(context, "${group.owner} просит:", ChatPalette.ACCENT)
+            group.items.forEach { item ->
+                val name = if (item.title.equals(item.plugin, ignoreCase = true)) item.plugin else "${item.title} (${item.plugin})"
+                say(context, "  $name ${item.minimum}+ · ${if (item.required) "обязательный" else "необязательный"}")
+                item.description?.let { say(context, "    $it", ChatPalette.LABEL) }
+                if (item.noFileForServer) say(context, "    для этого сервера готового файла нет, скачайте вручную", ChatPalette.LABEL)
+                item.variant?.let { say(context, "    выбран файл: $it", ChatPalette.LABEL) }
+                (listOfNotNull(item.page) + item.sources).forEach { say(context, "    $it", ChatPalette.LABEL) }
+            }
+            val line = if (group.installable) "  Установить: /pn deps install ${group.code}" else "  Скачайте по ссылкам и положите в plugins."
+            say(context, line, ChatPalette.SOFT)
         }
     }
 
@@ -80,7 +88,8 @@ class DepsCommand(private val library: PnLibrary) {
     private fun switch(context: CommandContext, value: Boolean) {
         val downloads = library.dependencyDownloads() ?: return say(context, "Загрузки зависимостей здесь недоступны.", ChatPalette.DANGER)
         downloads.setAutomatic(value)
-        say(context, if (value) "Недостающие плагины теперь скачиваются сами." else "Автозагрузка выключена: ссылки и код будут в сообщении.", ChatPalette.ACCENT)
+        val text = if (value) "Недостающие плагины теперь скачиваются сами." else "Автозагрузка выключена: ссылки и код будут в сообщении."
+        say(context, text, ChatPalette.ACCENT)
     }
 
     companion object {

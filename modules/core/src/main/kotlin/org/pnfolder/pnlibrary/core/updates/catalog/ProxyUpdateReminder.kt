@@ -15,7 +15,7 @@ object ProxyUpdateReminder {
     /** Sends the notice to [player] when an update is available or waits for a restart; sends nothing otherwise. */
     fun send(library: PnLibrary, player: UUID) {
         val audience = library.audiences.player(player) ?: return
-        val snapshots = library.updates.all().map { it.snapshot }
+        val snapshots = library.updates.products.all().map { it.snapshot }
         UpdateCatalogView.announcement(snapshots, ProxyUpdateCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL).forEach(audience::sendMessage)
     }
 }

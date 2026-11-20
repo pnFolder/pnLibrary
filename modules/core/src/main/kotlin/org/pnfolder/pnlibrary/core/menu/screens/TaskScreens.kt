@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.tasks.TaskStatus
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskLabels
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
@@ -32,18 +32,19 @@ import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** Menu screens for scheduled tasks. */
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
     fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) {
         val nextPeriod = TaskPeriod.values()[(period.ordinal + 1) % TaskPeriod.values().size]
         val nextState = TaskState.values()[(state.ordinal + 1) % TaskState.values().size]
-        val all = data.tasks()
+        val everything = data.tasks()
+        val all = TaskLabels.roots(everything)
         val inPeriod = all.filter(period::keep)
         val rows = inPeriod.filter(state::keep).sortedByDescending { TaskLabels.activity(it) }.map { task ->
-            Row(taskItem(task), go { who -> taskDetail(who, task.id.value) { tasks(it, period, state, page) } })
+            Row(taskItem(task, everything), go { who -> taskDetail(who, task.id.value) { tasks(it, period, state, page) } })
         }
         val byDate = icon(
             Icons.CLOCK, "CLOCK", "Когда",
@@ -70,7 +71,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         )
     }
 
-    private fun taskItem(task: TaskSnapshot): ItemSpec {
+    private fun taskItem(task: TaskSnapshot, all: Collection<TaskSnapshot>): ItemSpec {
         val material = when (task.status) {
             TaskStatus.SCHEDULED -> "CLOCK"
             TaskStatus.RUNNING -> "EMERALD"
@@ -83,6 +84,9 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             add("Плагин" to ownerLine(task.ownerName))
             add("Состояние" to TaskLabels.label(task.status))
             add("Запусков" to "${task.runCount}")
+            TaskLabels.children(task, all).takeIf { it > 0 }?.let { add("Подзадач" to TaskLabels.childrenLine(task, all)) }
+            TaskLabels.parent(task, all)?.let { add("Подзадача от" to it) }
+            TaskLabels.lag(task)?.let { add("Опоздание" to it) }
             task.lastFailure?.let { add("Ошибка" to "✖ ${it.take(MESSAGE_PREVIEW)}") }
         }
         val lore = Style.lore(description, parameters, Style.left("подробности"))
@@ -101,10 +105,48 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         val builder = menuFrame(Menus.chest(menuTitle("Задача")).rows(DETAIL_ROWS), DETAIL_ROWS)
         taskSummary(builder, task)
         taskFacts(builder, task)
+        relations(builder, task, back)
         runControl(builder, task, back)
         stopControl(builder, task, back)
         builder.button(DETAIL_BACK, backItem(), go { back(it) })
         show(player, builder.build())
+    }
+
+    /** Slot 33: the parent of a subtask, or the list of subtasks of a task that started some. */
+    private fun relations(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
+        val all = data.tasks()
+        val parent = task.parentId?.let { id -> all.firstOrNull { it.id == id } }
+        if (parent != null) {
+            val item = icon(
+                Icons.ROLLBACK, "ARROW", "Подзадача от: ${TaskLabels.title(parent)}",
+                Style.lore(
+                    listOf("Эту задачу запустила другая задача."),
+                    listOf("Состояние" to TaskLabels.label(parent.status)),
+                    Style.left("открыть родителя"),
+                ),
+            )
+            builder.button(33, item, go { who -> taskDetail(who, parent.id.value, back) })
+        }
+        val children = TaskLabels.childrenOf(task, all)
+        if (children.isNotEmpty()) {
+            val item = icon(
+                Icons.CHANGELOG, "CHEST", "Подзадачи: ${children.size}",
+                Style.lore(listOf("Задачи, которые запустила эта задача."), listOf("Активных" to "${children.count { it.isActive }}"), Style.left("показать")),
+            )
+            builder.button(34, item, go { who -> subtasks(who, task.id.value, back) })
+        }
+    }
+
+    private fun subtasks(player: MenuViewer, parentId: String, back: (MenuViewer) -> Unit) {
+        val all = data.tasks()
+        val parent = all.firstOrNull { it.id.value == parentId } ?: return back(player)
+        val rows = TaskLabels.childrenOf(parent, all).sortedByDescending { TaskLabels.activity(it) }.map { task ->
+            Row(taskItem(task, all), go { who -> taskDetail(who, task.id.value) { subtasks(it, parentId, back) } })
+        }
+        list(
+            player, "Подзадачи: ${TaskLabels.title(parent)}", rows, 0, PAGE_SIZE, { who, _ -> subtasks(who, parentId, back) },
+            { taskDetail(it, parentId, back) }, "Подзадач нет",
+        )
     }
 
     private fun taskSummary(builder: MenuBuilder, task: TaskSnapshot) {
@@ -112,6 +154,8 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             add("Плагин" to ownerLine(task.ownerName))
             add("Состояние" to TaskLabels.label(task.status))
             task.interval?.let { add("Повторяется" to "каждые ${TaskLabels.span(it)}") }
+            TaskLabels.parent(task, data.tasks())?.let { add("Подзадача от" to it) }
+            TaskLabels.children(task, data.tasks()).takeIf { it > 0 }?.let { add("Подзадач" to "$it") }
         }
         val about = task.description?.let { wrapText(it) } ?: listOf("Плагин не описал эту задачу.")
         builder.slot(
@@ -129,11 +173,28 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         val runs = buildList {
             add("Запусков" to "${task.runCount}")
             add("Пропущено" to "${task.skippedCount}")
-            task.lastDuration?.let { add("Последний заняла" to TaskLabels.span(it)) }
+            task.lastDuration?.let { add("Прошлый запуск шёл" to TaskLabels.span(it)) }
+            TaskLabels.lag(task)?.let { add("Опоздание" to it) }
             add("Где" to TaskLabels.where(task))
         }
         builder.slot(21, icon(Icons.SETTINGS, "COMPARATOR", "Как выполняется", Style.lore(emptyList(), runs)))
+        lagSlot(builder, task)
         taskTimes(builder, task)
+    }
+
+    private fun lagSlot(builder: MenuBuilder, task: TaskSnapshot) {
+        val lag = TaskLabels.lag(task)
+        val lore = buildList {
+            task.lastLag?.let { add("Последнее" to TaskLabels.span(it)) }
+            task.worstLag?.let { add("Наибольшее" to TaskLabels.span(it)) }
+            add("Пропущено" to "${task.skippedCount}")
+            if (task.failedCount > 0) add("Ошибок" to "${task.failedCount}")
+        }
+        val note = if (lag == null) "Запуски идут вовремя." else "Сервер или поток не успевали: запуск начинался позже срока."
+        builder.slot(
+            25,
+            icon(Icons.PROBLEMS, "CLOCK", "Опоздания", Style.lore(listOf(note), lore), alternative = "WATCH", danger = lag != null, muted = lag == null),
+        )
     }
 
     private fun taskTimes(builder: MenuBuilder, task: TaskSnapshot) {
@@ -184,7 +245,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
     }
 
     private fun stopControl(builder: MenuBuilder, task: TaskSnapshot, back: (MenuViewer) -> Unit) {
-        if (!TaskLabels.isActive(task.status)) {
+        if (!task.isActive) {
             builder.slot(31, closedControl("Остановка закрыта", TaskLabels.stopAnswer(task).replaceFirstChar { it.uppercase() } + "."))
             return
         }

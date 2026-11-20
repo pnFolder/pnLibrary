@@ -5,7 +5,12 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import java.util.Collections
 
 class UpdateApiConsistencyTest {
@@ -44,17 +49,23 @@ class UpdateApiConsistencyTest {
                 dependencies: List<PluginDependency>,
             ) = registration
 
-            override fun all(): List<UpdateRegistration> = Collections.unmodifiableList(listOf(registration))
-            override fun get(product: String): UpdateRegistration? =
-                registration.takeIf { product.equals("product", true) }
+            override val products = object : UpdateProducts {
+                override fun all(): List<UpdateRegistration> = Collections.unmodifiableList(listOf(registration))
+                override fun get(product: String): UpdateRegistration? =
+                    registration.takeIf { product.equals("product", true) }
+            }
+            override val plans: UpdatePlans get() = error("not used")
+            override val settings: UpdateSettings get() = error("not used")
+            override val backups: UpdateBackups get() = error("not used")
+            override val history: UpdateHistory get() = error("not used")
         }
 
-        assertSame(registration, service.get("PRODUCT"))
-        assertSame(registration, service.require("product"))
-        assertThrows(IllegalStateException::class.java) { service.require("missing") }
+        assertSame(registration, service.products.get("PRODUCT"))
+        assertSame(registration, service.products.require("product"))
+        assertThrows(IllegalStateException::class.java) { service.products.require("missing") }
         assertThrows(UnsupportedOperationException::class.java) {
             @Suppress("UNCHECKED_CAST")
-            (service.all() as MutableList<UpdateRegistration>).clear()
+            (service.products.all() as MutableList<UpdateRegistration>).clear()
         }
     }
 }

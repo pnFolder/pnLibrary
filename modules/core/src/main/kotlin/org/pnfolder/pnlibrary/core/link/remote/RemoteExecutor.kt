@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.link.remote
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -38,7 +38,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
     }
 
     private fun check(request: RemoteRequest, actor: UpdateActor, reply: (RemoteResult) -> Unit) {
-        library.updates.checkNow(actor).whenComplete { plan, error ->
+        library.updates.plans.check(actor).whenComplete { plan, error ->
             reply(
                 if (error != null) {
                     result(request, false, "Проверка не удалась: ${error.rootMessage()}")
@@ -52,7 +52,7 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
 
     private fun automatic(request: RemoteRequest, product: String, actor: UpdateActor, reply: (RemoteResult) -> Unit) {
         val enabled = request.action == RemoteAction.AUTO_ON
-        library.updates.setAutomaticDownload(product, enabled, actor).whenComplete { _, error ->
+        library.updates.settings.automaticDownload(product, enabled, actor).whenComplete { _, error ->
             reply(
                 if (error != null) {
                     result(request, false, "Не удалось изменить: ${error.rootMessage()}")
@@ -64,13 +64,13 @@ class RemoteExecutor(private val library: PnLibrary, private val clock: () -> In
     }
 
     private fun update(request: RemoteRequest, product: String, actor: UpdateActor, reply: (RemoteResult) -> Unit) {
-        if (library.updates.get(product) == null) return reply(result(request, false, "Плагин $product не подключён к обновлениям pnLibrary."))
-        library.updates.checkNow(actor).whenComplete { plan, error ->
+        if (library.updates.products.get(product) == null) return reply(result(request, false, "Плагин $product не подключён к обновлениям pnLibrary."))
+        library.updates.plans.check(actor).whenComplete { plan, error ->
             val change = plan?.plan?.changes?.firstOrNull { it.product.value.equals(product, ignoreCase = true) }
             when {
                 error != null -> reply(result(request, false, "Проверка не удалась: ${error.rootMessage()}"))
                 plan.state != UpdateState.UPDATE_AVAILABLE || change == null -> reply(result(request, true, "Для $product нет обновления."))
-                else -> library.updates.stage(plan.id, actor).whenComplete { _, stageError ->
+                else -> library.updates.plans.stage(plan.id, actor).whenComplete { _, stageError ->
                     reply(
                         if (stageError != null) {
                             result(request, false, "Не удалось подготовить: ${stageError.rootMessage()}")

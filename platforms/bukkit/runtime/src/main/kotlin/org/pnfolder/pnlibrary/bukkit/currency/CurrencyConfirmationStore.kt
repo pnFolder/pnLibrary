@@ -5,12 +5,10 @@ import java.security.SecureRandom
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 
-/** Console-confirmation queue holding currency operations until an administrator approves them. */
 internal class CurrencyConfirmationStore {
     private val pending = ConcurrentHashMap<String, PendingOperation>()
     private val random = SecureRandom()
 
-    /** Stores an operation and returns its confirmation code, or null when the queue is full. */
     fun add(
         timeoutSeconds: Int,
         currency: String,
@@ -26,10 +24,8 @@ internal class CurrencyConfirmationStore {
             .also { pending[token] = it }
     }
 
-    /** Removes and returns the operation for [token]; `null` when unknown or already used. */
     fun take(token: String): PendingOperation? = pending.remove(token.uppercase())
 
-    /** Drops operations whose confirmation time has run out. */
     fun discardExpired() {
         val now = System.currentTimeMillis()
         pending.entries.removeIf { it.value.expiresAt < now }
@@ -43,7 +39,6 @@ internal class CurrencyConfirmationStore {
         error("Unable to allocate a currency confirmation code")
     }
 
-    /** A currency operation waiting for the player to type its confirmation code. */
     internal data class PendingOperation(
         val token: String,
         val expiresAt: Long,

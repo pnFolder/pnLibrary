@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigId
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
+import org.pnfolder.pnlibrary.api.config.ConfigTypeConflict
 import org.pnfolder.pnlibrary.api.config.extensions
 import org.pnfolder.pnlibrary.api.config.serializer
 import org.pnfolder.pnlibrary.api.config.serializerFor
@@ -278,6 +279,55 @@ class ConfigAdditionsTest {
 
             assertTrue(own is GoldAward, "the owner's word wins in its own file: $own")
             assertEquals(ItemAward("GOLD", 1), added)
+        }
+    }
+
+    private fun first(scope: ConfigScope): Award {
+        val file = scope.get("awards.yml") ?: scope.yaml<AwardsFile>("awards.yml") { AwardsFile() }
+        @Suppress("UNCHECKED_CAST")
+        return (file as org.pnfolder.pnlibrary.api.config.ManagedConfig<AwardsFile>).reload().value.awards.first()
+    }
+
+    private fun item() = "awards:\n  - type: pick\n    material: GOLD\n"
+
+    @Test
+    fun `a taken word fails by default, is kept on request and is replaced on request`() {
+        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+            write("quests", "awards.yml", item())
+            val quests = scope(service, "quests")
+            val library = scope(service, "lib")
+            library.type<Award, ItemAward>().name("pick").everywhere().register()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                library.type<Award, GoldAward>().name("pick").everywhere().register()
+            }
+            val kept = library.type<Award, GoldAward>().name("pick").everywhere().onConflict(ConfigTypeConflict.KEEP).register()
+            assertFalse(kept.isActive)
+            assertTrue(first(quests) is ItemAward)
+
+            val replaced = library.type<Award, GoldAward>().name("pick").everywhere().onConflict(ConfigTypeConflict.REPLACE).register()
+            assertTrue(replaced.isActive)
+            assertTrue(first(quests) is GoldAward)
+        }
+    }
+
+    @Test
+    fun `one word can be published for several places and withdrawn together`() {
+        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+            write("quests", "awards.yml", item())
+            write("shop", "awards.yml", item())
+            write("farm", "awards.yml", item())
+            val publisher = scope(service, "lib")
+
+            val handles = publisher.type<Award, ItemAward>().name("pick")
+                .registerEach(listOf(ConfigAddress.plugin("quests"), ConfigAddress.plugin("shop")))
+
+            assertEquals(2, handles.size)
+            assertTrue(first(scope(service, "quests")) is ItemAward)
+            assertTrue(first(scope(service, "shop")) is ItemAward)
+            assertTrue(runCatching { first(scope(service, "farm")) }.getOrNull() !is ItemAward)
+            handles.forEach { it.close() }
+            assertTrue(runCatching { first(scope(service, "quests")) }.getOrNull() !is ItemAward)
         }
     }
 }

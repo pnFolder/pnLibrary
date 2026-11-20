@@ -15,6 +15,7 @@ object MenuCalls {
     const val CHECK_ONE = "checkOne"
     const val SET_AUTOMATIC = "setAutomatic"
     const val SET_CHANNEL = "setChannel"
+    const val SET_JAVA_BUILD = "setJavaBuild"
     const val SET_HELD = "setHeld"
     const val ROLLBACK = "rollback"
     const val RESTORE_DATABASE = "restore-database"
@@ -26,6 +27,10 @@ object MenuCalls {
     const val PLACEHOLDERS = "placeholders"
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
+    const val MODULES = "modules"
+    const val LIBRARIES = "libraries"
+    const val DISK = "disk"
+    const val MODULE_ACTION = "moduleAction"
     const val EVENTS = "events"
     const val LISTENERS = "listeners"
     const val EVENT_HISTORY = "eventHistory"
@@ -46,7 +51,8 @@ object MenuCalls {
     /** The calls that change nothing, whose answers may be remembered for a moment. */
     val READS = setOf(
         GROUPS,
-        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, STATS,
+        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL,
+        TASKS, MODULES, LIBRARIES, DISK, STATS,
         PLACEHOLDERS, SETTINGS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )

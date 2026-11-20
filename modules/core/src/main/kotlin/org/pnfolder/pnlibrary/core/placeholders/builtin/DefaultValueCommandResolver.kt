@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.placeholders.builtin
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueScope
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueScope
 import java.util.UUID
 
 /** Parses the bracket-delimited `defaultValue_*` command surface published to PlaceholderAPI. */

@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens
@@ -28,7 +28,7 @@ import org.pnfolder.pnlibrary.core.menu.style.clockTime
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import org.pnfolder.pnlibrary.updates.history.BackupItemText
 

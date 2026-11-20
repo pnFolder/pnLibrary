@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder
@@ -91,6 +91,33 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
                 icon(Icons.CHANGELOG, "WRITTEN_BOOK", "Список изменений",
                     Style.lore(listOf("Что нового в последней версии."), emptyList(), Style.left("получить ссылку"))),
                 go { who -> who.close(); tell(who, ChatTone.INFO, "Список изменений ${snapshot.product}", link) },
+            )
+        }
+        if (snapshot.javaBuilds.size > 1) {
+            val now = snapshot.javaBuild ?: snapshot.recommendedJava
+            builder.button(
+                23,
+                section(
+                    Icons.SETTINGS, "COMPARATOR", "Сборка Java", "У релиза несколько сборок: выберите под вашу Java.",
+                    "Сейчас" to (now?.let { "Java $it" + if (snapshot.javaBuild == null) " (подбор)" else "" } ?: "подбор"),
+                ),
+                go { policy.javaBuilds(it, snapshot.product) },
+            )
+        }
+        val modules = data.modules().count { it.key.startsWith("${snapshot.product.lowercase()}:", ignoreCase = true) }
+        if (modules > 0) {
+            builder.button(
+                24,
+                section(Icons.TOOLS, "CHEST", "Модули", "Включить, выключить или перезапустить модули плагина.", "Модулей" to "$modules"),
+                go { who -> allowed(who, MenuPermissions.MODULES) { routes.modules(who, snapshot.product, 0) { card(it, snapshot.product) } } },
+            )
+        }
+        val libraries = data.libraries().count { it.belongsTo(snapshot.product) }
+        if (libraries > 0) {
+            builder.button(
+                25,
+                section(Icons.CHANGELOG, "BOOKSHELF", "Библиотеки", "Что плагин и его модули подключили для работы.", "Всего" to "$libraries"),
+                go { who -> routes.libraries(who, snapshot.product, 0) { card(it, snapshot.product) } },
             )
         }
         builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })

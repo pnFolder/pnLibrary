@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCachePolicy
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.Locale

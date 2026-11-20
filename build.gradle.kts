@@ -189,7 +189,7 @@ dependencies {
     dokka(project(":modules:updates"))
     dokka(project(":modules:features:currency-api"))
     dokka(project(":modules:features:currency-runtime"))
-    dokka(project(":modules:features:minecraft-localization-api"))
+    dokka(project(":modules:features:localization-api"))
     dokka(project(":modules:bootstrap"))
     dokka(project(":platforms:bukkit:bootstrap"))
     dokka(project(":platforms:bungee:bootstrap"))

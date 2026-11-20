@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import java.util.function.Consumer
 
 /** Metrics settings declared by a module: providers, enabled flag and extra configurers. */

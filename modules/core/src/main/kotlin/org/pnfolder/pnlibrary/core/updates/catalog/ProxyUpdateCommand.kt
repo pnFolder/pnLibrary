@@ -1,18 +1,18 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandBuilder
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import java.time.Duration
 import java.util.UUID
 
@@ -91,7 +91,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
 
     private fun status(context: CommandContext, requested: String?) {
         val sender = context.sender
-        val entries = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
+        val entries = if (requested == null) library.updates.products.all() else listOfNotNull(library.updates.products.get(requested))
         if (requested != null && entries.isEmpty()) return notRegistered(sender, requested)
         val facts = listOf(
             "Java" to (System.getProperty("java.version") ?: "?"),
@@ -102,7 +102,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
 
     private fun check(context: CommandContext) {
         say(context.sender, ChatTone.PROGRESS, "Проверяю обновления…")
-        library.updates.checkNow(context.sender.asUpdateActor()).whenComplete { _, error ->
+        library.updates.plans.check(context.sender.asUpdateActor()).whenComplete { _, error ->
             if (error != null) fail(context.sender, "Не удалось проверить обновления", error) else catalog.showAvailable(context)
         }
     }
@@ -112,9 +112,9 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
     private fun update(context: CommandContext, name: String) {
         val sender = context.sender
         if (!sender.hasPermission(DOWNLOAD)) return say(sender, ChatTone.FAILURE, "Недостаточно прав для загрузки обновлений.")
-        val registration = library.updates.get(name) ?: return notRegistered(sender, name)
+        val registration = library.updates.products.get(name) ?: return notRegistered(sender, name)
         say(sender, ChatTone.PROGRESS, "Ищу совместимое обновление ${registration.snapshot.product}…")
-        library.updates.checkNow(sender.asUpdateActor()).whenComplete { result, error ->
+        library.updates.plans.check(sender.asUpdateActor()).whenComplete { result, error ->
             if (error != null) fail(sender, "Проверка обновления не удалась", error) else stage(sender, registration, result)
         }
     }
@@ -126,7 +126,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         }
         val transition = "${change.product} v${change.from} » v${change.to}"
         say(sender, ChatTone.PROGRESS, "Найдено $transition. Скачиваю и проверяю…")
-        library.updates.stage(result.id, sender.asUpdateActor()).whenComplete { _, error ->
+        library.updates.plans.stage(result.id, sender.asUpdateActor()).whenComplete { _, error ->
             if (error != null) fail(sender, "Не удалось подготовить обновление", error)
             else say(sender, ChatTone.SUCCESS, "Обновление $transition подготовлено.", "Перезапустите прокси, чтобы применить его.")
         }
@@ -137,7 +137,7 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
     private fun rollbackPlan(context: CommandContext) {
         val sender = context.sender
         if (!sender.hasPermission(ROLLBACK)) return say(sender, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
-        val plan = library.updates.currentPlan().orElse(null)
+        val plan = library.updates.plans.current().orElse(null)
             ?: return say(sender, ChatTone.WARNING, "Нет плана обновления, который можно откатить.")
         ask(
             sender, plan.id, plan.revision, UpdateAction.PLAN_ROLLBACK, "Откат обновления",
@@ -178,14 +178,18 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
         }
         when (grant.action) {
             UpdateAction.PLAN_ROLLBACK -> {
-                val current = library.updates.currentPlan().orElse(null)
+                val current = library.updates.plans.current().orElse(null)
                 if (current == null || current.id != grant.plan || current.revision != grant.revision) {
                     return say(sender, ChatTone.FAILURE, "План обновления изменился; запросите откат заново.")
                 }
-                library.updates.rollback(sender.asUpdateActor()).whenComplete { _, error -> done(error) }
+                library.updates.backups.rollback(sender.asUpdateActor()).whenComplete { _, error -> done(error) }
             }
-            UpdateAction.ROLLBACK -> library.updates.rollback(grant.plan, false, sender.asUpdateActor()).whenComplete { _, error -> done(error) }
-            UpdateAction.ROLLBACK_CONFIGS -> library.updates.rollback(grant.plan, true, sender.asUpdateActor()).whenComplete { _, error -> done(error) }
+            UpdateAction.ROLLBACK ->
+                library.updates.backups.rollback(grant.plan, sender.asUpdateActor(), restoreConfigurations = false)
+                    .whenComplete { _, error -> done(error) }
+            UpdateAction.ROLLBACK_CONFIGS ->
+                library.updates.backups.rollback(grant.plan, sender.asUpdateActor(), restoreConfigurations = true)
+                    .whenComplete { _, error -> done(error) }
             UpdateAction.RESTART, UpdateAction.RESTART_LATER, UpdateAction.RESTART_EMPTY ->
                 say(sender, ChatTone.WARNING, "Перезапустите прокси его обычной командой.")
         }

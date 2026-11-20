@@ -6,12 +6,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandEvent
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticCommandExecutor
+import org.pnfolder.pnlibrary.core.diagnostics.command.DiagnosticCommandEvent
+import org.pnfolder.pnlibrary.core.diagnostics.command.DiagnosticCommandExecutor
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryLauncher
 import org.pnfolder.pnlibrary.core.runtime.platform.toRuntimeContext
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.nio.file.Files
@@ -59,7 +60,8 @@ class DiagnosticCommandExecutorTest {
         override val type = PlatformType.BUKKIT
         override val id = "test"
         override val taskAdapter = object : PlatformTaskAdapter {
-            override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
+            override fun buildTask() = PlatformTaskBuilder(::dispatch)
+            private fun dispatch(request: PlatformTaskRequest): PlatformTaskHandle {
                 request.callback.run()
                 return PlatformTaskHandle { false }
             }

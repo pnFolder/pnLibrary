@@ -9,37 +9,14 @@ class PlaceholderTemplateRenderer(
     private val resolve: (String, UUID?, Map<String, Any?>) -> CompletionStage<Any?>,
     private val format: (Any?, List<String>, UUID?, Map<String, Any?>) -> Any?,
 ) {
-    /** Fills the conditionals, `[local]` and `{ordinary}` expressions of [template] with [values] and resolved placeholders. */
+    /** Fills the conditionals and `{name}` expressions of [template] with [values] and resolved placeholders. */
     fun render(
         template: String,
         playerId: UUID?,
         values: Map<String, Any?>,
     ): CompletionStage<String> =
         renderConditions(template, playerId, values, MAXIMUM_CONDITIONAL_DEPTH)
-            .thenCompose { output -> renderLocalExpressions(output, playerId, values) }
             .thenCompose { output -> renderOrdinaryExpressions(output, playerId, values) }
-
-    private fun renderLocalExpressions(
-        template: String,
-        playerId: UUID?,
-        values: Map<String, Any?>,
-    ): CompletionStage<String> {
-        val expressions = LOCAL_EXPRESSION.findAll(template)
-            .map { match -> match.value }
-            .distinct()
-            .mapNotNull { token -> LocalPlaceholderExpression.parse(token)?.let { token to it } }
-            .toList()
-        var result: CompletionStage<String> = CompletableFuture.completedFuture(template)
-        expressions.forEach { (token, expression) ->
-            result = result.thenCompose { current ->
-                resolve(expression.reference, playerId, values).thenApply { value ->
-                    val formatted = format(value, expression.formatters, playerId, values)
-                    current.replace(token, formatted?.toString() ?: token)
-                }
-            }
-        }
-        return result
-    }
 
     private fun renderOrdinaryExpressions(
         template: String,
@@ -80,7 +57,6 @@ class PlaceholderTemplateRenderer(
 
     private companion object {
         const val MAXIMUM_CONDITIONAL_DEPTH = 16
-        val LOCAL_EXPRESSION = Regex("\\[[^\\[\\]]+]")
         val ORDINARY_EXPRESSION = Regex("\\{([^{}]+)}")
         val CONDITIONAL = Regex("\\{\\?([^{}]+)}([\\s\\S]*?)(?:\\{:}([\\s\\S]*?))?\\{/}")
     }

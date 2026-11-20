@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.menu.ClickType
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
@@ -25,14 +25,14 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.backItem
 import org.pnfolder.pnlibrary.core.menu.style.clockStamp
-import org.pnfolder.pnlibrary.core.menu.style.dayTitle
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.menu.style.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.section
-import org.pnfolder.pnlibrary.core.menu.style.shortName
-import org.pnfolder.pnlibrary.core.menu.style.wrapText
+import org.pnfolder.pnlibrary.core.text.dayTitle
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
+import org.pnfolder.pnlibrary.core.text.wrapText
 import java.time.LocalDate
 
 /** Menu screens for event bus overview, events and listeners. */

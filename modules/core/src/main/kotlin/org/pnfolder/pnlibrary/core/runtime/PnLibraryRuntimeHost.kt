@@ -179,5 +179,68 @@ class PnLibraryRuntimeHost private constructor(
                 throw error
             }
         }
+
+    }
+}
+
+/**
+ * Entry point for starting a pnLibrary runtime.
+ *
+ * ```kotlin
+ * val host = PnLibraryRuntime.builder()
+ *     .owner(plugin)
+ *     .adapter(platformAdapter)
+ *     .platform<VelocityPlatform>(velocityPlatformImpl)
+ *     .launch(platformAdapter::markReady)
+ * ```
+ */
+class PnLibraryRuntime private constructor() {
+
+    companion object {
+        @JvmStatic
+        fun builder(): Builder = Builder()
+    }
+
+    class Builder internal constructor() {
+        private var owner: Any? = null
+        private var adapter: PlatformAdapter? = null
+        private val registrations = mutableListOf<(PnLibraryRuntimeHost) -> Unit>()
+
+        fun owner(owner: Any): Builder {
+            this.owner = owner
+            return this
+        }
+
+        fun adapter(adapter: PlatformAdapter): Builder {
+            this.adapter = adapter
+            return this
+        }
+
+        inline fun <reified T : Any> platform(implementation: T): Builder =
+            platform(T::class.java, implementation)
+
+        fun <T : Any> platform(type: Class<T>, implementation: T): Builder {
+            registrations.add { host -> host.registerPlatform(type, implementation) }
+            return this
+        }
+
+        fun launch(onReady: () -> Unit = {}): PnLibraryRuntimeHost {
+            val owner = requireNotNull(owner) { "owner is not set" }
+            val adapter = requireNotNull(adapter) { "adapter is not set" }
+            val host = try {
+                PnLibraryRuntimeHost.start(owner, adapter)
+            } catch (error: Throwable) {
+                runCatchingNonFatal { adapter.close() }.onFailure(error::addSuppressed)
+                throw error
+            }
+            return try {
+                registrations.forEach { it(host) }
+                onReady()
+                host
+            } catch (error: Throwable) {
+                runCatchingNonFatal { host.close() }.onFailure(error::addSuppressed)
+                throw error
+            }
+        }
     }
 }

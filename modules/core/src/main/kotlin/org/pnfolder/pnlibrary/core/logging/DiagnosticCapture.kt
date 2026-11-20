@@ -11,7 +11,7 @@ internal class DiagnosticCapture(
     private val ownership: PlatformOwnership,
     private val native: PlatformLogging,
     private val incidents: DiagnosticLogBuffer? = null,
-    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?, Map<String, Any?>) -> Unit)? = null,
     private val onError: (Any, String, Throwable) -> Unit = { _, _, _ -> },
 ) : PlatformLogging {
     private val emitting = ThreadLocal<Boolean>()
@@ -24,14 +24,15 @@ internal class DiagnosticCapture(
     }
 
     override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) =
-        write(owner, level, message, error, true)
+        write(owner, level, message, error)
 
-    /**
-     * Writes one line. With [record] `false` it is console only and never reaches the black box; a [LogLevel.DEBUG]
-     * line is the opposite and never reaches the console.
-     */
-    fun write(owner: Any, level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true) {
-        val result = if (record) capture(owner, level, message, error, true) else null
+    /** Writes to the journal and incident buffer at [level] without emitting to the console. */
+    fun captureOnly(owner: Any, level: LogLevel, message: String, error: Throwable? = null) {
+        capture(owner, level, message, error, true, emptyMap())
+    }
+
+    fun write(owner: Any, level: LogLevel, message: String, error: Throwable? = null, record: Boolean = true, context: Map<String, Any?> = emptyMap()) {
+        val result = if (record) capture(owner, level, message, error, true, context) else null
         if (level == LogLevel.DEBUG) return
         val output = when {
             result == null || result.emitOriginal -> message
@@ -53,7 +54,7 @@ internal class DiagnosticCapture(
 
     private fun observeLine(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean) {
         if (emitting.get() == true || echoedRecently(level, message)) return
-        capture(owner, level, message, error, includeJournal)
+        capture(owner, level, message, error, includeJournal, emptyMap())
     }
 
     /** A native logger may echo our line on another thread, where the thread-local guard cannot see it. */
@@ -68,8 +69,15 @@ internal class DiagnosticCapture(
         if (echoes.size <= ECHO_LIMIT) echoes["$level|$message"] = now
     }
 
-    private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean): DiagnosticLogBuffer.CaptureResult? {
-        if (includeJournal) guarded(owner, "journal") { journal?.invoke(owner, level, message, error) }
+    private fun capture(
+        owner: Any,
+        level: LogLevel,
+        message: String,
+        error: Throwable?,
+        includeJournal: Boolean,
+        context: Map<String, Any?>,
+    ): DiagnosticLogBuffer.CaptureResult? {
+        if (includeJournal) guarded(owner, "journal") { journal?.invoke(owner, level, message, error, context) }
         // An error logged as text only still has to reach the error tracker, which takes throwables.
         if (level >= LogLevel.ERROR) guarded(owner, "error report") { onError(owner, message, error ?: LoggedError(message)) }
         return guarded(owner, "incident buffer") { incidents?.record(ownership, owner, level, message, error) }

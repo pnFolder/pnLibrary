@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 
 class DiagnosticsRegistrationLifecycleTest {
     @Test

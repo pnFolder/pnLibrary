@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.updates.policy
 
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import java.util.Locale
 
 /** The channel as it is typed in commands and shown in tags: `stable`, `rc`, `beta`. */

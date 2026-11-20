@@ -8,44 +8,36 @@ import org.pnfolder.pnlibrary.api.remote.ProductInfo
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
+import kotlin.jvm.optionals.getOrDefault
 
 /** Creates remote-policy contexts from Velocity runtime metadata. */
 internal object VelocityRemotePolicyContextFactory {
 
-    /**
-     * Builds a context for [plugin] on [server] and appends caller-defined policy [values].
-     *
-     * @param plugin Native Velocity plugin instance that owns the policy evaluation.
-     * @param container Velocity container registered for [plugin].
-     * @param server Velocity proxy that hosts the plugin.
-     * @param values Additional non-sensitive values exposed to policy rules.
-     */
+    /** Builds a context for [plugin] on [server] and appends caller-defined policy [values]. */
     fun create(
         plugin: Any,
         container: PluginContainer,
         server: ProxyServer,
         values: Map<String, String> = emptyMap(),
     ): RemotePolicyContext {
-        val manager = server.pluginManager
         val descriptor = container.description
-
         val proxy = server.version
 
         val product = ProductInfo(
-            descriptor.id,
-            descriptor.name.orElse(descriptor.id),
-            descriptor.version.orElse("unknown"),
+            id = descriptor.id,
+            name = descriptor.name.getOrDefault(descriptor.id),
+            version = descriptor.version.getOrDefault("unknown"),
         )
 
         val platform = PlatformInfo(
-            PlatformType.VELOCITY,
-            proxy.name,
-            proxy.version,
+            type = PlatformType.VELOCITY,
+            name = proxy.name,
+            version = proxy.version,
         )
 
         val runtime = ServerInfo(
-            proxy.version,
-            MinecraftVersion.parseInfo(null),
+            version = proxy.version,
+            minecraft = MinecraftVersion.parseInfo(null),
         )
 
         return RemotePolicyContext.builder()
@@ -55,7 +47,7 @@ internal object VelocityRemotePolicyContextFactory {
             .values(values)
             .nativeHandle(plugin)
             .nativeHandle(server)
-            .nativeHandle(manager)
+            .nativeHandle(server.pluginManager)
             .build()
     }
 }

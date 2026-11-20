@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
 import org.pnfolder.pnlibrary.core.menu.MenuScreens
@@ -67,6 +67,47 @@ internal class PluginPolicyScreens(session: MenuSession, routes: MenuRoutes) : M
         )
         builder.button(SMALL_BACK, backItem(), go { routes.card(it, product) })
         show(player, builder.build())
+    }
+
+    /** The Java build choice for a release that has several builds, for example one for Java 8 and one for Java 17. */
+    fun javaBuilds(player: MenuViewer, product: String) {
+        val snapshot = data.snapshot(product) ?: return routes.home(player)
+        val builder = menuFrame(Menus.chest(menuTitle("Сборка Java $product")).rows(SMALL_ROWS), SMALL_ROWS)
+        snapshot.javaBuilds.take(7).forEachIndexed { index, java ->
+            val chosen = java == snapshot.javaBuild
+            val recommended = java == snapshot.recommendedJava
+            val notes = buildList {
+                if (chosen) add("Состояние" to "выбрана сейчас")
+                if (recommended) add("Рекомендуется" to if (snapshot.javaBuild == null) "используется" else "подходит этому серверу")
+                add("На сервере" to "Java ${snapshot.currentJava}")
+            }
+            val lore = Style.lore(listOf("Скачать сборку для Java $java."), notes, *if (chosen) emptyArray() else arrayOf(Style.left("выбрать")))
+            builder.button(
+                10 + index,
+                icon(Icons.SETTINGS, "COMPARATOR", "Java $java", lore, good = chosen || (recommended && snapshot.javaBuild == null)),
+                go { who -> allowed(who, SETTINGS) { chooseJava(who, product, java) } },
+            )
+        }
+        builder.button(
+            16,
+            icon(
+                Icons.RESET, "BARRIER", "Подбирать самому",
+                Style.lore(listOf("Сборка, как у установленной версии, иначе самая новая из подходящих."), emptyList(), Style.left("сбросить")), muted = true,
+            ),
+            go { who -> allowed(who, SETTINGS) { chooseJava(who, product, null) } },
+        )
+        builder.button(SMALL_BACK, backItem(), go { routes.card(it, product) })
+        show(player, builder.build())
+    }
+
+    private fun chooseJava(player: MenuViewer, product: String, java: Int?) {
+        data.setJavaBuild(product, java, player.actor).whenComplete { _, error ->
+            sync {
+                if (error != null) tell(player, ChatTone.FAILURE, "Не удалось выбрать сборку Java.", error.rootMessage())
+                else tell(player, ChatTone.SUCCESS, if (java == null) "Сборка Java $product подбирается сама." else "Сборка Java $product: $java.")
+                routes.card(player, product)
+            }
+        }
     }
 
     private fun holdSummary(remaining: Duration?) = icon(

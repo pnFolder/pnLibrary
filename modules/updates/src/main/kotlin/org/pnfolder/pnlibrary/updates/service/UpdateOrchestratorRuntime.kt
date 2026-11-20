@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.updates.service
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.updates.history.UpdateStateStore
 import org.pnfolder.pnlibrary.updates.install.ComponentLedger
 import org.pnfolder.pnlibrary.updates.install.ComponentOperation
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration
 import java.util.Collections
 import java.util.concurrent.CompletableFuture

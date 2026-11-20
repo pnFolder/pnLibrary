@@ -3,14 +3,14 @@ package org.pnfolder.pnlibrary.core.commands.settings
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
-import org.pnfolder.pnlibrary.core.commands.chatPager
-import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
 import org.pnfolder.pnlibrary.core.settings.SettingApply
 import org.pnfolder.pnlibrary.core.settings.SettingChange
 import org.pnfolder.pnlibrary.core.settings.SettingException
@@ -87,7 +87,9 @@ internal class SettingsCommand(private val settings: SettingsStore, private val 
             ?: return say(context, "Нет настройки с выбором из списка: $key. Есть: ${choiceKeys().joinToString()}.", ChatPalette.DANGER)
         if (context.sender.isConsole) return say(context, "Список открывается в меню игрока. В консоли: $ROOT set ${spec.key} <значение>.", ChatPalette.WARN)
         val opened = picker.opener?.invoke(context, spec.key, filter.trim()) ?: false
-        if (!opened) say(context, "Меню здесь недоступно. Откройте /pn gui на игровом сервере или используйте $ROOT set ${spec.key} <значение>.", ChatPalette.WARN)
+        if (!opened) {
+            say(context, "Меню здесь недоступно. Откройте /pn gui на игровом сервере или используйте $ROOT set ${spec.key} <значение>.", ChatPalette.WARN)
+        }
     }
 
     /** What is worth proposing for the value of [key]: the words of a switch, the examples, the default. */

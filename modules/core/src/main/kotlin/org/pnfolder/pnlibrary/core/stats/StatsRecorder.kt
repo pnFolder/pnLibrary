@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import java.time.Duration
 import java.util.concurrent.Executors

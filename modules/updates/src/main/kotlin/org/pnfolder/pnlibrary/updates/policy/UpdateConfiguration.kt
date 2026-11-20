@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.policy
 
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import java.time.Duration
 
 /**

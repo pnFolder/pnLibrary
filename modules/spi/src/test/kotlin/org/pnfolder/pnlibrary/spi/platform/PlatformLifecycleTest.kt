@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.util.concurrent.CopyOnWriteArrayList
@@ -163,7 +164,8 @@ class PlatformLifecycleTest {
         val steps = CopyOnWriteArrayList<String>()
         val startup = StartupGate(lifecycle) { steps += "startup task ran" }
         val tasks = object : PlatformTaskAdapter {
-            override fun schedule(request: PlatformTaskRequest) = PlatformTaskHandle { true }
+            override fun buildTask() = PlatformTaskBuilder(::dispatch)
+            private fun dispatch(request: PlatformTaskRequest) = PlatformTaskHandle { true }
             override fun close() { steps += "tasks" }
         }
         lifecycle.track(AutoCloseable { steps += "registration" })
@@ -182,7 +184,8 @@ class PlatformLifecycleTest {
         var observing = true
         val failure = IllegalStateException("cancel failed")
         val tasks = object : PlatformTaskAdapter {
-            override fun schedule(request: PlatformTaskRequest) = PlatformTaskHandle { true }
+            override fun buildTask() = PlatformTaskBuilder(::dispatch)
+            private fun dispatch(request: PlatformTaskRequest) = PlatformTaskHandle { true }
             override fun close() = throw failure
         }
 

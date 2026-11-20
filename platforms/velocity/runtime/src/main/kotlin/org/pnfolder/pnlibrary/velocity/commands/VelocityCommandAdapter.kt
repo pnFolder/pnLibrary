@@ -5,21 +5,19 @@ import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ProxyServer
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
-import org.pnfolder.pnlibrary.velocity.VelocityAudienceAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
 import java.util.concurrent.CompletionStage
 
-/** Bridges portable pnLibrary commands to the native Velocity command manager. */
 internal class VelocityCommandAdapter internal constructor(
     override val registrar: NativeCommandRegistrar<CommandSource>,
     private val audience: (CommandSource) -> AudienceSender,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    /** Registers commands in the command manager of [server]; senders are converted with [audiences]. */
     constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->
@@ -36,7 +34,6 @@ internal class VelocityCommandAdapter internal constructor(
     ): CommandContext = proxyCommandContext(audience(source), alias, arguments)
 }
 
-/** Default registrar backed by Velocity's command manager. */
 private class DefaultVelocityNativeCommandRegistrar(
     private val server: ProxyServer,
 ) : NativeCommandRegistrar<CommandSource> {
@@ -50,7 +47,7 @@ private class DefaultVelocityNativeCommandRegistrar(
         require(server.pluginManager.fromInstance(owner).isPresent) {
             "Command owner must be a registered Velocity plugin"
         }
-        (listOf(command.name) + command.aliases).forEach { name ->
+        for (name in listOf(command.name) + command.aliases) {
             require(!server.commandManager.hasCommand(name)) {
                 "Command name or alias '$name' is already registered on Velocity"
             }
@@ -61,16 +58,13 @@ private class DefaultVelocityNativeCommandRegistrar(
             .build()
 
         server.commandManager.register(metadata, object : SimpleCommand {
-            override fun execute(invocation: SimpleCommand.Invocation) {
+            override fun execute(invocation: SimpleCommand.Invocation) =
                 execute(invocation.source(), invocation.alias(), invocation.arguments())
-            }
 
             override fun suggestAsync(invocation: SimpleCommand.Invocation) =
                 suggest(invocation.source(), invocation.alias(), invocation.arguments()).toCompletableFuture()
         })
 
-        return PlatformCommandRegistration {
-            server.commandManager.unregister(metadata)
-        }
+        return PlatformCommandRegistration { server.commandManager.unregister(metadata) }
     }
 }

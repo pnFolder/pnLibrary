@@ -4,18 +4,21 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.config.ConfigEditResult
 import org.pnfolder.pnlibrary.api.config.ConfigId
 import org.pnfolder.pnlibrary.api.config.ConfigSetting
-import org.pnfolder.pnlibrary.api.events.EventDay
 import org.pnfolder.pnlibrary.api.events.EventDescription
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventTrace
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
+import org.pnfolder.pnlibrary.core.commands.modules.DiskUsage
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
@@ -65,58 +68,109 @@ class LocalMenuData(
         library.dependencyDownloads()?.setAutomatic(value)
     }
 
+    override fun missingDependencies(): List<MissingPlugins> = library.dependencyDownloads()?.missingGroups().orEmpty().map { group ->
+        MissingPlugins(
+            group.code, group.owner, group.installable,
+            group.items.map { "${it.title} ${it.minimum}+ · ${if (it.required) "обязательный" else "необязательный"}" },
+            group.items.flatMap { listOfNotNull(it.page) + it.sources }.map { it.toString() }.distinct(),
+        )
+    }
+
+    override fun installDependencies(code: String): java.util.concurrent.CompletionStage<String> {
+        val downloads = library.dependencyDownloads()
+            ?: return java.util.concurrent.CompletableFuture.completedFuture("Загрузки зависимостей здесь недоступны.")
+        val stage = try {
+            downloads.installGroup(code)
+        } catch (error: IllegalArgumentException) {
+            return java.util.concurrent.CompletableFuture.completedFuture(error.message ?: "Установить нельзя.")
+        } ?: return java.util.concurrent.CompletableFuture.completedFuture("Такого кода нет или всё уже скачано.")
+        return stage.handle { shots, error ->
+            val failed = shots?.firstOrNull { it.state == org.pnfolder.pnlibrary.api.downloads.DownloadState.FAILED }
+            when {
+                error != null -> "Не вышло: ${error.message}"
+                failed != null -> "Не вышло: ${failed.message ?: "причина неизвестна"}"
+                else -> "Готово. Перезапустите сервер, чтобы плагины загрузились."
+            }
+        }
+    }
+
     override fun version(): String = library.version
 
-    override fun snapshots(): List<UpdateSnapshot> = library.updates.all().map { it.snapshot }.sortedBy { it.product.lowercase() }
+    override fun snapshots(): List<UpdateSnapshot> = library.updates.products.all().map { it.snapshot }.sortedBy { it.product.lowercase() }
 
-    override fun snapshot(product: String): UpdateSnapshot? = library.updates.get(product)?.snapshot
+    override fun snapshot(product: String): UpdateSnapshot? = library.updates.products.get(product)?.snapshot
 
     override fun plugins(): List<PluginRow> = library.plugins.all().map { registration ->
         val owner = directory.owner(registration.owner)
         PluginRow(owner?.name ?: registration.owner.javaClass.simpleName, owner?.version, registration.all().size)
     }
 
-    override fun plan(): PlanInfo? = library.updates.currentPlan().orElse(null)?.let { plan ->
+    override fun plan(): PlanInfo? = library.updates.plans.current().orElse(null)?.let { plan ->
         PlanInfo(plan.state, plan.plan?.changes?.isNotEmpty() == true, plan.blockers.map { UpdateStatusMessages.blocker(it) })
     }
 
-    override fun heldUntil(product: String): Instant? = library.updates.heldUntil(product)
+    override fun heldUntil(product: String): Instant? = library.updates.settings.heldUntil(product)
 
-    override fun historyCount(product: String?): CompletionStage<Int> = library.updates.historyCount(product)
+    override fun historyCount(product: String?): CompletionStage<Int> = library.updates.history.count(product)
 
-    override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = library.updates.historyPage(page, product)
+    override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = library.updates.history.page(page, product)
 
-    override fun backups(): CompletionStage<List<UpdateBackup>> = library.updates.backups()
+    override fun backups(): CompletionStage<List<UpdateBackup>> = library.updates.backups.list()
 
-    override fun checkAll(actor: UpdateActor): CompletionStage<Boolean> = library.updates.checkNow(actor).thenApply { true }
+    override fun checkAll(actor: UpdateActor): CompletionStage<Boolean> = library.updates.plans.check(actor).thenApply { true }
 
     override fun checkOne(product: String, actor: UpdateActor) {
-        library.updates.get(product)?.checkNow()
+        library.updates.products.get(product)?.checkNow()
     }
 
     override fun setAutomatic(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.setAutomaticDownload(product, enabled, actor).thenApply { true }
+        library.updates.settings.automaticDownload(product, enabled, actor).thenApply { true }
 
     override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.setChannel(product, channel, actor).thenApply { true }
+        library.updates.settings.channel(product, channel, actor).thenApply { true }
+
+    override fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<Boolean> =
+        library.updates.settings.javaBuild(product, java, actor).thenApply { true }
 
     override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.setHeld(product, duration, actor).thenApply { true }
+        (if (duration == null) library.updates.settings.release(product, actor) else library.updates.settings.hold(product, duration, actor)).thenApply { true }
 
     override fun extractBackup(id: UUID, product: String, actor: UpdateActor): CompletionStage<String> =
-        library.updates.extractBackup(id, product, actor)
+        library.updates.backups.extract(id, product, actor)
 
     override fun restoreDatabase(id: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.restoreDatabase(id, product, name, actor).thenApply { true }
+        library.updates.backups.restoreDatabase(id, product, name, actor).thenApply { true }
 
     override fun rollback(id: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<Boolean> =
-        library.updates.rollback(id, restoreConfigurations, actor).thenApply { true }
+        library.updates.backups.rollback(id, actor, restoreConfigurations).thenApply { true }
 
     override fun journalGroups(level: String?, hours: Int, limit: Int): List<JournalGroup> = library.journalGroups(level, hours, limit)
 
     override fun journalDetail(id: String): JournalDetail? = library.journalDetail(id)
 
     override fun tasks(): List<TaskSnapshot> = library.taskSnapshots()
+
+    override fun modules(): List<ModuleInfo> = ModuleInfo.all(library)
+
+    override fun libraries(): List<LibraryRow> = LibraryRow.all(library)
+
+    @Volatile
+    private var diskAt = 0L
+
+    @Volatile
+    private var diskCache = DiskReport.EMPTY
+
+    /** The scan is remembered for half a minute: a big folder is not walked again for every click. */
+    override fun disk(): DiskReport {
+        val now = System.currentTimeMillis()
+        if (now - diskAt > 30_000) {
+            diskCache = DiskUsage.scan(DiskUsage.pluginsFolder, DiskUsage.registeredFiles(library))
+            diskAt = now
+        }
+        return diskCache
+    }
+
+    override fun moduleAction(key: String, action: String): ModuleInfo = ModuleInfo.apply(library, key, action)
 
     override fun runTask(id: String): TaskControl = library.runTaskNow(id)
 

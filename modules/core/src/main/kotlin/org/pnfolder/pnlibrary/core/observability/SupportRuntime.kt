@@ -1,14 +1,13 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.activity.ActivityCategory
-import org.pnfolder.pnlibrary.api.activity.ActivitySeverity
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticLevel
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
-import org.pnfolder.pnlibrary.api.observability.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
@@ -18,14 +17,14 @@ import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
 import org.pnfolder.pnlibrary.core.observability.history.IncidentHistoryStore
 import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator
-import org.pnfolder.pnlibrary.core.observability.reportSnapshot
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
 import org.pnfolder.pnlibrary.core.upload.UploadLedger
 import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnostics
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogObservation
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -47,7 +46,7 @@ internal class SupportRuntime(
     private val config: PnLibraryConfig,
     paths: LibraryPaths,
     private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
-    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?, Map<String, Any?>) -> Unit)? = null,
     private val onRuntimeError: (Any, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
     private val observations = ObservabilityRuntime(paths)
@@ -55,11 +54,12 @@ internal class SupportRuntime(
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(
-            type = "RUNTIME_ERROR",
-            category = ActivityCategory.ERROR,
-            severity = ActivitySeverity.ERROR,
-            source = logOwner.javaClass.name,
-            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ObservationRequest(
+                source = logOwner.javaClass.name,
+                message = "RUNTIME_ERROR",
+                level = ObservationLevel.ERROR,
+                data = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ),
         )
         onRuntimeError(logOwner, error)
     }

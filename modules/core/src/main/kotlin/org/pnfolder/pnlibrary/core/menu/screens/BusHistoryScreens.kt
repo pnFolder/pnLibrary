@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
-import org.pnfolder.pnlibrary.api.events.DispatchMode
-import org.pnfolder.pnlibrary.api.events.EventTrace
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
@@ -16,11 +16,11 @@ import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
 import org.pnfolder.pnlibrary.core.menu.style.ago
 import org.pnfolder.pnlibrary.core.menu.style.clockStamp
-import org.pnfolder.pnlibrary.core.menu.style.dayTitle
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.nanosText
 import org.pnfolder.pnlibrary.core.menu.style.progressBar
-import org.pnfolder.pnlibrary.core.menu.style.shortName
+import org.pnfolder.pnlibrary.core.text.dayTitle
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
 import java.time.LocalDate
 
 private const val TRACE_STEPS = 6

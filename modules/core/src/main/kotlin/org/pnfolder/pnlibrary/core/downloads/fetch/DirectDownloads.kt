@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch
 
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
@@ -18,14 +18,13 @@ import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingDependencies
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingDependency
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingGroup
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata
 import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory
 import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -56,17 +55,16 @@ internal class DirectDownloads(
     private val registrations = CopyOnWriteArrayList<DownloadBatch>()
     private val pluginJarVerifier = PluginJarVerifier(identity)
     private val filePublisher = AtomicDownloadPublisher(paths.data)
-    private val pins = DownloadPins(paths.data)
     private val missing = MissingDependencies()
     private val artifactPreparer = DownloadArtifactPreparer(
-        identity.type, paths.data, configuration, http, pins, MAX_BYTES,
+        identity.type, paths.data, configuration, http, MAX_BYTES,
     )
     private val dependencyStore = DownloadedDependencyStore(paths.data)
     private val dependencyReporter = DependencyDownloadReporter(
         logging, ownership, if (identity.type == PlatformType.VELOCITY || identity.type == PlatformType.BUNGEECORD) "pnproxy" else "pn",
     )
     private val dependencyRequestFactory = DependencyDownloadRequestFactory(
-        paths.serverUpdateFolder,
+        paths.serverUpdateFolder, identity.type, { identity.minecraftVersion },
     )
 
     fun register(owner: Any, request: FileDownloads): DownloadRegistration = register(owner, request, null)
@@ -121,7 +119,15 @@ internal class DirectDownloads(
     }
 
     private fun announceMissing(owner: Any, lacking: List<ExternalPluginDependency>, registration: DownloadRegistration?) {
-        val items = lacking.map { MissingDependency(it.plugin, it.minimumVersion.toString(), it.downloadPage, it.artifact?.let { a -> listOf(a.uri) + a.mirrors }.orEmpty()) }
+        val items = lacking.map {
+            val file = dependencyRequestFactory.fileFor(it)
+            MissingDependency(
+                it.plugin, it.minimumVersion.toString(), it.downloadPage, file?.let { a -> listOf(a.uri) + a.mirrors }.orEmpty(),
+                title = it.title, description = it.description, required = it.required, checked = file?.sha256 != null,
+                variant = file?.label.takeIf { _ -> it.artifacts.size > 1 },
+                noFileForServer = file == null && it.artifacts.isNotEmpty(),
+            )
+        }
         val group = missing.add(ownerName(owner), items, registration)
         runCatchingNonFatal { dependencyReporter.missing(owner, group, automatic() && registration != null) }
             .onFailure { logging.log(owner, LogLevel.ERROR, "Could not report the missing dependencies", it) }
@@ -140,11 +146,10 @@ internal class DirectDownloads(
 
     /**
      * Installs the group with this [code] now, whatever the automatic switch says: typing the code is the approval,
-     * and a file that changed since the last download is accepted.
+     *.
      */
     internal fun installGroup(code: String): CompletionStage<List<DownloadSnapshot>>? {
         val group = missing.find(code) ?: return null
-        pins.forget(group.addresses)
         return group.install()
     }
 

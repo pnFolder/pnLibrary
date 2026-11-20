@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.settings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
-import org.pnfolder.pnlibrary.updates.layout.InfoFileNames
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.InfoFileNames
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.io.IOException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files

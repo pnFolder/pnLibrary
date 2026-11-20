@@ -8,7 +8,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-minecraft-local
 
 dependencies {
     api(project(":modules:common"))
-    api(project(":modules:features:minecraft-localization-api"))
+    api(project(":modules:features:localization-api"))
     api(project(":platforms:bukkit:api"))
     api(libs.kotlin.stdlib)
     compileOnly(libs.spigot.api.v18)

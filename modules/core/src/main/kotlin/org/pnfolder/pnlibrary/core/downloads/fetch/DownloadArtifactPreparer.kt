@@ -6,9 +6,8 @@ import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadPins
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.nio.file.Files
 import java.nio.file.Path
@@ -20,10 +19,9 @@ internal class DownloadArtifactPreparer(
     private val libraryData: Path,
     private val configuration: () -> DownloadConfiguration,
     http: TrustedHttpClient,
-    pins: DownloadPins = DownloadPins(libraryData),
     private val maximumBytes: Long = 512L * 1024L * 1024L,
 ) {
-    private val fetcher = SourceFetcher(http, pins)
+    private val fetcher = SourceFetcher(http)
 
     fun prepare(
         request: FileDownloads,
@@ -35,7 +33,8 @@ internal class DownloadArtifactPreparer(
         }
 
         val target = target(request, declaration)
-        val limit = declaration.source.size?.coerceAtMost(maximumBytes)?.toInt() ?: maximumBytes.toInt()
+        val allowed = declaration.source.maxBytes ?: maximumBytes
+        val limit = declaration.source.size?.coerceAtMost(allowed)?.toInt() ?: allowed.toInt()
         val bytes = fetcher.fetch(declaration.source, limit)
         verifyIntegrity(declaration, bytes)
 

@@ -53,14 +53,9 @@ class JulLogObserver(
     /** Runs [block] while records produced by this thread are treated as the library's own. */
     fun <T> runOwn(block: () -> T): T = ownLogs.run(block)
 
-    /**
-     * Platform log handler that writes each record to the logger [loggerFor] picks for its owner, at the
-     * matching [julLevel], without the record coming back as an observation.
-     */
+    /** Platform log handler that writes each record to the logger [loggerFor] picks for its owner at the matching [julLevel]. */
     fun logHandler(loggerFor: (owner: Any) -> Logger): (Any, LogLevel, String, Throwable?) -> Unit =
-        { owner, level, message, error ->
-            runOwn { loggerFor(owner).log(julLevel(level), message, error) }
-        }
+        { owner, level, message, error -> loggerFor(owner).log(julLevel(level), message, error) }
 
     /** Level mapping for `java.util.logging`. */
     companion object {

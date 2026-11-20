@@ -3,12 +3,16 @@ package org.pnfolder.pnlibrary.bungee
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.bungee.commands.BungeeCommandAdapter
+import org.pnfolder.pnlibrary.bungee.diagnostics.BungeeDiagnosticDetailsCollector
+import org.pnfolder.pnlibrary.bungee.metrics.BungeeMetricsFactory
+import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter
+import org.pnfolder.pnlibrary.bungee.network.BungeeNetworkProxy
 import org.pnfolder.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bungee.tasks.BungeeTaskAdapter
-import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import org.pnfolder.pnlibrary.spi.platform.JulLogObserver
@@ -20,10 +24,9 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.logging.Logger
 
-/** Runtime adapter for BungeeCord-compatible proxy servers. */
 internal class BungeePlatformAdapter(
-    /** The pnLibrary plugin; internal work such as global tasks belongs to it. */
-    val plugin: Plugin,
+    private val plugin: Plugin,
+    pnLogger: () -> PnLogger,
 ) : ProxyPlatformAdapter(plugin) {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
@@ -53,13 +56,15 @@ internal class BungeePlatformAdapter(
         get() = plugin.proxy.name.ifBlank { type.displayName }
 
     override val metricsFactory: PlatformMetricsFactory =
-        BungeeMetricsFactory()
+        BungeeMetricsFactory(pnLogger)
+
+    override val networkProxy: BungeeNetworkProxy by lazy { BungeeNetworkProxy(plugin.proxy) }
+
+    override val audienceAdapter: BungeeAudienceAdapter =
+        BungeeAudienceAdapter(plugin)
 
     override val commandAdapter: PlatformCommandAdapter =
-        BungeeCommandAdapter(plugin)
-
-    override val audienceAdapter: PlatformAudienceAdapter =
-        BungeeAudienceAdapter(plugin)
+        BungeeCommandAdapter(audienceAdapter)
 
     override val taskAdapter: PlatformTaskAdapter =
         BungeeTaskAdapter(plugin)
@@ -73,9 +78,7 @@ internal class BungeePlatformAdapter(
 
     @Suppress("DEPRECATION")
     override fun console(owner: Any, message: String) {
-        plugin.proxy.console.sendMessage(
-            *TextComponent.fromLegacyText(message),
-        )
+        plugin.proxy.console.sendMessage(*TextComponent.fromLegacyText(message))
     }
 
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
@@ -107,7 +110,7 @@ internal class BungeePlatformAdapter(
     ): RemotePolicyContext =
         BungeeRemotePolicyContextFactory.create(plugins.requireInstalled(owner, "Remote policy owner"), values)
 
-    /** Dispatches work asynchronously; BungeeCord has no global main-thread scheduler. */
+    // BungeeCord has no main-thread scheduler; global work runs asynchronously.
     override fun executeGlobal(task: Runnable) {
         if (lifecycle.isClosed) return
 

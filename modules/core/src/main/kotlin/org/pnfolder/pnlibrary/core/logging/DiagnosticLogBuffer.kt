@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.core.logging
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
-import org.pnfolder.pnlibrary.core.diagnostics.fingerprint
-import org.pnfolder.pnlibrary.core.diagnostics.originData
-import org.pnfolder.pnlibrary.core.diagnostics.originFrame
-import org.pnfolder.pnlibrary.core.diagnostics.significantCause
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.fingerprint
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.originData
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.originFrame
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.significantCause
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.io.PrintWriter
 import java.io.StringWriter

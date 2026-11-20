@@ -103,6 +103,8 @@ data class PnLibraryConfig @JvmOverloads constructor(
     val playerNotFoundMessage: String = "Игрок {value} сейчас не в сети.",
     val playerOnlyMessage: String = "Эту команду можно использовать только в игре.",
     val consoleOnlyMessage: String = "Эту команду можно использовать только из консоли.",
+    val cooldownMessage: String = "Подождите {seconds} с перед повторным использованием.",
+    val commandFailedMessage: String = "Не удалось выполнить команду.",
     val journalJoinNoticeHours: Int = 24,
     val eventHistoryDays: Int = 30,
 ) {

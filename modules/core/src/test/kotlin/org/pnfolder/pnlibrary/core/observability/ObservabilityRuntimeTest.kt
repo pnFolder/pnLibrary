@@ -3,10 +3,11 @@ package org.pnfolder.pnlibrary.core.observability
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.observability.ComponentStatus
-import org.pnfolder.pnlibrary.api.observability.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.ObservationQuery
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

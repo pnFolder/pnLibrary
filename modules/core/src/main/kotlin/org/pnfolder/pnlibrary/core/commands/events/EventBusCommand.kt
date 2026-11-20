@@ -1,11 +1,12 @@
 package org.pnfolder.pnlibrary.core.commands.events
 
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandBuilder
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
-import org.pnfolder.pnlibrary.api.events.EventInspector
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.text.shortName
 
 /**
  * `/pn bus`: a window into the event bus, shared by every platform and drawn like the other `/pn` pages.

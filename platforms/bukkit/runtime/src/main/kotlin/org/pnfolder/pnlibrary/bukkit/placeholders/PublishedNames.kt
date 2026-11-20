@@ -45,7 +45,10 @@ internal class PublishedNames<H> {
         if (name in snapshot.names) snapshot = Snapshot(snapshot.names - name)
     }
 
-    /** The name that equals [params], then the most specific pattern that fits, otherwise the longest plain name that [params] equals or continues after `_`. */
+    /**
+     * The name that equals [params], then the most specific pattern that fits, otherwise the longest plain name
+     * that [params] equals or continues after `_`.
+     */
     fun find(params: String): Found<H>? {
         val current = snapshot
         current.exact[params.lowercase(Locale.ROOT)]?.let { return Found(it, emptyMap()) }

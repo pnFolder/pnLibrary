@@ -4,25 +4,25 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import org.pnfolder.pnlibrary.api.actions.ActionContext
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.placeholders.ExternalPlaceholderRegistration
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterCapabilities
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterState
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterCapabilities
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import java.nio.file.Files
 import java.util.UUID
 
-/** `[value]`, `{placeholder}` and `%external%` read different sources, and formats chain after a bar. */
+/** `${value}`, `{placeholder}` and `%external%` read different sources, and formats chain after a bar. */
 class ActionPlaceholderKindsTest {
     private val hub = PlaceholderHub(TestPlatform)
     private val service = hub.scope(PluginId.of("shop"), false).also { scope ->
@@ -53,15 +53,22 @@ class ActionPlaceholderKindsTest {
     )
 
     @Test
-    fun `each kind of brackets reads its own source`() {
-        val text = context().format("[same] {same} %server_tps% {money} [missing] {missing} %missing%")
+    fun `a message in square brackets with tags is text, not a placeholder name`() {
+        val prefix = "[<light_purple>pnTest</light_purple>]"
 
-        assertEquals("from-action from-library 19.9 1234567.891 [missing] {missing} %missing%", text)
+        assertEquals(prefix, context().text(prefix))
+    }
+
+    @Test
+    fun `a name is a value of the run first, then a placeholder, and percent signs are PlaceholderAPI`() {
+        val text = context().format("{same} {money} {papi:server_tps} %server_tps% {missing} %missing%")
+
+        assertEquals("from-action 1234567.891 19.9 19.9 {missing} %missing%", text)
     }
 
     @Test
     fun `the player name is always available`() {
-        assertEquals("Alice Alice Alice", context().format("[player] {player_name} %player%"))
+        assertEquals("Alice Alice Alice", context().format("{player} {player_name} %player%"))
     }
 
     @Test
@@ -70,7 +77,7 @@ class ActionPlaceholderKindsTest {
 
         assertEquals("1 234 567.891", ctx.format("{money|group}"))
         assertEquals("1.2M", ctx.format("{money|short}"))
-        assertEquals("3.14", ctx.format("[hp|number:2]"))
+        assertEquals("3.14", ctx.format("{hp|number:2}"))
         assertEquals("Vip", ctx.format("{rank|capitalize}"))
         assertEquals("VIP", ctx.format("{rank|upper}"))
     }
@@ -96,14 +103,14 @@ class ActionPlaceholderKindsTest {
     fun `text that a placeholder produced is not read again`() {
         val ctx = context().setValue("echo", "{rank}")
 
-        assertEquals("{rank}", ctx.format("[echo]"))
+        assertEquals("{rank}", ctx.format("{echo}"))
     }
 
     @Test
     fun `reading a whole token returns the value itself`() {
         val ctx = context()
 
-        assertEquals(3.14159, ctx.read("[hp]"))
+        assertEquals(3.14159, ctx.read("{hp}"))
         assertEquals("vip", ctx.read("{rank}"))
         assertEquals("19.9", ctx.read("%server_tps%"))
         assertEquals("from-action", ctx.read("same"))

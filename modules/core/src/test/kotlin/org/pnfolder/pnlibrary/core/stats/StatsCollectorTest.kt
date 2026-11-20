@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pnfolder.pnlibrary.api.events.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalStore
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 import java.nio.file.Path
 import java.time.Duration
 

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch
 
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.yaml.snakeyaml.LoaderOptions
@@ -9,7 +9,6 @@ import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.nio.file.Path
 import java.util.jar.JarFile
 
-/** Verifies that a downloaded plugin JAR declares the expected identity and version. */
 internal class PluginJarVerifier(
     private val platform: PlatformIdentity,
 ) {

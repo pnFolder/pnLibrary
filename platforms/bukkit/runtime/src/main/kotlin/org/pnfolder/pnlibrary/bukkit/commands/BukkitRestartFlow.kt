@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateConfirmationTokens
 import java.time.Duration
@@ -34,7 +34,7 @@ internal class BukkitRestartFlow(
         if (!sender.hasPermission("pnlibrary.updates.restart")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для перезапуска.")
         }
-        val plan = library.updates.currentPlan().orElse(null)
+        val plan = library.updates.plans.current().orElse(null)
         if (plan == null || plan.state != UpdateState.UPDATE_STAGED && plan.state != UpdateState.ROLLED_BACK) {
             return replies.say(reply, ChatTone.WARNING, "Нет подготовленных обновлений, которым нужен перезапуск.")
         }
@@ -75,7 +75,7 @@ internal class BukkitRestartFlow(
 
     /** Whether the confirmed update plan is still the current one, so the restart acts on what was approved. */
     fun isStill(grant: UpdateConfirmationTokens.Grant): Boolean =
-        library.updates.currentPlan().orElse(null)?.let { it.id == grant.plan && it.revision == grant.revision } == true
+        library.updates.plans.current().orElse(null)?.let { it.id == grant.plan && it.revision == grant.revision } == true
 
     /** Starts the restart in [mode] after checking the permission and that [grant] still matches the plan. */
     fun run(sender: CommandSender, reply: Reply, grant: UpdateConfirmationTokens.Grant, mode: ServerRestarter.Mode) {

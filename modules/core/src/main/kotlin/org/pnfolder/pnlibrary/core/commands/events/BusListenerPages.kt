@@ -1,15 +1,17 @@
 package org.pnfolder.pnlibrary.core.commands.events
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.commands.chatPager
-import org.pnfolder.pnlibrary.core.commands.pageCount
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -131,8 +133,8 @@ internal class BusListenerPages(private val library: PnLibrary) {
         all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { info ->
             var line = kit.text("   ").append(kit.text(info.ownerLabel(), ChatPalette.ACCENT)).append(kit.dot())
                 .append(kit.text(shortName(info.eventType), ChatPalette.TEXT))
-                .append(kit.text("  средн. ${micros(info.averageNanos)}", ChatPalette.LABEL))
-                .append(kit.text("  макс. ${micros(info.maxNanos)}", ChatPalette.SOFT))
+                .append(kit.text("  средн. ${nanosText(info.averageNanos)}", ChatPalette.LABEL))
+                .append(kit.text("  макс. ${nanosText(info.maxNanos)}", ChatPalette.SOFT))
                 .append(kit.text("  запусков ${info.invocations}", ChatPalette.FAINT))
             if (info.failures > 0) line = line.append(kit.text("  ошибок ${info.failures}", ChatPalette.DANGER))
             lines += line

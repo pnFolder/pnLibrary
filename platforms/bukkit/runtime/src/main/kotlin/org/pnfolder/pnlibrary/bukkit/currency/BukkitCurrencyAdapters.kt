@@ -12,24 +12,23 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRejectReason
 import org.pnfolder.pnlibrary.api.currency.CurrencyReset
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.lang.reflect.InvocationTargetException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import java.util.logging.Level
 
 /** Discovers optional economy plugins without linking their APIs on unsupported servers. */
 internal object BukkitCurrencyAdapters {
-    fun vault(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
+    fun vault(plugin: Plugin, log: PnLogger): CurrencyProvider? = runCatchingNonFatal {
         val type = Class.forName("net.milkbowl.vault.economy.Economy")
         @Suppress("UNCHECKED_CAST")
         val economy = plugin.server.servicesManager.load(type as Class<Any>) ?: return null
         vaultCurrency(economy)
     }.onFailure {
-        // Without the Vault API there is simply nothing to connect.
-        if (it !is ClassNotFoundException) plugin.logger.log(Level.SEVERE, "Vault is installed but its economy could not be connected", it)
+        if (it !is ClassNotFoundException) log.error("Vault is installed but its economy could not be connected", it)
     }.getOrNull()
 
     /**
@@ -43,12 +42,12 @@ internal object BukkitCurrencyAdapters {
         if (failure.cause is NullPointerException) null else throw failure
     }
 
-    fun playerPoints(plugin: Plugin): CurrencyProvider? = runCatchingNonFatal {
+    fun playerPoints(plugin: Plugin, log: PnLogger): CurrencyProvider? = runCatchingNonFatal {
         val target = plugin.server.pluginManager.getPlugin("PlayerPoints") ?: return null
         val api = target.javaClass.methods.firstOrNull { it.name == "getAPI" && it.parameterCount == 0 }
             ?.invoke(target) ?: return null
         ReflectivePlayerPointsCurrency(api)
-    }.onFailure { plugin.logger.log(Level.SEVERE, "PlayerPoints is installed but its currency could not be connected", it) }
+    }.onFailure { log.error("PlayerPoints is installed but its currency could not be connected", it) }
         .getOrNull()
 }
 

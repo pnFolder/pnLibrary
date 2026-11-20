@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.BlockedReason
-import org.pnfolder.pnlibrary.api.updates.UpdatePlanSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.state.BlockedReason
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 
 /** Pure, platform-independent wording of the update state used by the update commands. */
 object UpdateStatusMessages {

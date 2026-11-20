@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform
 
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.audiences.UnsupportedPlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -32,4 +33,6 @@ interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecutio
     val audienceAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
     /** Native task scheduling; unsupported by default. */
     val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
+    /** Proxy layer; null on game-server platforms. */
+    val networkProxy: NetworkProxy? get() = null
 }

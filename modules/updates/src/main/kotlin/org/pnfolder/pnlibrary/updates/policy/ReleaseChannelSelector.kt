@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.updates.policy
 
-import org.pnfolder.pnlibrary.api.updates.ProductId
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.product.ProductId
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease
 
 /** A product's releases and the newest one its channel allows. */

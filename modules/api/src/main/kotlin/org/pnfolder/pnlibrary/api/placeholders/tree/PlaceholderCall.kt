@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.UUID
 

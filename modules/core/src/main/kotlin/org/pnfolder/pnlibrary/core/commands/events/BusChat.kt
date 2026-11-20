@@ -3,24 +3,20 @@ package org.pnfolder.pnlibrary.core.commands.events
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
-import java.time.LocalDate
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
+import org.pnfolder.pnlibrary.core.text.BAR_WIDTH
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
 
 internal fun busKit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
 internal fun busBar(kit: ChatKit, value: Long, busiest: Long): String {
     val width = ((value * BAR_WIDTH + busiest - 1) / busiest.coerceAtLeast(1)).toInt().coerceIn(1, BAR_WIDTH)
     return (if (kit.reader.ascii) "#" else "█").repeat(width)
-}
-
-internal fun dayTitle(date: LocalDate, today: LocalDate): String = when (date) {
-    today -> "Сегодня"
-    today.minusDays(1) -> "Вчера"
-    else -> DAY.format(date)
 }
 
 internal fun busHints(kit: ChatKit): List<Component> =
@@ -45,13 +41,6 @@ internal fun busHints(kit: ChatKit): List<Component> =
 internal fun busFooter(kit: ChatKit, vararg buttons: Component?): List<Component> = listOfNotNull(kit.actions(*buttons))
 
 internal fun backToEvents(kit: ChatKit): Component = kit.button("назад", ROOT, "К списку событий", ChatPalette.ACCENT)
-
-
-internal fun shortName(name: String): String = name.substringAfterLast('.')
-
-internal fun micros(nanos: Long): String =
-    if (nanos >= NANOS_PER_MILLI) "%.1f мс".format(nanos / NANOS_PER_MILLI.toDouble())
-    else "%.1f мкс".format(nanos / NANOS_PER_MICRO.toDouble())
 
 internal fun ListenerInfo.ownerLabel(): String = module?.let { "$plugin/$it" } ?: plugin.toString()
 
@@ -79,7 +68,7 @@ private fun listenerRow(kit: ChatKit, info: ListenerInfo, title: Component): Com
             kit.hoverField("Источник", kit.text(info.source, ChatPalette.TEXT)),
             kit.hoverField("Приоритет", kit.text(info.priority.toString(), ChatPalette.TEXT)),
             kit.hoverField("Запусков", kit.text(info.invocations.toString(), ChatPalette.TEXT)),
-            kit.hoverField("Среднее время", kit.text(micros(info.averageNanos), ChatPalette.TEXT)),
+            kit.hoverField("Среднее время", kit.text(nanosText(info.averageNanos), ChatPalette.TEXT)),
             kit.hoverField("Ошибок", kit.text(info.failures.toString(), if (info.failures > 0) ChatPalette.DANGER else ChatPalette.TEXT)),
         ),
     ).clickEvent(ClickEvent.runCommand("$ROOT view ${info.eventType}"))

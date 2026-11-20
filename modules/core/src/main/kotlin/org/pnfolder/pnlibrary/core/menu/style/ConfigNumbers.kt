@@ -48,7 +48,8 @@ internal object ConfigNumbers {
         if (unit != null) {
             val one = unit.toMillis(1).coerceAtLeast(1)
             val sizes = TIME_STEPS[unit] ?: listOf(one, one * 10, one * 100, one * 1000)
-            return sizes.map { human(it) to it.toDouble() / one }.filter { fits(it.second, setting) }.take(LADDER).let { if (it.size >= 2) it else listOf("1" to 1.0, "10" to TEN) }
+            val ladder = sizes.map { human(it) to it.toDouble() / one }.filter { fits(it.second, setting) }.take(LADDER)
+            return if (ladder.size >= 2) ladder else listOf("1" to 1.0, "10" to TEN)
         }
         val label = setting.unit.takeIf(String::isNotBlank)?.let { " $it" }.orEmpty()
         val amounts = generateSequence(setting.step) { it * TEN }.take(LADDER).filter { fits(it, setting) }.toList()

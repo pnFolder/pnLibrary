@@ -416,7 +416,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigScope : 
 	public abstract fun list ()Ljava/util/List;
 	public abstract fun loadAll ()V
 	public abstract fun publishSerializer (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/config/ConfigSerializer;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigSerializerRegistration;
-	public abstract fun publishType (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
+	public abstract fun publishType (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
+	public static synthetic fun publishType$default (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;Ljava/util/Set;ILorg/pnfolder/pnlibrary/api/config/ConfigAddress;Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
 	public abstract fun reloadAll ()V
 	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public abstract fun saveAll ()V
@@ -600,8 +601,19 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigTypeBuilder {
 	public final fun into (Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun into (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
+	public final fun onConflict (Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun priority (I)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeBuilder;
 	public final fun register ()Lorg/pnfolder/pnlibrary/api/config/ConfigTypeRegistration;
+	public final fun registerEach (Ljava/util/Collection;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/config/ConfigTypeConflict : java/lang/Enum {
+	public static final field FAIL Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;
+	public static final field KEEP Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;
+	public static final field REPLACE Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/config/ConfigTypeConflict;
 }
 
 public final class org/pnfolder/pnlibrary/api/config/ConfigTypeInfo {

@@ -7,12 +7,14 @@ import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /** In-memory, thread-safe cooldowns keyed by subject and action, measured on the monotonic clock. */
 internal class InMemoryCooldowns : CooldownService {
     private data class Key(val subject: UUID, val action: String)
     private val deadlines = ConcurrentHashMap<Key, Long>()
     private val closed = AtomicBoolean(false)
+    private val writes = AtomicInteger()
     override val size: Int
         get() {
             cleanup()
@@ -24,6 +26,7 @@ internal class InMemoryCooldowns : CooldownService {
         checkOpen()
         val key = Key(subject, normalized(action))
         val now = System.nanoTime()
+        sweepSometimes()
         while (true) {
             val current = deadlines[key]
             if (current != null && current > now) return CooldownResult.denied(nanos(current - now))
@@ -48,6 +51,7 @@ internal class InMemoryCooldowns : CooldownService {
     override fun set(subject: UUID, action: String, duration: Duration) {
         validate(action, duration)
         checkOpen()
+        sweepSometimes()
         if (duration.isZero) deadlines.remove(Key(subject, normalized(action)))
         else deadlines[Key(subject, normalized(action))] = deadline(System.nanoTime(), duration)
     }
@@ -64,8 +68,28 @@ internal class InMemoryCooldowns : CooldownService {
     }
     override fun reset(subject: UUID, action: String) = deadlines.remove(Key(subject, normalized(action))) != null
     override fun clear() = deadlines.clear()
+
+    override fun clear(subject: UUID): Int {
+        var removed = 0
+        deadlines.keys.removeIf { key -> (key.subject == subject).also { if (it) removed++ } }
+        return removed
+    }
+
+    override fun active(subject: UUID): Map<String, Duration> {
+        checkOpen()
+        val now = System.nanoTime()
+        return deadlines.entries.asSequence()
+            .filter { it.key.subject == subject && it.value > now }
+            .sortedByDescending { it.value }
+            .associate { it.key.action to nanos(it.value - now) }
+    }
     override fun close() {
         if (closed.compareAndSet(false, true)) clear()
+    }
+
+    /** Every few hundred writes, drops the entries nobody asked about again, so the map cannot grow without bound. */
+    private fun sweepSometimes() {
+        if (writes.incrementAndGet() % SWEEP_EVERY == 0) cleanup()
     }
 
     private fun cleanup() {
@@ -90,4 +114,8 @@ internal class InMemoryCooldowns : CooldownService {
         Long.MAX_VALUE
     }
     private fun nanos(value: Long) = Duration.ofNanos(value.coerceAtLeast(0))
+
+    private companion object {
+        const val SWEEP_EVERY = 256
+    }
 }

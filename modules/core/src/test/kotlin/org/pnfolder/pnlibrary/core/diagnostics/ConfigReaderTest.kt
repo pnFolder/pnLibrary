@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
-import org.pnfolder.pnlibrary.core.diagnostics.ConfigReader
+import org.pnfolder.pnlibrary.core.diagnostics.config.ConfigReader
 import java.nio.file.Files
 import java.nio.file.Path
 

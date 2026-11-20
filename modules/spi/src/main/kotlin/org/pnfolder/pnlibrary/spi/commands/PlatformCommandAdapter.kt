@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.spi.commands
 
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import java.util.concurrent.CompletionStage
 
 /** Native command registration boundary implemented by each platform runtime. */

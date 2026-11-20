@@ -10,7 +10,9 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import org.pnfolder.pnlibrary.bukkit.currency.LEGACY
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import org.pnfolder.pnlibrary.common.lang.Failures
@@ -19,7 +21,6 @@ import java.lang.reflect.Array
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Level
 
 /**
  * Lifecycle-owned Adventure transport for Bukkit players.
@@ -30,10 +31,11 @@ import java.util.logging.Level
  * native transport failure, later messages use the fallback to avoid repeatedly failing calls.
  * Close this service with the owning plugin to release Adventure platform resources.
  */
-internal class BukkitAudienceService internal constructor(plugin: Plugin, private val audiences: BukkitAudiences?) : AutoCloseable {
-    constructor(plugin: Plugin) : this(plugin, createProvider(plugin))
-
-    private val logger = plugin.logger
+internal class BukkitAudienceService(
+    plugin: Plugin,
+    private val log: PnLoggerBuffer,
+    private val audiences: BukkitAudiences? = createProvider(plugin, log),
+) : AutoCloseable {
     private val pluginServer = plugin.server
     private val fallbackOnly = AtomicBoolean(audiences == null && !NATIVE_ADVENTURE)
     private val reportedFailures = ConcurrentHashMap.newKeySet<String>()
@@ -86,7 +88,7 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
                 Failures.rethrowIfFatal(error)
                 // A broken/incompatible platform bridge must not break the calling plugin.
                 if (fallbackOnly.compareAndSet(false, true)) {
-                    logger.log(Level.SEVERE, "Adventure Bukkit transport failed; switched to legacy text fallback", error)
+                    log.log(LogLevel.ERROR, "Adventure Bukkit transport failed; switched to legacy text fallback", error)
                 }
             }
         }
@@ -149,23 +151,23 @@ internal class BukkitAudienceService internal constructor(plugin: Plugin, privat
 
     /** The legacy fallback still delivers, so one report per kind is enough to show the Adventure transport is broken. */
     private fun reportOnce(kind: String, error: Throwable) {
-        if (reportedFailures.add(kind)) logger.log(Level.SEVERE, "Adventure $kind delivery failed; using the legacy fallback", error)
+        if (reportedFailures.add(kind)) log.log(LogLevel.ERROR, "Adventure $kind delivery failed; using the legacy fallback", error)
     }
 
     /** Releases the underlying Adventure audience provider when one was created. */
     override fun close() {
-        runCatchingNonFatal { audiences?.close() }.onFailure { logger.log(Level.SEVERE, "Could not close the Adventure transport", it) }
+        runCatchingNonFatal { audiences?.close() }.onFailure { log.log(LogLevel.ERROR, "Could not close the Adventure transport", it) }
     }
 
     private companion object {
         val LEGACY: LegacyComponentSerializer = LegacyComponentSerializer.legacySection()
         val NATIVE_ADVENTURE = Audience::class.java.isAssignableFrom(Player::class.java)
 
-        fun createProvider(plugin: Plugin): BukkitAudiences? {
+        fun createProvider(plugin: Plugin, log: PnLoggerBuffer): BukkitAudiences? {
             if (NATIVE_ADVENTURE) return null
             return try { BukkitAudiences.create(plugin) } catch (error: Throwable) {
                 Failures.rethrowIfFatal(error)
-                plugin.logger.warning("Adventure Bukkit transport is unavailable (${error.javaClass.simpleName}); using legacy text fallback")
+                log.log(LogLevel.WARNING, "Adventure Bukkit transport is unavailable (${error.javaClass.simpleName}); using legacy text fallback")
                 null
             }
         }

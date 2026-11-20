@@ -6,6 +6,7 @@ import net.md_5.bungee.api.scheduler.TaskScheduler
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import java.io.File
 
 /** Checks that startup-dependent work waits until the Bungee adapter is marked ready. */
@@ -21,7 +22,7 @@ class BungeeReadinessTest {
         val scheduled = mutableListOf<Runnable>()
         doAnswer { invocation -> scheduled.add(invocation.getArgument(1)); null }
             .`when`(scheduler).runAsync(same(plugin), any(Runnable::class.java))
-        val adapter = BungeePlatformAdapter(plugin)
+        val adapter = BungeePlatformAdapter(plugin) { mock(PnLogger::class.java) }
         var calls = 0
         try {
             adapter.whenServerReady(Runnable { calls++ })
@@ -44,7 +45,7 @@ class BungeeReadinessTest {
     fun `closing before readiness discards pending startup callbacks`() {
         val plugin = mock(Plugin::class.java)
         `when`(plugin.dataFolder).thenReturn(File("build/readiness-test"))
-        val adapter = BungeePlatformAdapter(plugin)
+        val adapter = BungeePlatformAdapter(plugin) { mock(PnLogger::class.java) }
         adapter.whenServerReady(Runnable { fail("Closed adapter must not release startup work") })
         adapter.close()
         adapter.markReady()

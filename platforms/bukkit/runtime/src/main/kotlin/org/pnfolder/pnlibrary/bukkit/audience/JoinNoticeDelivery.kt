@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.bukkit.audience
 
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import java.time.Duration
 
 /** Builds the journal notice off the server thread and sends it from the player's own thread. */

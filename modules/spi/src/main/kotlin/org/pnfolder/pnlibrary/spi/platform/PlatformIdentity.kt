@@ -13,6 +13,8 @@ interface PlatformIdentity {
     val isProxy: Boolean get() = type.isProxy
     /** Whether the platform is a game server such as Bukkit. */
     val isServer: Boolean get() = type.isServer
+    /** Minecraft version of the game server such as `1.21.4`; null on a proxy or when it cannot be read. */
+    val minecraftVersion: String? get() = null
     /** Stable suffix used by the installed distribution artifact. */
     val artifactId: String
         get() = when (type) {

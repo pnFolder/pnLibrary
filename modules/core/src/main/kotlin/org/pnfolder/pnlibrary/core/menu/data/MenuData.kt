@@ -3,17 +3,19 @@ package org.pnfolder.pnlibrary.core.menu.data
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.config.ConfigEditResult
 import org.pnfolder.pnlibrary.api.config.ConfigSetting
-import org.pnfolder.pnlibrary.api.events.EventDay
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventTrace
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
-import org.pnfolder.pnlibrary.api.updates.backup.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
+import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
@@ -131,6 +133,9 @@ interface MenuData {
     /** Sets the update channel of [product]; null returns it to the default. */
     fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<Boolean>
 
+    /** Chooses the Java build of [product]; null returns it to the recommended one. */
+    fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<Boolean>
+
     /** Pauses updates of [product] for [duration]; null lifts the pause. */
     fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<Boolean>
 
@@ -169,12 +174,32 @@ interface MenuData {
 
     /** Sets the setting [key] to [value], or returns it to the default when [value] is null. */
     fun changeSetting(key: String, value: String?, actor: UpdateActor): SettingOutcome =
-        throw UnsupportedOperationException("Настройки меняются на самом сервере")
+        SettingOutcome(false, "Настройки меняются на самом сервере")
 
     /** Whether missing plugins are downloaded without a command; `null` when this server has no such download. */
     fun downloadsAutomatic(): Boolean? = null
 
     fun setDownloadsAutomatic(value: Boolean) {}
+
+    /** Plugins other plugins need and the server lacks, grouped by who asks; none when nothing is missing or this server cannot say. */
+    fun missingDependencies(): List<MissingPlugins> = emptyList()
+
+    /** Downloads the group with this [code] now and says in a sentence how it went. */
+    fun installDependencies(code: String): java.util.concurrent.CompletionStage<String> =
+        java.util.concurrent.CompletableFuture.completedFuture("Здесь нечего скачивать.")
+
+    /** The modules of the plugins on this server; none when this server cannot switch them. */
+    fun modules(): List<ModuleInfo> = emptyList()
+
+    /** Runs one of [ModuleInfo.ACTIONS] on the module [key] and returns how the module looks afterwards. */
+    /** The libraries plugins and modules of this server registered; none when this server cannot say. */
+    fun libraries(): List<LibraryRow> = emptyList()
+
+    /** What each plugin takes on the disk of this server. */
+    fun disk(): DiskReport = DiskReport.EMPTY
+
+    fun moduleAction(key: String, action: String): ModuleInfo =
+        throw UnsupportedOperationException("Модули переключаются на самом сервере")
 
     fun runTask(id: String): TaskControl
 
@@ -212,3 +237,20 @@ interface MenuData {
 
     fun command(viewer: ViewerInfo, line: String): List<Component>
 }
+
+/**
+ * One group of missing plugins, as the menu shows it.
+ *
+ * @property code what `/pn deps install <code>` takes
+ * @property owner the plugin that asks for them
+ * @property installable whether the library can download them (otherwise they are put in by hand)
+ * @property lines one line per plugin: name, version, required or not
+ * @property links the addresses to get them from
+ */
+data class MissingPlugins(
+    val code: String,
+    val owner: String,
+    val installable: Boolean,
+    val lines: List<String>,
+    val links: List<String>,
+)

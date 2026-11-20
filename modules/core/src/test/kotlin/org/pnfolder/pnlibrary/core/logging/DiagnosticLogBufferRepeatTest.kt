@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
-import org.pnfolder.pnlibrary.core.diagnostics.fingerprint
-import org.pnfolder.pnlibrary.core.diagnostics.originFrame
-import org.pnfolder.pnlibrary.core.diagnostics.significantCause
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.fingerprint
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.originFrame
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.significantCause
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.security.MessageDigest
 import java.util.UUID

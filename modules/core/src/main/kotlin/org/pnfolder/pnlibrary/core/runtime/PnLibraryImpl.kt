@@ -1,22 +1,22 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -24,43 +24,36 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.services.ServiceManager
-import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.commands.engine.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.commands.settings.SettingsCommand
-import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
-import org.pnfolder.pnlibrary.core.diagnostics.reportConfigFile
+import org.pnfolder.pnlibrary.core.diagnostics.command.diagnosticCommand
+import org.pnfolder.pnlibrary.core.diagnostics.config.reportConfigFile
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
-import org.pnfolder.pnlibrary.core.events.EventHistory
+import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
-import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
-import org.pnfolder.pnlibrary.core.lifecycle.dependencyDownloads
-import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
-import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
-import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
-import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
-import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
-import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
-import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
-import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
+import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.placeholders.builtin.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
+import org.pnfolder.pnlibrary.core.plugin.LibraryWords
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
+import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
@@ -79,8 +72,8 @@ import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
-import org.pnfolder.pnlibrary.updates.layout.LegacyLayoutMigration
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LegacyPathsMigration
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.ZoneId
@@ -107,6 +100,9 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder
         ?: platform.ownership.ownerDataFolder(owner)
         ?: Paths.get("plugins", owner.javaClass.simpleName)
+    init {
+        org.pnfolder.pnlibrary.core.commands.modules.DiskUsage.pluginsFolder = dataFolder.toAbsolutePath().parent
+    }
     private val paths = LibraryPaths(dataFolder)
 
     /** Every setting an administrator may change; the command `/pn settings` and the menu edit it. */
@@ -116,7 +112,7 @@ internal class PnLibraryImpl(
     init {
         val warn = { text: String -> platform.logging.log(owner, LogLevel.WARNING, text) }
         // The old files are moved into data and read once, before the settings are used.
-        LegacyLayoutMigration(paths, warn).run()
+        LegacyPathsMigration(paths, warn).run()
         settings = SettingsStore(paths.settings, warn).also { LegacySettingsImport(paths, warn).run(it) }
         config = presetConfig ?: settings.config()
         DisplayZone.zone = ZoneId.of(settings.current().timeZone)
@@ -160,11 +156,12 @@ internal class PnLibraryImpl(
         capture = support.capture,
     )
 
-    private val features = RuntimeFeatureSet(platform, paths, support.capture, settings).also { set ->
+    private val features = RuntimeFeatureSet(owner, platform, paths, support.capture, settings).also { set ->
         set.configurations.fileListener = { file ->
             val handles = listOfNotNull(diagnostics.reportConfigFile(file), set.updates.databaseSources.register(file))
             AutoCloseable { handles.forEach(AutoCloseable::close) }
         }
+        LibraryWords.register(set.configurations.scope(owner))
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,
@@ -190,7 +187,6 @@ internal class PnLibraryImpl(
     private val platformProvider = NativePlatform()
 
     override val observability get() = support.service
-    override val activity: ActivityService get() = support.service
     override val metrics: MetricsService get() = metricsService
     override val configurations: ConfigurationService get() = features.configurations
     override val updates: UpdateService get() = features.updates
@@ -200,6 +196,7 @@ internal class PnLibraryImpl(
     override val expansions: ExpansionManager get() = features.expansions
     override val events: EventService get() = eventService
     override val platforms: PlatformProvider get() = platformProvider
+    override val proxy: NetworkProxy? = platform.networkProxy
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
     override val placeholderValues: PlaceholderValueStore get() = features.placeholderValues
 
@@ -219,6 +216,7 @@ internal class PnLibraryImpl(
         shared = SharedFeatures(features.placeholders, features.currency, features.expansions, features.libraryExpansions),
         commands = commands,
         directDownloads = features.downloads,
+        modulePreferences = ModulePreferences(dataFolder.resolve("modules").resolve("preferences.json")),
     )
     private val runtimeDiagnostics: RuntimeDiagnosticsAssembler = RuntimeDiagnosticsAssembler(
         version = version,

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.core.link.Link
 import java.util.UUID
 

@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.settings
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
 import org.pnfolder.pnlibrary.common.io.TextFiles
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
@@ -81,7 +81,12 @@ internal class LegacySettingsImport(
     private fun retire(file: Path) {
         val old = file.resolveSibling("${file.fileName}.old")
         runCatchingNonFatal { AtomicFiles.move(file, old) }
-            .onSuccess { warning("${file.fileName} больше не используется: настройки перенесены в data/settings.json и меняются командой /pn settings. Файл сохранён как ${old.fileName}.") }
+            .onSuccess {
+                warning(
+                    "${file.fileName} больше не используется: настройки перенесены в data/settings.json и меняются командой /pn settings. " +
+                        "Файл сохранён как ${old.fileName}.",
+                )
+            }
             .onFailure { warning("${file.fileName} не удалось переименовать в ${old.fileName}: ${it.message}") }
     }
 }

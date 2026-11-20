@@ -56,7 +56,10 @@ internal class SettingChoicePicker(session: MenuSession, routes: MenuRoutes) : M
             player, title(row, view), rows, page, PAGE_SIZE, { who, to -> values(who, target, view, to) }, target.back, empty,
             extra = { builder ->
                 builder.button(DATE_FILTER, typeItem(row, shown.size), go { target.type(it) })
-                if (!view.popular) builder.button(FILTER, orderItem(source, view), goClick { who, _ -> values(who, target, view.copy(order = (view.order + 1) % source.orders.size), 0) })
+                if (!view.popular) {
+                    val next = view.copy(order = (view.order + 1) % source.orders.size)
+                    builder.button(FILTER, orderItem(source, view), goClick { who, _ -> values(who, target, next, 0) })
+                }
                 if (view.filter.isNotEmpty()) {
                     builder.button(TOGGLE, resetItem(view), go { who -> values(who, target, view.copy(filter = ""), 0) })
                 } else if (source.popular.isNotEmpty()) {
@@ -97,7 +100,8 @@ internal class SettingChoicePicker(session: MenuSession, routes: MenuRoutes) : M
 
     private fun searchItem(view: View): ItemSpec {
         val hints = listOfNotNull(Style.left("искать по названию"), Style.middle("сбросить поиск").takeIf { view.filter.isNotEmpty() })
-        return icon(null, "COMPASS", "Поиск", Style.lore(emptyList(), listOfNotNull(view.filter.takeIf { it.isNotEmpty() }?.let { "Ищем" to it }), *hints.toTypedArray()))
+        val found = listOfNotNull(view.filter.takeIf { it.isNotEmpty() }?.let { "Ищем" to it })
+        return icon(null, "COMPASS", "Поиск", Style.lore(emptyList(), found, *hints.toTypedArray()))
     }
 
     private fun resetItem(view: View): ItemSpec =

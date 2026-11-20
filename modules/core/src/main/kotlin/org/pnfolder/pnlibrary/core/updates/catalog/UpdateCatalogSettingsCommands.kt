@@ -2,17 +2,17 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
-import org.pnfolder.pnlibrary.api.updates.UpdateState
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.cleanup.rootCause
+import org.pnfolder.pnlibrary.core.exceptions.rootCause
 import org.pnfolder.pnlibrary.updates.engine.FreezeDuration
 import java.time.Duration
 import java.util.Locale
@@ -43,7 +43,7 @@ internal class UpdateCatalogSettingsCommands(
         val value = context.get<String>("value")
         if (value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
             change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, "как задал плагин") { product, actor ->
-                library.updates.setChannel(product, null, actor)
+                library.updates.settings.channel(product, null, actor)
             }
             return
         }
@@ -57,14 +57,27 @@ internal class UpdateCatalogSettingsCommands(
             return
         }
         change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
-            actor -> library.updates.setChannel(product, channel, actor) }
+            actor -> library.updates.settings.channel(product, channel, actor) }
+    }
+
+    /** `java` command: chooses the Java build of a release that has several, or `default` to let the library pick one. */
+    fun setJava(context: CommandContext) {
+        val value = context.get<String>("value")
+        val java = value.toIntOrNull()
+        if (java == null && !value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
+            context.sender.send(catalogError("Укажите версию Java, например 17, или default."))
+            return
+        }
+        change(context, "Сборка Java", { it.javaBuild?.toString() ?: "подбирается" }, java?.toString() ?: "подбирается") { product, actor ->
+            library.updates.settings.javaBuild(product, java, actor)
+        }
     }
 
     /** `automatic` command: toggles automatic downloads. */
     fun setAutomatic(context: CommandContext) {
         val enabled = switch(context) ?: return
         change(context, "Автозагрузка", { if (it.automaticDownload) "включена" else "выключена" }, if (enabled) "включена" else "выключена") { product, actor ->
-            library.updates.setAutomaticDownload(product, enabled, actor)
+            library.updates.settings.automaticDownload(product, enabled, actor)
         }
     }
 
@@ -74,7 +87,7 @@ internal class UpdateCatalogSettingsCommands(
         if (!ready(context)) return
         val sender = context.sender
         val actor = sender.asUpdateActor()
-        library.updates.setAutomaticDownloadForAllPlugins(enabled, actor).whenComplete { _, failure ->
+        library.updates.settings.automaticDownloadForAll(enabled, actor).whenComplete { _, failure ->
             deliver(Runnable {
                 val text = if (failure != null) failure.rootCause().message ?: "Не удалось изменить настройку."
                 else "Сохранено. Автозагрузка для всех плагинов: ${if (enabled) "включена" else "выключена"}."
@@ -95,7 +108,10 @@ internal class UpdateCatalogSettingsCommands(
             }
         }
         change(context, "Пауза", { if (it.state == UpdateState.FROZEN) "на паузе" else "нет" },
-            if (duration == null) "нет" else RussianText.period(duration)) { product, actor -> library.updates.setHeld(product, duration, actor) }
+            if (duration == null) "нет" else RussianText.period(duration),
+        ) { product, actor ->
+            if (duration == null) library.updates.settings.release(product, actor) else library.updates.settings.hold(product, duration, actor)
+        }
     }
 
     private fun switch(context: CommandContext): Boolean? {
@@ -115,7 +131,7 @@ internal class UpdateCatalogSettingsCommands(
         if (!ready(context)) return
         val product = context.get<String>("plugin")
         val sender = context.sender
-        val before = library.updates.get(product)?.snapshot?.let(current) ?: value
+        val before = library.updates.products.get(product)?.snapshot?.let(current) ?: value
         val actor = sender.asUpdateActor()
         apply(product, actor).whenComplete { snapshot, failure ->
             deliver(Runnable {
@@ -124,7 +140,7 @@ internal class UpdateCatalogSettingsCommands(
                 } else {
                     val routes = routesFor(context)
                     val arrow = if (routes.ascii) "->" else "→"
-                    val card = UpdateCatalogView.settings(snapshot, routes, library.updates.heldUntil(snapshot.product))
+                    val card = UpdateCatalogView.settings(snapshot, routes, library.updates.settings.heldUntil(snapshot.product))
                     (card + UpdateCatalogView.notice(ChatNotice(ChatTone.SUCCESS, "Сохранено. $setting: $before $arrow $value."), routes)).forEach(sender::send)
                     onSaved(context, UpdateCatalogCommands.SettingSaved(snapshot.product, setting, before, value))
                 }

@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.bukkit.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.UUID
 

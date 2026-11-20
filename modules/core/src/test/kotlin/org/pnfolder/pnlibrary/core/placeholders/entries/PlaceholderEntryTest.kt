@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.placeholders.entries
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCachePolicy
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderCacheScope
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCachePolicy
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCacheScope
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.time.Duration

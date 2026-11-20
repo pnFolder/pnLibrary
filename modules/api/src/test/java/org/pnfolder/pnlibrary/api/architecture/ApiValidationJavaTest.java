@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey;
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec;
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey;
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 
 import java.time.Duration;
 

@@ -41,6 +41,7 @@ pnLibrary обновляет себя и плагины pnFolder, которые
 - `/pn updates set all auto on|off`: автоскачивание для всех плагинов сразу, включая те, что подключатся позже;
 - `/pn updates set <плагин> channel <канал>`: канал релизов. Сейчас можно выбрать только `dev` (остальные каналы
   ещё не выпускаются и отклоняются) или `default`: тогда канал снова задаёт плагин;
+- `/pn updates set <плагин> java <8|11|17|21|default>`: сборка Java для продукта. Список берётся из каталога (файлы, подходящие платформе и вашей Java). Если ничего не выбрано, берётся сборка, как у установленного продукта, а потом любая подходящая. В меню: карточка продукта, «Сборка Java»;
 - `/pn updates set <плагин> hold <период>`: пауза от 1 минуты до 7 суток, потом обновления возвращаются сами.
 
 По умолчанию автоскачивание включено у всех. Отключить обновление навсегда нельзя: списка «не обновлять» нет, остаётся
@@ -96,7 +97,7 @@ pnLibrary обновляет себя и плагины pnFolder, которые
 | `/pn updates backups files <id> <плагин>` | выдать сохранённые базы и выгрузки плагина файлами |
 | `/pn updates backups delete <id>` | удалить резервный набор |
 
-Настройки и паузы запоминаются в одном файле `data/updates/preferences.json` (разделы `channels`, `automatic`, `allPlugins`, `freezes`). Каждое изменение попадает в
+Настройки и паузы запоминаются в одном файле `data/updates/preferences.json` (разделы `channels`, `automatic`, `allPlugins`, `freezes`, `javaBuilds`). Каждое изменение попадает в
 историю вместе с автором.
 
 Опасные действия требуют права и подтверждения. Схема всегда одна: сначала просишь действие (`update rollback`,
@@ -119,6 +120,31 @@ Markdown в чат не выводится.
 | `pnlibrary.updates.restart` | подтверждать перезапуск после подготовки |
 | `pnlibrary.updates.rollback` | смотреть резервные наборы и откатывать |
 | `pnlibrary.updates.notify` | получать напоминание об обновлениях при входе |
+
+## Для плагинов: `library.updates`
+
+`UpdateService` разделён на пять частей, в каждой работает всё: необязательных операций нет.
+
+| Часть | Что делает | Методы |
+|---|---|---|
+| `products` | какие продукты зарегистрированы | `all()`, `get(имя)`, `require(имя)` |
+| `plans` | проверка релизов и план | `check(actor)`, `current()`, `recent()`, `stage(план, actor)` |
+| `settings` | выбор администратора для продукта | `channel`, `automaticDownload`, `automaticDownloadForAll`, `hold(продукт, срок)`, `release`, `heldUntil`, `javaBuild` |
+| `backups` | резервные наборы и откат | `list()`, `rollback(actor)`, `rollback(набор, actor, restoreConfigurations)`, `delete`, `restoreDatabase`, `extract` |
+| `history` | журнал событий | `page(страница, продукт)`, `count(продукт)` |
+
+```kotlin
+val updates = library.updates
+updates.register(plugin, product, request)                            // начать следить за релизами
+updates.plans.check(actor).thenCompose { plan -> updates.plans.stage(plan.id, actor) }
+updates.settings.hold("shop", Duration.ofDays(3), actor)              // не предлагать три дня
+updates.settings.release("shop", actor)                               // снять досрочно
+updates.backups.list().thenAccept { sets -> sets.forEach { println(it.id) } }
+updates.history.page(1, "shop")                                       // последние десять событий
+```
+
+Каждый метод, который что-то меняет, принимает `actor`: он пишется в журнал, но прав не даёт. Без него записывается
+`UpdateActor.UNKNOWN`. Подтверждение чувствительных шагов (`/pn update confirm <код>`) выполняют команды и меню, в API его нет.
 
 ## 4. Применение перед запуском: `pnLibrary-updater`
 
@@ -169,7 +195,7 @@ PluginUpdateRequest.builder()
   предупреждение с командой удаления;
 - данные, которые библиотека не копирует как файл (например MySQL), плагин выгружает сам: `.backupExport(BackupKind.DATABASE, "Кланы", "clans.sql") { файл -> выгрузить(файл) }`. Имена файлов выгрузок в одном плагине не повторяются. Файл лежит в `plugins/pnLibrary/data/updates/exports/<план>/<плагин>/`, откат его **не восстанавливает**: загрузите вручную. Если выгрузка упала, обновление не готовится;
 - удалить набор вручную: `/pn updates backups delete <id>` (право на управление обновлениями),
-  в API `UpdateService.deleteBackup`.
+  в API `updates.backups.delete(id, actor)`.
 
 ### Базы данных MySQL/MariaDB
 

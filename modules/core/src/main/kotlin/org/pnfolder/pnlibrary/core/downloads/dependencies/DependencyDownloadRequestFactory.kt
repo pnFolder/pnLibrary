@@ -1,9 +1,11 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies
 
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalArtifact
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.nio.file.Path
 
@@ -13,7 +15,15 @@ internal data class DependencyDownloadRequest(
     val requirements: Map<String, ExternalPluginDependency>,
 )
 
-internal class DependencyDownloadRequestFactory(private val serverUpdateFolder: Path) {
+/** [platform] and [minecraft] pick, among a dependency's files, the one made for this server. */
+internal class DependencyDownloadRequestFactory(
+    private val serverUpdateFolder: Path,
+    private val platform: PlatformType,
+    private val minecraft: () -> String?,
+) {
+    /** The file of [dependency] meant for this server, or null when it has none (only a page, or no variant fits). */
+    fun fileFor(dependency: ExternalPluginDependency): ExternalArtifact? = dependency.artifactFor(platform, minecraft())
+
     /** The external dependencies that are not installed at a fitting version. */
     fun missing(dependencies: List<PluginDependency>, installedPlugins: Map<String, String>): List<ExternalPluginDependency> =
         dependencies.mapNotNull { it.external }.filterNot { isAlreadyCompatible(it, installedPlugins) }
@@ -24,7 +34,7 @@ internal class DependencyDownloadRequestFactory(private val serverUpdateFolder: 
     ): DependencyDownloadRequest? {
         val downloadable = dependencies.mapNotNull { dependency ->
             val external = dependency.external ?: return@mapNotNull null
-            val artifact = external.artifact ?: return@mapNotNull null
+            val artifact = fileFor(external) ?: return@mapNotNull null
             if (isAlreadyCompatible(external, installedPlugins)) return@mapNotNull null
             Triple(dependency, external, artifact)
         }
@@ -42,11 +52,8 @@ internal class DependencyDownloadRequestFactory(private val serverUpdateFolder: 
                             .forceAutomaticDownload(dependency.forceAutomaticDownload)
                             .destination(DownloadDestination.DATA_FOLDER, safeFileName(external.plugin))
                         artifact.mirrors.forEach { file.mirror(it.toString()) }
-                        val expectedSize = artifact.size
-                        val expectedHash = artifact.sha256
-                        if (expectedSize != null && expectedHash != null) {
-                            file.integrity(expectedSize, expectedHash)
-                        }
+                        artifact.sha256?.let { file.sha256(it) }
+                        artifact.maxBytes?.let { file.maxBytes(it) }
                     }
                 }
             }

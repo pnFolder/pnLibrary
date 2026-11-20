@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.core.cleanup.rootMessage
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.core.exceptions.rootMessage
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.link.remote.LinkNames
 import org.pnfolder.pnlibrary.core.link.remote.RemoteAction

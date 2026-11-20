@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-import org.pnfolder.pnlibrary.api.placeholders.AsyncPlaceholderResolver
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderUpdater
+import org.pnfolder.pnlibrary.api.placeholders.model.AsyncPlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer

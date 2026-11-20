@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu
 
-import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport
@@ -15,6 +15,7 @@ import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens
 import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens
 import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens
 import org.pnfolder.pnlibrary.core.menu.screens.LibrarySettingsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.ModuleScreens
 import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens
 import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens
 import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens
@@ -32,6 +33,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val settingsScreens = SettingsScreens(session, this)
     private val journalScreens = JournalScreens(session, this)
     private val taskScreens = TaskScreens(session, this)
+    private val moduleScreens = ModuleScreens(session, this)
     private val networkScreens = NetworkScreens(session, this)
     private val groupScreens = GroupScreens(session, this)
     private val statsScreens = StatsScreens(session, this)
@@ -63,6 +65,10 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row> = journalScreens.journalRows(level, back)
     override fun labelled(label: String, text: String): List<Pair<String, String>> = taskScreens.labelled(label, text)
     override fun members(map: NetworkReport): List<NetworkServer> = networkScreens.members(map)
+    override fun modules(player: MenuViewer, plugin: String?, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.modules(player, plugin, page, back)
+    override fun libraries(player: MenuViewer, owner: String?, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.libraries(player, owner, page, back)
+
+    override fun disk(player: MenuViewer, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.disk(player, page, back)
     override fun network(player: MenuViewer, page: Int) = networkScreens.network(player, page)
     override fun ownerLine(name: String): String = taskScreens.ownerLine(name)
     override fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = taskScreens.ownerParameters(owner)
@@ -71,6 +77,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*> =
         updateScreens.setAutomatic(snapshot, enable, player)
     override fun settings(player: MenuViewer) = settingsScreens.settings(player)
+    override fun missingPlugins(player: MenuViewer, page: Int) = settingsScreens.missingPlugins(player, page)
     override fun stats(player: MenuViewer) = statsScreens.stats(player)
     override fun support(player: MenuViewer) = settingsScreens.support(player)
     override fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) = taskScreens.tasks(player, period, state, page)

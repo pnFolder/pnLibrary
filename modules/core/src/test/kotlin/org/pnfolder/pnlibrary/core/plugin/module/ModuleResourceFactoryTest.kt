@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.currency.CurrencyService
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageFactory
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.events.EventScope
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.MetricsService

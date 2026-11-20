@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.updates.install
 
 import com.google.gson.JsonParser
-import org.pnfolder.pnlibrary.api.updates.CatalogSource
+import org.pnfolder.pnlibrary.api.updates.request.CatalogSource
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalogClient

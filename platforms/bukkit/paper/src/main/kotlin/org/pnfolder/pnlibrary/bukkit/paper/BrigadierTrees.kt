@@ -14,35 +14,23 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
-import org.pnfolder.pnlibrary.api.commands.ArgumentSpec
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandNode
-import org.pnfolder.pnlibrary.api.commands.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentSpec
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
-/** What a Brigadier node does when it is used: the portable router decides everything after the tree has matched. */
 internal interface NativeInvocation<S> {
-    /** Runs the command typed as [input], which is the whole line without the leading slash. */
     fun execute(source: S, input: String)
-
-    /** Returns the suggestions for the partial argument at the end of [input]. */
     fun suggest(source: S, input: String): CompletionStage<List<String>>
-
-    /**
-     * Whether [source] may enter [node]. A node it may not enter is left out of the tree the client receives, so
-     * Tab does not offer it. Defaults to everything allowed.
-     */
     fun allowed(source: S, node: CommandNode): Boolean = true
 }
 
-/**
- * Builds the Brigadier tree of a portable command, so a modern client validates the arguments and shows the
- * usual red and gray hints while the shared router keeps doing the real work: permissions, custom messages,
- * parsing and execution. Literals and arguments mirror the portable tree one to one.
- */
+// Brigadier validates client-side; the portable router still handles all logic after the tree matches.
 internal object BrigadierTrees {
-    /** Returns the root node of [definition]; its aliases are registered by the caller. */
+    private const val EXTRA_ARGUMENTS = "arguments"
+
     fun <S> build(definition: CommandDefinition, invocation: NativeInvocation<S>): LiteralCommandNode<S> {
         val root = LiteralArgumentBuilder.literal<S>(definition.name)
             .requires { invocation.allowed(it, definition.root) }
@@ -58,8 +46,11 @@ internal object BrigadierTrees {
             }
         }
         node.children.forEach { builder.then(child(it, invocation)) }
-        if (node.acceptsExtraArguments && node.isExecutable && node.children.none { it.kind == CommandNodeKind.ARGUMENT }) {
-            // Free words after this node are not rejected by the client: the portable router decides what they mean.
+        // Allow free words when no argument child exists — the portable router parses them itself.
+        if (node.acceptsExtraArguments &&
+            node.isExecutable &&
+            node.children.none { it.kind == CommandNodeKind.ARGUMENT }
+        ) {
             builder.then(
                 RequiredArgumentBuilder.argument<S, Any>(EXTRA_ARGUMENTS, typeOf(ArgumentSpec.GREEDY))
                     .requires { invocation.allowed(it, node) }
@@ -72,84 +63,89 @@ internal object BrigadierTrees {
         }
     }
 
-    private const val EXTRA_ARGUMENTS = "arguments"
-
-    private fun <S> child(node: CommandNode, invocation: NativeInvocation<S>): ArgumentBuilder<S, *> {
-        if (node.kind == CommandNodeKind.LITERAL) {
-            return LiteralArgumentBuilder.literal<S>(node.name)
+    private fun <S> child(node: CommandNode, invocation: NativeInvocation<S>): ArgumentBuilder<S, *> =
+        when (node.kind) {
+            CommandNodeKind.LITERAL -> LiteralArgumentBuilder.literal<S>(node.name)
                 .requires { invocation.allowed(it, node) }
                 .also { populate(it, node, invocation) }
+            else -> {
+                val spec = node.argumentType?.spec ?: ArgumentSpec.TEXT
+                RequiredArgumentBuilder.argument<S, Any>(node.name, typeOf(spec))
+                    .requires { invocation.allowed(it, node) }
+                    .suggests(suggestionsFor(invocation))
+                    .also { populate(it, node, invocation) }
+            }
         }
-        val spec = node.argumentType?.spec ?: ArgumentSpec.TEXT
-        val builder = RequiredArgumentBuilder.argument<S, Any>(node.name, typeOf(spec))
-            .requires { invocation.allowed(it, node) }
-            .suggests(suggestionsFor(invocation))
-        populate(builder, node, invocation)
-        return builder
-    }
 
-    /**
-     * Maps a portable spec to a Brigadier type. Anything the portable parser accepts in more spellings than
-     * Brigadier does (`yes` for a boolean, `1e3` for a decimal) stays a plain word, so the client never rejects
-     * what the server would take.
-     */
     private fun bound(value: Double?, spec: ArgumentSpec): Double =
         requireNotNull(value) { "${spec.kind} argument needs both bounds" }
 
+    // Types the portable parser accepts in more spellings than Brigadier stay as SpacelessWord
+    // so the client never rejects input the server would take (e.g. `yes` for boolean, `1e3` for decimal).
     @Suppress("UNCHECKED_CAST")
-    internal fun typeOf(spec: ArgumentSpec): ArgumentType<Any> = when (spec.kind) {
-        ArgumentSpec.Kind.INTEGER ->
-            IntegerArgumentType.integer(bound(spec.minimum, spec).toInt(), bound(spec.maximum, spec).toInt())
-        ArgumentSpec.Kind.LONG ->
-            LongArgumentType.longArg(bound(spec.minimum, spec).toLong(), bound(spec.maximum, spec).toLong())
-        ArgumentSpec.Kind.DECIMAL ->
-            if (spec.minimum == -Double.MAX_VALUE && spec.maximum == Double.MAX_VALUE) SpacelessWord
-            else DoubleArgumentType.doubleArg(bound(spec.minimum, spec), bound(spec.maximum, spec))
+    internal fun typeOf(spec: ArgumentSpec): ArgumentType<Any> = (when (spec.kind) {
+        ArgumentSpec.Kind.INTEGER -> IntegerArgumentType.integer(
+            bound(spec.minimum, spec).toInt(),
+            bound(spec.maximum, spec).toInt(),
+        )
+        ArgumentSpec.Kind.LONG -> LongArgumentType.longArg(
+            bound(spec.minimum, spec).toLong(),
+            bound(spec.maximum, spec).toLong(),
+        )
+        ArgumentSpec.Kind.DECIMAL -> {
+            val min = spec.minimum
+            val max = spec.maximum
+            if (min == null || max == null || (min == -Double.MAX_VALUE && max == Double.MAX_VALUE)) SpacelessWord
+            else DoubleArgumentType.doubleArg(min, max)
+        }
         ArgumentSpec.Kind.GREEDY -> StringArgumentType.greedyString()
         ArgumentSpec.Kind.BOOLEAN, ArgumentSpec.Kind.CHOICE, ArgumentSpec.Kind.TEXT -> SpacelessWord
-    } as ArgumentType<Any>
+    }) as ArgumentType<Any>
 
-    private fun <S> suggestionsFor(invocation: NativeInvocation<S>): SuggestionProvider<S> = SuggestionProvider { context, builder ->
-        val result = CompletableFuture<Suggestions>()
-        invocation.suggest(context.source, builder.input).whenComplete { values, error ->
-            if (error != null) {
-                result.complete(builder.build())
-            } else {
-                values.orEmpty().forEach { builder.suggest(it) }
-                result.complete(builder.build())
+    private fun <S> suggestionsFor(invocation: NativeInvocation<S>): SuggestionProvider<S> =
+        SuggestionProvider { context, builder ->
+            val result = CompletableFuture<Suggestions>()
+            // For greedy arguments (EXTRA_ARGUMENTS), builder.start points to the beginning of the entire
+            // greedy portion. Adjust to the last token so the suggestion replaces only the word being typed.
+            val lastSpace = builder.input.lastIndexOf(' ')
+            val target = if (lastSpace >= builder.start) builder.createOffset(lastSpace + 1) else builder
+            try {
+                invocation.suggest(context.source, builder.input).whenComplete { values, error ->
+                    if (error == null) values.orEmpty().forEach { target.suggest(it) }
+                    result.complete(target.build())
+                }
+            } catch (_: Exception) {
+                result.complete(target.build())
             }
+            result
         }
-        result
-    }
 }
 
-/**
- * A word up to the next space. Brigadier's own word stops at anything but letters, digits and `_-.+`, which cut ids such as
- * `shop/main:config.yml` and values such as `world;0;64;0` and ended the command with "expected a space". The client is
- * told it is a greedy string so it does not colour such a word red; only the server reads it as one word.
- */
+// Brigadier's built-in word type stops at `/`, `:`, `;` and similar, breaking ids like `shop/main:config.yml`.
+// Declared as greedy to the client so those chars are not painted red; the server reads it as one token.
+@Suppress("UnstableApiUsage")
 internal object SpacelessWord : CustomArgumentType<String, String> {
     override fun parse(reader: StringReader): String {
         val start = reader.cursor
-        while (reader.canRead() && !Character.isWhitespace(reader.peek())) reader.skip()
+        while (reader.canRead() && !reader.peek().isWhitespace()) reader.skip()
         return reader.string.substring(start, reader.cursor)
     }
 
-    // The client only paints the line: a plain word would colour `/`, `:` and `;` red, a greedy one accepts them.
     override fun getNativeType(): ArgumentType<String> = StringArgumentType.greedyString()
 }
 
-/** A command line split into the label the player typed and its arguments. */
-internal class CommandLine(val label: String, val arguments: List<String>) {
+internal data class CommandLine(val label: String, val arguments: List<String>) {
     companion object {
-        /**
-         * Splits [input]. A label such as `pnlibrary:pn` keeps only the command name. With [keepTrailing] a
-         * line that ends with a space has an empty last argument, which is what tab completion needs.
-         */
         fun of(input: String, keepTrailing: Boolean): CommandLine {
             val trimmed = input.trimStart().removePrefix("/")
-            val parts = if (keepTrailing) trimmed.split(' ') else trimmed.trim().split(Regex(" +"))
-            return CommandLine(parts.first().substringAfterLast(':'), parts.drop(1))
+            // keepTrailing: a trailing space produces an empty last argument, which tab completion needs.
+            // Both paths collapse multiple spaces; keepTrailing re-appends the empty token manually.
+            val collapsed = trimmed.trim().split(Regex(" +"))
+            val parts = if (keepTrailing && trimmed.endsWith(' ')) collapsed + "" else collapsed
+            return CommandLine(
+                label = parts.first().substringAfterLast(':'),
+                arguments = parts.drop(1),
+            )
         }
     }
 }

@@ -3,9 +3,9 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.commands.CommandRegistry
+import org.pnfolder.pnlibrary.core.commands.engine.CommandRegistry
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
+import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -28,7 +28,7 @@ internal class RuntimeDiagnosticsAssembler(
 ) {
     fun assemble(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
-        val updateSnapshots = updates.all()
+        val updateSnapshots = updates.products.all()
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
         val diagnosticSummary = diagnostics.diagnosticSummary()
@@ -92,7 +92,7 @@ internal class RuntimeDiagnosticsAssembler(
 
     private fun updateGraph(): Map<String, Any?> = linkedMapOf(
 
-            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
-            "history" to updates.history().map(RuntimeUpdateDetails::of),
+            "current" to updates.plans.current().orElse(null)?.let(RuntimeUpdateDetails::of),
+            "history" to updates.plans.recent().map(RuntimeUpdateDetails::of),
     )
 }
