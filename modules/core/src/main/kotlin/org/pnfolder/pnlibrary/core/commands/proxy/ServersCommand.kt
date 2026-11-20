@@ -14,9 +14,9 @@ import org.pnfolder.pnlibrary.api.updates.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskLabels
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.LinkNames
-import org.pnfolder.pnlibrary.core.link.NetworkServer
-import org.pnfolder.pnlibrary.core.link.RemoteAction
+import org.pnfolder.pnlibrary.core.link.remote.LinkNames
+import org.pnfolder.pnlibrary.core.link.remote.RemoteAction
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels
 import java.time.Duration
 import java.time.Instant

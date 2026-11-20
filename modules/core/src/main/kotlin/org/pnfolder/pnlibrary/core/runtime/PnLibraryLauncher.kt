@@ -30,7 +30,7 @@ internal object PnLibraryLauncher {
      *
      * @param owner native plugin instance that owns the runtime
      * @param platform prepared platform capabilities from the native boundary
-     * @param config already validated runtime configuration
+     * @param config a ready runtime configuration; `null` builds it from the stored settings (`data/settings.json`)
      * @return the active runtime, which may be an instance created by an earlier call
      */
     @JvmStatic
@@ -39,7 +39,7 @@ internal object PnLibraryLauncher {
     fun bootstrap(
         owner: Any,
         platform: PlatformRuntimeContext,
-        config: PnLibraryConfig = PnLibraryConfig(),
+        config: PnLibraryConfig? = null,
     ): PnLibrary {
         requireNotNull(owner) { "Owner plugin must not be null" }
         requireNotNull(platform) { "Platform context must not be null" }
@@ -50,7 +50,7 @@ internal object PnLibraryLauncher {
             owner = owner,
             platform = platform,
             diagnostics = globalRegistry,
-            config = config,
+            presetConfig = config,
             onClose = { instance = null },
         )
         instance = created

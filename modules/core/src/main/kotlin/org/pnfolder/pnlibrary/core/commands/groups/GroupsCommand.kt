@@ -9,9 +9,9 @@ import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.command
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.NetworkServer
-import org.pnfolder.pnlibrary.core.link.RemoteAction
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.link.remote.RemoteAction
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 
 /**
  * `/pn groups` on a proxy: groups of servers and the plugins each of them should have, compared with what the

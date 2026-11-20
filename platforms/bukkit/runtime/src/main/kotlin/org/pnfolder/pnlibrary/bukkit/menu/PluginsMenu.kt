@@ -9,9 +9,9 @@ import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandReplies
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu
-import org.pnfolder.pnlibrary.core.menu.LocalMenuData
-import org.pnfolder.pnlibrary.core.menu.MenuDataServer
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
+import org.pnfolder.pnlibrary.core.menu.data.LocalMenuData
+import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import org.bukkit.command.CommandSender as NativeSender
@@ -54,6 +54,13 @@ internal class PluginsMenu(
     fun openFor(sender: NativeSender, reply: Reply) {
         if (sender is Player) menu.home(adapter.viewer(sender))
         else replies.say(reply, ChatTone.INFO, "Меню доступно только игроку.", "В консоли используйте /pn updates.")
+    }
+
+    /** Opens the values of the choice setting [key] for [sender], narrowed to [filter]; `false` when [sender] is not a player. */
+    fun pickFor(sender: NativeSender, key: String, filter: String): Boolean {
+        val player = sender as? Player ?: return false
+        menu.pickSetting(adapter.viewer(player), key, filter)
+        return true
     }
 
     fun home(viewer: MenuViewer) = menu.home(viewer)

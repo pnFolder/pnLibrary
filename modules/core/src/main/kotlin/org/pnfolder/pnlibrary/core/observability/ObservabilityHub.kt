@@ -94,12 +94,12 @@ internal class ObservabilityHub(
         runtime.createReport(request)
 
     override fun record(event: ActivityEvent): ActivityEvent {
-        val observation = runtime.record(LegacyActivityMapper.request(event))
+        val observation = runtime.record(event.toObservationRequest())
         return event.copy(eventId = observation.id, timestamp = observation.timestamp)
     }
 
     override fun recent(query: ActivityQuery): List<ActivityEvent> =
-        runtime.recent(LegacyActivityMapper.query(query)).map(LegacyActivityMapper::event)
+        runtime.recent(query.toObservationQuery()).map(Observation::toActivityEvent)
 
     override fun attach(
         eventId: String,

@@ -15,7 +15,7 @@ internal class BusTracePages(private val library: PnLibrary) {
 
     fun traces(context: CommandContext, typed: String?) {
         val name = typed?.let(bus::resolve)
-        val kit = kit(context)
+        val kit = busKit(context)
         val all = bus.traces().filter { name == null || it.eventName == name }
         val lines = mutableListOf(
             kit.blank(),
@@ -24,7 +24,7 @@ internal class BusTracePages(private val library: PnLibrary) {
         )
         if (all.isEmpty()) lines += kit.note("Пусто. Включите запись на странице события: $ROOT view <событие>")
         all.takeLast(MAX_TRACES).reversed().forEach { lines += traceBlock(kit, it) }
-        lines += footer(kit, backToEvents(kit),
+        lines += busFooter(kit, backToEvents(kit),
             if (all.isEmpty()) null else kit.button("очистить", "$ROOT clear", "Забыть записанные вызовы", ChatPalette.DANGER))
         lines.forEach(context.sender::send)
     }
@@ -55,3 +55,5 @@ internal class BusTracePages(private val library: PnLibrary) {
         return lines
     }
 }
+
+private const val MAX_TRACES = 6

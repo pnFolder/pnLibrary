@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Owns journal storage, asynchronous writes, failure counters and draining at shutdown. */
 internal class RuntimeJournal(
-    dataFolder: Path,
+    journalFolder: Path,
     config: PnLibraryConfig,
     private val ownership: PlatformOwnership,
     startedAtMillis: Long,
@@ -31,7 +31,7 @@ internal class RuntimeJournal(
     private val onWriteFailure: (Throwable) -> Unit = {},
 ) : AutoCloseable {
     val store = JournalStore(
-        dataFolder.resolve("journal"),
+        journalFolder,
         mapOf(
             JournalLevel.INFO to Duration.ofDays(config.journalInfoDays.toLong()),
             JournalLevel.WARNING to Duration.ofDays(config.journalWarningDays.toLong()),

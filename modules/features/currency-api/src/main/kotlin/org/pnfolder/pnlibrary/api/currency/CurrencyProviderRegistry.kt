@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.currency
 
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /** Restricted registry for platform integrations; consumer plugins use their owned [CurrencyService]. */

@@ -4,8 +4,8 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PluginMessageEvent
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
-import org.pnfolder.pnlibrary.core.link.LinkCodec
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
+import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
 
 /** Takes the reports that game servers send on the pnLibrary link channel; messages from players are dropped. */
 internal class VelocityLinkListener(private val receiver: LinkReceiver) {

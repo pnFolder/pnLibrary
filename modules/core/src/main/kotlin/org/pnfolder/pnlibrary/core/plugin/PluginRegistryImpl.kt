@@ -39,9 +39,10 @@ import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
 import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions
@@ -51,7 +52,7 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
+import org.pnfolder.pnlibrary.core.plugin.module.moduleServiceKey
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
@@ -192,7 +193,7 @@ internal class PluginRegistryImpl(
                 }
                 definition.bindUpdatesTo(descriptor)
                 dependencyValidator.validate(definition.dependencies, productDescriptors)
-                val serviceKey = ModuleServiceKeyFactory.create(registrationId, nativeId, id)
+                val serviceKey = moduleServiceKey(registrationId, nativeId, id)
                 createContext(this, id, serviceKey, definition, descriptor).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor

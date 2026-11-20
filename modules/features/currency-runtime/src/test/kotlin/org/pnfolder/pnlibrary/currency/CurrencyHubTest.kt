@@ -1,7 +1,5 @@
 package org.pnfolder.pnlibrary.currency
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -12,6 +10,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.Proxy
 import java.math.BigDecimal

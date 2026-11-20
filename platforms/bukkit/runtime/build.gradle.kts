@@ -11,7 +11,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":modules:features:currency-api"))
     implementation(project(":platforms:bukkit:api"))

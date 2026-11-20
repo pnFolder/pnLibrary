@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.UpdateActor
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuSession
+import org.pnfolder.pnlibrary.bukkit.item.PlayerHeads
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.menu.ClickType
@@ -25,6 +26,7 @@ import org.pnfolder.pnlibrary.core.menu.Menu
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import org.pnfolder.pnlibrary.bukkit.inventory.Menus as BukkitMenus
 
 /** Turns the portable menu into Bukkit inventories. */
@@ -40,7 +42,7 @@ internal class BukkitMenuAdapter(
     fun stack(spec: ItemSpec): ItemStack {
         val name = HexColors.downgrade(spec.name)
         val lore = spec.lore.map(HexColors::downgrade)
-        val head = spec.texture?.let { MenuHeads.head(it) }
+        val head = spec.texture?.let(::head)
         val base = head ?: ItemStack(listOfNotNull(spec.material, spec.alternative).firstNotNullOfOrNull(::resolve) ?: Material.PAPER)
         if (head == null && spec.legacyData != 0.toShort() && base.type.name in LEGACY_GLASS) base.durability = spec.legacyData
         return base.also {
@@ -52,6 +54,12 @@ internal class BukkitMenuAdapter(
             }
         }
     }
+
+    /**
+     * A copy of the textured player head for [hash], built once per texture and cached after that.
+     * A head the server cannot make is `null`, and the caller shows an ordinary item instead.
+     */
+    private fun head(hash: String): ItemStack? = HEADS[hash]?.clone() ?: PlayerHeads.textured(hash)?.also { HEADS[hash] = it.clone() }
 
     /** The inventory page for [menu]; a click goes to its handler as a click by the local player. */
     fun page(menu: Menu): org.pnfolder.pnlibrary.bukkit.inventory.Menu {
@@ -146,6 +154,7 @@ internal class BukkitMenuAdapter(
     fun playerOf(viewer: MenuViewer): Player? = (viewer as? BukkitViewer)?.native
 
     private companion object {
+        val HEADS = ConcurrentHashMap<String, ItemStack>()
         /** Any of these opens `/pn gui`; losing all of them closes the menu. */
         val MENU_ACCESS = listOf("pnlibrary.admin", "pnlibrary.updates.view")
         val RECHECK: Duration = Duration.ofSeconds(2)

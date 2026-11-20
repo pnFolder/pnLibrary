@@ -74,7 +74,7 @@ tasks.register<Test>("verifyUpdaterProcess") {
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:features:config-runtime"))
     implementation(project(":modules:common"))
     implementation(libs.kotlin.stdlib)

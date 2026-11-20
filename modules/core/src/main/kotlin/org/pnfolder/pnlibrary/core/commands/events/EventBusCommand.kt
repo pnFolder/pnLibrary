@@ -51,7 +51,7 @@ class EventBusCommand(private val library: PnLibrary) {
 
     private fun CommandBuilder.eventViews() {
         executes { events.list(it, "all", 1) }
-        FILTERS.forEach { (word, _) ->
+        BusFilter.entries.map(BusFilter::word).forEach { word ->
             literal(word) {
                 executes { events.list(it, word, 1) }
                 argument("page", ArgumentType.integer()) { executes { events.list(it, word, it.get<Int>("page")) } }
@@ -159,3 +159,5 @@ class EventBusCommand(private val library: PnLibrary) {
         const val PERMISSION = "pnlibrary.events.bus"
     }
 }
+
+private const val MAX_SUGGESTED_DAYS = 31

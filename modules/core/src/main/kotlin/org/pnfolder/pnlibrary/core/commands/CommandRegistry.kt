@@ -30,7 +30,7 @@ internal const val DEFAULT_NO_PERMISSION = "Недостаточно прав д
 /**
  * Registers, routes and runs portable commands, and answers a problem from the most specific level that has an
  * answer: the subcommand, the command, the plugin module, the plugin as a whole, and last [standard], the library's
- * own wording from `config.yml`.
+ * own wording from the library's settings.
  */
 internal class CommandRegistry(
     private val commandAdapter: PlatformCommandAdapter,

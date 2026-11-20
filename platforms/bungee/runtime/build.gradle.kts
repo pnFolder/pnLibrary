@@ -9,7 +9,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-bungee" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":platforms:bungee:api"))
     implementation(libs.kotlin.stdlib)

@@ -8,7 +8,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-config" }
 
 dependencies {
     api(project(":modules:features:config-api"))
-    api(project(":modules:runtime-spi"))
+    api(project(":modules:spi"))
     implementation(project(":modules:common"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.snakeyaml)

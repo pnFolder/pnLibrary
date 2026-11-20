@@ -18,7 +18,7 @@ interface PluginRegistration : AutoCloseable {
     /**
      * Answers errors of class [type] for every command of this plugin, in all of its modules, with [handler]. The most specific level
      * wins: a handler on a command or subcommand over this one, over the library's standard
-     * answer from `config.yml`.
+     * answer from the library's settings.
      */
     fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
         throw UnsupportedOperationException("Plugin commands are not available in this runtime")

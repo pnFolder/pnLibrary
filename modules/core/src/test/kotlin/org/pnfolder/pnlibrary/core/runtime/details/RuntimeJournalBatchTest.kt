@@ -16,7 +16,7 @@ class RuntimeJournalBatchTest {
     @Test
     fun `a burst is written in fewer blocks than records and nothing disappears without a count`() {
         val folder = Files.createTempDirectory("pnlibrary-journal-batch")
-        val journal = RuntimeJournal(folder, PnLibraryConfig(), ownership, 0L, "/pn events")
+        val journal = RuntimeJournal(folder.resolve("journal"), PnLibraryConfig(), ownership, 0L, "/pn events")
         val total = 20_000
 
         repeat(total) { journal.record(this, if (it % 50 == 0) LogLevel.ERROR else LogLevel.INFO, "event $it", null) }
@@ -31,7 +31,7 @@ class RuntimeJournalBatchTest {
     @Test
     fun `records recorded one after another are all stored`() {
         val folder = Files.createTempDirectory("pnlibrary-journal-seq")
-        val journal = RuntimeJournal(folder, PnLibraryConfig(), ownership, 0L, "/pn events")
+        val journal = RuntimeJournal(folder.resolve("journal"), PnLibraryConfig(), ownership, 0L, "/pn events")
 
         repeat(300) { journal.record(this, LogLevel.WARNING, "w $it", null) }
         journal.close()

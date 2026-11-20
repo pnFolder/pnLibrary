@@ -34,7 +34,7 @@ interface ModuleContext : AutoCloseable {
      * Answers errors of class [type] for every command of this module with [handler]. The most specific level
      * wins: a handler on a command or subcommand over this one, this one over the plugin-wide answer of
      * [PluginRegistration.onCommandError], over the library's standard
-     * answer from `config.yml`.
+     * answer from the library's settings.
      */
     fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
         throw UnsupportedOperationException("Module commands are not available in this runtime")

@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.currency
 
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-
 import java.util.function.Consumer
 
 /**

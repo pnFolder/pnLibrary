@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.config
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import java.util.Collections
 import java.util.LinkedHashSet
 
 /** Handle for one plugin-owned polymorphic configuration type. */

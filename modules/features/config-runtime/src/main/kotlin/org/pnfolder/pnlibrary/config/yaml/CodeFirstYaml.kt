@@ -57,9 +57,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val parent = file.absoluteFile.parentFile
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
         val rawDefaultsYaml = fileStore.normalize(codec.encode(defaults))
-        val defaultsYaml = SupportHeader.apply(
-            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it)) } ?: rawDefaultsYaml,
-        )
+        val defaultsYaml = options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it)) } ?: rawDefaultsYaml
         if (!file.exists()) return createFromDefaults(defaultsYaml)
 
         val original = fileStore.normalize(file.readText())
@@ -69,7 +67,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val working = migration?.takeIf { it.applied.isNotEmpty() }?.content?.let(fileStore::normalize) ?: original
         val differences = differences(defaultsYaml, working)
         val syncResult = synchronize(working, defaultsYaml)
-        val synchronized = SupportHeader.apply(syncResult.content)
+        val synchronized = LegacySupportNote.removeFrom(syncResult.content)
         val value = decodeAndValidate(synchronized)
         if (synchronized == original) {
             loadedValue = value
@@ -177,9 +175,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
                 "${skippedUnknownTypes.joinToString("; ")}. Saving would delete them from the file"
         }
         val raw = fileStore.normalize(codec.encode(value))
-        val encoded = SupportHeader.apply(
-            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw,
-        )
+        val encoded = options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw
         decodeAndValidate(encoded)
         fileStore.writeDecoded(encoded)
         loadedValue = value

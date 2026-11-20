@@ -10,39 +10,38 @@ import org.pnfolder.pnlibrary.api.observability.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.ObservationRequest
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 
-/** Conversion rules kept in one place for the deprecated activity API. */
-internal object LegacyActivityMapper {
-    private const val CATEGORY_FIELD = "category"
+// Conversion rules of the deprecated activity API, kept in one place.
 
-    fun request(event: ActivityEvent): ObservationRequest = ObservationRequest(
-        plugin = event.pluginId,
-        source = event.source,
-        message = event.type,
-        level = ObservationLevel.valueOf(event.severity.name),
-        data = event.metadata + mapOf(CATEGORY_FIELD to event.category.name),
-    )
+private const val CATEGORY_FIELD = "category"
 
-    fun query(query: ActivityQuery): ObservationQuery = ObservationQuery(
-        limit = query.limit,
-        plugin = query.pluginId,
-        minimumLevel = query.minimumSeverity?.let { ObservationLevel.valueOf(it.name) },
-        since = query.since,
-        until = query.until,
-    )
+internal fun ActivityEvent.toObservationRequest(): ObservationRequest = ObservationRequest(
+    plugin = pluginId,
+    source = source,
+    message = type,
+    level = ObservationLevel.valueOf(severity.name),
+    data = metadata + mapOf(CATEGORY_FIELD to category.name),
+)
 
-    fun event(observation: Observation): ActivityEvent = ActivityEvent(
-        eventId = observation.id,
-        timestamp = observation.timestamp,
-        type = observation.message,
-        category = category(observation.data[CATEGORY_FIELD]),
-        severity = ActivitySeverity.valueOf(observation.level.name),
-        source = observation.source,
-        pluginId = observation.plugin,
-        metadata = observation.data - CATEGORY_FIELD,
-    )
+internal fun ActivityQuery.toObservationQuery(): ObservationQuery = ObservationQuery(
+    limit = limit,
+    plugin = pluginId,
+    minimumLevel = minimumSeverity?.let { ObservationLevel.valueOf(it.name) },
+    since = since,
+    until = until,
+)
 
-    private fun category(value: String?): ActivityCategory {
-        if (value == null) return ActivityCategory.SYSTEM
-        return runCatchingNonFatal { ActivityCategory.valueOf(value) }.getOrDefault(ActivityCategory.SYSTEM)
-    }
+internal fun Observation.toActivityEvent(): ActivityEvent = ActivityEvent(
+    eventId = id,
+    timestamp = timestamp,
+    type = message,
+    category = activityCategory(data[CATEGORY_FIELD]),
+    severity = ActivitySeverity.valueOf(level.name),
+    source = source,
+    pluginId = plugin,
+    metadata = data - CATEGORY_FIELD,
+)
+
+private fun activityCategory(value: String?): ActivityCategory {
+    if (value == null) return ActivityCategory.SYSTEM
+    return runCatchingNonFatal { ActivityCategory.valueOf(value) }.getOrDefault(ActivityCategory.SYSTEM)
 }

@@ -8,8 +8,8 @@ import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 
 internal const val GROUPS_ROOT = "/pn groups"
 
@@ -126,9 +126,10 @@ internal class GroupsPages(private val groups: ServerGroups, private val servers
         lines += kit.section("Серверы")
         if (group.servers.isEmpty()) lines += kit.note("Серверов нет: $ROOT join ${group.name} <сервер>", ChatPalette.FAINT)
         groups.compare(group, servers()).forEach { state ->
+            val known = state.known
             val verdict = when {
-                state.known == null -> kit.text("не присылал отчёт", ChatPalette.DANGER)
-                !state.known!!.online -> kit.text("нет связи", ChatPalette.DANGER)
+                known == null -> kit.text("не присылал отчёт", ChatPalette.DANGER)
+                !known.online -> kit.text("нет связи", ChatPalette.DANGER)
                 state.ok -> kit.text("всё в порядке", ChatPalette.ACCENT)
                 else -> kit.text("", ChatPalette.TEXT)
             }

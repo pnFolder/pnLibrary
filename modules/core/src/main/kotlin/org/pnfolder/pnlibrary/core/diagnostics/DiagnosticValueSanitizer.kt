@@ -46,10 +46,10 @@ internal class DiagnosticValueSanitizer(
         code: String,
         message: String,
         error: Throwable?,
-    ): String = DiagnosticThrowables.fingerprint(listOf(key(plugin), level.name, component, code), message, error)
+    ): String = error.fingerprint(listOf(key(plugin), level.name, component, code), message)
 
     /** Returns the first useful application frame for an exception, if available. */
-    fun exceptionOrigin(error: Throwable): Map<String, Any?>? = DiagnosticThrowables.origin(error)
+    fun exceptionOrigin(error: Throwable): Map<String, Any?>? = error.originData()
 
     private fun map(
         values: Map<*, *>?,

@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.events.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
+import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
@@ -31,22 +32,33 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.commands.settings.SettingsCommand
 import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.core.diagnostics.configFileDiagnostics
 import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.diagnostics.reportConfigFile
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.events.EventHistory
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
+import org.pnfolder.pnlibrary.core.lifecycle.cancelTask
+import org.pnfolder.pnlibrary.core.lifecycle.dependencyDownloads
+import org.pnfolder.pnlibrary.core.lifecycle.journalDetail
+import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
+import org.pnfolder.pnlibrary.core.lifecycle.journalJoinNotice
+import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
+import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
+import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
+import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
 import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
+import org.pnfolder.pnlibrary.core.placeholders.builtin.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
-import org.pnfolder.pnlibrary.core.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
@@ -56,12 +68,19 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdownPlan
+import org.pnfolder.pnlibrary.core.runtime.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
+import org.pnfolder.pnlibrary.core.settings.LegacySettingsImport
+import org.pnfolder.pnlibrary.core.settings.LibraryInfoFiles
+import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
+import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
+import org.pnfolder.pnlibrary.updates.layout.LegacyLayoutMigration
+import org.pnfolder.pnlibrary.updates.layout.LibraryPaths
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.ZoneId
@@ -76,7 +95,7 @@ internal class PnLibraryImpl(
     override val owner: Any,
     private val platform: PlatformRuntimeContext,
     override val diagnostics: DiagnosticsRegistry,
-    private val config: PnLibraryConfig = PnLibraryConfig(),
+    presetConfig: PnLibraryConfig? = null,
     private val onClose: () -> Unit = {},
 ) : PnLibrary, PlatformRegistration, RuntimeResources {
     private val closedFlag = AtomicBoolean(false)
@@ -88,14 +107,30 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder
         ?: platform.ownership.ownerDataFolder(owner)
         ?: Paths.get("plugins", owner.javaClass.simpleName)
+    private val paths = LibraryPaths(dataFolder)
+
+    /** Every setting an administrator may change; the command `/pn settings` and the menu edit it. */
+    private val settings: SettingsStore
+    private val config: PnLibraryConfig
 
     init {
-        DisplayZone.zone = ZoneId.of(config.timeZone)
+        val warn = { text: String -> platform.logging.log(owner, LogLevel.WARNING, text) }
+        // The old files are moved into data and read once, before the settings are used.
+        LegacyLayoutMigration(paths, warn).run()
+        settings = SettingsStore(paths.settings, warn).also { LegacySettingsImport(paths, warn).run(it) }
+        config = presetConfig ?: settings.config()
+        DisplayZone.zone = ZoneId.of(settings.current().timeZone)
+        settings.onChange { DisplayZone.zone = ZoneId.of(it.timeZone) }
+        // Help and settings overview for administrators: written again at every start and after every change.
+        LibraryInfoFiles(paths, settings::values, version, warning = warn).also { files ->
+            files.refresh()
+            settings.onChange { files.refreshSettings() }
+        }
     }
 
     // Support and journal come first: every later part reports its failures through them.
     private val journalRuntime = RuntimeJournal(
-        dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND,
+        paths.journal, config, platform.ownership, startedAtMillis, EVENTS_COMMAND,
         onWriteFailure = ::reportJournalFailure,
     )
 
@@ -110,7 +145,7 @@ internal class PnLibraryImpl(
         platformLogging = platform.logging,
         diagnostics = diagnostics,
         config = config,
-        dataFolder = dataFolder,
+        paths = paths,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
         journal = journalRuntime::record,
         onRuntimeError = ::reportRuntimeError,
@@ -125,10 +160,9 @@ internal class PnLibraryImpl(
         capture = support.capture,
     )
 
-    private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
-        val reports = configFileDiagnostics(diagnostics)
+    private val features = RuntimeFeatureSet(platform, paths, support.capture, settings).also { set ->
         set.configurations.fileListener = { file ->
-            val handles = listOfNotNull(reports(file), set.updates.databaseSources.register(file))
+            val handles = listOfNotNull(diagnostics.reportConfigFile(file), set.updates.databaseSources.register(file))
             AutoCloseable { handles.forEach(AutoCloseable::close) }
         }
     }
@@ -138,7 +172,7 @@ internal class PnLibraryImpl(
         taskAdapter = platform.taskAdapter,
         platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
-        taskHistoryFile = dataFolder.resolve("task-history.tsv"),
+        taskHistoryFile = paths.taskHistory,
         errorLogger = support::recordRuntimeError,
         commandFeedback = standardCommandFeedback(config),
         onAudienceFailure = { error ->
@@ -149,7 +183,7 @@ internal class PnLibraryImpl(
     private val commands = platformServices.commands
     private val eventService = EventDispatcher(
         EventHistory(
-            dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone },
+            paths.eventHistory, config.eventHistoryDays, { DisplayZone.zone },
             onFailure = { support.recordRuntimeError(owner, "[pnLibrary/events] The event history could not be read or saved", it) },
         ),
     ) { pluginId, message, error -> support.recordRuntimeError(owner, "[$pluginId] $message", error) }
@@ -215,10 +249,11 @@ internal class PnLibraryImpl(
         ).start()
         stats.start()
         // The platform's `/pn` control command mounts these as its subcommands.
-        mountable["debug"] = diagnosticCommand(this, "/pn debug")
-        mountable["events"] = journalRuntime.command()
-        mountable["stats"] = stats.command()
-        mountable["placeholders"] = placeholdersCommand(features.placeholders)
+        mountable[MountableCommands.DEBUG] = diagnosticCommand(this, "/pn debug")
+        mountable[MountableCommands.EVENTS] = journalRuntime.command()
+        mountable[MountableCommands.STATS] = stats.command()
+        mountable[MountableCommands.PLACEHOLDERS] = placeholdersCommand(features.placeholders)
+        mountable[MountableCommands.SETTINGS] = SettingsCommand(settings, settingPicker).definition()
         LibraryPlaceholders(features.placeholders, startedAtMillis, { plugins.all().size }, stats::values).register()
         registerRuntimeCommand(libraryInfoCommand(this, platform.identity) {
             platform.ownership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -269,6 +304,10 @@ internal class PnLibraryImpl(
         platformProvider.register(type, implementation)
 
     override fun dependencyDownloads() = features.downloads
+
+    override fun librarySettings(): SettingsStore = settings
+
+    override val settingPicker = SettingPickerHook()
 
     override fun taskSnapshots(): List<TaskSnapshot> = tasks.query().filterNot { it.hidden }
 

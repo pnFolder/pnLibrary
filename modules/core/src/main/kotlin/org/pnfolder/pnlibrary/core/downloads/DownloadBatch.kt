@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference
 /** Tracks the files of one download request and runs at most one download of them at a time. */
 internal class DownloadBatch(
     private val request: FileDownloads,
-    private val configuration: DownloadConfiguration,
+    private val configuration: () -> DownloadConfiguration,
     private val executor: Executor,
     private val managerIsClosed: () -> Boolean,
     private val install: (List<FileDownload>, beforePublish: () -> Unit) -> Unit,
@@ -25,7 +26,7 @@ internal class DownloadBatch(
     private val dependenciesStaged: (List<FileDownload>) -> Unit,
     private val failed: (List<FileDownload>, Throwable) -> Unit,
     private val remove: (DownloadBatch) -> Unit,
-    private val automaticAllowed: () -> Boolean = { configuration.automatic },
+    private val automaticAllowed: () -> Boolean = { configuration().automatic },
 ) : DownloadRegistration {
     private val stateLock = Any()
     private val closed = AtomicBoolean(false)
@@ -57,7 +58,7 @@ internal class DownloadBatch(
         }
 
         val selectedFiles = selectFiles(declarations, automaticPolicy)
-        if (!configuration.enabled) return blocked(promise, "система загрузок отключена")
+        if (!configuration().enabled) return blocked(promise, "система загрузок отключена")
         if (selectedFiles.isEmpty()) {
             if (automaticPolicy && declarations.isNotEmpty()) {
                 return blocked(promise, "автозагрузка выключена (включить: /pn deps auto on)")

@@ -12,13 +12,10 @@ import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import org.pnfolder.pnlibrary.spi.platform.JulLogObserver
-import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
-import org.pnfolder.pnlibrary.spi.platform.PlatformLifecycle
 import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
-import org.pnfolder.pnlibrary.spi.platform.StartupGate
-import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.logging.Logger
@@ -27,10 +24,9 @@ import java.util.logging.Logger
 internal class BungeePlatformAdapter(
     /** The pnLibrary plugin; internal work such as global tasks belongs to it. */
     val plugin: Plugin,
-) : PlatformAdapter {
+) : ProxyPlatformAdapter(plugin) {
     private val diagnosticDetailsCollector = BungeeDiagnosticDetailsCollector(plugin)
 
-    private val lifecycle = PlatformLifecycle()
     private val plugins = PlatformPlugins<Plugin>(
         platformName = "BungeeCord",
         installed = { plugin.proxy.pluginManager.plugins },
@@ -45,9 +41,7 @@ internal class BungeePlatformAdapter(
             mainClass = description.main,
         )
     }
-    private val startup = StartupGate(lifecycle, ::executeGlobal)
 
-    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
     private val logObserver = JulLogObserver({ plugin.proxy.logger }, plugin) { loggerName ->
         JulLogObserver.matchPlugin(loggerName, plugin.proxy.pluginManager.plugins) { it.description.name }
     }
@@ -73,12 +67,8 @@ internal class BungeePlatformAdapter(
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         logObserver.logHandler { owner -> (owner as? Plugin)?.logger ?: plugin.logger }
 
-    /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, preserving the previous handler. */
-    @Synchronized
-    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null) lifecycle.checkOpen()
+    override fun observeProxyLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
         logObserver.observe(observer)
-        uncaughtExceptionObserver.observe(observer)
     }
 
     @Suppress("DEPRECATION")
@@ -122,24 +112,5 @@ internal class BungeePlatformAdapter(
         if (lifecycle.isClosed) return
 
         plugin.proxy.scheduler.runAsync(plugin, task)
-    }
-
-    /** Waits until the entry point has published the runtime and native platform API. */
-    override fun whenServerReady(task: Runnable) {
-        startup.whenReady(task)
-    }
-
-    /** Releases startup callbacks once; other managed plugins may still use the startup grace. */
-    internal fun markReady() {
-        startup.markReady()
-    }
-
-    override fun executeReply(recipient: Any, task: Runnable) {
-        executeGlobal(task)
-    }
-
-    /** Discards pending startup work, cancels native tasks and stops native log observation once. */
-    override fun close() {
-        lifecycle.closeAdapter(startup, taskAdapter) { observeNativeLogs(null) }
     }
 }

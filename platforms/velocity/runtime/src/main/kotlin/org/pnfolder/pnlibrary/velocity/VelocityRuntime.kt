@@ -143,3 +143,8 @@ internal class VelocityRuntime(
         runCatchingNonFatal(action).onFailure { logger.error("Could not stop $part", it) }
     }
 }
+
+/** Native-backed Velocity platform API installed by the Velocity runtime. */
+private class VelocityPlatformServices(
+    override val proxy: ProxyServer,
+) : VelocityPlatform

@@ -3,7 +3,10 @@ package org.pnfolder.pnlibrary.core.logging
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticThrowables
+import org.pnfolder.pnlibrary.core.diagnostics.fingerprint
+import org.pnfolder.pnlibrary.core.diagnostics.originData
+import org.pnfolder.pnlibrary.core.diagnostics.originFrame
+import org.pnfolder.pnlibrary.core.diagnostics.significantCause
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -20,7 +23,7 @@ import java.util.LinkedHashMap
 internal class DiagnosticLogBuffer(
     private val capacity: Int = 2_000,
     private val redact: (String) -> String = DiagnosticRedactor()::redact,
-    private val fingerprintOf: (List<String>, String, Throwable?) -> String = DiagnosticThrowables::fingerprint,
+    private val fingerprintOf: (List<String>, String, Throwable?) -> String = { context, message, error -> error.fingerprint(context, message) },
 ) {
     /** What a record looks like before redaction; equal keys always redact and fingerprint to the same incident. */
     private data class RawKey(
@@ -98,8 +101,8 @@ internal class DiagnosticLogBuffer(
     }
 
     private fun rawKeyOf(plugin: String, level: LogLevel, message: String, error: Throwable?): RawKey {
-        val significant = DiagnosticThrowables.unwrap(error)
-        val frame = DiagnosticThrowables.originFrame(error)
+        val significant = error.significantCause()
+        val frame = error.originFrame()
         return RawKey(plugin, level, message, significant?.javaClass?.name, significant?.message, frame?.className, frame?.methodName)
     }
 
@@ -119,7 +122,7 @@ internal class DiagnosticLogBuffer(
             plugin = plugin,
             message = message,
             exceptionType = error?.javaClass?.name,
-            origin = error?.let(DiagnosticThrowables::origin),
+            origin = error?.originData(),
             fullError = completeError,
             consoleBlock = consoleBlock(now, level, message, completeError),
             firstSeenUtc = now,

@@ -1,9 +1,17 @@
 package org.pnfolder.pnlibrary.bukkit
 
+import org.bukkit.Server
 import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
+import org.pnfolder.pnlibrary.bukkit.currency.error
+import org.pnfolder.pnlibrary.bukkit.entity.ArmorStandVisual
+import org.pnfolder.pnlibrary.bukkit.entity.VisualService
+import org.pnfolder.pnlibrary.bukkit.integration.BukkitIntegrations
 import org.pnfolder.pnlibrary.bukkit.inventory.BukkitMenus
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
+import org.pnfolder.pnlibrary.bukkit.item.BukkitItems
+import org.pnfolder.pnlibrary.bukkit.item.ItemService
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
@@ -70,4 +78,14 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
         runtime.registerService(BukkitAudienceService::class.java, audienceService)
         menus = menuService
     }
+}
+
+/** Native-backed Bukkit platform API installed by the Bukkit runtime. */
+private class BukkitPlatformServices(
+    override val server: Server,
+    override val serverInfo: ServerInfo,
+    override val menus: MenuService,
+) : BukkitPlatform {
+    override val items: ItemService = BukkitItems
+    override val visuals: VisualService = ArmorStandVisual.Factory
 }

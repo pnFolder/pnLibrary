@@ -7,12 +7,12 @@ import org.bukkit.plugin.messaging.PluginMessageListener
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.link.DataChunks
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.LinkCodec
-import org.pnfolder.pnlibrary.core.link.LinkReports
-import org.pnfolder.pnlibrary.core.link.LinkSecret
-import org.pnfolder.pnlibrary.core.link.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.remote.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.report.LinkReports
+import org.pnfolder.pnlibrary.core.link.wire.DataChunks
+import org.pnfolder.pnlibrary.core.link.wire.LinkCodec
+import org.pnfolder.pnlibrary.core.link.wire.LinkSecret
 import java.util.UUID
 import java.util.logging.Level
 

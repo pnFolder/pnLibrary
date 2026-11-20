@@ -1,7 +1,5 @@
 package org.pnfolder.pnlibrary.currency
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-
 import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount
 import org.pnfolder.pnlibrary.api.currency.CurrencyBalanceMutation
@@ -23,6 +21,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransfers
 import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal

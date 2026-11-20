@@ -4,17 +4,11 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
 import org.pnfolder.pnlibrary.core.link.Link
+import org.pnfolder.pnlibrary.core.menu.data.LocalMenuData
+import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer
+import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo
 import java.util.UUID
 import java.util.concurrent.Executors
-
-/** Every permission that opens a page of the menu. */
-object MenuPermissions {
-    val ALL = listOf(
-        "pnlibrary.admin", "pnlibrary.servers", "pnlibrary.updates.view", "pnlibrary.updates.download", "pnlibrary.updates.rollback",
-        "pnlibrary.updates.settings", "pnlibrary.updates.restart", "pnlibrary.events.view", "pnlibrary.events.bus", "pnlibrary.tasks",
-        "pnlibrary.stats", "pnlibrary.placeholders", "pnlibrary.debug", "pnlibrary.currency.list",
-    )
-}
 
 /**
  * The questions about a proxy's library that game servers ask.

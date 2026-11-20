@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.config.Property
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.spi.platform.OwnLogScope
 
 /**
  * Forwards WARN and ERROR events of Velocity's Log4j2 backend to the shared log observation contract.
@@ -21,7 +22,7 @@ internal class VelocityLogObserver(
     private val pluginById: (String) -> Any? = { null },
     private val pluginInstances: () -> Collection<Any>,
 ) {
-    private val ownLogCall = ThreadLocal.withInitial { false }
+    private val ownLogs = OwnLogScope()
 
     @Volatile
     private var callback: ((Any, LogLevel, String, Throwable?) -> Unit)? = null
@@ -35,15 +36,7 @@ internal class VelocityLogObserver(
     }
 
     /** Runs [block] while events produced by this thread are treated as the library's own. */
-    fun <T> runOwn(block: () -> T): T {
-        val previous = ownLogCall.get()
-        ownLogCall.set(true)
-        try {
-            return block()
-        } finally {
-            ownLogCall.set(previous)
-        }
-    }
+    fun <T> runOwn(block: () -> T): T = ownLogs.run(block)
 
     /** Returns the plugin whose main-class package is the longest prefix of [loggerName]. */
     internal fun resolveOwner(loggerName: String?): Any? {
@@ -82,7 +75,7 @@ internal class VelocityLogObserver(
     }
 
     private fun accept(event: LogEvent) {
-        if (ownLogCall.get() || !event.level.isMoreSpecificThan(Level.WARN)) return
+        if (ownLogs.isActive || !event.level.isMoreSpecificThan(Level.WARN)) return
         val level = if (event.level.isMoreSpecificThan(Level.ERROR)) LogLevel.ERROR else LogLevel.WARNING
         val owner = resolveOwner(event.loggerName) ?: fallbackOwner
         callback?.invoke(owner, level, event.message?.formattedMessage ?: "Native platform error", event.thrown)

@@ -4,13 +4,13 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
-import org.pnfolder.pnlibrary.core.link.LinkSecret
-import org.pnfolder.pnlibrary.core.link.LinkTransport
-import org.pnfolder.pnlibrary.core.link.NetworkPublisher
-import org.pnfolder.pnlibrary.core.link.RemoteExecutor
-import org.pnfolder.pnlibrary.core.menu.MenuDataServer
+import org.pnfolder.pnlibrary.core.link.remote.LinkTransport
+import org.pnfolder.pnlibrary.core.link.remote.RemoteExecutor
+import org.pnfolder.pnlibrary.core.link.report.NetworkPublisher
+import org.pnfolder.pnlibrary.core.link.wire.LinkSecret
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu
+import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer
 import java.nio.file.Path
 
 /**

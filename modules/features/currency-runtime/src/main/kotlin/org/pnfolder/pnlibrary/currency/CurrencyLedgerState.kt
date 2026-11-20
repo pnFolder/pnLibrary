@@ -58,10 +58,10 @@ internal class CurrencyLedgerState {
         while (transactions.size > maximumTransactions) {
             val old = transactions.removeFirst()
             val key = old.idempotencyKey?.let { idempotencyKey(old.currency, it) }
-            val indexed = key != null && idempotency.remove(key, old)
+            val indexedKey = key?.takeIf { idempotency.remove(it, old) }
             undo?.add {
                 transactions.addFirst(old)
-                if (indexed) idempotency[key!!] = old
+                if (indexedKey != null) idempotency[indexedKey] = old
             }
         }
     }

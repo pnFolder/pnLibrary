@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.currency
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
 import org.pnfolder.pnlibrary.api.currency.CurrencyConfirmationMode
@@ -17,6 +16,7 @@ import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.time.Duration

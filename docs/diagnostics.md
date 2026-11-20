@@ -26,14 +26,13 @@ DiagnosticRegistration reg = PnLibraryProvider.get().getDiagnostics().register("
 
 ## Отчёт `/pn debug`
 
-Отчёт зашифрован, расшифровывает его поддержка (`tools/support/decode_pnsupport.py`). В `plugins/pnLibrary/config.yml`:
-`privacy` (по умолчанию `false`) скрывает имена, UUID, адреса и пинг игроков; `excluded-paths` — значения в файлах
-конфигов плагинов, которые не попадут в отчёт (путь `ключ.подключ` для всех файлов или `плагин/файл.yml:ключ` для
-одного). Поля, помеченные `@ConfigSecret`, скрыты без записи здесь, см. [configuration.md](configuration.md).
+Отчёт зашифрован, расшифровывает его поддержка (`tools/support/decode_pnsupport.py`). Настройка `privacy`
+(`/pn settings set privacy true`, по умолчанию `false`) скрывает имена, UUID, адреса и пинг игроков. Значения в конфигах плагинов скрывает
+аннотация `@ConfigSecret`, см. [configuration.md](configuration.md).
 
 ## Логгер модуля и чёрный ящик
 
-`ModuleContext.logger` (`PnLogger`) пишет в консоль и в «чёрный ящик»: буфер диагностики, журнал `journal/` и, для ошибки
+`ModuleContext.logger` (`PnLogger`) пишет в консоль и в «чёрный ящик»: буфер диагностики, журнал `data/journal/` и, для ошибки
 с исключением, отчёт об ошибках. Короткие формы (`info`, `success`, `warning`, `error`, `critical`) пишут везде. `critical` — сбой, после которого плагин не работает; в консоли строка идёт с пометкой `[CRITICAL]`, успех — с `[OK]`.
 
 | Вызов | Консоль | Чёрный ящик |

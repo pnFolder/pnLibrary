@@ -44,7 +44,7 @@ annotation class ConfigIgnore
  * Marks a field whose value must never appear in a diagnostic report, such as a password, a token or a webhook.
  *
  * It applies to the file this class is registered for, and to a nested section when put on the field holding it.
- * The value is hidden in every report with no entry in `plugins/pnLibrary/config.yml`:
+ * The value is hidden in every report with no extra setting in the library:
  * ```kotlin
  * @field:ConfigSecret
  * var password: String = ""

@@ -3,8 +3,25 @@ package org.pnfolder.pnlibrary.core.menu
 import org.pnfolder.pnlibrary.api.updates.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
-import org.pnfolder.pnlibrary.core.link.NetworkReport
-import org.pnfolder.pnlibrary.core.link.NetworkServer
+import org.pnfolder.pnlibrary.core.link.report.NetworkReport
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
+import org.pnfolder.pnlibrary.core.menu.data.EventAbout
+import org.pnfolder.pnlibrary.core.menu.screens.BusHistoryScreens
+import org.pnfolder.pnlibrary.core.menu.screens.BusScreens
+import org.pnfolder.pnlibrary.core.menu.screens.ConfigScreens
+import org.pnfolder.pnlibrary.core.menu.screens.Filter
+import org.pnfolder.pnlibrary.core.menu.screens.GroupScreens
+import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens
+import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens
+import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens
+import org.pnfolder.pnlibrary.core.menu.screens.LibrarySettingsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens
+import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens
+import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.TaskScreens
+import org.pnfolder.pnlibrary.core.menu.screens.UpdateScreens
+import org.pnfolder.pnlibrary.core.menu.style.Row
 import java.time.Duration
 
 /** Opens menu screens by route and keeps the navigation back stack of a session. */
@@ -22,6 +39,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
     private val configScreens = ConfigScreens(session, this)
+    private val librarySettingsScreens = LibrarySettingsScreens(session, this)
 
     override fun aboutOf(name: String): EventAbout? = taskScreens.aboutOf(name)
     override fun backups(player: MenuViewer, page: Int) = historyScreens.backups(player, page)
@@ -40,6 +58,8 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
         updateScreens.hold(snapshot, duration, player)
     override fun home(player: MenuViewer) = homeScreens.home(player)
     override fun journal(player: MenuViewer, level: String?, page: Int) = journalScreens.journal(player, level, page)
+    override fun librarySettings(player: MenuViewer, page: Int) = librarySettingsScreens.librarySettings(player, page)
+    override fun pickSetting(player: MenuViewer, key: String, filter: String) = librarySettingsScreens.pick(player, key, filter)
     override fun journalRows(level: String?, back: (MenuViewer) -> Unit): List<Row> = journalScreens.journalRows(level, back)
     override fun labelled(label: String, text: String): List<Pair<String, String>> = taskScreens.labelled(label, text)
     override fun members(map: NetworkReport): List<NetworkServer> = networkScreens.members(map)
@@ -58,4 +78,6 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun versioned(owner: OwnerInfo): String = taskScreens.versioned(owner)
 
     fun open(player: MenuViewer) = session.away(player) { home(player) }
+
+    fun pick(player: MenuViewer, key: String, filter: String) = session.away(player) { pickSetting(player, key, filter) }
 }

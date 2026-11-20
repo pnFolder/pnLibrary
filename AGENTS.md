@@ -49,7 +49,7 @@
 ```
 
 ## Где что
-- `modules/`: api, core, common, runtime-spi, updates, bootstrap, console, features (config, currency, localization).
+- `modules/`: api, core, common, spi, updates, bootstrap, console, features (config, currency, localization).
 - `platforms/`: bukkit, bungee, velocity, loader.
 - `.pnlibrary/releases.json` и `.pnlibrary/changelogs/<версия>.md`: каталог релизов библиотеки.
 - `integration/`: инструкция и заготовка `.pnlibrary` для плагинов на pnLibrary.
@@ -73,7 +73,7 @@
 - Осталось: проверка на живых базах и серверах, релиз `0.1.0-dev.3`, идея отпечатка сервера, вес `universal` 5,6 МБ.
 
 ### 2026-11-05 (логгер, прокси, тесты)
-- Логгер один: конфиги, интеграции Bukkit и перезапуск пишут через `PnLogger` (`PlatformPnLogger` в `runtime-spi`), серьёзное попадает в чёрный ящик; у `info`/`debug` можно передать исключение. Общая сборка связи прокси вынесена в `core/proxy/ProxyLink` с откатом при сбое запуска. Меню Bukkit перенесены в пакет `menu`.
+- Логгер один: конфиги, интеграции Bukkit и перезапуск пишут через `PnLogger` (`PlatformPnLogger` в `spi`), серьёзное попадает в чёрный ящик; у `info`/`debug` можно передать исключение. Общая сборка связи прокси вынесена в `core/proxy/ProxyLink` с откатом при сбое запуска. Меню Bukkit перенесены в пакет `menu`.
 - Перезапуск без `restart-script`: сервер останавливается, дальше его поднимает панель или start.sh, это не ошибка.
 - FastStats оставлен как был (`ErrorTracker.contextAware()`), правку откатили по просьбе.
 - Тесты: миграция конфигов, кадры связи и `LinkSecret`, откат обновления после сбоя публикации, задачи, скрытие секретов в отчёте. Ошибок не нашли.
@@ -94,7 +94,7 @@
 - Изучены LimboAPI, LimboAuth, LimboFilter и LirTitles, правила записаны в «Как должен читаться код». Меню Bukkit разделено по ролям (`MenuSessions`, `BukkitMenuSession`, `MenuListener`, `MenuInventories`), флаги заменены методами. `PnLibraryImpl` переписан как сценарий запуска без псевдонимов (320 → 284). Убраны 124 однострочных KDoc над `override` вне публичного API. Проверено: `catch (Throwable)` почти везде прибирает и пробрасывает, это оставлено; `lateinit` в основном коде нет.
 - Глобальный `LinkHub` заменён классом `Link`: его создаёт рантайм платформы (`openLink` на Bukkit, `connectLink` на Velocity/Bungee) и передаёт через конструкторы командам, меню (`MenuHost.link`) и слушателям. `/pnproxy` теперь регистрирует рантайм прокси, а не `PnLibraryLauncher`; команда запускается через `PnLibrary.dispatchRuntimeCommand`. Убраны `ProxyMenuCommands.runner` и `RemoteMenus.data`. На живой сети (прокси + сервер) не проверялось.
 - Рефлексия: папку и логгер плагина теперь даёт платформа (`PlatformOwnerMetadata.ownerDataFolder/ownerLogger`), а не `getMethod("getDataFolder")` в ядре и конфигах. Folia собрана в `compat/Folia` (методы ищутся один раз, а не при каждой задаче и клике). Головы с текстурой — одна реализация (`PlayerHeads`), замена hex-цветов вынесена в `HexColors`. Убраны лишние: проверка Folia в bStats, `getOnlinePlayers` через рефлексию (нужно было только для 1.7). Оставшаяся рефлексия в Bukkit нужна: рантайм собран против Spigot 1.8 и зовёт новые API только там, где они есть.
-- `DisplayZone.zone` оставлен: пишется один раз при старте из `config.yml`, это настройка отображения, протягивать `ZoneId` через 16 файлов форматирования незачем.
+- `DisplayZone.zone` оставлен: пишется при старте и при смене `time-zone` из настроек библиотеки (`data/settings.json`), это настройка отображения, протягивать `ZoneId` через 16 файлов форматирования незачем.
 - Дальше: комментарии-пересказы над `private`/`internal` (около 600, только вручную); на живом Folia-сервере новый `Folia` не проверялся.
 
 ### 2026-11-05 (документы)

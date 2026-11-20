@@ -10,7 +10,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-velocity" }
 
 dependencies {
     implementation(project(":modules:api"))
-    implementation(project(":modules:runtime-spi"))
+    implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":platforms:velocity:api"))
     implementation(libs.kotlin.stdlib)

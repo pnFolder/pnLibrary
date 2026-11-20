@@ -53,9 +53,7 @@ internal class DiagnosticRedactor {
         private val EMAIL: Pattern = Pattern.compile(
             "(?<![\\w.+-])[\\w.+-]++@[\\w.-]+\\.[A-Za-z]{2,}"
         )
-        private val UUID_PAT: Pattern = Pattern.compile(
-            "(?i)\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b"
-        )
+        private val UUID_PAT: Pattern = UUID_REGEX.toPattern()
         private val PATH: Pattern = Pattern.compile(
             "(?i)(?:[a-z]:[\\\\/]|(?<![\\w:])/)(?:[^\\s<>]+)"
         )
