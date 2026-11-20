@@ -4,6 +4,8 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import java.util.function.Consumer
 
@@ -30,6 +32,17 @@ interface PluginRegistration : AutoCloseable {
         val text = message.trim()
         onCommandError(type, CommandErrorHandler<E> { context, error -> context.sender.send(Component.text(error.format(text))) })
     }
+
+    /**
+     * The libraries of the whole plugin: what is registered here is available to every module of it, so a library several
+     * modules need is downloaded once. Modules keep their own in `ModuleContext.libraries`.
+     */
+    val libraries: ModuleLibraries
+        get() = throw UnsupportedOperationException("Plugin libraries are not available in this runtime")
+
+    /** Every library of this plugin: its own and those of each module, without repeats. */
+    val allLibraries: List<ModuleLibrary>
+        get() = (libraries.loaded + all().flatMap { it.libraries.loaded }).distinct()
 
     /** Registers a logical module identified by [id]. */
     fun registerModule(

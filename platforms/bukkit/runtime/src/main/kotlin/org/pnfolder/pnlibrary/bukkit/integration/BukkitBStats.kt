@@ -29,6 +29,6 @@ internal object BukkitBStats {
         mainThread = if (ServerCapabilities.isFolia) null else ServerScheduler(plugin)::nextTick,
         ownerEnabled = plugin::isEnabled,
         warn = { message, error -> pnLogger().warning(message, error) },
-        info = pnLogger()::info,
+        info = { message -> pnLogger().info(message) },
     )
 }

@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.api.plugin
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import net.kyori.adventure.text.Component
@@ -108,6 +109,9 @@ interface ModuleContext : AutoCloseable {
     val updates: UpdateRegistration?
     /** Auxiliary download registration, or `null` when none was configured. */
     val downloads: DownloadRegistration?
+    /** The Maven libraries of this module; see `PluginModule.libraries()`. */
+    val libraries: ModuleLibraries
+        get() = throw UnsupportedOperationException("Module libraries are not available in this runtime")
     /** Switches this module on and off; the same operations as `/pn modules` and the menu. */
     val control: ModuleControl
         get() = throw UnsupportedOperationException("Module control is not available in this runtime")

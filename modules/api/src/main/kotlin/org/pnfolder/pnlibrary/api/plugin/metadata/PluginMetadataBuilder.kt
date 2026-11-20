@@ -14,6 +14,9 @@ interface PluginMetadataBuilder {
     /** Overrides the plugin version shown in lifecycle and diagnostic output. */
     fun version(value: String): PluginMetadataBuilder
 
+    /** Says in a sentence or two what the plugin or module is for; `/pn modules` and the menu show it. */
+    fun description(value: String): PluginMetadataBuilder = this
+
     /** Overrides the display-ready author text. */
     fun authors(value: String): PluginMetadataBuilder
 }

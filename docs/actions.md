@@ -33,7 +33,7 @@ val result = module.actions.execute(config.onBuy, player, values = mapOf("item" 
 ## Деньги и ошибки
 
 `charge` списывает деньги и регистрирует откат. Если следующий шаг упал, деньги вернутся сами.
-`attempt` ловит ошибку, откатывает свой блок и показывает сообщение через `[error]` и `[error_code]`.
+`attempt` ловит ошибку, откатывает свой блок и показывает сообщение через `{error}` и `{error_code}`.
 
 ```yaml
 on-buy:
@@ -44,13 +44,13 @@ on-buy:
       operator: greater-or-equal
       right: 100
     deny:
-      - { type: message, messages: ['&c[reason]'] }
+      - { type: message, messages: ['&c{reason}'] }
   - type: attempt
     do:
       - { type: charge, currency: money, amount: 100 }
-      - { type: command, command: 'give [player] diamond 1' }
+      - { type: command, command: 'give {player} diamond 1' }
     fail:
-      - { type: message, messages: ['&cНе вышло: [error]'] }
+      - { type: message, messages: ['&cНе вышло: {error}'] }
 ```
 
 Коды ошибок денег: `currency.insufficient-funds`, `currency.unavailable`, `currency.unsupported`, `currency.invalid-amount`, `currency.rejected`, `currency.failed`.
@@ -91,7 +91,7 @@ when:
 
 ```yaml
 - { type: set, name: price, expression: "round(base * (1 - {shop:discount} / 100), 2)" }
-- { type: message, messages: ['Цена: [price], уровень {= level() * 2}'] }
+- { type: message, messages: ['Цена: {price}, уровень {= level() * 2}'] }
 ```
 
 Значения: имя (`balance`) читает значение сценария, потом плейсхолдер pnLibrary; `{плагин:ключ}` — плейсхолдер, `%имя%` — внешний, `[имя-с-дефисом]` — значение сценария.
@@ -103,7 +103,7 @@ when:
 ## Свои именованные действия и требования
 
 ```kotlin
-module.actions.define("give-kit") { ctx -> kits.give(ctx.player, ctx.format("[kit]")); ActionResult.Done }
+module.actions.define("give-kit") { ctx -> kits.give(ctx.player, ctx.format("{kit}")); ActionResult.Done }
 module.actions.defineRequirement("is-vip", Requirement { ctx -> Verdict.of(ctx.player.hasPermission("vip"), "только VIP") })
 ```
 
@@ -126,7 +126,7 @@ module.actions.defineRequirement("is-vip", Requirement { ctx -> Verdict.of(ctx.p
       do: [ { type: message, messages: ['&cНужно 100 монет'] } ]
     - codes: ['currency.*']
       do: [ { type: message, messages: ['&cБанк не отвечает'] } ]
-  fail: [ { type: message, messages: ['&cОшибка: [error]'] } ]
+  fail: [ { type: message, messages: ['&cОшибка: {error}'] } ]
 ```
 
 Ещё: `set` (запомнить значение), `random` (выбор с весами).

@@ -33,6 +33,10 @@ internal interface MenuRoutes {
     fun labelled(label: String, text: String): List<Pair<String, String>>
     fun members(map: NetworkReport): List<NetworkServer>
     fun modules(player: MenuViewer, plugin: String?, page: Int, back: (MenuViewer) -> Unit)
+    fun libraries(player: MenuViewer, owner: String?, page: Int, back: (MenuViewer) -> Unit)
+
+    /** What every plugin takes on the disk. */
+    fun disk(player: MenuViewer, page: Int, back: (MenuViewer) -> Unit)
     fun network(player: MenuViewer, page: Int)
     fun ownerLine(name: String): String
     fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>>

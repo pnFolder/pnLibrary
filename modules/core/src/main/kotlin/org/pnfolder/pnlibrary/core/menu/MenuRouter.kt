@@ -66,6 +66,9 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun labelled(label: String, text: String): List<Pair<String, String>> = taskScreens.labelled(label, text)
     override fun members(map: NetworkReport): List<NetworkServer> = networkScreens.members(map)
     override fun modules(player: MenuViewer, plugin: String?, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.modules(player, plugin, page, back)
+    override fun libraries(player: MenuViewer, owner: String?, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.libraries(player, owner, page, back)
+
+    override fun disk(player: MenuViewer, page: Int, back: (MenuViewer) -> Unit) = moduleScreens.disk(player, page, back)
     override fun network(player: MenuViewer, page: Int) = networkScreens.network(player, page)
     override fun ownerLine(name: String): String = taskScreens.ownerLine(name)
     override fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = taskScreens.ownerParameters(owner)

@@ -23,6 +23,9 @@ import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleController
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibrariesImpl
 import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
@@ -94,6 +97,7 @@ internal class PluginRegistryImpl(
     private val directDownloads: DirectDownloads? = null,
     libraryVersion: String? = null,
     private val modulePreferences: ModulePreferences = ModulePreferences(),
+    private val libraryFetcher: LibraryFetcher = LibraryFetcher.THROUGH_LIBBY,
 ) : PluginRegistry {
 
     private val scenarioDefinitions = ScenarioDefinitions()
@@ -180,6 +184,7 @@ internal class PluginRegistryImpl(
     ) : PluginRegistration {
         override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
+        override val libraries: ModuleLibraries = ModuleLibrariesImpl.through("p-${nativeId.value}-$registrationId", PluginRegistryImpl::class.java.classLoader, owner, null, libraryFetcher, identity.type)
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()
 
@@ -271,6 +276,7 @@ internal class PluginRegistryImpl(
             commandFeedback.handlers[type] = handler
         }
         override val isClosed: Boolean get() = contextClosed.get()
+        override val libraries = ModuleLibrariesImpl.through(key.value, PluginRegistryImpl::class.java.classLoader, parent.owner, parent.libraries, libraryFetcher, identity.type)
         override val control = ModuleController(key.value, module, modulePreferences) {
             resources.tasks.cancelAll()
             moduleCommands.drain().asReversed().forEach { it.close() }

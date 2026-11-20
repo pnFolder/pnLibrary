@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.pnfolder.pnlibrary.api.libraries.LibraryUsage
+
 /**
  * Registry of native platform plugins using one pnLibrary runtime.
  *
@@ -37,6 +39,15 @@ interface PluginRegistry : AutoCloseable {
 
     /** Returns an immutable snapshot of registered platform plugins. */
     fun all(): List<PluginRegistration>
+
+    /** Every module of every plugin registered in the library. */
+    fun allModules(): List<ModuleContext> = all().flatMap { it.all() }
+
+    /** Every library registered anywhere, and who registered it, so one used by many modules shows once per owner. */
+    fun libraryUsage(): List<LibraryUsage> = all().flatMap { plugin ->
+        plugin.libraries.loaded.map { LibraryUsage(it, plugin.id, null) } +
+            plugin.all().flatMap { module -> module.libraries.loaded.map { LibraryUsage(it, plugin.id, module.id) } }
+    }
 
     /** Closes all registrations in reverse ownership order. */
     override fun close()

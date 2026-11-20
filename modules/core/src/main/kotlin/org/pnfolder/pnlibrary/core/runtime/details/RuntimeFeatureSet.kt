@@ -21,8 +21,9 @@ import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateTiming
 import org.pnfolder.pnlibrary.updates.service.UpdateServiceImpl
 
-/** Creates the feature services of the library runtime (services, configs, updates and so on). */
+/** Creates the feature services of the library runtime (services, configs, updates and so on); [owner] is the pnLibrary plugin that log lines are written for. */
 internal class RuntimeFeatureSet(
+    owner: Any,
     platform: PlatformRuntimeContext,
     paths: LibraryPaths,
     logging: PlatformLogging,
@@ -43,12 +44,12 @@ internal class RuntimeFeatureSet(
     val placeholderValues = GlobalPlaceholderValueStore()
     val placeholders: PlaceholderHub = PlaceholderHub(
         platform.identity, placeholderValues,
-        issues = { problem -> logging.log(this, LogLevel.WARNING, problem) },
-        failures = { problem, error -> logging.log(this, LogLevel.ERROR, problem, error) },
+        issues = { problem -> logging.log(owner, LogLevel.WARNING, problem) },
+        failures = { problem, error -> logging.log(owner, LogLevel.ERROR, problem, error) },
     )
-    val currency: CurrencyRuntime = CurrencyFeature { message, error -> logging.log(this, LogLevel.ERROR, message, error) }
+    val currency: CurrencyRuntime = CurrencyFeature { message, error -> logging.log(owner, LogLevel.ERROR, message, error) }
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
-        logging.log(this, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)
+        logging.log(owner, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)
     }
 
     /** Expansions of plugins; the public `PnLibrary.expansions`. */

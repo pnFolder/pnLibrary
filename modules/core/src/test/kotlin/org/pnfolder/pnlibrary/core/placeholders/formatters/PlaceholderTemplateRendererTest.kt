@@ -13,18 +13,35 @@ class PlaceholderTemplateRendererTest {
             "name" to "Alex",
         )
         val renderer = PlaceholderTemplateRenderer(
-            resolve = { expression, _, _ -> CompletableFuture.completedFuture(values[expression]) },
-            format = { value, pipeline, _, _ ->
-                if ("upper" in pipeline) value?.toString()?.uppercase() else value
+            resolve = { expression, _, _ ->
+                val parts = expression.split('|')
+                val value = values[parts.first()]
+                CompletableFuture.completedFuture(if ("upper" in parts.drop(1)) value?.toString()?.uppercase() else value)
             },
+            format = { value, _, _, _ -> value },
         )
 
         val rendered = renderer.render(
-            "{?enabled}Server [status|upper]: {name}{:}offline{/}",
+            "{?enabled}Server {status|upper}: {name}{:}offline{/}",
             playerId = null,
             values = emptyMap(),
         ).toCompletableFuture().join()
 
         assertEquals("Server ONLINE: Alex", rendered)
+    }
+
+    @Test
+    fun `square brackets around tags stay text and ask no placeholder`() {
+        val asked = mutableListOf<String>()
+        val renderer = PlaceholderTemplateRenderer(
+            resolve = { expression, _, _ -> asked += expression; CompletableFuture.completedFuture(null) },
+            format = { value, _, _, _ -> value },
+        )
+
+        val text = "<gray>[<light_purple>pnTest</light_purple>]</gray> hi"
+        val rendered = renderer.render(text, null, emptyMap()).toCompletableFuture().join()
+
+        assertEquals(text, rendered)
+        assertEquals(emptyList<String>(), asked)
     }
 }

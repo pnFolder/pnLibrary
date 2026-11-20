@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin
 
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -637,6 +638,7 @@ class PluginRegistryImplTest {
             directDownloads: DirectDownloads? = null,
             expansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryExpansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
+            libraryFetcher: LibraryFetcher = LibraryFetcher { _, _, _, _ -> null },
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
@@ -654,6 +656,7 @@ class PluginRegistryImplTest {
                 commands = commands,
                 directDownloads = directDownloads,
                 libraryVersion = libraryVersion,
+                libraryFetcher = libraryFetcher,
             )
 
         private class RecordingUpdateService : UpdateService {

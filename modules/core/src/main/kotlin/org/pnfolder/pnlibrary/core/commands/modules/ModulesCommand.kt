@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -21,6 +22,9 @@ import java.util.concurrent.CompletionStage
  * | Command | What it does |
  * |---|---|
  * | `/pn modules` | every module with its state |
+ * | `/pn modules plugins` | every plugin with its modules and the number of libraries |
+ * | `/pn modules libs [<плагин>\|<плагин:модуль>]` | libraries with name, description, who registered them and version conflicts |
+ * | `/pn modules disk` | what every plugin takes on the disk: jar, settings, libraries, logs, data |
  * | `/pn modules view <модуль>` | one module: state, last error, whether it starts with the server |
  * | `/pn modules enable\|disable\|restart\|reload <модуль>` | switches the module now |
  * | `/pn modules auto <модуль> on\|off` | whether the module starts with the server; saved |
@@ -34,6 +38,15 @@ class ModulesCommand(private val library: PnLibrary) {
         noPermissionMessage("Модули плагинов доступны администраторам. Нужно право $PERMISSION.")
         consoleBypassesPermission()
         executes { list(it) }
+        literal("libs") {
+            executes { libs(it, null) }
+            argument("owner", ArgumentType.string()) {
+                suggests { LibraryRow.all(library).map { it.owner }.distinct() }
+                executes { libs(it, it.get<String>("owner")) }
+            }
+        }
+        literal("plugins") { executes { plugins(it) } }
+        literal("disk") { executes { disk(it) } }
         literal("view") { moduleArgument { context, typed -> view(context, typed) } }
         for (action in Action.values()) {
             literal(action.word) { moduleArgument { context, typed -> change(context, typed, action) } }
@@ -104,15 +117,93 @@ class ModulesCommand(private val library: PnLibrary) {
         lines.forEach(context.sender::send)
     }
 
+    private fun libraryLine(kit: ChatKit, library: ModuleLibrary, fromPlugin: Boolean): net.kyori.adventure.text.Component {
+        val suffix = if (fromPlugin) " (от плагина)" else ""
+        val line = kit.text("    ${library.title} ${library.version}$suffix", if (fromPlugin) ChatPalette.FAINT else ChatPalette.SOFT)
+        return library.description?.let { line.append(kit.text(": $it", ChatPalette.LABEL)) } ?: line
+    }
+
+    private fun libs(context: CommandContext, owner: String?) {
+        val kit = kit(context)
+        val rows = LibraryRow.all(library).filter { owner == null || it.belongsTo(owner) }
+        val lines = mutableListOf(kit.blank(), kit.header("Библиотеки", kit.text("${rows.size}", ChatPalette.LABEL)))
+        if (rows.isEmpty()) lines += kit.note(if (owner == null) "Плагины не подключили библиотек." else "У $owner нет библиотек.", ChatPalette.FAINT)
+        rows.groupBy { it.owner }.forEach { (who, own) ->
+            lines += kit.text(" $who", ChatPalette.ACCENT)
+            own.forEach { row ->
+                var line = kit.text("    ${row.title}", ChatPalette.TEXT).append(kit.text(" ${row.version}", ChatPalette.SOFT))
+                        .append(kit.dot()).append(kit.text(when (row.scope) { "ISOLATED" -> "отдельно"; "LIBRARY" -> "в pnLibrary"; else -> "в плагине" }, ChatPalette.FAINT))
+                if (row.size >= 0) line = line.append(kit.dot()).append(kit.text(DiskUsage.format(row.size), ChatPalette.SOFT))
+                line = line.append(kit.dot()).append(
+                    when (row.trust) {
+                        LibraryRow.GIVEN -> kit.text("сумма задана", ChatPalette.OK)
+                        else -> kit.text("jar не проверяется", ChatPalette.WARN)
+                    },
+                )
+                if (!row.required) line = line.append(kit.dot()).append(kit.text("необязательная", ChatPalette.FAINT))
+                if (row.conflict) line = line.append(kit.dot()).append(kit.text("другая версия у другого плагина", ChatPalette.DANGER))
+                lines += line
+                row.description?.let { lines += kit.text("      $it", ChatPalette.LABEL) }
+                row.place?.let { lines += kit.text("      лежит: $it", ChatPalette.FAINT) }
+            }
+        }
+        lines.forEach(context.sender::send)
+    }
+
+    private fun disk(context: CommandContext) {
+        val kit = kit(context)
+        val report = DiskUsage.scan(DiskUsage.pluginsFolder, DiskUsage.registeredFiles(library))
+        val lines = mutableListOf(kit.blank(), kit.header("Диск плагинов", kit.text(DiskUsage.format(report.total), ChatPalette.LABEL)))
+        report.rows.forEach { row ->
+            val share = if (report.total > 0) row.total * 100 / report.total else 0
+            lines += kit.text(" ${row.name}", ChatPalette.ACCENT).append(kit.dot())
+                .append(kit.text("${DiskUsage.format(row.total)} ($share%)", if (share >= 50) ChatPalette.WARN else ChatPalette.SOFT))
+            lines += kit.text(
+                "    плагин ${DiskUsage.format(row.jar)} · настройки ${DiskUsage.format(row.configs)} · библиотеки ${DiskUsage.format(row.libraries)}" +
+                    " · журналы ${DiskUsage.format(row.logs)} · данные ${DiskUsage.format(row.data)}",
+                ChatPalette.FAINT,
+            )
+        }
+        lines += kit.blank()
+        lines += kit.hoverField("Библиотеки pnLibrary", kit.text(DiskUsage.format(report.registeredLibraries), ChatPalette.TEXT))
+        lines += kit.hoverField("Свободно на диске", kit.text("${DiskUsage.format(report.free)} из ${DiskUsage.format(report.capacity)}", ChatPalette.TEXT))
+        lines.forEach(context.sender::send)
+    }
+
+    private fun plugins(context: CommandContext) {
+        val kit = kit(context)
+        val all = library.plugins.all()
+        val lines = mutableListOf(kit.blank(), kit.header("Плагины библиотеки", kit.text("${all.size}", ChatPalette.LABEL)))
+        all.sortedBy { it.id.value }.forEach { plugin ->
+            val modules = plugin.all()
+            lines += kit.text(" ${plugin.id.value}", ChatPalette.ACCENT)
+                .append(kit.dot()).append(kit.text("модулей ${modules.size}", ChatPalette.SOFT))
+                .append(kit.dot()).append(kit.text("библиотек ${plugin.allLibraries.size}", ChatPalette.SOFT))
+            modules.forEach { module ->
+                val state = module.control.state
+                lines += kit.text("    ${module.id.value}", ChatPalette.TEXT).append(kit.text("  ${ModuleLabels.label(state)}", ModuleLabels.color(state)))
+            }
+        }
+        lines.forEach(context.sender::send)
+    }
+
     private fun view(context: CommandContext, typed: String) = withModule(context, typed) { kit, name, module ->
         val control = module.control
         val lines = mutableListOf(
             kit.blank(),
             kit.header(ModuleLabels.title(module), kit.bracketed(ModuleLabels.label(control.state), ModuleLabels.color(control.state))),
             kit.hoverField("Имя", kit.text(name, ChatPalette.TEXT)),
+            kit.hoverField("Описание", kit.text(module.metadata.description ?: "плагин не описал", ChatPalette.TEXT)),
             kit.hoverField("Переключается", kit.text(if (control.isControllable) "да" else "нет, плагин не дал методы включения", ChatPalette.TEXT)),
             kit.hoverField("Включается с сервером", kit.text(if (control.autoStart) "да" else "нет", ChatPalette.TEXT)),
         )
+        val own = module.libraries.loaded
+        val shared = library.plugins.all().firstOrNull { plugin -> plugin.all().any { it === module } }?.libraries?.loaded.orEmpty()
+        if (own.isNotEmpty() || shared.isNotEmpty()) {
+            lines += kit.hoverField("Библиотеки", kit.text("${own.size + shared.size}", ChatPalette.TEXT))
+            own.forEach { lines += libraryLine(kit, it, false) }
+            shared.forEach { lines += libraryLine(kit, it, true) }
+        }
         control.lastError?.let { lines += kit.hoverField("Ошибка", kit.text(it.message ?: it.javaClass.simpleName, ChatPalette.DANGER)) }
         if (control.isControllable && kit.reader.interactive) {
             var buttons = kit.text(" ")

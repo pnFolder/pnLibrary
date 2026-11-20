@@ -28,6 +28,8 @@ object MenuCalls {
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
     const val MODULES = "modules"
+    const val LIBRARIES = "libraries"
+    const val DISK = "disk"
     const val MODULE_ACTION = "moduleAction"
     const val EVENTS = "events"
     const val LISTENERS = "listeners"
@@ -49,7 +51,7 @@ object MenuCalls {
     /** The calls that change nothing, whose answers may be remembered for a moment. */
     val READS = setOf(
         GROUPS,
-        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, MODULES, STATS,
+        VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, MODULES, LIBRARIES, DISK, STATS,
         PLACEHOLDERS, SETTINGS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )

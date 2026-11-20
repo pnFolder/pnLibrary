@@ -101,7 +101,7 @@ class ScenarioTest {
 
     @Test
     fun `an unmet requirement runs deny with the reason and stops`() {
-        val deny = Action { c -> log += c.format("no: [reason]"); ActionResult.Done }
+        val deny = Action { c -> log += c.format("no: {reason}"); ActionResult.Done }
 
         val result = context().execute(listOf(RequireAction(PermissionRequirement("shop.use"), listOf(deny)), step("after")))
 
@@ -126,7 +126,7 @@ class ScenarioTest {
         )
         val attempt = AttemptAction(
             steps = listOf(ChargeAction("money", "100"), step("give")),
-            fail = listOf(Action { c -> log += c.format("[error_code]"); ActionResult.Done }),
+            fail = listOf(Action { c -> log += c.format("{error_code}"); ActionResult.Done }),
         )
 
         val result = context().execute(listOf(attempt, step("after")))
@@ -161,8 +161,8 @@ class ScenarioTest {
     @Test
     fun `requirements compare values from any source and combine`() {
         val ctx = context(setOf("a")).setValue("balance", "250")
-        val enough = CompareRequirement("[balance]", CompareOperator.GREATER_OR_EQUAL, "100")
-        val rich = CompareRequirement("[balance]", CompareOperator.GREATER, "1000")
+        val enough = CompareRequirement("{balance}", CompareOperator.GREATER_OR_EQUAL, "100")
+        val rich = CompareRequirement("{balance}", CompareOperator.GREATER, "1000")
 
         assertTrue(enough.test(ctx).isMet)
         assertEquals(Verdict.Unmet("250 is not greater 1000"), rich.test(ctx))

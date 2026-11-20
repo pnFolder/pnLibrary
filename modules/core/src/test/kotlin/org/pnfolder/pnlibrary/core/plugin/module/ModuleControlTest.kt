@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
@@ -105,5 +106,43 @@ class ModuleControlTest {
         registry.close()
 
         assertEquals(listOf("enable", "disable"), module.calls)
+    }
+
+    private class WithLibrary(private val library: ModuleLibrary) : PluginModule {
+        var enabled = false
+        override fun libraries() = listOf(library)
+        override fun onEnable(context: ModuleContext) {
+            enabled = true
+        }
+    }
+
+    @Test
+    fun `a required library that cannot be loaded fails the module and an optional one does not`() {
+        val required = WithLibrary(ModuleLibrary.of("com.example:missing:1"))
+        val optional = WithLibrary(ModuleLibrary.builder("com.example", "missing", "1").optional().build())
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
+
+        val failed = registry.register(Any()).registerModule("needs", required)
+        val started = registry.register(Any()).registerModule("wants", optional)
+
+        assertEquals(ModuleState.FAILED, failed.control.state)
+        assertFalse(required.enabled)
+        assertNotNull(failed.control.lastError)
+        assertEquals(ModuleState.ENABLED, started.control.state)
+        assertTrue(optional.enabled)
+        registry.close()
+    }
+
+    @Test
+    fun `the library lists every module and every library with who registered it`() {
+        val registry = registry()
+        val plugin = registry.register(Any())
+        plugin.registerModule("one", Recording()).libraries.load(ModuleLibrary.of("g:a:1"))
+        plugin.registerModule("two", Recording()).libraries.load(ModuleLibrary.of("g:a:2"))
+
+        assertEquals(2, registry.allModules().size)
+        assertEquals(listOf("one", "two"), registry.libraryUsage().map { it.module?.value }.sortedBy { it })
+        assertEquals(2, plugin.allLibraries.size)
+        registry.close()
     }
 }

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu.data
 
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
+import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
 import com.google.gson.JsonObject
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
@@ -108,6 +110,10 @@ class RemoteMenuData(
     override fun tasks(): List<TaskSnapshot> = ask(MenuCalls.TASKS)
 
     override fun modules(): List<ModuleInfo> = ask(MenuCalls.MODULES)
+
+    override fun libraries(): List<LibraryRow> = ask(MenuCalls.LIBRARIES)
+
+    override fun disk(): DiskReport = ask(MenuCalls.DISK)
 
     override fun moduleAction(key: String, action: String): ModuleInfo =
         ask(MenuCalls.MODULE_ACTION, args("key" to key, "action" to action))

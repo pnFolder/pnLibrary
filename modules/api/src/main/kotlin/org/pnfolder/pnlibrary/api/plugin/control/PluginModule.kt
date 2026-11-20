@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin.control
 
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 
 /**
@@ -22,6 +23,13 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
  * clean-up. Listeners, open files and anything else the module opened itself belong in [onDisable].
  */
 interface PluginModule {
+    /**
+     * The Maven libraries this module needs, with where to download them and how to check them. They are loaded before
+     * [onEnable] each time the module starts; one already loaded is not downloaded again. A required library that cannot be
+     * loaded leaves the module in [ModuleState.FAILED] with the reason.
+     */
+    fun libraries(): List<ModuleLibrary> = emptyList()
+
     /** Starts the module: registers its commands, listeners and tasks. Runs at registration and on every enable. */
     fun onEnable(context: ModuleContext) {}
 

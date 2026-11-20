@@ -39,7 +39,7 @@ internal class RuntimeMetricsBootstrap(
             }
         }.onFailure { error ->
             runCatchingNonFatal { openedSession?.close() }
-            warning("Metrics could not be started: ${error.message ?: error.javaClass.simpleName}")
+            warning("Metrics could not be started: ${error.message ?: "${error.javaClass.simpleName} in ${error.stackTrace.firstOrNull() ?: "unknown place"}"}")
         }.getOrNull()
     }
 

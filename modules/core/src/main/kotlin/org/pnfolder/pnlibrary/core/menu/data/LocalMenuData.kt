@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu.data
 
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
+import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
+import org.pnfolder.pnlibrary.core.commands.modules.DiskUsage
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.config.ConfigEditResult
 import org.pnfolder.pnlibrary.api.config.ConfigId
@@ -122,6 +125,24 @@ class LocalMenuData(
     override fun tasks(): List<TaskSnapshot> = library.taskSnapshots()
 
     override fun modules(): List<ModuleInfo> = ModuleInfo.all(library)
+
+    override fun libraries(): List<LibraryRow> = LibraryRow.all(library)
+
+    @Volatile
+    private var diskAt = 0L
+
+    @Volatile
+    private var diskCache = DiskReport.EMPTY
+
+    /** The scan is remembered for half a minute: a big folder is not walked again for every click. */
+    override fun disk(): DiskReport {
+        val now = System.currentTimeMillis()
+        if (now - diskAt > 30_000) {
+            diskCache = DiskUsage.scan(DiskUsage.pluginsFolder, DiskUsage.registeredFiles(library))
+            diskAt = now
+        }
+        return diskCache
+    }
 
     override fun moduleAction(key: String, action: String): ModuleInfo = ModuleInfo.apply(library, key, action)
 

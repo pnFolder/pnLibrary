@@ -14,6 +14,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType
  * @property platformImplementation concrete platform implementation and version description
  * @property javaVersion complete JVM version string from the running process
  * @property javaFeature JVM feature release, for example `21`
+ * @property description one or two sentences on what the plugin or module is for, read by administrators in the menu; `null` when not given
  */
 class PluginMetadata(
     val id: ModuleId,
@@ -24,4 +25,5 @@ class PluginMetadata(
     val platformImplementation: String,
     val javaVersion: String,
     val javaFeature: Int,
+    val description: String? = null,
 )

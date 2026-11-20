@@ -26,6 +26,7 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     var metadataName: String? = null
     var metadataVersion: String? = null
     var metadataAuthors: String? = null
+    var metadataDescription: String? = null
     var metrics: ModuleMetricsDefinition = ModuleMetricsDefinition()
         private set
     var diagnosticsDirectory: Path? = null
@@ -149,6 +150,10 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
 
         override fun version(value: String): PluginMetadataBuilder = apply {
             definition.metadataVersion = value.requireMetadata("version")
+        }
+
+        override fun description(value: String): PluginMetadataBuilder = apply {
+            definition.metadataDescription = value.requireMetadata("description")
         }
 
         override fun authors(value: String): PluginMetadataBuilder = apply {

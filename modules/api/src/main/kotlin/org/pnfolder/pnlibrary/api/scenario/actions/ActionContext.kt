@@ -37,7 +37,7 @@ import java.util.Collections
  * }
  * ```
  *
- * Every text an action prints may mention values, in three kinds of brackets, see [format].
+ * Every text an action prints may mention values, in three kinds of marks, see [format].
  *
  * @property player player the run is for
  * @property allPlayers wider audience for actions aimed at [ActionTarget.ALL_PLAYERS]
@@ -45,7 +45,7 @@ import java.util.Collections
  * @property logger plugin logger for warnings
  * @property tasks task scope for delayed work
  * @property serializerType default text format of printed text
- * @param values named values texts and requirements read as `[name]`
+ * @param values named values texts and requirements read as `{name}`
  * @param services services handed over directly, by exact type
  * @param serviceLookup fallback for services registered elsewhere, such as in the module's service scope
  * @param lookup actions, requirements and functions plugins defined by name
@@ -193,11 +193,11 @@ class ActionContext(
      *
      * | Written | Taken from |
      * |---|---|
-     * | `[name]` | a value of this run (and `player`) |
+     * | `{name}` | a value of this run (and `player`), else a pnLibrary placeholder |
      * | `{name}`, `{plugin:key}` | pnLibrary placeholders: the plugin's own, the library's, another plugin's |
      * | `%name%` | the external PlaceholderAPI only |
      *
-     * `[name]` and `{name}` take a chain of formats after a bar, such as `{money|group}`.
+     * `{name}` takes a chain of formats after a bar, such as `{money|group}`.
      * `player` and `player_name` are always the player's name. Text that a placeholder produced is not read again.
      * Unknown names stay as written, so a typo is visible instead of silently empty.
      */
@@ -219,11 +219,13 @@ class ActionContext(
         return resolve(trimmed)
     }
 
-    /** Resolves a bare `name` or `[name|formats]` as a run value first, then as a pnLibrary placeholder. */
+    /** Resolves a bare `name` or `{name|formats}` as a run value first, then as a pnLibrary placeholder. */
     fun resolve(reference: String): Any? {
         val expression = reference.trim().let {
-            if (it.startsWith('[') && it.endsWith(']')) it.substring(1, it.length - 1) else it
+            if (it.startsWith("{") && it.endsWith("}")) it.substring(1, it.length - 1) else it
         }
+        // Text with tags such as `[<gray>pnTest</gray>]` is a message, not a name: asking placeholders for it only logs a warning.
+        if ('<' in expression || '>' in expression) return null
         runtimeValues[expression.substringBefore('|').trim()]?.let { return it }
         return placeholders?.resolve(expression, player.uniqueId, runtimeValues)?.toCompletableFuture()?.join()
     }
@@ -235,13 +237,11 @@ class ActionContext(
     }
 
     private fun valueOf(match: MatchResult): Any? {
-        val localGroup = match.groups[1]
-        val libraryGroup = match.groups[3]
-        if (libraryGroup != null && libraryGroup.value.startsWith("=")) return calculate(libraryGroup.value.substring(1))
+        val braced = match.groups[1]?.value
+        if (braced != null && braced.startsWith("=")) return calculate(braced.substring(1))
         return when {
-            localGroup != null -> named(localGroup.value.trim()) { local(it, match.groupValues[2]) }
-            libraryGroup != null -> named(libraryGroup.value.trim()) { library(it) }
-            else -> named(requireNotNull(match.groups[4]) { "Token matched no placeholder group" }.value) { external(it) }
+            braced != null -> named(braced.substringBefore('|').trim()) { braced(braced.trim()) }
+            else -> named(requireNotNull(match.groups[2]) { "Token matched no placeholder group" }.value) { external(it) }
         }
     }
 
@@ -256,15 +256,16 @@ class ActionContext(
     private inline fun named(name: String, lookup: (String) -> Any?): Any? =
         if (name == "player" || name == "player_name") player.name else lookup(name)
 
-    private fun local(name: String, pipeline: String): Any? {
-        val value = runtimeValues[name] ?: return null
-        val service = placeholders
-        if (pipeline.isEmpty() || service == null) return value
-        return service.render("[$name$pipeline]", player.uniqueId, runtimeValues).toCompletableFuture().join()
+    /**
+     * `{name}`, `{name|format}`, `{plugin/module:path}`, `{papi:name}`: this run's value first, then a pnLibrary
+     * placeholder; `papi:` asks PlaceholderAPI. Without a placeholder service only this run's values are read.
+     */
+    private fun braced(expression: String): Any? {
+        val name = expression.substringBefore('|').trim()
+        if (name.startsWith(PAPI_PREFIX)) return external(name.removePrefix(PAPI_PREFIX))
+        val service = placeholders ?: return runtimeValues[name]
+        return service.resolve(expression, player.uniqueId, runtimeValues).toCompletableFuture().join()
     }
-
-    private fun library(expression: String): Any? =
-        placeholders?.resolve(expression, player.uniqueId)?.toCompletableFuture()?.join()
 
     private fun external(name: String): Any? {
         val adapter = placeholders?.adapters()?.get(EXTERNAL_ADAPTER) ?: return null
@@ -274,8 +275,9 @@ class ActionContext(
 
     private companion object {
         const val EXTERNAL_ADAPTER = "placeholderapi"
+        private const val PAPI_PREFIX = "papi:"
 
-        /** `[value]`, `{placeholder}` and `%external%`, each with its own capture groups. */
-        val TOKEN = Regex("\\[([^\\[\\]{}|%]+)((?:\\|[^\\[\\]{}]*)?)]|\\{(?![?:/])([^{}]+)}|%([A-Za-z0-9_.:-]+)%")
+        /** `{value-or-placeholder}` and `%external%`, each with its own capture group. */
+        val TOKEN = Regex("\\{(?![?:/])([^{}]+)}|%([A-Za-z0-9_.:-]+)%")
     }
 }

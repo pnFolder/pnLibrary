@@ -22,6 +22,7 @@ internal class ModuleMetadataFactory(
             platformImplementation = identity.implementationName,
             javaVersion = System.getProperty("java.version", "unknown"),
             javaFeature = JavaRuntime.feature,
+            description = definition.metadataDescription ?: nativeMetadata["description"]?.takeIf(String::isNotBlank),
         )
     }
 

@@ -81,7 +81,7 @@ class ExpressionTest {
 
         assertEquals("25", calc("balance / 10", ctx))
         assertEquals("true", calc("rank == 'vip'", ctx))
-        assertEquals("14", calc("[weird-name] * 2", ctx))
+        assertEquals("14", calc("{weird-name} * 2", ctx))
         assertEquals("false", calc("unknown_name > 1", ctx))
     }
 
@@ -118,7 +118,7 @@ class ExpressionTest {
     fun `a calculation inside a text and the set action`() {
         val ctx = context("base" to 200)
         SetAction("price", expression = "base * 0.9").run(ctx)
-        SetAction("label", value = "[player] pays [price]").run(ctx)
+        SetAction("label", value = "{player} pays {price}").run(ctx)
 
         assertEquals("180", ctx.format("{= price}"))
         assertEquals("Alice pays 180", ctx.value("label"))
@@ -128,7 +128,7 @@ class ExpressionTest {
 
     @Test
     fun `a defined action is called with arguments that do not leak`() {
-        own.defineAction("greet", Action { c -> log += c.format("hello [who]"); ActionResult.Done }, "shop", DefinitionConflict.FAIL)
+        own.defineAction("greet", Action { c -> log += c.format("hello {who}"); ActionResult.Done }, "shop", DefinitionConflict.FAIL)
         val ctx = context()
 
         val result = ctx.execute(listOf(CallAction("greet", mapOf("who" to "{= 1 + 1}")), CallAction("greet", mapOf("who" to "Bob"))))
@@ -166,7 +166,7 @@ class ExpressionTest {
             steps = listOf(failing),
             handlers = listOf(
                 ErrorHandler(listOf("shop.closed"), listOf(say("closed"))),
-                ErrorHandler(listOf("currency.*"), listOf(say("money: [error_code]"))),
+                ErrorHandler(listOf("currency.*"), listOf(say("money: {error_code}"))),
             ),
             fail = listOf(say("other")),
         )

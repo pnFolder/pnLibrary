@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.data
 
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
@@ -128,6 +129,8 @@ class MenuDataServer(
             MenuCalls.JOURNAL_DETAIL -> give(data.journalDetail(text("id").orEmpty()))
             MenuCalls.TASKS -> give(data.tasks())
             MenuCalls.MODULES -> give(data.modules())
+            MenuCalls.LIBRARIES -> give(data.libraries())
+            MenuCalls.DISK -> give(data.disk())
             MenuCalls.MODULE_ACTION -> give(data.moduleAction(text("key").orEmpty(), text("action").orEmpty()))
             MenuCalls.STATS -> give(data.stats())
             MenuCalls.PLACEHOLDERS -> give(data.placeholders())

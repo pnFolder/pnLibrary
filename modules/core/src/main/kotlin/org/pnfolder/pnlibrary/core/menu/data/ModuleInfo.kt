@@ -14,12 +14,18 @@ data class ModuleInfo(
     val autoStart: Boolean,
     val controllable: Boolean,
     val error: String?,
+    /** The libraries the module registered itself, as `group:artifact:version`. */
+    val libraries: List<String> = emptyList(),
+    /** The libraries its plugin registered for all of its modules. */
+    val pluginLibraries: List<String> = emptyList(),
+    /** What the module is for, as its plugin wrote it; `null` when it did not. */
+    val description: String? = null,
 ) {
     companion object {
         /** What can be done to a module; the words are the ones `/pn modules` uses. */
         val ACTIONS = listOf("enable", "disable", "restart", "reload", "auto-on", "auto-off")
 
-        fun of(key: String, module: ModuleContext): ModuleInfo = ModuleInfo(
+        fun of(key: String, module: ModuleContext, pluginLibraries: List<String> = emptyList()): ModuleInfo = ModuleInfo(
             key = key,
             plugin = module.metadata.name,
             title = ModuleLabels.title(module),
@@ -27,10 +33,16 @@ data class ModuleInfo(
             autoStart = module.control.autoStart,
             controllable = module.control.isControllable,
             error = module.control.lastError?.let { it.message ?: it.javaClass.simpleName },
+            libraries = module.libraries.loaded.map { it.coordinates },
+            pluginLibraries = pluginLibraries,
+            description = module.metadata.description,
         )
 
         fun all(library: PnLibrary): List<ModuleInfo> =
-            ModuleLabels.named(library).map { (key, module) -> of(key, module) }
+            library.plugins.all().flatMap { plugin ->
+                val shared = plugin.libraries.loaded.map { it.coordinates }
+                plugin.all().map { of("${plugin.id.value}:${it.id.value}", it, shared) }
+            }.sortedBy { it.key }
 
         /** Runs [action] on the module [key] and returns how it looks afterwards. */
         fun apply(library: PnLibrary, key: String, action: String): ModuleInfo {
@@ -46,7 +58,8 @@ data class ModuleInfo(
                 "auto-on" -> control.setAutoStart(true)
                 else -> control.setAutoStart(false)
             }
-            return of(key, module)
+            val plugin = library.plugins.all().first { registration -> registration.all().any { it === module } }
+            return of(key, module, plugin.libraries.loaded.map { it.coordinates })
         }
     }
 }

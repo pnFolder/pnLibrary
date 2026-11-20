@@ -112,6 +112,14 @@ internal class UpdateScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
                 go { who -> allowed(who, MenuPermissions.MODULES) { routes.modules(who, snapshot.product, 0) { card(it, snapshot.product) } } },
             )
         }
+        val libraries = data.libraries().count { it.belongsTo(snapshot.product) }
+        if (libraries > 0) {
+            builder.button(
+                25,
+                section(Icons.CHANGELOG, "BOOKSHELF", "Библиотеки", "Что плагин и его модули подключили для работы.", "Всего" to "$libraries"),
+                go { who -> routes.libraries(who, snapshot.product, 0) { card(it, snapshot.product) } },
+            )
+        }
         builder.button(CARD_BACK, backItem(), go { plugins(it, Filter.ALL, 0) })
         show(player, builder.build())
     }

@@ -91,7 +91,17 @@ internal class ModuleController(
         if (module == null) throw UnsupportedOperationException("This module has no enable and disable hooks")
     }
 
-    private fun runEnable() = guarded(ModuleState.ENABLED) { module!!.onEnable(context) }
+    private fun runEnable() = guarded(ModuleState.ENABLED) {
+        for (library in module!!.libraries()) {
+            try {
+                context.libraries.load(library)
+            } catch (failure: Exception) {
+                if (library.required) throw failure
+                context.logger.warning("Optional library $library was not loaded: ${failure.message}")
+            }
+        }
+        module.onEnable(context)
+    }
 
     private fun runDisable() = guarded(ModuleState.DISABLED) {
         try {

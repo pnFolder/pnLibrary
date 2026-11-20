@@ -109,6 +109,9 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder
         ?: platform.ownership.ownerDataFolder(owner)
         ?: Paths.get("plugins", owner.javaClass.simpleName)
+    init {
+        org.pnfolder.pnlibrary.core.commands.modules.DiskUsage.pluginsFolder = dataFolder.toAbsolutePath().parent
+    }
     private val paths = LibraryPaths(dataFolder)
 
     /** Every setting an administrator may change; the command `/pn settings` and the menu edit it. */
@@ -162,7 +165,7 @@ internal class PnLibraryImpl(
         capture = support.capture,
     )
 
-    private val features = RuntimeFeatureSet(platform, paths, support.capture, settings).also { set ->
+    private val features = RuntimeFeatureSet(owner, platform, paths, support.capture, settings).also { set ->
         set.configurations.fileListener = { file ->
             val handles = listOfNotNull(diagnostics.reportConfigFile(file), set.updates.databaseSources.register(file))
             AutoCloseable { handles.forEach(AutoCloseable::close) }

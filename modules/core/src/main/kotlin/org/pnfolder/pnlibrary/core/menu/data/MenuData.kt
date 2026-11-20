@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu.data
 
+import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
+import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.config.ConfigEditResult
 import org.pnfolder.pnlibrary.api.config.ConfigSetting
@@ -183,6 +185,12 @@ interface MenuData {
     fun modules(): List<ModuleInfo> = emptyList()
 
     /** Runs one of [ModuleInfo.ACTIONS] on the module [key] and returns how the module looks afterwards. */
+    /** The libraries plugins and modules of this server registered; none when this server cannot say. */
+    fun libraries(): List<LibraryRow> = emptyList()
+
+    /** What each plugin takes on the disk of this server. */
+    fun disk(): DiskReport = DiskReport.EMPTY
+
     fun moduleAction(key: String, action: String): ModuleInfo =
         throw UnsupportedOperationException("Модули переключаются на самом сервере")
 

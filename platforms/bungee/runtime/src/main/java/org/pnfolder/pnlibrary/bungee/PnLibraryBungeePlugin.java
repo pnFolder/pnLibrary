@@ -27,6 +27,9 @@ public final class PnLibraryBungeePlugin extends Plugin {
         try {
             BungeeLibraryManager manager = new BungeeLibraryManager(this, settings.directoryFor(getDataFolder().toPath()));
             LibraryLoader.load(manager, getClass().getClassLoader(), settings, RuntimeLibraries.BUNGEE);
+            LibraryLoader.useManagers(owner -> owner instanceof net.md_5.bungee.api.plugin.Plugin
+                    ? new BungeeLibraryManager((net.md_5.bungee.api.plugin.Plugin) owner, settings.directoryFor(((net.md_5.bungee.api.plugin.Plugin) owner).getDataFolder().toPath()))
+                    : null);
             Class<?> type = Class.forName("org.pnfolder.pnlibrary.bungee.BungeeRuntime", true, getClass().getClassLoader());
             Constructor<?> constructor = type.getDeclaredConstructors()[0];
             runtime = constructor.newInstance(this);

@@ -169,7 +169,6 @@ internal class Parser(private val text: String) {
             ch.isDigit() || (ch == '.' && text.getOrNull(position + 1)?.isDigit() == true) -> numberLiteral()
             ch == '\'' || ch == '"' -> stringLiteral(ch)
             ch == '{' -> bracketed('}')
-            ch == '[' -> bracketed(']')
             ch == '%' -> bracketed('%')
             ch.isLetter() || ch == '_' -> nameOrCall()
             else -> fail("Unexpected '$ch'")
@@ -193,7 +192,7 @@ internal class Parser(private val text: String) {
         return Expression.Node { value }
     }
 
-    /** `{plugin:key}`, `[name]` or `%external%`: the whole token is read by the context, as in texts. */
+    /** `{name}`, `{plugin:key}` or `%external%`: the whole token is read by the context, as in texts. */
     private fun bracketed(close: Char): Expression.Node {
         val start = position
         position++
