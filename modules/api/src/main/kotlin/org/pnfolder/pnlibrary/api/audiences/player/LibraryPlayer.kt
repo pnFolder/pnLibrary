@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.audiences.player
 
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import org.pnfolder.pnlibrary.api.audiences.Delivery
 import java.util.UUID
 
 /**

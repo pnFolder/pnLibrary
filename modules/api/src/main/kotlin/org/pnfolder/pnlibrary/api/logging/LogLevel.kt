@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.logging
 
-
 /** Semantic severity and presentation category for plugin log messages. */
 enum class LogLevel {
     /** Detail for a support report; the console does not show it. */

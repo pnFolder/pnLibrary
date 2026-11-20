@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree.scope
 
-import org.pnfolder.pnlibrary.api.placeholders.tree.none
-import org.pnfolder.pnlibrary.api.placeholders.tree.Updater
-import org.pnfolder.pnlibrary.api.placeholders.tree.PlaceholderCall
-import org.pnfolder.pnlibrary.api.placeholders.tree.Node
-import org.pnfolder.pnlibrary.api.placeholders.tree.FormatChoice
-import org.pnfolder.pnlibrary.api.placeholders.tree.AccessScope
 import org.pnfolder.pnlibrary.api.placeholders.tree.AccessRule
+import org.pnfolder.pnlibrary.api.placeholders.tree.AccessScope
+import org.pnfolder.pnlibrary.api.placeholders.tree.FormatChoice
+import org.pnfolder.pnlibrary.api.placeholders.tree.Node
+import org.pnfolder.pnlibrary.api.placeholders.tree.PlaceholderCall
+import org.pnfolder.pnlibrary.api.placeholders.tree.Updater
+import org.pnfolder.pnlibrary.api.placeholders.tree.none
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 

@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config
 
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.config.ManagedConfigFile
+import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 
 /**
  * Puts every file a plugin registers through the configuration service into that plugin's report, with the fields

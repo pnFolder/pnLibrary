@@ -5,6 +5,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -14,7 +15,6 @@ import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
-import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
@@ -79,6 +79,7 @@ internal class BukkitPlatformAdapter(
     private var lifecycleListener: BukkitLifecycleListener? = null
 
     override val type: PlatformType = PlatformType.BUKKIT
+    override val minecraftVersion: String? get() = runCatching { ServerCapabilities.rawMinecraftVersion }.getOrNull()
     override val dataFolder = plugin.dataFolder.toPath()
 
     override val implementationName: String

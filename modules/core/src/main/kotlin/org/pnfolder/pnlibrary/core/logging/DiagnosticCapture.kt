@@ -69,7 +69,14 @@ internal class DiagnosticCapture(
         if (echoes.size <= ECHO_LIMIT) echoes["$level|$message"] = now
     }
 
-    private fun capture(owner: Any, level: LogLevel, message: String, error: Throwable?, includeJournal: Boolean, context: Map<String, Any?>): DiagnosticLogBuffer.CaptureResult? {
+    private fun capture(
+        owner: Any,
+        level: LogLevel,
+        message: String,
+        error: Throwable?,
+        includeJournal: Boolean,
+        context: Map<String, Any?>,
+    ): DiagnosticLogBuffer.CaptureResult? {
         if (includeJournal) guarded(owner, "journal") { journal?.invoke(owner, level, message, error, context) }
         // An error logged as text only still has to reach the error tracker, which takes throwables.
         if (level >= LogLevel.ERROR) guarded(owner, "error report") { onError(owner, message, error ?: LoggedError(message)) }

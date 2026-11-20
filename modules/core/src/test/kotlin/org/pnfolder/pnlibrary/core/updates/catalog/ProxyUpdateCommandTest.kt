@@ -1,20 +1,20 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
-import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
-import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.backup.*
+import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
@@ -23,9 +23,11 @@ import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import java.lang.reflect.Proxy
 import java.time.Duration
+import java.time.Instant
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 class ProxyUpdateCommandTest {
     @Test
@@ -133,28 +135,57 @@ class ProxyUpdateCommandTest {
         var automaticSet: Pair<String, Boolean>? = null
         var heldSet: Pair<String, Duration?>? = null
         private fun snapshot() = UpdateSnapshot("pnlibrary", "1.0.0", null, UpdateChannel.BETA, UpdateState.UP_TO_DATE, 17, 8, false, null, null)
-        override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor) =
-            CompletableFuture.completedFuture(snapshot()).also { channelSet = product to channel; this.actor = actor }
-        override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor) =
-            CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }
-        override fun setHeld(product: String, duration: Duration?, actor: UpdateActor) =
-            CompletableFuture.completedFuture(snapshot()).also { heldSet = product to duration }
         override fun register(owner: Any, product: ProductDescriptor, request: PluginUpdateRequest,
             dependencies: List<PluginDependency>): UpdateRegistration = error("not used")
-        override fun all(): List<UpdateRegistration> = emptyList()
-        override fun get(product: String): UpdateRegistration? = null
-        override fun currentPlan(): Optional<UpdatePlanSnapshot> = Optional.of(current)
-        override fun stage(planId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture(current).also {
-            staged = planId
-            this.actor = actor
+
+        override val products = object : UpdateProducts {
+            override fun all(): List<UpdateRegistration> = emptyList()
+            override fun get(product: String): UpdateRegistration? = null
         }
-        override fun historyPage(page: Int,
-            product: String?) = CompletableFuture.completedFuture<List<UpdateHistoryEntry>>(emptyList()).also { pages.add(page) }
-        override fun historyCount(product: String?) = CompletableFuture.completedFuture(0)
-        override fun rollback(transactionId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture(current).also { rolledBack = transactionId }
-        override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor) = CompletableFuture.completedFuture(current).also {
-            rolledBack = transactionId
-            this.restoreConfigurations = restoreConfigurations
+
+        override val plans = object : UpdatePlans {
+            override fun check(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = CompletableFuture.completedFuture(current)
+            override fun current(): Optional<UpdatePlanSnapshot> = Optional.of(current)
+            override fun recent(): List<UpdatePlanSnapshot> = emptyList()
+            override fun stage(planId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture(current).also {
+                staged = planId
+                this@Updates.actor = actor
+            }
+        }
+
+        override val settings = object : UpdateSettings {
+            override fun channel(product: String, channel: UpdateChannel?, actor: UpdateActor) =
+                CompletableFuture.completedFuture(snapshot()).also { channelSet = product to channel; this@Updates.actor = actor }
+            override fun automaticDownload(product: String, enabled: Boolean, actor: UpdateActor) =
+                CompletableFuture.completedFuture(snapshot()).also { automaticSet = product to enabled }
+            override fun automaticDownloadForAll(enabled: Boolean, actor: UpdateActor) =
+                CompletableFuture.completedFuture(listOf(snapshot()))
+            override fun hold(product: String, duration: Duration, actor: UpdateActor) =
+                CompletableFuture.completedFuture(snapshot()).also { heldSet = product to duration }
+            override fun release(product: String, actor: UpdateActor) =
+                CompletableFuture.completedFuture(snapshot()).also { heldSet = product to null }
+            override fun heldUntil(product: String): Instant? = null
+            override fun javaBuild(product: String, java: Int?, actor: UpdateActor) = CompletableFuture.completedFuture(snapshot())
+        }
+
+        override val history = object : UpdateHistory {
+            override fun page(page: Int, product: String?) =
+                CompletableFuture.completedFuture<List<UpdateHistoryEntry>>(emptyList()).also { pages.add(page) }
+            override fun count(product: String?) = CompletableFuture.completedFuture(0)
+        }
+
+        override val backups = object : UpdateBackups {
+            override fun list() = CompletableFuture.completedFuture<List<UpdateBackup>>(emptyList())
+            override fun rollback(actor: UpdateActor) = CompletableFuture.completedFuture(current)
+            override fun rollback(transactionId: UUID, actor: UpdateActor, restoreConfigurations: Boolean) =
+                CompletableFuture.completedFuture(current).also {
+                    rolledBack = transactionId
+                    this@Updates.restoreConfigurations = restoreConfigurations
+                }
+            override fun delete(transactionId: UUID, actor: UpdateActor) = CompletableFuture.completedFuture<Void?>(null)
+            override fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor) =
+                CompletableFuture.completedFuture<Void?>(null)
+            override fun extract(transactionId: UUID, product: String, actor: UpdateActor) = CompletableFuture.completedFuture("")
         }
     }
 }

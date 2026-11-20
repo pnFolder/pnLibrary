@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree.scope
 
-import org.pnfolder.pnlibrary.api.placeholders.tree.Segment
-import org.pnfolder.pnlibrary.api.placeholders.tree.PlayerArg
-import org.pnfolder.pnlibrary.api.placeholders.tree.Node
-import org.pnfolder.pnlibrary.api.placeholders.tree.ArgTypes
 import org.pnfolder.pnlibrary.api.placeholders.tree.ArgType
+import org.pnfolder.pnlibrary.api.placeholders.tree.ArgTypes
+import org.pnfolder.pnlibrary.api.placeholders.tree.Node
+import org.pnfolder.pnlibrary.api.placeholders.tree.PlayerArg
+import org.pnfolder.pnlibrary.api.placeholders.tree.Segment
 
 /**
  * Where branches can be added. A branch gets a word (`int("kills")`) or takes an argument from the path

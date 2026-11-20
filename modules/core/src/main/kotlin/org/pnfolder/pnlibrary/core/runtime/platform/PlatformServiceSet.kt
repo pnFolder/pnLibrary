@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.runtime.platform
 
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
-import org.pnfolder.pnlibrary.core.runtime.platform.PlatformAudiences
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRegistry
 import org.pnfolder.pnlibrary.core.commands.engine.StandardCommandFeedback
+import org.pnfolder.pnlibrary.core.runtime.platform.PlatformAudiences
 import org.pnfolder.pnlibrary.core.tasks.ScheduledTasks
 import org.pnfolder.pnlibrary.core.tasks.TaskHistoryStore
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter

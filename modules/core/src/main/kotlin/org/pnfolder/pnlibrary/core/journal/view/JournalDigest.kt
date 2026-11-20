@@ -1,16 +1,16 @@
 package org.pnfolder.pnlibrary.core.journal.view
 
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter

@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.logging
 
-
 /** Creates plugin-bound loggers and console message boxes. */
 interface LoggingService {
 

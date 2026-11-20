@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
-import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
-import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 

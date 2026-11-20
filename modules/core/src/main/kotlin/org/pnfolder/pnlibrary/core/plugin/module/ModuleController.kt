@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
+import org.pnfolder.pnlibrary.common.lang.Failures
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -63,6 +64,7 @@ internal class ModuleController(
             val inPlace = try {
                 module!!.onReload(context)
             } catch (failure: Throwable) {
+                Failures.rethrowIfFatal(failure)
                 error(failure)
                 return@change
             }
@@ -116,6 +118,7 @@ internal class ModuleController(
             block()
             state = target
         } catch (failure: Throwable) {
+            Failures.rethrowIfFatal(failure)
             error(failure)
         }
     }

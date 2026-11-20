@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.observability.observation
 
-
 /** Reserved [Observation.data] keys used by the library for retention. */
 object ObservationKeys {
     /** Request: how long to keep the observation, in milliseconds; replaced by [KEEP_UNTIL_MS] when stored. */

@@ -1,15 +1,15 @@
 package org.pnfolder.pnlibrary.api.observability
 
-import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
-import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
-import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
-import org.pnfolder.pnlibrary.api.observability.observation.Observation
-import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
-import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
 import java.nio.file.Paths
 
 class ObservabilityDslTest {

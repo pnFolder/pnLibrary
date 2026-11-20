@@ -80,7 +80,7 @@ class UpdateModelTest {
     fun `automatic external dependency requires secure complete artifact`() {
         assertThrows(IllegalArgumentException::class.java) {
             ExternalPluginDependency.builder("Vault", "1.7.3")
-                .artifact("http://example.test/vault.jar", 10, "00".repeat(32))
+                .artifact("http://example.test/vault.jar", "00".repeat(32))
                 .build()
         }
         val manual = ExternalPluginDependency.builder("Vault", "1.7.3")

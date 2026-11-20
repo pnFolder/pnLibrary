@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.diagnostics.report
 
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
+import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import java.util.Collections
 import java.util.LinkedHashMap
 import java.util.function.Supplier

@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.core.placeholders.entries
 
-import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderUpdater
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCachePolicy
 import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderCacheScope
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderUpdater
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal

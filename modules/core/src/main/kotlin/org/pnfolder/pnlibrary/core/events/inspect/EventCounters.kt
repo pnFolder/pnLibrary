@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.events.inspect
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.LongAdder
 
 /** Counts the calls and the denials of every event type, and passes each call to the history. */
 class EventCounters(private val history: EventHistory?) {

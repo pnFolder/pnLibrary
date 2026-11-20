@@ -3,16 +3,21 @@ package org.pnfolder.pnlibrary.updates.service
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
-import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
-import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.UpdateBackups
+import org.pnfolder.pnlibrary.api.updates.UpdateHistory
+import org.pnfolder.pnlibrary.api.updates.UpdatePlans
+import org.pnfolder.pnlibrary.api.updates.UpdateProducts
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
-import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import org.pnfolder.pnlibrary.api.updates.UpdateSettings
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.console.ConsoleTheme
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
@@ -145,77 +150,87 @@ class UpdateServiceImpl(
         return registration
     }
 
-    override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
-    override fun get(product: String): UpdateRegistration? = registrations.find(product)
-    override fun checkNow(): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow()
-    override fun checkNow(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow(actor = actor)
-    override fun currentPlan(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
-    override fun stage(planId: UUID): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId)
-    override fun stage(planId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId, actor)
-    override fun history(): List<UpdatePlanSnapshot> = orchestrator.history()
-    override fun historyPage(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
-    override fun historyCount(product: String?): CompletionStage<Int> = runtime.historyCount(product)
-    override fun setChannel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
-        changeSetting(product, actor, recheck = true) { registration ->
-            val before = registration.snapshot.channel
-            val chosen = overrides.channel(registration.product)
-            when {
-                chosen == channel -> null
-                channel == null -> {
-                    overrides.setChannel(registration.product, null)
-                    val after = graphResolver.channelFor(registration)
-                    "выбор канала снят: ${before.name.lowercase()} → ${after.name.lowercase()}, канал определяет плагин"
-                }
-                else -> {
-                    overrides.setChannel(registration.product, channel)
-                    "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
-                }
-            }
-        }
-
-    override fun setJavaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
-        changeSetting(product, actor, recheck = false) { registration ->
-            val available = registration.snapshot.javaBuilds
-            require(java == null || available.isEmpty() || java in available) {
-                "Для ${registration.product} нет сборки под Java $java. Есть: ${available.joinToString()}"
-            }
-            val before = overrides.javaBuild(registration.product)
-            if (before == java) null
-            else {
-                overrides.setJavaBuild(registration.product, java)
-                if (java == null) "сборка Java: выбор снят, подбирается подходящая" else "сборка Java: ${before ?: "подбор"} → $java"
-            }
-        }
-
-    override fun setAutomaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
-        changeSetting(product, actor, recheck = false) { registration ->
-            val before = registration.snapshot.automaticDownload
-            if (before == enabled) null
-            else {
-                overrides.setAutomatic(registration.product, enabled)
-                "автозагрузка: ${if (before) "вкл" else "выкл"} → ${if (enabled) "вкл" else "выкл"}"
-            }
-        }
-
-    override fun setAutomaticDownloadForAllPlugins(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> {
-        overrides.setAllPlugins(enabled, PnLibraryIdentity.PRODUCT_ID)
-        logging.log(this, LogLevel.INFO, "Автозагрузка обновлений плагинов: ${if (enabled) "включена" else "выключена"} для всех (${actor.name})")
-        return CompletableFuture.completedFuture(registrations.snapshot().map { it.snapshot })
+    override val products: UpdateProducts = object : UpdateProducts {
+        override fun all(): List<UpdateRegistration> = registrations.publicSnapshot()
+        override fun get(product: String): UpdateRegistration? = registrations.find(product)
     }
 
-    override fun setHeld(product: String, duration: Duration?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
-        changeSetting(product, actor, recheck = true) { registration ->
-            val id = registration.descriptor.id
-            if (duration == null) {
-                if (freezes.clear(id)) "удержание обновлений снято" else null
-            } else {
-                val until = freezes.freeze(id, duration)
-                "обновления удержаны до ${HOLD_FORMAT.format(until.atZone(org.pnfolder.pnlibrary.common.time.DisplayZone.zone))}"
+    override val plans: UpdatePlans = object : UpdatePlans {
+        override fun check(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.checkNow(actor = actor)
+        override fun current(): Optional<UpdatePlanSnapshot> = orchestrator.currentPlan()
+        override fun recent(): List<UpdatePlanSnapshot> = orchestrator.history()
+        override fun stage(planId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.stage(planId, actor)
+    }
+
+    override val history: UpdateHistory = object : UpdateHistory {
+        override fun page(page: Int, product: String?): CompletionStage<List<UpdateHistoryEntry>> = runtime.historyPage(page, product)
+        override fun count(product: String?): CompletionStage<Int> = runtime.historyCount(product)
+    }
+
+    override val settings: UpdateSettings = object : UpdateSettings {
+        override fun channel(product: String, channel: UpdateChannel?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+            changeSetting(product, actor, recheck = true) { registration ->
+                val before = registration.snapshot.channel
+                val chosen = overrides.channel(registration.product)
+                when {
+                    chosen == channel -> null
+                    channel == null -> {
+                        overrides.setChannel(registration.product, null)
+                        val after = graphResolver.channelFor(registration)
+                        "выбор канала снят: ${before.name.lowercase()} → ${after.name.lowercase()}, канал определяет плагин"
+                    }
+                    else -> {
+                        overrides.setChannel(registration.product, channel)
+                        "канал: ${before.name.lowercase()} → ${channel.name.lowercase()}"
+                    }
+                }
             }
+
+        override fun javaBuild(product: String, java: Int?, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+            changeSetting(product, actor, recheck = false) { registration ->
+                val available = registration.snapshot.javaBuilds
+                require(java == null || available.isEmpty() || java in available) {
+                    "Для ${registration.product} нет сборки под Java $java. Есть: ${available.joinToString()}"
+                }
+                val before = overrides.javaBuild(registration.product)
+                if (before == java) null
+                else {
+                    overrides.setJavaBuild(registration.product, java)
+                    if (java == null) "сборка Java: выбор снят, подбирается подходящая" else "сборка Java: ${before ?: "подбор"} → $java"
+                }
+            }
+
+        override fun automaticDownload(product: String, enabled: Boolean, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+            changeSetting(product, actor, recheck = false) { registration ->
+                val before = registration.snapshot.automaticDownload
+                if (before == enabled) null
+                else {
+                    overrides.setAutomatic(registration.product, enabled)
+                    "автозагрузка: ${if (before) "вкл" else "выкл"} → ${if (enabled) "вкл" else "выкл"}"
+                }
+            }
+
+        override fun automaticDownloadForAll(enabled: Boolean, actor: UpdateActor): CompletionStage<List<UpdateSnapshot>> {
+            overrides.setAllPlugins(enabled, PnLibraryIdentity.PRODUCT_ID)
+            val state = if (enabled) "включена" else "выключена"
+            logging.log(this@UpdateServiceImpl, LogLevel.INFO, "Автозагрузка обновлений плагинов: $state для всех (${actor.name})")
+            return CompletableFuture.completedFuture(registrations.snapshot().map { it.snapshot })
         }
 
-    override fun heldUntil(product: String): Instant? =
-        registrations.find(product)?.let { freezes.active()[it.descriptor.id] }
+        override fun hold(product: String, duration: Duration, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+            changeSetting(product, actor, recheck = true) { registration ->
+                val until = freezes.freeze(registration.descriptor.id, duration)
+                "обновления удержаны до ${HOLD_FORMAT.format(until.atZone(org.pnfolder.pnlibrary.common.time.DisplayZone.zone))}"
+            }
+
+        override fun release(product: String, actor: UpdateActor): CompletionStage<UpdateSnapshot> =
+            changeSetting(product, actor, recheck = true) { registration ->
+                if (freezes.clear(registration.descriptor.id)) "удержание обновлений снято" else null
+            }
+
+        override fun heldUntil(product: String): Instant? =
+            registrations.find(product)?.let { freezes.active()[it.descriptor.id] }
+    }
 
     /** Applies one administrator setting, records it with its author and refreshes what readers see. */
     private fun changeSetting(
@@ -245,36 +260,37 @@ class UpdateServiceImpl(
         return result
     }
 
-    override fun backups(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
-        Collections.unmodifiableList(installer.backups())
-    }
+    override val backups: UpdateBackups = object : UpdateBackups {
+        override fun list(): CompletionStage<List<UpdateBackup>> = runtime.readAsync {
+            Collections.unmodifiableList(installer.backups())
+        }
 
-    override fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
-        runtime.readAsync {
-            installer.restoreDatabase(transactionId, product, name)
-            logging.log(this, LogLevel.WARNING, "База «$name» плагина $product возвращена из набора $transactionId (${actor.name})")
+        override fun rollback(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
+            orchestrator.rollbackTo(actor) { installer.rollbackLatest() }
+
+        override fun rollback(transactionId: UUID, actor: UpdateActor, restoreConfigurations: Boolean): CompletionStage<UpdatePlanSnapshot> =
+            orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId, restoreConfigurations) }
+
+        override fun delete(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {
+            installer.deleteBackup(transactionId)
+            logging.log(this@UpdateServiceImpl, LogLevel.INFO, "Резервный набор $transactionId удалён (${actor.name})")
             null
         }
 
-    override fun extractBackup(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> = runtime.readAsync {
-        val folder = installer.extractBackup(transactionId, product).toAbsolutePath().toString()
-        logging.log(this, LogLevel.INFO, "Файлы плагина $product из набора $transactionId выданы в $folder (${actor.name})")
-        folder
+        override fun restoreDatabase(transactionId: UUID, product: String, name: String, actor: UpdateActor): CompletionStage<Void?> =
+            runtime.readAsync {
+                installer.restoreDatabase(transactionId, product, name)
+                logging.log(this@UpdateServiceImpl, LogLevel.WARNING, "База «$name» плагина $product возвращена из набора $transactionId (${actor.name})")
+                null
+            }
+
+        override fun extract(transactionId: UUID, product: String, actor: UpdateActor): CompletionStage<String> = runtime.readAsync {
+            val folder = installer.extractBackup(transactionId, product).toAbsolutePath().toString()
+            logging.log(this@UpdateServiceImpl, LogLevel.INFO, "Файлы плагина $product из набора $transactionId выданы в $folder (${actor.name})")
+            folder
+        }
     }
 
-    override fun deleteBackup(transactionId: UUID, actor: UpdateActor): CompletionStage<Void?> = runtime.readAsync {
-        installer.deleteBackup(transactionId)
-        logging.log(this, LogLevel.INFO, "Резервный набор $transactionId удалён (${actor.name})")
-        null
-    }
-    override fun rollback(): CompletionStage<UpdatePlanSnapshot> = rollback(UpdateActor.UNKNOWN)
-    override fun rollback(actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> = orchestrator.rollbackTo(actor) {
-        installer.rollbackLatest()
-    }
-    override fun rollback(transactionId: UUID, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
-        orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId) }
-    override fun rollback(transactionId: UUID, restoreConfigurations: Boolean, actor: UpdateActor): CompletionStage<UpdatePlanSnapshot> =
-        orchestrator.rollbackTo(actor, transactionId) { installer.rollback(transactionId, restoreConfigurations) }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         registrations.close()

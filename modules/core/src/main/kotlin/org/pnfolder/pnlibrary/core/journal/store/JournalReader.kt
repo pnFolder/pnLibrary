@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.journal.store
 
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path

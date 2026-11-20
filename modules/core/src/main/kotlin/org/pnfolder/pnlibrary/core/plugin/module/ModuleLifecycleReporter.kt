@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.plugin.module
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 

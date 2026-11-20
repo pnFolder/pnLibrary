@@ -15,11 +15,11 @@ import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens
 import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens
 import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens
 import org.pnfolder.pnlibrary.core.menu.screens.LibrarySettingsScreens
+import org.pnfolder.pnlibrary.core.menu.screens.ModuleScreens
 import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens
 import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens
 import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens
 import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens
-import org.pnfolder.pnlibrary.core.menu.screens.ModuleScreens
 import org.pnfolder.pnlibrary.core.menu.screens.TaskScreens
 import org.pnfolder.pnlibrary.core.menu.screens.UpdateScreens
 import org.pnfolder.pnlibrary.core.menu.style.Row
@@ -77,6 +77,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*> =
         updateScreens.setAutomatic(snapshot, enable, player)
     override fun settings(player: MenuViewer) = settingsScreens.settings(player)
+    override fun missingPlugins(player: MenuViewer, page: Int) = settingsScreens.missingPlugins(player, page)
     override fun stats(player: MenuViewer) = statsScreens.stats(player)
     override fun support(player: MenuViewer) = settingsScreens.support(player)
     override fun tasks(player: MenuViewer, period: TaskPeriod, state: TaskState, page: Int) = taskScreens.tasks(player, period, state, page)

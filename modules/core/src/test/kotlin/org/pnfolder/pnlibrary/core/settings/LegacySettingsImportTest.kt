@@ -22,11 +22,16 @@ class LegacySettingsImportTest {
         Files.writeString(file, text)
     }
 
-    private fun import(): SettingsStore = SettingsStore(paths.settings) { warnings += it }.also { LegacySettingsImport(paths) { text -> warnings += text }.run(it) }
+    private fun import(): SettingsStore =
+        SettingsStore(paths.settings) { warnings += it }.also { LegacySettingsImport(paths) { text -> warnings += text }.run(it) }
 
     @Test
     fun `the values of the old files are taken over once and the files are renamed`() {
-        write(paths.legacyConfig, "# header\nprivacy: true\nhistory-retention-days: 60\ntime-zone: Europe/Moscow\nno-permission-message: Нельзя\njournal-foreign-plugins: false\n")
+        write(
+            paths.legacyConfig,
+            "# header\nprivacy: true\nhistory-retention-days: 60\ntime-zone: Europe/Moscow\n" +
+                "no-permission-message: Нельзя\njournal-foreign-plugins: false\n",
+        )
         write(paths.legacyDownloadsConfig, "enabled: true\nautomatic: false\ndestinations:\n  data-folder: true\n  cache: false\n")
 
         val store = import()

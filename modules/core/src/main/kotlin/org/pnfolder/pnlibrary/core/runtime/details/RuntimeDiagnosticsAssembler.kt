@@ -28,7 +28,7 @@ internal class RuntimeDiagnosticsAssembler(
 ) {
     fun assemble(): Map<String, Any?> {
         val taskSnapshots = tasks.query()
-        val updateSnapshots = updates.all()
+        val updateSnapshots = updates.products.all()
         val taskFailures = taskSnapshots.count { it.lastFailure != null }
         val failedUpdates = updateSnapshots.count { it.snapshot.state.name.equals("FAILED", ignoreCase = true) }
         val diagnosticSummary = diagnostics.diagnosticSummary()
@@ -92,7 +92,7 @@ internal class RuntimeDiagnosticsAssembler(
 
     private fun updateGraph(): Map<String, Any?> = linkedMapOf(
 
-            "current" to updates.currentPlan().orElse(null)?.let(RuntimeUpdateDetails::of),
-            "history" to updates.history().map(RuntimeUpdateDetails::of),
+            "current" to updates.plans.current().orElse(null)?.let(RuntimeUpdateDetails::of),
+            "history" to updates.plans.recent().map(RuntimeUpdateDetails::of),
     )
 }

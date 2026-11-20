@@ -79,7 +79,14 @@ class LegacyPathsMigration(
                 )
             }
             val paused = legacy(freezes) { root -> root.entrySet().associate { (product, value) -> product to value.asLong } }
-            store.update { it.copy(channels = merged.value.channels, automatic = merged.value.automatic, allPlugins = merged.value.allPlugins, freezes = paused.value) }
+            store.update {
+                it.copy(
+                    channels = merged.value.channels,
+                    automatic = merged.value.automatic,
+                    allPlugins = merged.value.allPlugins,
+                    freezes = paused.value,
+                )
+            }
             if (merged.readable) Files.deleteIfExists(settings)
             if (paused.readable) Files.deleteIfExists(freezes)
         }

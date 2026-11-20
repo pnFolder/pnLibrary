@@ -8,9 +8,9 @@ import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadataBuilder
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginOptions
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
-import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import java.nio.file.Path
 import java.util.function.Consumer
 

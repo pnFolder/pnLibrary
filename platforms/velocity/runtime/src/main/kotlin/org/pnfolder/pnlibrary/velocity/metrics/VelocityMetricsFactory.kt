@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.velocity.metrics
 import com.velocitypowered.api.proxy.ProxyServer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.core.metrics.factory.ProviderMetricsFactory
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsClient
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsMetricsSession
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings
+import org.pnfolder.pnlibrary.core.metrics.factory.ProviderMetricsFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException

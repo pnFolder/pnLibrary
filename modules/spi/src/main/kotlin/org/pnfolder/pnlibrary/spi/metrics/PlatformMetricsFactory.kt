@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.spi.metrics
 
+import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
-import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import java.util.function.Supplier
 
 /**

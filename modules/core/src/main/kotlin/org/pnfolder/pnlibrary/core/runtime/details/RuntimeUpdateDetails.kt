@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime.details
 
-import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 
 /** Renders update registrations as maps for the diagnostics report. */
 internal object RuntimeUpdateDetails {

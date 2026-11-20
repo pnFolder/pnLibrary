@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.core.journal.view
 
-import org.pnfolder.pnlibrary.core.journal.store.JournalStore
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.common.text.RussianText
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 import java.util.Locale
 
 /** Filter words in the order of the tabs: the command word, the tab label and the levels it shows. */

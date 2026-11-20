@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.bukkit.integration
 
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
-import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.currency.currencyProviders
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 

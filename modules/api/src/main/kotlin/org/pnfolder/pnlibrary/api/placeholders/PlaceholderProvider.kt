@@ -3,7 +3,6 @@ package org.pnfolder.pnlibrary.api.placeholders
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-import java.util.function.Consumer
 
 /** Consumer view restricted to placeholders owned by one plugin. */
 interface PlaceholderProvider {

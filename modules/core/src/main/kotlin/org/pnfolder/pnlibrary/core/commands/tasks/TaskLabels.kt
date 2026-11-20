@@ -29,7 +29,7 @@ object TaskLabels {
         TaskStatus.FAILED -> ChatPalette.DANGER
     }
 
-    /** Whether the task can still run, so it can be cancelled. */
+    /** The latest moment something happened to the task: it started, completed, or was created. */
     fun activity(task: TaskSnapshot): Instant = listOfNotNull(task.lastStartedAt, task.lastCompletedAt, task.createdAt).max()
 
     fun isToday(task: TaskSnapshot): Boolean =

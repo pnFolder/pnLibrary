@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.events.bus
 
-import java.util.function.Consumer
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.listener.EventHandler
 import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
@@ -8,6 +7,7 @@ import org.pnfolder.pnlibrary.api.events.listener.EventPriority
 import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
 import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.util.function.Consumer
 
 /**
  * Plugin-ID-bound access to the pnLibrary event bus.

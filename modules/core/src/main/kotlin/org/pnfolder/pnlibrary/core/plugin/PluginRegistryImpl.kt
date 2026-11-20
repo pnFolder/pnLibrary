@@ -1,10 +1,9 @@
 package org.pnfolder.pnlibrary.core.plugin
 
-import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -12,6 +11,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.events.bus.EventScope
 import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
@@ -21,44 +21,44 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
+import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleController
-import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
-import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibrariesImpl
-import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
-import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
-import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
-import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleController
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibrariesImpl
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleLifecycleReporter
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleMessages
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
+import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
 import org.pnfolder.pnlibrary.core.plugin.module.moduleServiceKey
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
@@ -184,7 +184,9 @@ internal class PluginRegistryImpl(
     ) : PluginRegistration {
         override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
-        override val libraries: ModuleLibraries = ModuleLibrariesImpl.through("p-${nativeId.value}-$registrationId", PluginRegistryImpl::class.java.classLoader, owner, null, libraryFetcher, identity.type)
+        override val libraries: ModuleLibraries = ModuleLibrariesImpl.through(
+            "p-${nativeId.value}-$registrationId", PluginRegistryImpl::class.java.classLoader, owner, null, libraryFetcher, identity.type,
+        )
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()
 
@@ -276,7 +278,9 @@ internal class PluginRegistryImpl(
             commandFeedback.handlers[type] = handler
         }
         override val isClosed: Boolean get() = contextClosed.get()
-        override val libraries = ModuleLibrariesImpl.through(key.value, PluginRegistryImpl::class.java.classLoader, parent.owner, parent.libraries, libraryFetcher, identity.type)
+        override val libraries = ModuleLibrariesImpl.through(
+            key.value, PluginRegistryImpl::class.java.classLoader, parent.owner, parent.libraries, libraryFetcher, identity.type,
+        )
         override val control = ModuleController(key.value, module, modulePreferences) {
             resources.tasks.cancelAll()
             moduleCommands.drain().asReversed().forEach { it.close() }

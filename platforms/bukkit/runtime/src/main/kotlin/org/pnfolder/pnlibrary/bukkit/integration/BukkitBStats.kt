@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.bukkit.integration
 
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import org.pnfolder.pnlibrary.bukkit.currency.settings
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
-import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsClient
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings
 import java.io.File

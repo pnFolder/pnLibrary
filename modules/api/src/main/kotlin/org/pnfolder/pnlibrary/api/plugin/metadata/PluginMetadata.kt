@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.plugin.metadata
 
-import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.plugin.ModuleId
 
 /**
  * Immutable runtime metadata resolved when a plugin context is registered.

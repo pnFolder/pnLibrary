@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.commands.configs
 
-import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
-import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.config.ConfigApply
 import org.pnfolder.pnlibrary.api.config.ConfigEditException

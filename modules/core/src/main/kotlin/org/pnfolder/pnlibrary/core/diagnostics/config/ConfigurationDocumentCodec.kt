@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config
 
-import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor

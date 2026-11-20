@@ -1,11 +1,5 @@
 package org.pnfolder.pnlibrary.core.journal
 
-import org.pnfolder.pnlibrary.core.journal.view.ago
-import org.pnfolder.pnlibrary.core.journal.view.traceView
-import org.pnfolder.pnlibrary.core.journal.view.traceLine
-import org.pnfolder.pnlibrary.core.journal.view.span
-import org.pnfolder.pnlibrary.core.journal.view.agoColor
-import org.pnfolder.pnlibrary.core.journal.view.CARD_TRACE_LINES
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,8 +7,14 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.core.journal.view.CARD_TRACE_LINES
+import org.pnfolder.pnlibrary.core.journal.view.ago
+import org.pnfolder.pnlibrary.core.journal.view.agoColor
+import org.pnfolder.pnlibrary.core.journal.view.span
+import org.pnfolder.pnlibrary.core.journal.view.traceLine
+import org.pnfolder.pnlibrary.core.journal.view.traceView
 import java.time.Instant
 import java.time.ZoneOffset
 

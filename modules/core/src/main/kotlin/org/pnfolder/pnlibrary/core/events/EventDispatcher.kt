@@ -1,14 +1,5 @@
 package org.pnfolder.pnlibrary.core.events
 
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executor
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.LongAdder
-import java.util.function.Consumer
-import java.util.function.Supplier
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.InternalEventApi
 import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
@@ -20,7 +11,6 @@ import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventHour
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
-import org.pnfolder.pnlibrary.api.events.listener.EventHandler
 import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
 import org.pnfolder.pnlibrary.api.events.listener.EventSubscription
 import org.pnfolder.pnlibrary.api.events.listener.Listener
@@ -34,6 +24,15 @@ import org.pnfolder.pnlibrary.core.events.inspect.EventHandlerInspector
 import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
 import org.pnfolder.pnlibrary.core.events.inspect.trace.EventTracer
 import org.pnfolder.pnlibrary.core.events.registration.ListenerRegistration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.LongAdder
+import java.util.function.Consumer
+import java.util.function.Supplier
 
 class EventDispatcher(
     private val history: EventHistory? = null,

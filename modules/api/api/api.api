@@ -618,7 +618,9 @@ public final class org/pnfolder/pnlibrary/api/cooldowns/CooldownResult$Companion
 
 public abstract interface class org/pnfolder/pnlibrary/api/cooldowns/CooldownService : java/lang/AutoCloseable {
 	public abstract fun acquire (Ljava/util/UUID;Ljava/lang/String;Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/cooldowns/CooldownResult;
+	public abstract fun active (Ljava/util/UUID;)Ljava/util/Map;
 	public abstract fun clear ()V
+	public abstract fun clear (Ljava/util/UUID;)I
 	public abstract fun extend (Ljava/util/UUID;Ljava/lang/String;Ljava/time/Duration;)Ljava/time/Duration;
 	public abstract fun getSize ()I
 	public abstract fun has (Ljava/util/UUID;Ljava/lang/String;)Z
@@ -635,10 +637,10 @@ public final class org/pnfolder/pnlibrary/api/dependencies/Dependencies {
 	public static final fun managed (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static synthetic fun managed$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
-	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
-	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
-	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
-	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
+	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
@@ -646,7 +648,7 @@ public final class org/pnfolder/pnlibrary/api/dependencies/Dependencies {
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Z)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static final fun plugin (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZZZ)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
-	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
+	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 	public static synthetic fun plugin$default (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/PluginDependency;
 }
@@ -660,16 +662,29 @@ public final class org/pnfolder/pnlibrary/api/dependencies/DependencyBuilder {
 }
 
 public final class org/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder {
-	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun artifact (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun automaticDownload (Z)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun description (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun downloadPage (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun downloadPolicy (Lorg/pnfolder/pnlibrary/api/dependencies/DownloadPolicy;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun forceAutomaticDownload (Z)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun maxBytes (J)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun maximumVersion (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun maximumVersionExclusive (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun minimumVersion (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun mirror (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun required (Z)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun title (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun url (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
+	public static synthetic fun variant$default (Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun verifyPluginId (Z)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 	public final fun verifyVersion (Z)Lorg/pnfolder/pnlibrary/api/dependencies/DependencyBuilder$ExternalBuilder;
 }
@@ -712,42 +727,63 @@ public final class org/pnfolder/pnlibrary/api/dependencies/VersionConstraint {
 }
 
 public final class org/pnfolder/pnlibrary/api/dependencies/external/ExternalArtifact {
-	public fun <init> (Ljava/net/URI;Ljava/lang/Long;Ljava/lang/String;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/net/URI;Ljava/lang/Long;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/net/URI;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/net/URI;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun fits (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Ljava/lang/String;)Z
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getMaxBytes ()Ljava/lang/Long;
+	public final fun getMinecraftBefore ()Ljava/lang/String;
+	public final fun getMinecraftFrom ()Ljava/lang/String;
 	public final fun getMirrors ()Ljava/util/List;
+	public final fun getPlatforms ()Ljava/util/Set;
 	public final fun getSha256 ()Ljava/lang/String;
-	public final fun getSize ()Ljava/lang/Long;
 	public final fun getUri ()Ljava/net/URI;
 }
 
 public final class org/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency : org/pnfolder/pnlibrary/api/dependencies/PluginDependency {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Companion;
 	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun artifactFor (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalArtifact;
 	public static final fun builder (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun getArtifact ()Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalArtifact;
+	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
 	public final fun getDownloadPage ()Ljava/net/URI;
 	public fun getDownloadPolicy ()Lorg/pnfolder/pnlibrary/api/dependencies/DownloadPolicy;
 	public fun getExternal ()Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency;
 	public final fun getMinimumVersion ()Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;
 	public final fun getPlugin ()Ljava/lang/String;
 	public fun getRequired ()Z
+	public final fun getTitle ()Ljava/lang/String;
 	public final fun getVerifyPluginId ()Z
 	public final fun getVerifyVersion ()Z
 	public fun getVersions ()Lorg/pnfolder/pnlibrary/api/dependencies/VersionConstraint;
 }
 
 public final class org/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder {
-	public final fun artifact (Ljava/lang/String;JLjava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun artifact (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun automaticDownload (Z)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun build ()Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency;
+	public final fun description (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun downloadPage (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun downloadPolicy (Lorg/pnfolder/pnlibrary/api/dependencies/DownloadPolicy;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun forceAutomaticDownload (Z)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun maxBytes (J)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun maximumVersion (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun maximumVersionExclusive (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun mirror (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun required (Z)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun title (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun url (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public final fun variant (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
+	public static synthetic fun variant$default (Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun verifyPluginId (Z)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 	public final fun verifyVersion (Z)Lorg/pnfolder/pnlibrary/api/dependencies/external/ExternalPluginDependency$Builder;
 }
@@ -906,6 +942,7 @@ public final class org/pnfolder/pnlibrary/api/downloads/DirectDownloadSource {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Companion;
 	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
+	public final fun getMaxBytes ()Ljava/lang/Long;
 	public final fun getMaximumJava ()Ljava/lang/Integer;
 	public final fun getMinimumJava ()I
 	public final fun getMirrors ()Ljava/util/List;
@@ -922,8 +959,10 @@ public final class org/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Bui
 	public final fun java (I)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 	public final fun java (ILjava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 	public static synthetic fun java$default (Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
+	public final fun maxBytes (J)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 	public final fun mirror (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 	public final fun platform (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
+	public final fun sha256 (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 	public final fun url (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/DirectDownloadSource$Builder;
 }
 
@@ -994,9 +1033,11 @@ public final class org/pnfolder/pnlibrary/api/downloads/FileDownload$Builder {
 	public final fun java (I)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public final fun java (ILjava/lang/Integer;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public static synthetic fun java$default (Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;ILjava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun maxBytes (J)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public final fun mirror (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public final fun platform (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public final fun required (Z)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
+	public final fun sha256 (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 	public final fun url (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/downloads/FileDownload$Builder;
 }
 
@@ -2270,18 +2311,18 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext 
 	public abstract fun getActions ()Lorg/pnfolder/pnlibrary/api/scenario/actions/ActionService;
 	public abstract fun getComponents ()Lorg/pnfolder/pnlibrary/api/text/ComponentService;
 	public abstract fun getConfigs ()Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
-	public fun getControl ()Lorg/pnfolder/pnlibrary/api/plugin/control/ModuleControl;
+	public abstract fun getControl ()Lorg/pnfolder/pnlibrary/api/plugin/control/ModuleControl;
 	public abstract fun getCooldowns ()Lorg/pnfolder/pnlibrary/api/cooldowns/CooldownService;
 	public abstract fun getDiagnostics ()Lorg/pnfolder/pnlibrary/api/diagnostics/DiagnosticRegistration;
 	public abstract fun getDownloads ()Lorg/pnfolder/pnlibrary/api/downloads/DownloadRegistration;
 	public abstract fun getErrors ()Lorg/pnfolder/pnlibrary/api/metrics/error/ErrorReporter;
 	public abstract fun getEvents ()Lorg/pnfolder/pnlibrary/api/events/bus/EventScope;
-	public fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
+	public abstract fun getExpansions ()Lorg/pnfolder/pnlibrary/api/expansions/ExpansionManager;
 	public abstract fun getId ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
 	public abstract fun getKey ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public fun getLibraries ()Lorg/pnfolder/pnlibrary/api/libraries/ModuleLibraries;
+	public abstract fun getLibraries ()Lorg/pnfolder/pnlibrary/api/libraries/ModuleLibraries;
 	public abstract fun getLifecycle ()Lorg/pnfolder/pnlibrary/api/plugin/lifecycle/PluginLifecycle;
-	public fun getLocalization ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
+	public abstract fun getLocalization ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
 	public abstract fun getLogger ()Lorg/pnfolder/pnlibrary/api/logging/PnLogger;
 	public abstract fun getMessages ()Lorg/pnfolder/pnlibrary/api/plugin/metadata/PluginMessages;
 	public abstract fun getMetadata ()Lorg/pnfolder/pnlibrary/api/plugin/metadata/PluginMetadata;
@@ -2292,9 +2333,9 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/ModuleContext 
 	public abstract fun getUpdates ()Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public abstract fun isClosed ()Z
 	public fun onCommandError (Ljava/lang/Class;Ljava/lang/String;)V
-	public fun onCommandError (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/commands/error/CommandErrorHandler;)V
+	public abstract fun onCommandError (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/commands/error/CommandErrorHandler;)V
 	public fun registerCommand (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/CommandRegistration;
-	public fun registerCommand (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;)Lorg/pnfolder/pnlibrary/api/commands/CommandRegistration;
+	public abstract fun registerCommand (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;)Lorg/pnfolder/pnlibrary/api/commands/CommandRegistration;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginBuilder {
@@ -2321,17 +2362,17 @@ public abstract interface class org/pnfolder/pnlibrary/api/plugin/PluginRegistra
 	public fun configs ()Ljava/util/List;
 	public fun getAllLibraries ()Ljava/util/List;
 	public abstract fun getId ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-	public fun getLibraries ()Lorg/pnfolder/pnlibrary/api/libraries/ModuleLibraries;
+	public abstract fun getLibraries ()Lorg/pnfolder/pnlibrary/api/libraries/ModuleLibraries;
 	public fun getModule (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun isClosed ()Z
 	public fun onCommandError (Ljava/lang/Class;Ljava/lang/String;)V
-	public fun onCommandError (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/commands/error/CommandErrorHandler;)V
+	public abstract fun onCommandError (Ljava/lang/Class;Lorg/pnfolder/pnlibrary/api/commands/error/CommandErrorHandler;)V
 	public fun registerModule (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public fun registerModule (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/plugin/control/PluginModule;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public abstract fun registerModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
-	public fun registerModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/plugin/control/PluginModule;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
+	public abstract fun registerModule (Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Lorg/pnfolder/pnlibrary/api/plugin/control/PluginModule;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public static synthetic fun registerModule$default (Lorg/pnfolder/pnlibrary/api/plugin/PluginRegistration;Ljava/lang/String;Ljava/util/function/Consumer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public static synthetic fun registerModule$default (Lorg/pnfolder/pnlibrary/api/plugin/PluginRegistration;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/plugin/control/PluginModule;Ljava/util/function/Consumer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
 	public static synthetic fun registerModule$default (Lorg/pnfolder/pnlibrary/api/plugin/PluginRegistration;Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;Ljava/util/function/Consumer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleContext;
@@ -4070,6 +4111,42 @@ public final class org/pnfolder/pnlibrary/api/text/serializer/ComponentSerialize
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/text/serializer/ComponentSerializerType;
 }
 
+public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateBackups {
+	public abstract fun delete (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun delete$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun extract (Ljava/util/UUID;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun extract$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;Ljava/util/UUID;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun list ()Ljava/util/concurrent/CompletionStage;
+	public abstract fun restoreDatabase (Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun restoreDatabase$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun rollback (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;Z)Ljava/util/concurrent/CompletionStage;
+	public abstract fun rollback (Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun rollback$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ZILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun rollback$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateHistory {
+	public abstract fun count (Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun count$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateHistory;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun page (ILjava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun page$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateHistory;ILjava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdatePlans {
+	public abstract fun check (Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun check$default (Lorg/pnfolder/pnlibrary/api/updates/UpdatePlans;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun current ()Ljava/util/Optional;
+	public abstract fun recent ()Ljava/util/List;
+	public abstract fun stage (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun stage$default (Lorg/pnfolder/pnlibrary/api/updates/UpdatePlans;Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateProducts {
+	public abstract fun all ()Ljava/util/List;
+	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
+	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateRegistration : java/lang/AutoCloseable {
 	public abstract fun checkNow ()V
 	public abstract fun close ()V
@@ -4080,38 +4157,29 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateRegistr
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService {
-	public abstract fun all ()Ljava/util/List;
-	public fun backups ()Ljava/util/concurrent/CompletionStage;
-	public fun checkNow ()Ljava/util/concurrent/CompletionStage;
-	public fun checkNow (Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun confirm (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
-	public fun currentPlan ()Ljava/util/Optional;
-	public fun deleteBackup (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun extractBackup (Ljava/util/UUID;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
-	public fun heldUntil (Ljava/lang/String;)Ljava/time/Instant;
-	public fun history ()Ljava/util/List;
-	public fun historyCount (Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
-	public static synthetic fun historyCount$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateService;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
-	public fun historyPage (ILjava/lang/String;)Ljava/util/concurrent/CompletionStage;
-	public static synthetic fun historyPage$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateService;ILjava/lang/String;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
-	public fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/updates/product/ProductDescriptor;Lorg/pnfolder/pnlibrary/api/updates/request/PluginUpdateRequest;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
+	public abstract fun getBackups ()Lorg/pnfolder/pnlibrary/api/updates/UpdateBackups;
+	public abstract fun getHistory ()Lorg/pnfolder/pnlibrary/api/updates/UpdateHistory;
+	public abstract fun getPlans ()Lorg/pnfolder/pnlibrary/api/updates/UpdatePlans;
+	public abstract fun getProducts ()Lorg/pnfolder/pnlibrary/api/updates/UpdateProducts;
+	public abstract fun getSettings ()Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;
 	public abstract fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/updates/product/ProductDescriptor;Lorg/pnfolder/pnlibrary/api/updates/request/PluginUpdateRequest;Ljava/util/List;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
 	public static synthetic fun register$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateService;Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/updates/product/ProductDescriptor;Lorg/pnfolder/pnlibrary/api/updates/request/PluginUpdateRequest;Ljava/util/List;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
-	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/UpdateRegistration;
-	public fun restoreDatabase (Ljava/util/UUID;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun rollback ()Ljava/util/concurrent/CompletionStage;
-	public fun rollback (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun rollback (Ljava/util/UUID;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun rollback (Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setAutomaticDownload (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setAutomaticDownloadForAllPlugins (ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setChannel (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setHeld (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setHeld (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun setJavaBuild (Ljava/lang/String;Ljava/lang/Integer;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun stage (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
-	public fun stage (Ljava/util/UUID;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateSettings {
+	public abstract fun automaticDownload (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun automaticDownload$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun automaticDownloadForAll (ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun automaticDownloadForAll$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun channel (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun channel$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun heldUntil (Ljava/lang/String;)Ljava/time/Instant;
+	public abstract fun hold (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun hold$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun javaBuild (Ljava/lang/String;Ljava/lang/Integer;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun javaBuild$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;Ljava/lang/String;Ljava/lang/Integer;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun release (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
+	public static synthetic fun release$default (Lorg/pnfolder/pnlibrary/api/updates/UpdateSettings;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;ILjava/lang/Object;)Ljava/util/concurrent/CompletionStage;
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/backup/BackupExport {

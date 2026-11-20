@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.updates.engine
 
-import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.dependencies.*
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.product.ProductId

@@ -1,15 +1,15 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
+import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
 import org.pnfolder.pnlibrary.api.scenario.actions.DefinitionConflict
 import org.pnfolder.pnlibrary.api.scenario.actions.DefinitionScope
-import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
-import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
+import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 
 /**

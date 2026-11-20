@@ -4,8 +4,8 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle
@@ -63,7 +63,7 @@ internal class UpdateReminders(
     private fun send(active: PnLibrary, player: Player, withTitle: Boolean) {
         if (!player.isOnline) return
         val audience = active.audiences.player(player.uniqueId) ?: return
-        val snapshots = active.updates.all().map { it.snapshot }
+        val snapshots = active.updates.products.all().map { it.snapshot }
         val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
         if (notice.isEmpty()) return
         notice.forEach(audience::sendMessage)

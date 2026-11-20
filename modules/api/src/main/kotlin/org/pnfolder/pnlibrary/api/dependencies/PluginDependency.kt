@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
-import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 
 /** One dependency accepted by `PluginBuilder.depends`. */
 interface PluginDependency {

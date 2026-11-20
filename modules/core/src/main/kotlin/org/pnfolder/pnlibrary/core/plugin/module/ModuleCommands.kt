@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService
 

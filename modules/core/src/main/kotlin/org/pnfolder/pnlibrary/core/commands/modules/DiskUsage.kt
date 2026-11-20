@@ -48,7 +48,9 @@ object DiskUsage {
         val known = registered.map(::File).filter { it.isFile }.distinctBy { it.absolutePath }.sumOf { it.length() }
         if (plugins == null || !Files.isDirectory(plugins)) return DiskReport(emptyList(), known, -1, -1)
         val rows = linkedMapOf<String, DiskRow>()
-        val children = runCatching { Files.list(plugins).use { stream -> stream.collect(java.util.stream.Collectors.toList<Path>()) } }.getOrDefault(emptyList())
+        val children = runCatching {
+            Files.list(plugins).use { stream -> stream.collect(java.util.stream.Collectors.toList<Path>()) }
+        }.getOrDefault(emptyList())
         val folders = children.filter { Files.isDirectory(it) }
         folders.forEach { rows[it.fileName.toString().lowercase()] = folderRow(it) }
         children.filter { it.fileName.toString().endsWith(".jar", true) }.forEach { jar ->

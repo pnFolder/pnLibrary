@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-
 /** Turns one path part of a placeholder into a typed value; `null` means the part does not fit. */
 abstract class ArgType<T : Any>(
     /** Short word shown to the administrator, such as `int` or `player`. */

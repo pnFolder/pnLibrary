@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.commands.definition
 
-
 /**
  * What a platform needs to know about an [ArgumentType] to validate and suggest it natively, such as the
  * Brigadier tree of a modern Paper server, before the portable parser runs.

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
-import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 
 /** Short factories for the unified dependency DSL. */
 object Dependencies {
@@ -41,27 +41,26 @@ object Dependencies {
         .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
         .build()
 
-    /** Declares an external plugin dependency with a direct download checked by size and SHA-256. */
+    /** Declares an external plugin dependency with a direct download checked by its SHA-256. */
     @JvmStatic
     @JvmOverloads
     fun plugin(
         plugin: String,
         minimumVersion: String,
         downloadUrl: String,
-        size: Long,
         sha256: String,
         required: Boolean = true,
         automaticDownload: Boolean = true,
         forceAutomaticDownload: Boolean = false,
     ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
-        .artifact(downloadUrl, size, sha256)
+        .artifact(downloadUrl, sha256)
         .required(required)
         .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
         .build()
 
     /**
      * Declares an external plugin with several download addresses and no checksum. The first address is tried first,
-     * the others are mirrors; when two or more answer, their files must be identical, so a replaced copy is caught.
+     * the others are mirrors tried in order when the one before does not answer; the file is taken as it came.
      */
     @JvmStatic
     @JvmOverloads

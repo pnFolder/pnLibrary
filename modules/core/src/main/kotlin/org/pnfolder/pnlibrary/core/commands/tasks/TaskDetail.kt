@@ -23,7 +23,7 @@ internal object TaskDetail {
         lines += kit.field("Выполняется", kit.text(TaskLabels.where(task), ChatPalette.TEXT))
         task.interval?.let { lines += kit.field("Повторяется", kit.text("каждые ${TaskLabels.span(it)}", ChatPalette.TEXT)) }
         lines += kit.field("Запусков", kit.text("${task.runCount}, пропущено ${task.skippedCount}", ChatPalette.TEXT))
-        task.lastDuration?.let { lines += kit.field("Последний заняла", kit.text(TaskLabels.span(it), ChatPalette.TEXT)) }
+        task.lastDuration?.let { lines += kit.field("Прошлый запуск шёл", kit.text(TaskLabels.span(it), ChatPalette.TEXT)) }
         TaskLabels.lag(task)?.let { lines += kit.field("Опоздание", kit.text(it, ChatPalette.DANGER)) }
         return lines
     }
@@ -46,10 +46,12 @@ internal object TaskDetail {
         if (parent == null && children.isEmpty()) return emptyList()
         val lines = mutableListOf<Component>(kit.blank(), kit.section("Связанные задачи"))
         parent?.let {
-            lines += kit.field("Родитель", kit.text(TaskLabels.title(it), ChatPalette.ACCENT).clickEvent(ClickEvent.runCommand("/pn tasks view ${it.id.value}")))
+            val open = ClickEvent.runCommand("/pn tasks view ${it.id.value}")
+            lines += kit.field("Родитель", kit.text(TaskLabels.title(it), ChatPalette.ACCENT).clickEvent(open))
         }
         children.forEach {
-            lines += kit.field("Подзадача", kit.text("${TaskLabels.title(it)}, ${TaskLabels.label(it.status)}", ChatPalette.TEXT).clickEvent(ClickEvent.runCommand("/pn tasks view ${it.id.value}")))
+            val open = ClickEvent.runCommand("/pn tasks view ${it.id.value}")
+            lines += kit.field("Подзадача", kit.text("${TaskLabels.title(it)}, ${TaskLabels.label(it.status)}", ChatPalette.TEXT).clickEvent(open))
         }
         return lines
     }

@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.observability.report
 
-
 /**
  * Controls which support data is included in an observability report.
  *

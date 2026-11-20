@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.metrics
 
-import org.pnfolder.pnlibrary.core.metrics.session.AbstractMetricsSession
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials
+import org.pnfolder.pnlibrary.core.metrics.session.AbstractMetricsSession
 import java.util.function.Supplier
 
 class AbstractMetricsSessionTest {

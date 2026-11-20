@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.metrics.factory
 
+import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
-import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 

@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.api.updates.history
 
-import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
-import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.updates.frozen
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import java.time.Instant
 import java.util.UUID
 

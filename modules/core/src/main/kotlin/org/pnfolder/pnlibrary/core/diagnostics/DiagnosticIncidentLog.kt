@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.diagnostics
 
-import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import java.time.Instant
 import java.util.ArrayDeque
 

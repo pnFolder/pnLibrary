@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config
 
-import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 

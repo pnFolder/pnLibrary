@@ -104,4 +104,3 @@ data class BalanceRequirement(val currency: String = "", val atLeast: String = "
         return Verdict.of(has, "need ${money.format(need)}")
     }
 }
-

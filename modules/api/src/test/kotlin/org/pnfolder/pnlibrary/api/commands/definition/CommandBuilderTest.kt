@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.api.commands.definition
 
-import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.api.commands.CommandContext
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.CommandSender
 import java.util.Locale
 
 class CommandBuilderTest {

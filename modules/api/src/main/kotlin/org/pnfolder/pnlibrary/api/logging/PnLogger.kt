@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.logging
 
-
 /**
  * Plugin-bound logger that writes to the console and the black box (journal, diagnostics buffer, error report).
  *

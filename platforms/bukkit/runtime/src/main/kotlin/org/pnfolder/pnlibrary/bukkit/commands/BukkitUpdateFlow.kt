@@ -8,10 +8,10 @@ import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
-import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange
+import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction
@@ -46,7 +46,7 @@ internal class BukkitUpdateFlow(
         if (!replies.ready(context.sender)) return
         val native = (context.sender as? BukkitCommandSender)?.native ?: return
         replies.say(context.sender, ChatTone.PROGRESS, "Проверяю обновления…")
-        library.updates.checkNow(replies.updateActor(native)).whenComplete { _, error ->
+        library.updates.plans.check(replies.updateActor(native)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(context.sender, "Не удалось проверить обновления", error)
                 else catalog.showAvailable(context)
@@ -91,7 +91,7 @@ internal class BukkitUpdateFlow(
 
     /** The detailed console card, or the server state card styled like the catalog. */
     fun sendStatus(sender: CommandSender, reply: Reply, requested: String?) {
-        val entries = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
+        val entries = if (requested == null) library.updates.products.all() else listOfNotNull(library.updates.products.get(requested))
         if (sender is ConsoleCommandSender && requested == null) {
             BukkitConsoleStatusRenderer.render(entries).forEach(sender::sendMessage)
             return
@@ -106,9 +106,9 @@ internal class BukkitUpdateFlow(
     }
 
     fun sendUpdateStatus(reply: Reply, requested: String?) {
-        val plan = library.updates.currentPlan().orElse(null)
+        val plan = library.updates.plans.current().orElse(null)
             ?: return replies.say(reply, ChatTone.WARNING, "Проверка обновлений ещё не завершалась.", "Запустите её командой /pn check.")
-        val registrations = if (requested == null) library.updates.all() else listOfNotNull(library.updates.get(requested))
+        val registrations = if (requested == null) library.updates.products.all() else listOfNotNull(library.updates.products.get(requested))
         if (registrations.isEmpty()) return replies.notRegistered(reply, requested ?: "с указанным именем")
         replies.notices(reply, registrations.flatMap { UpdateStatusMessages.status(plan to it.snapshot) })
     }
@@ -120,7 +120,7 @@ internal class BukkitUpdateFlow(
         if (!sender.hasPermission("pnlibrary.updates.download")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для загрузки обновлений.")
         }
-        val registration = library.updates.get(name) ?: return replies.notRegistered(reply, name)
+        val registration = library.updates.products.get(name) ?: return replies.notRegistered(reply, name)
         checkAndInstallUpdate(sender, reply, registration)
     }
 
@@ -143,7 +143,7 @@ internal class BukkitUpdateFlow(
                     "Проверьте доступ сервера к raw.githubusercontent.com и повторите команду.")
             }
         }
-        library.updates.checkNow(replies.updateActor(sender)).whenComplete { result, error ->
+        library.updates.plans.check(replies.updateActor(sender)).whenComplete { result, error ->
             if (!finished.compareAndSet(false, true)) return@whenComplete
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Проверка обновления не удалась", error)
@@ -166,7 +166,7 @@ internal class BukkitUpdateFlow(
     private fun stageUpdate(sender: CommandSender, reply: Reply, plan: UpdatePlanSnapshot, change: ProductChange) {
         val transition = "${change.product} v${change.from} » v${change.to}"
         replies.say(reply, ChatTone.PROGRESS, "Найдено $transition. Скачиваю и проверяю…")
-        library.updates.stage(plan.id, replies.updateActor(sender)).whenComplete { _, error ->
+        library.updates.plans.stage(plan.id, replies.updateActor(sender)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить обновление", error)
                 else {
@@ -183,7 +183,7 @@ internal class BukkitUpdateFlow(
         if (!sender.hasPermission("pnlibrary.updates.rollback")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
         }
-        val plan = library.updates.currentPlan().orElse(null)
+        val plan = library.updates.plans.current().orElse(null)
             ?: return replies.say(reply, ChatTone.WARNING, "Нет плана обновления, который можно откатить.")
         askToConfirm(
             sender, reply, plan.id, plan.revision, UpdateAction.PLAN_ROLLBACK,
@@ -216,7 +216,7 @@ internal class BukkitUpdateFlow(
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
         }
         if (!restart.isStill(grant)) return replies.say(reply, ChatTone.FAILURE, "План обновления изменился; запросите откат заново.")
-        library.updates.rollback(replies.updateActor(sender)).whenComplete { _, error ->
+        library.updates.backups.rollback(replies.updateActor(sender)).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
                 else {
@@ -231,7 +231,7 @@ internal class BukkitUpdateFlow(
         if (!sender.hasPermission("pnlibrary.updates.rollback")) {
             return replies.say(reply, ChatTone.FAILURE, "Недостаточно прав для отката обновлений.")
         }
-        library.updates.rollback(id, restoreConfigurations, replies.updateActor(sender)).whenComplete { _, error ->
+        library.updates.backups.rollback(id, replies.updateActor(sender), restoreConfigurations).whenComplete { _, error ->
             replies.onServerThread {
                 if (error != null) replies.fail(reply, "Не удалось подготовить откат", error)
                 else {

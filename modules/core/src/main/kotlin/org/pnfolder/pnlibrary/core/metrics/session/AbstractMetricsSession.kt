@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.metrics.session
 
+import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 

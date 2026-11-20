@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.bungee.metrics
 import dev.faststats.bungee.BungeeContext
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.core.metrics.factory.NativePluginMetricsFactory
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsClient
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsMetricsSession
 import org.pnfolder.pnlibrary.core.metrics.bstats.BStatsSettings
+import org.pnfolder.pnlibrary.core.metrics.factory.NativePluginMetricsFactory
 import org.pnfolder.pnlibrary.core.metrics.faststats.SimpleFastStatsMetricsSession
 import java.io.File
 

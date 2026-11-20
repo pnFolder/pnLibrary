@@ -21,7 +21,11 @@ import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateTiming
 import org.pnfolder.pnlibrary.updates.service.UpdateServiceImpl
 
-/** Creates the feature services of the library runtime (services, configs, updates and so on); [owner] is the pnLibrary plugin that log lines are written for. */
+/** Creates the feature services of the library runtime (
+    services,
+    configs,
+    updates and so on,
+); [owner] is the pnLibrary plugin that log lines are written for. */
 internal class RuntimeFeatureSet(
     owner: Any,
     platform: PlatformRuntimeContext,

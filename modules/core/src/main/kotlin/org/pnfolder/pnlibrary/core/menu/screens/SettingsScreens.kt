@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder
@@ -11,17 +12,19 @@ import org.pnfolder.pnlibrary.core.menu.Menus
 import org.pnfolder.pnlibrary.core.menu.style.HOLDS
 import org.pnfolder.pnlibrary.core.menu.style.Icons
 import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions
+import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.ROUTES
+import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.SETTINGS
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.menuFrame
-import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.icon
-import org.pnfolder.pnlibrary.core.menu.style.timeLeft
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.menu.style.timeLeft
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.text.wrapText
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
@@ -110,14 +113,65 @@ internal class SettingsScreens(session: MenuSession, routes: MenuRoutes) : MenuS
         )
     }
 
+    /** The plugins other plugins need and the server lacks: who asks, what, from where; a click downloads a group. */
+    fun missingPlugins(player: MenuViewer, page: Int) {
+        val rows = data.missingDependencies().map { group ->
+            Row(
+                icon(
+                    null, if (group.installable) "HOPPER" else "BARRIER", "Нужно для ${group.owner}",
+                    Style.lore(
+                        group.lines + group.links.take(4).map { "  $it" } +
+                            (if (group.installable) emptyList() else listOf("Скачайте по ссылкам и положите в plugins.")),
+                        listOf("Код" to group.code),
+                        if (group.installable) Style.left("скачать") else "",
+                    ),
+                    danger = !group.installable,
+                ),
+                go { who ->
+                    if (!group.installable) return@go
+                    allowed(who, SETTINGS) {
+                        tell(who, ChatTone.INFO, "Скачиваю…")
+                        data.installDependencies(group.code).whenComplete { text, error ->
+                            sync {
+                                tell(who, if (error == null && text.startsWith("Готово")) ChatTone.SUCCESS else ChatTone.FAILURE, text ?: "Не вышло.")
+                                missingPlugins(who, page)
+                            }
+                        }
+                    }
+                },
+            )
+        }
+        list(
+            player, "Недостающие плагины", rows, page, PAGE_SIZE,
+            { who, to -> missingPlugins(who, to) }, { routes.settings(it) }, "Всё нужное установлено",
+        )
+    }
+
     private fun downloadsForMissing(builder: MenuBuilder) {
         val automatic = data.downloadsAutomatic() ?: return
+        val missing = data.missingDependencies()
+        if (missing.isNotEmpty()) builder.button(
+            14,
+            icon(
+                Icons.SETTINGS, "CHEST", "Что не хватает",
+                Style.lore(
+                    wrapText("Плагины, которые просят другие плагины, а на сервере их нет. Там же можно скачать.", WRAP_WIDTH, 3),
+                    listOf("Групп" to "${missing.size}"), Style.left("открыть"),
+                ),
+                danger = true,
+            ),
+            go { who -> allowed(who, SETTINGS) { missingPlugins(who, 0) } },
+        )
         builder.button(
             13,
             icon(
                 Icons.TOGGLE, "HOPPER", "Недостающие плагины",
                 Style.lore(
-                    wrapText("Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.", WRAP_WIDTH, 4),
+                    wrapText(
+                        "Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.",
+                        WRAP_WIDTH,
+                        4,
+                    ),
                     emptyList(), Style.left(if (automatic) "выключить" else "включить"),
                     extra = Style.choices(listOf("скачивать самому", "только сообщать"), if (automatic) 0 else 1),
                 ),

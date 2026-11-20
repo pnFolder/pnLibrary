@@ -9,4 +9,4 @@ internal fun CommandSender.asUpdateActor(): UpdateActor =
     UpdateActor(if (isConsole) UpdateActor.Kind.CONSOLE else UpdateActor.Kind.PLAYER, id, name)
 
 /** The names of all plugins registered for updates, for tab completion. */
-internal fun PnLibrary.updateProductNames(): List<String> = updates.all().map { it.snapshot.product }
+internal fun PnLibrary.updateProductNames(): List<String> = updates.products.all().map { it.snapshot.product }

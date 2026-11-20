@@ -41,7 +41,8 @@ class SettingsStoreTest {
         assertTrue(second.current().privacy)
         assertEquals(Duration.ofMinutes(90), second.current().updateCheckInterval)
         assertFalse(second.current().downloadsToCache)
-        assertEquals(setOf("privacy", "updates.check-interval", "downloads.destinations.cache"), second.values().filter { it.changed }.map { it.spec.key }.toSet())
+        val changed = second.values().filter { it.changed }.map { it.spec.key }.toSet()
+        assertEquals(setOf("privacy", "updates.check-interval", "downloads.destinations.cache"), changed)
         val json = JsonParser.parseString(Files.readString(file)).asJsonObject
         assertEquals(setOf("privacy", "updates.check-interval", "downloads.destinations.cache"), json.keySet())
         assertTrue(json.get("privacy").asJsonPrimitive.isBoolean)
@@ -79,7 +80,8 @@ class SettingsStoreTest {
         Files.createDirectories(file.parent)
         Files.writeString(
             file,
-            """{"history-retention-days": 7, "privacy": "maybe", "time-zone": "Mars/Base", "mystery": 1, "journal-foreign-plugins": true, "downloads.enabled": [1]}""",
+            """{"history-retention-days": 7, "privacy": "maybe", "time-zone": "Mars/Base", "mystery": 1,""" +
+                """ "journal-foreign-plugins": true, "downloads.enabled": [1]}""",
         )
 
         val store = store()

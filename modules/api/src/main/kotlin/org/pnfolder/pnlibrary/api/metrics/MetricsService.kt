@@ -1,9 +1,8 @@
 package org.pnfolder.pnlibrary.api.metrics
 
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
-
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 
 /** Public pnLibrary abstraction over the platform-specific metrics providers. */
 interface MetricsService {

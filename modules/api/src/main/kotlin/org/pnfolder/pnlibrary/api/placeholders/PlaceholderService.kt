@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.util.UUID
 import java.util.concurrent.CompletionStage

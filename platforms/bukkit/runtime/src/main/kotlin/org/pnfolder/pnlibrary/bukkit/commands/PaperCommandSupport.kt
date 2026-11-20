@@ -15,7 +15,12 @@ internal object PaperCommandSupport {
     private const val PAPER_COMMANDS = "io.papermc.paper.command.brigadier.Commands"
     private const val PAPER_LIFECYCLE = "io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents"
 
-    fun choose(plugin: Plugin, classic: NativeCommandRegistrar<CommandSender>, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer): NativeCommandRegistrar<CommandSender> {
+    fun choose(
+        plugin: Plugin,
+        classic: NativeCommandRegistrar<CommandSender>,
+        pnLogger: () -> PnLogger,
+        logBuffer: PnLoggerBuffer,
+    ): NativeCommandRegistrar<CommandSender> {
         if (System.getProperty(SWITCH)?.equals("false", ignoreCase = true) == true) return classic
         if (!present(PAPER_COMMANDS, plugin) || !present(PAPER_LIFECYCLE, plugin)) return classic
         return try {

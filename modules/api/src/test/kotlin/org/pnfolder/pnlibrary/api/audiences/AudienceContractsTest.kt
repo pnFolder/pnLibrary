@@ -1,9 +1,5 @@
 package org.pnfolder.pnlibrary.api.audiences
 
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,6 +7,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.audiences.Delivery
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import java.util.UUID
 
 class AudienceContractsTest {

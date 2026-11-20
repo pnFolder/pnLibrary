@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -18,14 +20,12 @@ import org.pnfolder.pnlibrary.api.scenario.actions.builtin.ErrorHandler
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RandomAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RandomOption
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.SetAction
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
-import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.scenario.expression.Expression
+import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.Verdict
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ExpressionRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.RefRequirement
-import org.pnfolder.pnlibrary.api.scenario.expression.Expression
-import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.core.plugin.module.LayeredLookup
@@ -180,7 +180,9 @@ class ExpressionTest {
     @Test
     fun `random picks by weight`() {
         val ctx = context()
-        val only = RandomAction(listOf(RandomOption(0.0001, listOf(Action { log += "rare"; ActionResult.Done })), RandomOption(1e9, listOf(Action { log += "common"; ActionResult.Done }))))
+        val rare = RandomOption(0.0001, listOf(Action { log += "rare"; ActionResult.Done }))
+        val common = RandomOption(1e9, listOf(Action { log += "common"; ActionResult.Done }))
+        val only = RandomAction(listOf(rare, common))
 
         repeat(20) { ctx.execute(listOf(only)) }
 

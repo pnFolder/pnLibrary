@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.observability.observation
 
-
 /** Describes the operational importance and retention priority of an observation. */
 enum class ObservationLevel {
     /** Detailed execution information intended for short-lived troubleshooting. */

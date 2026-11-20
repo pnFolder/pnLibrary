@@ -9,11 +9,11 @@ import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ChanceRequiremen
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.CompareRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ExperienceRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ExpressionRequirement
-import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.RefRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ItemRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.NearRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.NotRequirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.PermissionRequirement
+import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.RefRequirement
 
 /**
  * A condition that only looks: it answers [Verdict.Met] or [Verdict.Unmet] and changes nothing.

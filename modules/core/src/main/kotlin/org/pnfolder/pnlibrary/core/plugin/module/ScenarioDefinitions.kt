@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.core.plugin.module
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.DefinitionConflict
 import org.pnfolder.pnlibrary.api.scenario.actions.ScenarioLookup
-import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
+import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 
 /** Named actions, requirements and expression functions of one level (one module, or the whole library). */
 internal class ScenarioDefinitions : ScenarioLookup {

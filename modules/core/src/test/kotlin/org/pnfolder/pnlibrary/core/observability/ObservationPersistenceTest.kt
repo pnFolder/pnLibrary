@@ -1,9 +1,5 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.core.observability.store.retained
-import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
-import org.pnfolder.pnlibrary.core.observability.store.ObservationJournal
-import org.pnfolder.pnlibrary.core.observability.store.AttachmentStore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -12,6 +8,10 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.observability.observation.Observation
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
+import org.pnfolder.pnlibrary.core.observability.store.AttachmentStore
+import org.pnfolder.pnlibrary.core.observability.store.ObservationJournal
+import org.pnfolder.pnlibrary.core.observability.store.retained
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
 import java.nio.file.Path

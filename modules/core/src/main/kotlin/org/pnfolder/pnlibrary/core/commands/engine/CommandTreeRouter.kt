@@ -1,19 +1,19 @@
 package org.pnfolder.pnlibrary.core.commands.engine
 
+import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentSpec
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
+import org.pnfolder.pnlibrary.api.commands.definition.SenderRule
+import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.ConsoleOnly
 import org.pnfolder.pnlibrary.api.commands.error.IncompleteCommand
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.commands.error.PlayerOnly
-import org.pnfolder.pnlibrary.api.commands.definition.SenderRule
 import org.pnfolder.pnlibrary.api.commands.error.UnknownArgument
-import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage

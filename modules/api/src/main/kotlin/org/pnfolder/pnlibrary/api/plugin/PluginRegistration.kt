@@ -23,9 +23,7 @@ interface PluginRegistration : AutoCloseable {
      * wins: a handler on a command or subcommand over this one, over the library's standard
      * answer from the library's settings.
      */
-    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
-        throw UnsupportedOperationException("Plugin commands are not available in this runtime")
-    }
+    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>)
 
     /** Answers errors of class [type] for every command of this plugin, in all of its modules, with the plain [message]. */
     fun <E : CommandError> onCommandError(type: Class<E>, message: String) {
@@ -38,7 +36,6 @@ interface PluginRegistration : AutoCloseable {
      * modules need is downloaded once. Modules keep their own in `ModuleContext.libraries`.
      */
     val libraries: ModuleLibraries
-        get() = throw UnsupportedOperationException("Plugin libraries are not available in this runtime")
 
     /** Every library of this plugin: its own and those of each module, without repeats. */
     val allLibraries: List<ModuleLibrary>
@@ -58,7 +55,7 @@ interface PluginRegistration : AutoCloseable {
         id: ModuleId,
         module: PluginModule,
         configure: Consumer<PluginBuilder> = Consumer { },
-    ): ModuleContext = throw UnsupportedOperationException("Module control is not available in this runtime")
+    ): ModuleContext
 
     /** Normalizes [id] and registers a switchable module; see [registerModule]. */
     fun registerModule(

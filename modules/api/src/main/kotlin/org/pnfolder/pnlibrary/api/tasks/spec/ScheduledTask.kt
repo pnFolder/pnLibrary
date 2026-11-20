@@ -1,8 +1,7 @@
 package org.pnfolder.pnlibrary.api.tasks.spec
 
-import org.pnfolder.pnlibrary.api.tasks.run.LagResponse
-import org.pnfolder.pnlibrary.api.tasks.run.TaskContext
 import org.pnfolder.pnlibrary.api.tasks.info.TaskLag
+import org.pnfolder.pnlibrary.api.tasks.run.LagResponse
 import java.time.Duration
 
 /**

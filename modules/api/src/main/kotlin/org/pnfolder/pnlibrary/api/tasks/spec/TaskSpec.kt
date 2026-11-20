@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.api.tasks.spec
 
+import org.pnfolder.pnlibrary.api.tasks.info.TaskLag
 import org.pnfolder.pnlibrary.api.tasks.run.LagResponse
 import org.pnfolder.pnlibrary.api.tasks.run.TaskLagHandler
 import java.time.Duration
 import java.util.Collections
-import org.pnfolder.pnlibrary.api.tasks.info.TaskLag
 import java.util.function.BooleanSupplier
 
 /**

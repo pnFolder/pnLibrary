@@ -2,8 +2,8 @@ package org.pnfolder.pnlibrary.api.scenario.actions
 
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
-import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
+import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 
 /**

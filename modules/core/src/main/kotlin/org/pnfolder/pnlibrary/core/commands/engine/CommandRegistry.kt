@@ -2,18 +2,19 @@ package org.pnfolder.pnlibrary.core.commands.engine
 
 import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.error.CommandError
-import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
-import org.pnfolder.pnlibrary.api.commands.error.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNode
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
-import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.commands.definition.SenderRule
 import org.pnfolder.pnlibrary.api.commands.definition.completedExecution
 import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
+import org.pnfolder.pnlibrary.api.commands.error.CommandFailure
+import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
@@ -95,6 +96,7 @@ internal class CommandRegistry(
         val route = try {
             router.route(command, context)
         } catch (error: Throwable) {
+            Failures.rethrowIfFatal(error)
             executionFailed(registration.owner, registration.command.name, context, error)
             return completedExecution()
         }
@@ -108,6 +110,7 @@ internal class CommandRegistry(
         val stage = try {
             executable.node.execution.execute(executable.context)
         } catch (error: Throwable) {
+            Failures.rethrowIfFatal(error)
             failed(registration, executable, error)
             return completedExecution()
         }
@@ -182,6 +185,7 @@ internal class CommandRegistry(
         val stage = try {
             router.suggest(command, context)
         } catch (error: Throwable) {
+            Failures.rethrowIfFatal(error)
             suggestionFailed(registration.owner, error)
             return completedSuggestions(emptyList())
         }

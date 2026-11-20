@@ -113,7 +113,9 @@ internal class BukkitLifecycleListener(
     private fun markServerReady() {
         if (!serverReady.compareAndSet(false, true)) return
         readyCallbacks.toList().forEach { callback ->
-            runCatchingNonFatal(callback::run).onFailure { library?.logging?.logger(plugin, "Runtime")?.error("A startup task failed after the server became ready", it) }
+            runCatchingNonFatal(callback::run).onFailure {
+                library?.logging?.logger(plugin, "Runtime")?.error("A startup task failed after the server became ready", it)
+            }
         }
         readyCallbacks.clear()
     }

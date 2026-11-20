@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.api.commands.definition
 
-import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
-import org.pnfolder.pnlibrary.api.commands.error.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandContext
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import java.util.Collections
 import java.util.LinkedHashSet
 import java.util.Locale

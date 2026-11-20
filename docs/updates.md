@@ -121,6 +121,31 @@ Markdown в чат не выводится.
 | `pnlibrary.updates.rollback` | смотреть резервные наборы и откатывать |
 | `pnlibrary.updates.notify` | получать напоминание об обновлениях при входе |
 
+## Для плагинов: `library.updates`
+
+`UpdateService` разделён на пять частей, в каждой работает всё: необязательных операций нет.
+
+| Часть | Что делает | Методы |
+|---|---|---|
+| `products` | какие продукты зарегистрированы | `all()`, `get(имя)`, `require(имя)` |
+| `plans` | проверка релизов и план | `check(actor)`, `current()`, `recent()`, `stage(план, actor)` |
+| `settings` | выбор администратора для продукта | `channel`, `automaticDownload`, `automaticDownloadForAll`, `hold(продукт, срок)`, `release`, `heldUntil`, `javaBuild` |
+| `backups` | резервные наборы и откат | `list()`, `rollback(actor)`, `rollback(набор, actor, restoreConfigurations)`, `delete`, `restoreDatabase`, `extract` |
+| `history` | журнал событий | `page(страница, продукт)`, `count(продукт)` |
+
+```kotlin
+val updates = library.updates
+updates.register(plugin, product, request)                            // начать следить за релизами
+updates.plans.check(actor).thenCompose { plan -> updates.plans.stage(plan.id, actor) }
+updates.settings.hold("shop", Duration.ofDays(3), actor)              // не предлагать три дня
+updates.settings.release("shop", actor)                               // снять досрочно
+updates.backups.list().thenAccept { sets -> sets.forEach { println(it.id) } }
+updates.history.page(1, "shop")                                       // последние десять событий
+```
+
+Каждый метод, который что-то меняет, принимает `actor`: он пишется в журнал, но прав не даёт. Без него записывается
+`UpdateActor.UNKNOWN`. Подтверждение чувствительных шагов (`/pn update confirm <код>`) выполняют команды и меню, в API его нет.
+
 ## 4. Применение перед запуском: `pnLibrary-updater`
 
 В релиз входит отдельный `pnLibrary-updater-<версия>.jar`. Это не плагин: держите его **вне** папки `plugins` и
@@ -170,7 +195,7 @@ PluginUpdateRequest.builder()
   предупреждение с командой удаления;
 - данные, которые библиотека не копирует как файл (например MySQL), плагин выгружает сам: `.backupExport(BackupKind.DATABASE, "Кланы", "clans.sql") { файл -> выгрузить(файл) }`. Имена файлов выгрузок в одном плагине не повторяются. Файл лежит в `plugins/pnLibrary/data/updates/exports/<план>/<плагин>/`, откат его **не восстанавливает**: загрузите вручную. Если выгрузка упала, обновление не готовится;
 - удалить набор вручную: `/pn updates backups delete <id>` (право на управление обновлениями),
-  в API `UpdateService.deleteBackup`.
+  в API `updates.backups.delete(id, actor)`.
 
 ### Базы данных MySQL/MariaDB
 

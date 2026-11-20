@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.api.tasks.run
 
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskAction
-import org.pnfolder.pnlibrary.api.tasks.spec.ScheduledTask
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.spec.ScheduledTask
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskAction
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import java.time.Duration
 import java.time.Instant
 

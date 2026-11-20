@@ -1,7 +1,11 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
+import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
+import org.pnfolder.pnlibrary.api.config.ConfigType
+import org.pnfolder.pnlibrary.api.config.ConfigTypes
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.ActionBarAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.AttemptAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.CallAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.CommandAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.DelayAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.EffectAction
@@ -9,17 +13,13 @@ import org.pnfolder.pnlibrary.api.scenario.actions.builtin.IfAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.LogAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.MessageAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.ParticleAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RandomAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RepeatAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RequireAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.SoundAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.CallAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RandomAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.SetAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.SoundAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.scenario.actions.builtin.TitleAction
-import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic
-import org.pnfolder.pnlibrary.api.config.ConfigType
-import org.pnfolder.pnlibrary.api.config.ConfigTypes
 
 /**
  * One step of a configured scenario, such as sending a message, playing a sound or taking money.

@@ -6,13 +6,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import org.pnfolder.pnlibrary.api.scenario.actions.Action
-import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
-import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.AttemptAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.IfAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RequireAction
-import org.pnfolder.pnlibrary.api.scenario.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.currency.ChargeAction
 import org.pnfolder.pnlibrary.api.currency.Currency
@@ -20,6 +13,13 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRejectReason
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.scenario.actions.Action
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.AttemptAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.IfAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.RequireAction
+import org.pnfolder.pnlibrary.api.scenario.actions.builtin.StopAction
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.scenario.requirements.Verdict
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.AllRequirement

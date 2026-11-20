@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config
 
-import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
 import java.util.regex.Pattern
 
 /**

@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.updates.service
 
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateArtifact
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity

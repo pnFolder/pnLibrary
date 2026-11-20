@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.plugin.lifecycle
 
-import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.api.logging.MessageBox
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 
 /**
  * Symmetric, buffered startup and shutdown messages bound to one plugin.

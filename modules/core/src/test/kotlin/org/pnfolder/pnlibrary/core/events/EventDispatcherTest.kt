@@ -1,13 +1,11 @@
 package org.pnfolder.pnlibrary.core.events
 
-import java.lang.reflect.Proxy
-import java.util.function.Consumer
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.events.*
-import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
 import org.pnfolder.pnlibrary.api.events.bus.*
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
 import org.pnfolder.pnlibrary.api.events.inspect.*
 import org.pnfolder.pnlibrary.api.events.listener.*
 import org.pnfolder.pnlibrary.api.events.listener.EventHandler
@@ -16,6 +14,8 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
+import java.lang.reflect.Proxy
+import java.util.function.Consumer
 
 class EventDispatcherTest {
     @Test

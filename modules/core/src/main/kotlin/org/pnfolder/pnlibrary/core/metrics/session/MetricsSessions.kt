@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.metrics.session
 
-import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
-import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import java.util.Collections
 import java.util.IdentityHashMap

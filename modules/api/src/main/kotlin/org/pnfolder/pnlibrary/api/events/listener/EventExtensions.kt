@@ -2,11 +2,11 @@
 
 package org.pnfolder.pnlibrary.api.events.listener
 
-import java.util.function.Consumer
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.bus.EventScope
 import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.plugin.PluginId
+import java.util.function.Consumer
 
 /** Kotlin shorthand for subscribing without passing an event class manually. */
 inline fun <reified E : Event> EventScope.subscribe(

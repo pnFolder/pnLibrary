@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.events.player
 
-import java.util.UUID
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.player.PlayerJoinedEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLeftEvent
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import java.util.UUID
 
 /**
  * Turns each platform's native join and quit notifications into the portable player events.

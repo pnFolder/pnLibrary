@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.bukkit.inventory
 
-import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -18,6 +17,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue

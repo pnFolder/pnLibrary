@@ -43,13 +43,11 @@ internal class DependencyDownloadReporter(
     /** Tells the administrator what is missing, where to get it, and how to have it installed. */
     fun missing(owner: Any, group: MissingGroup, installingNow: Boolean) {
         val command = "$root deps install ${group.code}"
-        val wanted = ConsoleTree.builder("Не хватает").also { tree ->
-            group.items.forEach { item ->
-                val links = listOfNotNull(item.page) + item.sources
-                tree.child("${item.plugin} ${item.minimum}+")
-                links.forEach { tree.child("  $it") }
-            }
-        }.build()
+        val needed = group.items.filter { it.required }
+        val optional = group.items.filterNot { it.required }
+        val trees = listOf("Обязательные" to needed, "Необязательные" to optional).filter { it.second.isNotEmpty() }.map { (name, items) ->
+            ConsoleTree.builder(name).also { tree -> items.forEach { item -> describe(tree, item) } }.build()
+        }
         val next = ConsoleTree.builder("Что сделать").also { tree ->
             when {
                 installingNow -> tree.child("Скачиваю сам, это займёт несколько секунд; потом перезапустите сервер")
@@ -59,12 +57,26 @@ internal class DependencyDownloadReporter(
         }.build()
         ConsoleCard.builder(ConsoleStyle.theme(ChatTone.WARNING), "НЕ ХВАТАЕТ ПЛАГИНОВ")
             .mascot("o.o", group.owner, "нужны другие плагины")
-            .blank().tree(wanted).blank().tree(next).blank()
-            .status("Без них ${group.owner} работает не полностью")
+            .blank().also { card -> trees.forEach { card.tree(it).blank() } }.tree(next).blank()
+            .status(if (needed.isEmpty()) "Без них ${group.owner} работает, но без части возможностей" else "Без них ${group.owner} работает не полностью")
             .build()
             .send { logging.console(owner, it) }
         if (!installingNow && group.installable) {
             logging.log(owner, LogLevel.WARNING, "${group.owner}: не хватает ${group.items.joinToString { it.plugin }}. Установить: $command")
+        }
+    }
+
+    /** One missing plugin: its name and version, why it is needed, how the file is checked, and where to get it. */
+    private fun describe(tree: ConsoleTree.Builder, item: MissingDependency) {
+        val name = if (item.title.equals(item.plugin, ignoreCase = true)) item.plugin else "${item.title} (${item.plugin})"
+        tree.child("$name ${item.minimum}+")
+        item.description?.let { tree.child("  $it") }
+        if (item.noFileForServer) tree.child("  для этого сервера готового файла нет, скачайте вручную")
+        item.variant?.let { tree.child("  выбран файл: $it") }
+        val links = listOfNotNull(item.page) + item.sources
+        links.forEach { tree.child("  $it") }
+        if (item.sources.isNotEmpty()) {
+            tree.child(if (item.checked) "  файл проверяется по SHA-256 автора" else "  сумма автора не задана, файл берётся с первой доступной ссылки")
         }
     }
 

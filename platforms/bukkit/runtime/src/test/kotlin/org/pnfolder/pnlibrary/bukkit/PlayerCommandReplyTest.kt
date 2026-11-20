@@ -67,7 +67,9 @@ class PlayerCommandReplyTest {
         val library = mock(PnLibrary::class.java)
         val updates = mock(UpdateService::class.java)
         `when`(library.updates).thenReturn(updates)
-        `when`(updates.all()).thenReturn(emptyList())
+        val products = mock(org.pnfolder.pnlibrary.api.updates.UpdateProducts::class.java)
+        `when`(updates.products).thenReturn(products)
+        `when`(products.all()).thenReturn(emptyList())
         val definition = BukkitControlCommand(plugin, library, mock(CurrencyProviderRegistry::class.java)).definition()
         val root = definition.root
         val catalog = root.children.single { it.name == "updates" }

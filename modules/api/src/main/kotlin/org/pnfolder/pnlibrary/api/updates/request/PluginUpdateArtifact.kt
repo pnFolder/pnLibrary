@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.updates.request
 
-import org.pnfolder.pnlibrary.api.updates.javaInRange
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.javaInRange
 
 /**
  * Release-asset name pattern bounded to a range of Java feature versions.

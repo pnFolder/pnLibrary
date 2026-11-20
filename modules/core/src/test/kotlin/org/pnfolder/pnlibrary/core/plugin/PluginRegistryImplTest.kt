@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.plugin
 
-import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -13,11 +12,11 @@ import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.dependencies.Dependencies
-import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
@@ -28,25 +27,31 @@ import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.UpdateBackups
+import org.pnfolder.pnlibrary.api.updates.UpdateHistory
+import org.pnfolder.pnlibrary.api.updates.UpdatePlans
+import org.pnfolder.pnlibrary.api.updates.UpdateProducts
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.UpdateSettings
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
@@ -674,8 +679,14 @@ class PluginRegistryImplTest {
                 this.dependencies = dependencies
                 return emptyProxy(UpdateRegistration::class.java)
             }
-            override fun all(): List<UpdateRegistration> = emptyList()
-            override fun get(product: String): UpdateRegistration? = null
+            override val products = object : UpdateProducts {
+                override fun all(): List<UpdateRegistration> = emptyList()
+                override fun get(product: String): UpdateRegistration? = null
+            }
+            override val plans: UpdatePlans get() = error("not used")
+            override val settings: UpdateSettings get() = error("not used")
+            override val backups: UpdateBackups get() = error("not used")
+            override val history: UpdateHistory get() = error("not used")
         }
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->

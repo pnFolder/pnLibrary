@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree.scope
 
-import org.pnfolder.pnlibrary.api.placeholders.tree.none
-import org.pnfolder.pnlibrary.api.placeholders.tree.PlaceholderInstaller
-import org.pnfolder.pnlibrary.api.placeholders.tree.GroupData
-import org.pnfolder.pnlibrary.api.placeholders.tree.FormatChoice
-import org.pnfolder.pnlibrary.api.placeholders.tree.AccessScope
 import org.pnfolder.pnlibrary.api.placeholders.tree.AccessRule
+import org.pnfolder.pnlibrary.api.placeholders.tree.AccessScope
+import org.pnfolder.pnlibrary.api.placeholders.tree.FormatChoice
+import org.pnfolder.pnlibrary.api.placeholders.tree.GroupData
+import org.pnfolder.pnlibrary.api.placeholders.tree.PlaceholderInstaller
+import org.pnfolder.pnlibrary.api.placeholders.tree.none
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 
 /**

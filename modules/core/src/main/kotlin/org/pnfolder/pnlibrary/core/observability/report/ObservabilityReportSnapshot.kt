@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.observability.report
 
-import org.pnfolder.pnlibrary.core.observability.store.StoredAttachment
-import org.pnfolder.pnlibrary.core.observability.ObservabilityRuntime
 import com.google.gson.GsonBuilder
 import org.pnfolder.pnlibrary.api.observability.observation.Observation
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationKeys
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.core.observability.ObservabilityRuntime
+import org.pnfolder.pnlibrary.core.observability.store.StoredAttachment
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 

@@ -32,8 +32,8 @@ import org.pnfolder.pnlibrary.core.menu.style.clockStamp
 import org.pnfolder.pnlibrary.core.menu.style.icon
 import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
-import org.pnfolder.pnlibrary.core.text.wrapText
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
+import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** Menu screens for scheduled tasks. */
 internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -119,7 +119,11 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         if (parent != null) {
             val item = icon(
                 Icons.ROLLBACK, "ARROW", "Подзадача от: ${TaskLabels.title(parent)}",
-                Style.lore(listOf("Эту задачу запустила другая задача."), listOf("Состояние" to TaskLabels.label(parent.status)), Style.left("открыть родителя")),
+                Style.lore(
+                    listOf("Эту задачу запустила другая задача."),
+                    listOf("Состояние" to TaskLabels.label(parent.status)),
+                    Style.left("открыть родителя"),
+                ),
             )
             builder.button(33, item, go { who -> taskDetail(who, parent.id.value, back) })
         }
@@ -169,7 +173,7 @@ internal class TaskScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
         val runs = buildList {
             add("Запусков" to "${task.runCount}")
             add("Пропущено" to "${task.skippedCount}")
-            task.lastDuration?.let { add("Последний заняла" to TaskLabels.span(it)) }
+            task.lastDuration?.let { add("Прошлый запуск шёл" to TaskLabels.span(it)) }
             TaskLabels.lag(task)?.let { add("Опоздание" to it) }
             add("Где" to TaskLabels.where(task))
         }

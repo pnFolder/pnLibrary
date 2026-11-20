@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.UpdateProducts
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.UpdateSettings
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
 import java.time.Duration
 import java.time.Instant
@@ -21,14 +23,19 @@ class RemoteExecutorTest {
 
     private val calls = mutableListOf<Call>()
     private var automaticAnswer: CompletionStage<UpdateSnapshot> = CompletableFuture.completedFuture(null)
-    private val updates: UpdateService = mock(UpdateService::class.java) { call ->
+    private val settings: UpdateSettings = mock(UpdateSettings::class.java) { call ->
         when (call.method.name) {
-            "setAutomaticDownload" -> {
+            "automaticDownload" -> {
                 calls += Call(call.getArgument(0), call.getArgument(1), call.getArgument(2))
                 automaticAnswer
             }
             else -> null
         }
+    }
+    private val products: UpdateProducts = mock(UpdateProducts::class.java)
+    private val updates: UpdateService = mock(UpdateService::class.java).also {
+        `when`(it.settings).thenReturn(settings)
+        `when`(it.products).thenReturn(products)
     }
     private val library = mock(PnLibrary::class.java).also { `when`(it.updates).thenReturn(updates) }
     private var now = Instant.parse("2026-11-04T10:00:00Z")
@@ -72,7 +79,7 @@ class RemoteExecutorTest {
         `when`(library.logging).thenReturn(logging)
         `when`(library.owner).thenReturn(owner)
         val failure = IllegalStateException("update service is down")
-        `when`(updates.get("shop")).thenThrow(failure)
+        `when`(products.get("shop")).thenThrow(failure)
 
         run(request(action = RemoteAction.UPDATE))
 

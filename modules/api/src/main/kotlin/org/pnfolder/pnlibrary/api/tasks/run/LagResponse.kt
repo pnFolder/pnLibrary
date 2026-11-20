@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.tasks.run
 
-
 /** What to do with a run that started late. */
 enum class LagResponse {
     /** Run it anyway, late. */

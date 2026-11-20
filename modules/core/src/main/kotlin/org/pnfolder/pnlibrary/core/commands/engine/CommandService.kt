@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.commands.engine
 
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.command
 
 /**

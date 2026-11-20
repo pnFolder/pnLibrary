@@ -84,20 +84,25 @@ internal class MenuSession(
         val first = if (total == 0) 0 else current * perPage + 1
         val range = "$first–${current * perPage + shown} из $total"
         if (current > 0) {
-            val previous = icon(null, "SPECTRAL_ARROW", "◀ Страница $current", Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на предыдущую")), good = true)
+            val lore = Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на предыдущую"))
+            val previous = icon(null, "SPECTRAL_ARROW", "◀ Страница $current", lore, good = true)
             builder.button(PREVIOUS, previous, go { reopen(it, current - 1) })
         } else if (pages > 1) {
             builder.slot(PREVIOUS, icon(null, "GRAY_DYE", "Это первая страница", emptyList(), muted = true))
         }
         if (current < pages - 1) {
-            val following = icon(null, "SPECTRAL_ARROW", "Страница ${current + 2} ▶", Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на следующую")), good = true)
+            val lore = Style.lore(emptyList(), listOf("Сейчас" to "${current + 1} из $pages"), Style.left("на следующую"))
+            val following = icon(null, "SPECTRAL_ARROW", "Страница ${current + 2} ▶", lore, good = true)
             builder.button(NEXT, following, go { reopen(it, current + 1) })
         } else if (pages > 1) {
             builder.slot(NEXT, icon(null, "GRAY_DYE", "Это последняя страница", emptyList(), muted = true))
         }
         builder.button(
             REFRESH,
-            icon(Icons.CHECK, "COMPASS", "Страница ${current + 1} из $pages", Style.lore(listOf("Показано $range."), emptyList(), Style.left("обновить список"))),
+            icon(
+                Icons.CHECK, "COMPASS", "Страница ${current + 1} из $pages",
+                Style.lore(listOf("Показано $range."), emptyList(), Style.left("обновить список")),
+            ),
             go { reopen(it, current) },
         )
     }

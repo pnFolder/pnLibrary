@@ -72,7 +72,8 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         list(
             player, "Конфигурации", rows, page, PAGE_SIZE, { who, to -> configsBy(who, top, to) }, { routes.home(it) }, "Конфигураций нет",
             extra = {
-                it.button(FILTER, switcher("Показать", "Выбрать плагин или сразу увидеть все файлы.", Top.entries.map { t -> t.label }, top.ordinal), go { who -> configsBy(who, other, 0) })
+                val switch = switcher("Показать", "Выбрать плагин или сразу увидеть все файлы.", Top.entries.map { t -> t.label }, top.ordinal)
+                it.button(FILTER, switch, go { who -> configsBy(who, other, 0) })
                 it.slot(DATE_FILTER, ConfigLook.place("Плагинов" to "${all.map { f -> f.plugin }.distinct().size}", "Файлов" to "${all.size}"))
             },
         )
@@ -97,12 +98,20 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val modules = files.map { it.module }.distinct().sorted()
         val shown = view ?: if (modules.size > 1) View.MODULES else View.FILES
         val rows = if (shown == View.MODULES) modules.map { moduleRow(plugin, it, files.filter { f -> f.module == it }, top) }
-        else files.sortedWith(compareBy({ it.module }, { it.path })).map { fileRow(it, false, modules.size > 1) { who -> pluginFiles(who, plugin, shown, page, top) } }
+        else {
+            files.sortedWith(compareBy({ it.module }, { it.path }))
+                .map { fileRow(it, false, modules.size > 1) { who -> pluginFiles(who, plugin, shown, page, top) } }
+        }
         val switch = View.entries.first { it != shown }
         list(
-            player, plugin, rows, page, PAGE_SIZE, { who, to -> pluginFiles(who, plugin, shown, to, top) }, { configsBy(it, top, 0) }, "У плагина нет конфигураций",
+            player, plugin, rows, page, PAGE_SIZE, { who, to -> pluginFiles(who, plugin, shown, to, top) }, { configsBy(it, top, 0) },
+            "У плагина нет конфигураций",
             extra = {
-                it.button(FILTER, switcher("Показать", "Модули плагина или все его файлы подряд.", View.entries.map { v -> v.label }, shown.ordinal), go { who -> pluginFiles(who, plugin, switch, 0, top) })
+                it.button(
+                    FILTER,
+                    switcher("Показать", "Модули плагина или все его файлы подряд.", View.entries.map { v -> v.label }, shown.ordinal),
+                    go { who -> pluginFiles(who, plugin, switch, 0, top) },
+                )
                 it.slot(DATE_FILTER, ConfigLook.place("Плагин" to plugin, "Модулей" to "${modules.size}", "Файлов" to "${files.size}"))
             },
         )
@@ -141,7 +150,12 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             extra = {
                 it.slot(
                     DATE_FILTER,
-                    ConfigLook.place("Плагин" to address.plugin.value, "Модуль" to address.module.value, "Файл" to address.path, "Класс" to file?.model.orEmpty()),
+                    ConfigLook.place(
+                        "Плагин" to address.plugin.value,
+                        "Модуль" to address.module.value,
+                        "Файл" to address.path,
+                        "Класс" to file?.model.orEmpty(),
+                    ),
                 )
             },
         )
@@ -157,7 +171,10 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
         val numeric = setting.kind == ConfigSettingKind.INTEGER || setting.kind == ConfigSettingKind.DECIMAL
         when {
             setting.kind == ConfigSettingKind.TEXT -> allowed(player, CONFIGS_EDIT) { ask(player, id, setting) }
-            numeric && how == ClickType.MIDDLE -> allowed(player, CONFIGS_EDIT) { pickers.number(player, id, setting.path, here, writer(id), { who, item -> ask(who, id, item) }) }
+            numeric && how == ClickType.MIDDLE -> allowed(
+                player,
+                CONFIGS_EDIT,
+            ) { pickers.number(player, id, setting.path, here, writer(id), { who, item -> ask(who, id, item) }) }
             setting.kind == ConfigSettingKind.CHOICE && how.isShift() && setting.choices.size > 2 ->
                 allowed(player, CONFIGS_EDIT) { pickers.choice(player, id, setting.path, 0, here, writer(id)) }
             else -> next(setting, how)?.let { value -> allowed(player, CONFIGS_EDIT) { write(player, id, setting, value, here) } }
@@ -169,7 +186,10 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
     private fun writer(id: String): SettingWriter = { who, setting, value, after -> write(who, id, setting, value, after) }
 
     private fun ask(player: MenuViewer, id: String, setting: ConfigSetting) {
-        val hint = listOf(setting.format.takeIf(String::isNotBlank)?.let { "Формат: $it." }, setting.examples.takeIf { it.isNotEmpty() }?.let { "Например: ${it.joinToString()}." })
+        val hint = listOf(
+            setting.format.takeIf(String::isNotBlank)?.let { "Формат: $it." },
+            setting.examples.takeIf { it.isNotEmpty() }?.let { "Например: ${it.joinToString()}." },
+        )
             .filterNotNull().joinToString(" ")
         suggestCommand(player, "Введите новое значение для «${setting.title}». $hint".trim(), "/pn configs edit $id ${setting.path} ${setting.value.orEmpty()}")
     }
@@ -186,7 +206,9 @@ internal class ConfigScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             }
             host.sync {
                 if (outcome != null) tell(player, ChatTone.FAILURE, "Не изменено.", outcome)
-                else if (setting.apply != ConfigApply.LIVE) tell(player, ChatTone.WARNING, "Сохранено: ${setting.title} = $next.", "Заработает: ${ConfigLook.applyWord(setting.apply)}.")
+                else if (setting.apply != ConfigApply.LIVE) {
+                    tell(player, ChatTone.WARNING, "Сохранено: ${setting.title} = $next.", "Заработает: ${ConfigLook.applyWord(setting.apply)}.")
+                }
                 after(player)
             }
         }

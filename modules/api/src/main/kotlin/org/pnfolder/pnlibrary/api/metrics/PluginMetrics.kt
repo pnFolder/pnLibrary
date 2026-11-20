@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.metrics
 
-import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import java.util.function.Supplier
 
 /**

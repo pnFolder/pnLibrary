@@ -18,11 +18,11 @@ import org.pnfolder.pnlibrary.core.menu.style.SMALL_BACK
 import org.pnfolder.pnlibrary.core.menu.style.SMALL_ROWS
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.TITLE_LIMIT
-import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.menu.style.backItem
-import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.menu.style.menuFrame
 import org.pnfolder.pnlibrary.core.menu.style.menuTitle
+import org.pnfolder.pnlibrary.core.text.WRAP_WIDTH
 import org.pnfolder.pnlibrary.core.text.wrapText
 
 /** Writes [text] into a setting, then runs [after] with the viewer; the screens that edit a value share it. */
@@ -64,10 +64,16 @@ internal class ConfigPickers(session: MenuSession, routes: MenuRoutes) : MenuScr
     }
 
     private fun stepItem(sign: String, label: String, down: Boolean): ItemSpec =
-        icon(null, if (down) "RED_DYE" else "LIME_DYE", "$sign $label", Style.lore(emptyList(), emptyList(), Style.left(if (down) "уменьшить" else "увеличить")), danger = down, good = !down)
+        icon(
+            null, if (down) "RED_DYE" else "LIME_DYE", "$sign $label",
+            Style.lore(emptyList(), emptyList(), Style.left(if (down) "уменьшить" else "увеличить")), danger = down, good = !down,
+        )
 
     private fun edge(name: String, limit: Double, setting: ConfigSetting): ItemSpec =
-        icon(Icons.CLOCK, "CLOCK", name, Style.lore(emptyList(), listOf("Значение" to ConfigNumbers.shown(setting.copy(value = ConfigLook.number(limit)))), Style.left("поставить")))
+        icon(
+            Icons.CLOCK, "CLOCK", name,
+            Style.lore(emptyList(), listOf("Значение" to ConfigNumbers.shown(setting.copy(value = ConfigLook.number(limit)))), Style.left("поставить")),
+        )
 
     /** Rounds to what the field holds: whole numbers without a fraction, decimals to thousandths. */
     private fun text(setting: ConfigSetting, value: Double): String {
@@ -88,7 +94,10 @@ internal class ConfigPickers(session: MenuSession, routes: MenuRoutes) : MenuScr
         }
         list(
             player, setting.title.take(TITLE_LIMIT), rows, page, PAGE_SIZE, { who, to -> choice(who, id, path, to, done, write) }, done, "Вариантов нет",
-            extra = { it.slot(DATE_FILTER, ConfigLook.place("Настройка" to setting.title, "Сейчас" to setting.value.orEmpty(), "Вариантов" to "${setting.choices.size}")) },
+            extra = {
+                val facts = ConfigLook.place("Настройка" to setting.title, "Сейчас" to setting.value.orEmpty(), "Вариантов" to "${setting.choices.size}")
+                it.slot(DATE_FILTER, facts)
+            },
         )
     }
 

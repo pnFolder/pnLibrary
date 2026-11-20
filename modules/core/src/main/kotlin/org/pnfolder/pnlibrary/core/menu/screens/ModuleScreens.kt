@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.menu.screens
 
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.core.commands.modules.DiskReport
 import org.pnfolder.pnlibrary.core.commands.modules.DiskRow
 import org.pnfolder.pnlibrary.core.commands.modules.DiskUsage
 import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
-import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.core.commands.modules.ModuleLabels
 import org.pnfolder.pnlibrary.core.menu.ItemSpec
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes
@@ -211,9 +211,12 @@ internal class ModuleScreens(session: MenuSession, routes: MenuRoutes) : MenuScr
             val reopen = { who: MenuViewer -> module(who, key, back) }
             val on = info.state == ModuleState.ENABLED
             builder.button(10, control(Icons.CHECK, "EMERALD", "Включить", "Запустить модуль.", !on), act(key, "enable", "включён", reopen))
-            builder.button(11, control(Icons.PROBLEMS, "REDSTONE", "Выключить", "Остановить до следующего запуска сервера.", on), act(key, "disable", "выключен", reopen))
-            builder.button(12, control(Icons.UPDATES, "REPEATER", "Перезапустить", "Выключить и включить заново.", true), act(key, "restart", "перезапущен", reopen))
-            builder.button(13, control(Icons.SETTINGS, "WRITABLE_BOOK", "Перечитать", "Перечитать настройки; если сам не умеет, перезапустится.", on), act(key, "reload", "перечитан", reopen))
+            val off = control(Icons.PROBLEMS, "REDSTONE", "Выключить", "Остановить до следующего запуска сервера.", on)
+            builder.button(11, off, act(key, "disable", "выключен", reopen))
+            val restart = control(Icons.UPDATES, "REPEATER", "Перезапустить", "Выключить и включить заново.", true)
+            builder.button(12, restart, act(key, "restart", "перезапущен", reopen))
+            val reload = control(Icons.SETTINGS, "WRITABLE_BOOK", "Перечитать", "Перечитать настройки; если сам не умеет, перезапустится.", on)
+            builder.button(13, reload, act(key, "reload", "перечитан", reopen))
             val toggle = if (info.autoStart) "auto-off" to "Не включать с сервером" else "auto-on" to "Включать с сервером"
             builder.button(
                 15, control(Icons.HISTORY, "CLOCK", toggle.second, "Сохраняется между перезапусками сервера.", true),

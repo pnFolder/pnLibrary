@@ -7,8 +7,8 @@ import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
@@ -132,7 +132,8 @@ class ModulesCommand(private val library: PnLibrary) {
             lines += kit.text(" $who", ChatPalette.ACCENT)
             own.forEach { row ->
                 var line = kit.text("    ${row.title}", ChatPalette.TEXT).append(kit.text(" ${row.version}", ChatPalette.SOFT))
-                        .append(kit.dot()).append(kit.text(when (row.scope) { "ISOLATED" -> "отдельно"; "LIBRARY" -> "в pnLibrary"; else -> "в плагине" }, ChatPalette.FAINT))
+                        .append(kit.dot())
+                        .append(kit.text(when (row.scope) { "ISOLATED" -> "отдельно"; "LIBRARY" -> "в pnLibrary"; else -> "в плагине" }, ChatPalette.FAINT))
                 if (row.size >= 0) line = line.append(kit.dot()).append(kit.text(DiskUsage.format(row.size), ChatPalette.SOFT))
                 line = line.append(kit.dot()).append(
                     when (row.trust) {

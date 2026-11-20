@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.api.dependencies.external
 
-import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
-import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
+import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
 import org.pnfolder.pnlibrary.api.internal.requireHttpsUri
+import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.net.URI
 
@@ -13,14 +14,24 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
     override val external: ExternalPluginDependency get() = this
     /** Third-party plugin name expected from the native platform. */
     val plugin: String = builder.plugin
+    /** Short name for people, such as `Vault economy`; the plugin name when not given. */
+    val title: String = builder.title ?: builder.plugin
+    /** One or two sentences on why the plugin is needed, shown to the administrator when it is missing. */
+    val description: String? = builder.description
     /** Oldest accepted plugin version. */
     val minimumVersion: SemanticVersion = builder.minimumVersion
     /** Accepted semantic-version interval. */
     override val versions: VersionConstraint = builder.versions()
     /** Administrator-facing download page, when declared. */
     val downloadPage: URI? = builder.downloadPage
-    /** Exact downloadable artifact, when automatic installation is possible. */
-    val artifact: ExternalArtifact? = builder.artifact
+    /** Every downloadable file, specific variants first and the general one last; empty when only a page is given. */
+    val artifacts: List<ExternalArtifact> = builder.allArtifacts()
+    /** The general downloadable file (or the first variant), when automatic installation is possible. */
+    val artifact: ExternalArtifact? = artifacts.firstOrNull { it.platforms.isEmpty() && it.minecraftFrom == null && it.minecraftBefore == null }
+        ?: artifacts.firstOrNull()
+
+    /** The file meant for this server: the first variant that fits [platform] and [minecraft], or null when none does. */
+    fun artifactFor(platform: PlatformType, minecraft: String?): ExternalArtifact? = artifacts.firstOrNull { it.fits(platform, minecraft) }
     /** Whether staged JAR metadata must match [plugin]. */
     val verifyPluginId: Boolean = builder.verifyPluginId
     /** Whether staged JAR metadata must satisfy [versions]. */
@@ -29,7 +40,7 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
     override val required: Boolean = builder.required
     /** Administrator/automatic download policy. */
     override val downloadPolicy: DownloadPolicy = builder.downloadPolicy
-        ?: if (builder.artifact != null) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
+        ?: if (artifacts.isNotEmpty()) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
 
     /** Fluent builder for an [ExternalPluginDependency]. */
     class Builder internal constructor(
@@ -45,20 +56,57 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         internal val mirrors = mutableListOf<URI>()
         internal var verifyPluginId = true
         internal var verifyVersion = true
+        internal val variants = mutableListOf<ExternalArtifact>()
+        internal var title: String? = null
+        internal var generalMaxBytes: Long? = null
+        internal var description: String? = null
+
+        /** Sets the largest accepted size in bytes of the general file (`artifact` or `url`); variants take their own `maxBytes`. */
+        fun maxBytes(value: Long): Builder = apply { generalMaxBytes = value }
+
+        /** Sets the short name people read in the notice about the missing plugin. */
+        fun title(value: String): Builder = apply { title = value.trim().ifEmpty { null } }
+
+        /** Says why the plugin is needed, in a sentence or two. */
+        fun description(value: String): Builder = apply { description = value.trim().ifEmpty { null } }
 
         /** Sets the page where the administrator can download the plugin by hand. */
         fun downloadPage(url: String): Builder = apply {
             downloadPage = requireHttpsUri(url, "Download page must use HTTPS")
         }
 
-        /** Sets a direct download with its expected size and SHA-256 checksum. */
-        fun artifact(url: String, size: Long, sha256: String): Builder = apply {
-            artifact = ExternalArtifact(URI.create(url), size, sha256)
+        /** Sets a direct download with the SHA-256 checksum the file must match. */
+        fun artifact(url: String, sha256: String): Builder = apply {
+            artifact = ExternalArtifact(URI.create(url), sha256)
         }
         /** Sets a direct download URL without an integrity check. */
-        fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null, null) }
+        fun url(value: String): Builder = apply { artifact = ExternalArtifact(URI.create(value), null) }
 
-        /** Adds another HTTPS address of the same file; without a checksum the copies are compared with each other. */
+        /**
+         * Adds a file meant only for some servers: other [platforms] (empty means all) and/or a range of Minecraft versions
+         * from [minecraftFrom] (inclusive) up to [minecraftBefore] (exclusive). It has its own [sha256] and [mirrors]; the
+         * first variant that fits the server is the one downloaded, and only that one is checked.
+         */
+        @JvmOverloads
+        fun variant(
+            url: String,
+            sha256: String? = null,
+            platforms: Set<PlatformType> = emptySet(),
+            minecraftFrom: String? = null,
+            minecraftBefore: String? = null,
+            mirrors: List<String> = emptyList(),
+            label: String? = null,
+            maxBytes: Long? = null,
+        ): Builder = apply {
+            variants += ExternalArtifact(
+                URI.create(url), sha256, mirrors.map { requireHttpsUri(it, "Mirror must use HTTPS") },
+                platforms, minecraftFrom, minecraftBefore, label, maxBytes,
+            )
+        }
+
+        internal fun allArtifacts(): List<ExternalArtifact> = variants + listOfNotNull(artifact)
+
+        /** Adds another HTTPS address of the same file; tried when the one before does not answer. */
         fun mirror(value: String): Builder = apply { mirrors += requireHttpsUri(value, "Mirror must use HTTPS") }
 
         /** Sets whether the plugin refuses to start without this dependency. */
@@ -93,17 +141,20 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
 
         /** Validates and creates the immutable dependency. */
         fun build(): ExternalPluginDependency {
-            require(downloadPage != null || artifact != null) { "External dependency requires a download page or artifact" }
-            require(artifact != null || downloadPolicy == null || downloadPolicy == DownloadPolicy.MANUAL) {
+            require(downloadPage != null || artifact != null || variants.isNotEmpty()) { "External dependency requires a download page or artifact" }
+            require(artifact != null || variants.isNotEmpty() || downloadPolicy == null || downloadPolicy == DownloadPolicy.MANUAL) {
                 "A download page cannot be installed automatically"
             }
-            artifact = artifact?.let { ExternalArtifact(it.uri, it.size, it.sha256, mirrors.toList()) }
+            artifact = artifact?.let { ExternalArtifact(it.uri, it.sha256, mirrors.toList(), maxBytes = generalMaxBytes) }
+            check(variants.size + (if (artifact != null) 1 else 0) <= MAX_FILES) { "Too many files for one dependency" }
             versions()
             return ExternalPluginDependency(this)
         }
     }
 
     companion object {
+        private const val MAX_FILES = 16
+
         /** Starts a dependency for [plugin] with the supplied minimum version. */
         @JvmStatic
         fun builder(plugin: String, minimumVersion: String): Builder {

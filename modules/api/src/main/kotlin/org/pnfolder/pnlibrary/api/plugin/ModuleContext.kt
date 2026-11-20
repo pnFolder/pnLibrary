@@ -1,28 +1,28 @@
 package org.pnfolder.pnlibrary.api.plugin
 
-import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
-import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
-import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
-import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
-import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
-import org.pnfolder.pnlibrary.api.commands.definition.command
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
+import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
-import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.events.bus.EventScope
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
+import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
@@ -32,8 +32,7 @@ import org.pnfolder.pnlibrary.localization.MinecraftLocalization
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
 interface ModuleContext : AutoCloseable {
     /** Registers a command released when this module closes. */
-    fun registerCommand(command: CommandDefinition): CommandRegistration =
-        throw UnsupportedOperationException("Module commands are not available in this runtime")
+    fun registerCommand(command: CommandDefinition): CommandRegistration
 
     /**
      * Answers errors of class [type] for every command of this module with [handler]. The most specific level
@@ -41,9 +40,7 @@ interface ModuleContext : AutoCloseable {
      * [PluginRegistration.onCommandError], over the library's standard
      * answer from the library's settings.
      */
-    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>) {
-        throw UnsupportedOperationException("Module commands are not available in this runtime")
-    }
+    fun <E : CommandError> onCommandError(type: Class<E>, handler: CommandErrorHandler<E>)
 
     /** Answers errors of class [type] for every command of this module with the plain [message]. */
     fun <E : CommandError> onCommandError(type: Class<E>, message: String) {
@@ -76,17 +73,15 @@ interface ModuleContext : AutoCloseable {
      * version and locale one plugin loaded is cached for all. Closing this view does nothing, and keyboard layouts
      * registered through its `layouts` are removed when this module closes; no handle needs closing.
      *
-     * Available on game servers only: on a proxy this throws [UnsupportedOperationException].
+     * Backed by the library's localization expansion, which is made for game servers.
      */
     val localization: MinecraftLocalization
-        get() = throw UnsupportedOperationException("Minecraft localization is not available on this platform")
     /**
      * The library's expansions with ownership: what this module registers through it is disabled and unregistered when
      * the module closes, with no handle to keep. Lookups read the same registry as `PnLibrary.expansions`, and ids stay
      * unique across the library.
      */
     val expansions: ExpansionManager
-        get() = throw UnsupportedOperationException("Expansions are not available in this runtime")
     /** Module-bound structured logger. */
     val logger: PnLogger
     /** Module-bound configuration scope. */
@@ -111,10 +106,8 @@ interface ModuleContext : AutoCloseable {
     val downloads: DownloadRegistration?
     /** The Maven libraries of this module; see `PluginModule.libraries()`. */
     val libraries: ModuleLibraries
-        get() = throw UnsupportedOperationException("Module libraries are not available in this runtime")
     /** Switches this module on and off; the same operations as `/pn modules` and the menu. */
     val control: ModuleControl
-        get() = throw UnsupportedOperationException("Module control is not available in this runtime")
     /** Whether this module has released all owned resources. */
     val isClosed: Boolean
     /** Releases every capability and registration owned by this module. */

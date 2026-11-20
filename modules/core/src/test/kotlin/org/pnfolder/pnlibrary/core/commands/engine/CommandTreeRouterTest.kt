@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.command
 
 class CommandTreeRouterTest {
@@ -55,7 +55,8 @@ class CommandTreeRouterTest {
 
         assertEquals(listOf("public"), deniedSuggestions)
         assertEquals(listOf("public", "secret"), allowedSuggestions)
-        val deniedUsage = (router.route(definition, context(listOf("builders"))) as CommandRoute.Problem).error as org.pnfolder.pnlibrary.api.commands.error.BadUsage
+        val problem = router.route(definition, context(listOf("builders"))) as CommandRoute.Problem
+        val deniedUsage = problem.error as org.pnfolder.pnlibrary.api.commands.error.BadUsage
         assertEquals("/group <group> public", deniedUsage.usage)
         assertTrue(
             (router.route(definition, context(listOf("builders", "secret", "delete"))) as CommandRoute.Problem).error

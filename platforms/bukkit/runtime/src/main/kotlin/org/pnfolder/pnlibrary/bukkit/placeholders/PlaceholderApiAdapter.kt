@@ -4,10 +4,10 @@ import me.clip.placeholderapi.PlaceholderAPI
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.OfflinePlayer
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterCapabilities
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId

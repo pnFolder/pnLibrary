@@ -6,18 +6,18 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.scenario.requirements.RequirementContext
-import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
+import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
+import org.pnfolder.pnlibrary.api.scenario.requirements.RequirementContext
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
-import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 import org.pnfolder.pnlibrary.api.text.ComponentService
+import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.time.Duration
 import java.util.Collections
@@ -109,7 +109,6 @@ class ActionContext(
             .build())
     }
 
-
     /**
      * Registers how to take back what the current step did, for example giving a charge back.
      *
@@ -134,7 +133,6 @@ class ActionContext(
             runCatchingNonFatal(undo).onFailure { logger.error("Could not undo: $description", it) }
         }
     }
-
 
     override fun <T : Any> service(type: Class<T>): T? = (services[type] ?: serviceLookup(type))?.let(type::cast)
 
@@ -177,7 +175,6 @@ class ActionContext(
 
     /** The audience an action aimed at [target] sends to. */
     fun target(target: ActionTarget): LibraryAudience = if (target == ActionTarget.PLAYER) player else allPlayers
-
 
     /** Fills in the placeholders of [text] (see [format]), then parses it with [type] or [serializerType]. */
     fun component(text: String, type: ComponentSerializerType? = null): Component =

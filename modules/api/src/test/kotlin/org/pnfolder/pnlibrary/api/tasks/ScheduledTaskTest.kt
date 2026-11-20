@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.tasks.spec.ScheduledTask
 import org.pnfolder.pnlibrary.api.tasks.run.TaskContext
+import org.pnfolder.pnlibrary.api.tasks.spec.ScheduledTask
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import java.time.Duration

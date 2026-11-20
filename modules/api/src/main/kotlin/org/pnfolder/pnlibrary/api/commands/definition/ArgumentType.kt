@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.api.commands.definition
 
-import org.pnfolder.pnlibrary.api.commands.error.PlayerNotFound
-import org.pnfolder.pnlibrary.api.commands.error.InvalidArgument
-import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.InvalidArgument
+import org.pnfolder.pnlibrary.api.commands.error.PlayerNotFound
 import java.math.BigDecimal
 import java.util.Locale
 

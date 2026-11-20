@@ -5,15 +5,15 @@ import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.style.ChatTone
-import org.pnfolder.pnlibrary.api.commands.error.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.commands.error.BadUsage
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
-import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.error.ConsoleOnly
 import org.pnfolder.pnlibrary.api.commands.error.InvalidArgument
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
@@ -113,7 +113,7 @@ internal fun CommandSender.usageNotice(text: String, help: List<String> = emptyL
     val command = USAGE_COMMAND.find(text)?.value?.substringBefore('<')?.trimEnd()
     if (command != null && kit.reader.interactive) {
         line = line.clickEvent(ClickEvent.suggestCommand("$command "))
-            .hoverEvent(kit.tooltip(kit.text("Click to insert command", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
+            .hoverEvent(kit.tooltip(kit.text("Нажмите, чтобы вставить команду", ChatPalette.TEXT), kit.text(command, ChatPalette.LABEL)))
     }
     send(line)
     help.forEach { send(kit.text("    $it", ChatPalette.LABEL)) }

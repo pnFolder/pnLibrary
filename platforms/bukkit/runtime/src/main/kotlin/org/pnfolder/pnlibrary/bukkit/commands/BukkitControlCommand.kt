@@ -3,9 +3,9 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
-import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
@@ -16,8 +16,8 @@ import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
-import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.modules.ModulesCommand
+import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
 import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
@@ -181,7 +181,7 @@ internal class BukkitControlCommand(
         replies.say(sender, ChatTone.INFO, "Команды pnLibrary, доступные вам:", available.joinToString("  "))
     }
 
-    private fun productNames(): List<String> = library.updates.all().map { it.snapshot.product }
+    private fun productNames(): List<String> = library.updates.products.all().map { it.snapshot.product }
 
     internal companion object {
         /** Catalog routes of the `/pn` tree, shared with the join notice. */

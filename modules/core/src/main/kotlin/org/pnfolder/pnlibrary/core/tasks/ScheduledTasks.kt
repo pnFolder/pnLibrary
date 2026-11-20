@@ -1,13 +1,13 @@
 package org.pnfolder.pnlibrary.core.tasks
 
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle
-import org.pnfolder.pnlibrary.api.tasks.info.TaskId
-import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.TaskServiceSettings
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter

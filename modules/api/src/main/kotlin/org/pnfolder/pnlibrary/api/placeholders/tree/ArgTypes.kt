@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-
 /** The argument types a placeholder branch can take. */
 object ArgTypes {
     val int: ArgType<Int> = object : ArgType<Int>("int") {

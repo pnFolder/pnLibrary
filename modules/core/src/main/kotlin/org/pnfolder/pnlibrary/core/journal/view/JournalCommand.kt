@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.journal.view
 
-import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.CommandContext
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.core.journal.store.JournalStore
 
 /**
  * `/pn events [info|warning|error|all] [page]`: the journal with repeats of one event folded into a single row.

@@ -5,12 +5,21 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import java.net.URI
 import java.security.SecureRandom
 
-/** One plugin that is not installed (or too old) with the addresses it can be had from. */
+/** One plugin that is not installed (or too old): what it is, why it is needed, and the addresses it can be had from. */
 internal data class MissingDependency(
     val plugin: String,
     val minimum: String,
     val page: URI?,
     val sources: List<URI>,
+    val title: String = plugin,
+    val description: String? = null,
+    val required: Boolean = true,
+    /** `true` when the author gave a SHA-256 the file is checked against; else the file is taken as downloaded. */
+    val checked: Boolean = false,
+    /** Name of the chosen file when the plugin has several for different servers. */
+    val variant: String? = null,
+    /** `true` when the plugin has files, but none is made for this platform or Minecraft version. */
+    val noFileForServer: Boolean = false,
 )
 
 /** The missing dependencies of one plugin; [code] confirms their installation from the console. */

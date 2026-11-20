@@ -9,14 +9,12 @@ import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigSerializerInfo
 import org.pnfolder.pnlibrary.api.config.ConfigSerializerRegistration
+import org.pnfolder.pnlibrary.api.config.ConfigTypeConflict
 import org.pnfolder.pnlibrary.api.config.ConfigTypeInfo
 import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration
-import org.pnfolder.pnlibrary.api.config.ConfigTypeConflict
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
-import org.pnfolder.pnlibrary.api.config.MissingFilePolicy
-import org.pnfolder.pnlibrary.api.config.UnknownValuePolicy
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginAccess
@@ -29,7 +27,6 @@ import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.IdentityHashMap
@@ -171,6 +168,7 @@ class ConfigurationServiceImpl(
         private val directory: Path,
         private val logger: PnLogger,
     ) : ConfigScope {
+        private val paths = ConfigPaths(directory, plugin)
         private val handles = linkedSetOf<OwnedConfig<*>>()
         private val announcements = mutableListOf<AutoCloseable>()
         private val serializers = BuiltInConfigSerializers.create()
@@ -194,8 +192,8 @@ class ConfigurationServiceImpl(
             check(!scopeClosed.get()) { "Configuration scope is closed" }
             val relative = Paths.get(path).normalize()
             val external = options.root == ConfigRoot.EXTERNAL
-            val target = if (external) externalTarget(path, relative) else checkedTarget(path, relative, rootDirectory(options.root), options.root)
-            val effective = effectiveOptions(options)
+            val target = if (external) paths.external(path, relative) else paths.checked(path, relative, options.root)
+            val effective = paths.effective(options)
             val id = ConfigId(plugin, module, options.root, relative.toString().replace('\\', '/'))
             val defaultValue = defaults.get() ?: error("Configuration defaults cannot be null")
             val codec = AnnotatedYamlCodec(
@@ -215,7 +213,8 @@ class ConfigurationServiceImpl(
                 validator = ConfigValueValidator { value -> codec.validate(value) + validator.validate(value) },
                 options = effective,
             )
-            val owned = OwnedConfig(id, target, type, effective.readOnly, handle, ConfigSettingsEditor(ConfigObjectIntrospector(effective.naming), type), logger)
+            val editor = ConfigSettingsEditor(ConfigObjectIntrospector(effective.naming), type)
+            val owned = OwnedConfig(id, target, type, effective.readOnly, handle, editor, logger)
             register(owned)
             // Files of other plugins can hold secrets that the diagnostic report must not see, so only the plugin's own are announced.
             if (options.root == ConfigRoot.PLUGIN) {
@@ -247,48 +246,6 @@ class ConfigurationServiceImpl(
                 synchronized(files) { files.remove(owned.id) }
                 throw error
             }
-        }
-
-        /** The folder paths of [root] are counted from. */
-        private fun rootDirectory(root: ConfigRoot): Path = when (root) {
-            ConfigRoot.PLUGIN -> directory
-            ConfigRoot.PLUGINS -> directory.parent
-            ConfigRoot.SERVER -> directory.parent?.parent
-            ConfigRoot.EXTERNAL -> error("An external path is absolute and has no root folder")
-        } ?: error("The ${root.name.lowercase()} folder is not known for $plugin")
-
-        /** Someone else's files get strict handling whatever the options ask: never created, always backed up, unknown keys kept. */
-        private fun effectiveOptions(options: ConfigOptions): ConfigOptions =
-            if (options.root == ConfigRoot.PLUGIN || options.root == ConfigRoot.EXTERNAL) options else options.copy(
-                missingFile = MissingFilePolicy.FAIL,
-                backups = true,
-                unknownValues = if (options.unknownValues == UnknownValuePolicy.REMOVE) UnknownValuePolicy.PRESERVE else options.unknownValues,
-            )
-
-        /** An absolute path chosen by the plugin itself; only the file extension is checked. */
-        private fun externalTarget(path: String, relative: Path): Path {
-            require(relative.isAbsolute) { "An external configuration path must be absolute: $path" }
-            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) {
-                "Configuration file must use .yml or .yaml"
-            }
-            return relative
-        }
-
-        /** The absolute file for [path]; rejects paths outside the root, links out of it and other file extensions. */
-        private fun checkedTarget(path: String, relative: Path, base: Path, root: ConfigRoot): Path {
-            val label = if (root == ConfigRoot.PLUGIN) "plugin directory" else "${root.name.lowercase()} folder"
-            require(!relative.isAbsolute && !relative.startsWith("..")) {
-                "Configuration path must stay inside the $label"
-            }
-            require(path.endsWith(".yml", true) || path.endsWith(".yaml", true)) {
-                "Configuration file must use .yml or .yaml"
-            }
-            val target = base.resolve(relative).normalize()
-            require(target.startsWith(base)) { "Configuration path escapes the $label" }
-            if (Files.exists(target) && Files.exists(base)) {
-                require(target.toRealPath().startsWith(base.toRealPath())) { "Configuration path leaves the $label through a link" }
-            }
-            return target
         }
 
         // Announcing feeds diagnostics only, so a failing listener is logged and the file still works.

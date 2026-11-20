@@ -131,7 +131,15 @@ internal object ConfigLook {
         }
         val text = if (row.editable > 0) "Настройки, которые можно менять в игре." else "В этом файле нет настроек для игры. Его правят вручную."
         val hint = if (row.editable > 0) arrayOf(Style.left("настройки")) else emptyArray()
-        return icon(if (row.readOnly) Icons.LOCKED else Icons.CHANGELOG, if (row.readOnly) "BARRIER" else "WRITABLE_BOOK", name, Style.lore(about(text), shown, *hint), good = row.editable > 0 && row.loaded, warn = row.pending != null, muted = row.editable == 0)
+        return icon(
+            if (row.readOnly) Icons.LOCKED else Icons.CHANGELOG,
+            if (row.readOnly) "BARRIER" else "WRITABLE_BOOK",
+            name,
+            Style.lore(about(text), shown, *hint),
+            good = row.editable > 0 && row.loaded,
+            warn = row.pending != null,
+            muted = row.editable == 0,
+        )
     }
 
     /** One setting: the value, what it may be, when a change starts to work, and what a click does. */

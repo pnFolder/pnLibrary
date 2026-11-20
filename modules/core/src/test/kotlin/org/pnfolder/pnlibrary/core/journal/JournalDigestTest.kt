@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.core.journal
 
-import org.pnfolder.pnlibrary.core.journal.view.joinDigest
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.core.journal.view.joinDigest
 import java.time.Duration
 import java.time.Instant
 

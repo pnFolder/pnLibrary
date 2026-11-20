@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
+import org.pnfolder.pnlibrary.api.placeholders.model.ExternalPlaceholderRegistration
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderResolver
 import org.pnfolder.pnlibrary.api.plugin.PluginId

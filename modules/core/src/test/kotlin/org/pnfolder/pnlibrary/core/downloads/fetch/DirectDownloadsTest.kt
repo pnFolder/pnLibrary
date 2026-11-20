@@ -205,7 +205,8 @@ class DirectDownloadsTest {
                 return bytes.also { require(it.size <= maximumBytes) }
             }
         }
-        return DirectDownloads(platform, platform, platform, platform, platform, LibraryPaths(directory.resolve("plugins/pnLibrary")), { DownloadConfiguration(automatic = automatic) }, http = http)
+        val paths = LibraryPaths(directory.resolve("plugins/pnLibrary"))
+        return DirectDownloads(platform, platform, platform, platform, platform, paths, { DownloadConfiguration(automatic = automatic) }, http = http)
     }
 
     private fun pluginJar(name: String, version: String): ByteArray = ByteArrayOutputStream().also { output ->

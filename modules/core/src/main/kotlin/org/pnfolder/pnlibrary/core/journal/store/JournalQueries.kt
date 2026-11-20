@@ -1,13 +1,13 @@
 package org.pnfolder.pnlibrary.core.journal.store
 
-import org.pnfolder.pnlibrary.core.journal.view.joinDigest
-import org.pnfolder.pnlibrary.core.journal.JournalRecord
-import org.pnfolder.pnlibrary.core.journal.JournalLevel
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.journal.JournalLevel
+import org.pnfolder.pnlibrary.core.journal.JournalRecord
+import org.pnfolder.pnlibrary.core.journal.view.joinDigest
 import java.time.Duration
 
 /** What the menu and the join notice read from the journal: equal events merged, one event with its details. */

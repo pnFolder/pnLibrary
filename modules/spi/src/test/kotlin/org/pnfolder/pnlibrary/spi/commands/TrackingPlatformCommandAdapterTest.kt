@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.spi.commands
 
-import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
-import org.pnfolder.pnlibrary.api.commands.definition.completedExecution
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.completedExecution
+import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

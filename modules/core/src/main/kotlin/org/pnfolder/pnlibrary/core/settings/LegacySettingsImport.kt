@@ -81,7 +81,12 @@ internal class LegacySettingsImport(
     private fun retire(file: Path) {
         val old = file.resolveSibling("${file.fileName}.old")
         runCatchingNonFatal { AtomicFiles.move(file, old) }
-            .onSuccess { warning("${file.fileName} больше не используется: настройки перенесены в data/settings.json и меняются командой /pn settings. Файл сохранён как ${old.fileName}.") }
+            .onSuccess {
+                warning(
+                    "${file.fileName} больше не используется: настройки перенесены в data/settings.json и меняются командой /pn settings. " +
+                        "Файл сохранён как ${old.fileName}.",
+                )
+            }
             .onFailure { warning("${file.fileName} не удалось переименовать в ${old.fileName}: ${it.message}") }
     }
 }
