@@ -37,7 +37,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: gradle
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - name: Validate release identity and publication configuration
         shell: pwsh
         run: |
