@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.6",
+      "channel": "dev",
+      "description": "API поколения 2 (несовместим с dev.5). Зависимости плагинов с вариантами файлов и лимитом размера, меню «Что не хватает», команды /pn deps, кулдауны, конфигурации и меню, много тестов.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.6.md",
+      "publishedAt": "2026-11-21T06:49:47Z",
+      "api": {
+        "minimum": 2,
+        "maximum": 2
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.6-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.6/pnLibrary-0.1.0-dev.6-bukkit-java8.jar",
+          "sha256": "16c81ba13d09d28104b8052b4fe79c9040d46779deeb817f53aead4a9b09351a",
+          "size": 9141143
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.6-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.6/pnLibrary-0.1.0-dev.6-bungeecord-java8.jar",
+          "sha256": "13d04159d091d727dd7b19d67c12a9086b08794ae102d0f5f81c3790751706ff",
+          "size": 8271691
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.6-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.6/pnLibrary-0.1.0-dev.6-velocity-java17.jar",
+          "sha256": "84eba10a2a732170f9f9515bdefa51b1360e9ba1bc79425742b75ea44eaa6b21",
+          "size": 8290360
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.6-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.6/pnLibrary-0.1.0-dev.6-universal.jar",
+          "sha256": "53a9621ff1e0d6e92bc03de54bc00a6c10d2dec5afbdbda62d3d76ddc906e568",
+          "size": 6417279
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.2",
       "channel": "dev",
       "description": "Политики компилируются без JDK: ECJ грузит Libby. Убран sha256 политики. Сбои среды не уходят в телеметрию.",
