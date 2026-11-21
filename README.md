@@ -75,6 +75,20 @@ dependencies {
 
 Какие модули подключать и как собрать библиотеку локально, не публикуя, описано в [integration/README.md](integration/README.md).
 
+### Как получить библиотеку для сборки плагина
+
+pnLibrary не публикуется в Maven Central. Библиотеку скачивают из исходников нужной версии и ставят в локальный Maven-репозиторий своего компьютера:
+
+```powershell
+git clone https://github.com/pnFolder/pnLibrary.git
+cd pnLibrary
+git checkout v0.1.0-dev.6
+./gradlew.bat publishToMavenLocal --no-build-cache
+```
+
+После этого в `build.gradle.kts` плагина достаточно `repositories { mavenLocal() }` и зависимости нужной версии (`io.github.pnfolder:pnlibrary-api:0.1.0-dev.6`). Версия в зависимости должна совпадать с тегом, который вы поставили.
+Готовые jar для сервера лежат в [релизах GitHub](https://github.com/pnFolder/pnLibrary/releases). Сборка плагина на GitHub Actions без этого шага не найдёт библиотеку, поэтому плагины собираются и выпускаются локально.
+
 ```kotlin
 val library = PnLibraryProvider.get()
 val registration = library.plugins.register(this)
