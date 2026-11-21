@@ -272,7 +272,10 @@ class LibrarySettingsMenuTest {
         assertTrue("➤ Europe/Berlin" in text, text)
         assertTrue("▲ выше ещё" in text && "▼ ниже ещё" in text, text)
         assertTrue("Клик  следующий" in text && "Правый клик  предыдущий" in text && "Shift + клик  весь список" in text, text)
-        assertFalse("По умолчанию" in text.substringBefore("➤"), "no default line while the zone is unchanged")
+
+        val here = java.time.ZoneId.systemDefault().id
+        val unchanged = zoneTooltip(settingsScreen(Viewer(), rows(mapOf("time-zone" to here)))).joinToString("\n")
+        assertFalse("По умолчанию" in unchanged.substringBefore("➤"), "no default line while the zone is unchanged")
     }
 
     @Test
