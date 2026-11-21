@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 
+/** Renders the library configuration as a map for the diagnostics report. */
 internal object RuntimeConfigurationDetails {
     fun of(config: PnLibraryConfig): Map<String, Any?> = linkedMapOf(
         "privacy" to config.privacy,
@@ -15,7 +16,6 @@ internal object RuntimeConfigurationDetails {
         "taskHistoryCapacity" to config.taskHistoryCapacity,
         "keepReports" to config.keepReports,
         "maxReportBytes" to config.maxReportBytes,
-        "excludedPathCount" to config.excludedPaths.size,
         "redactionRuleCount" to (config.secretKeyPatterns.size + config.redactValuePatterns.size),
     )
 }

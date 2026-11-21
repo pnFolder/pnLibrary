@@ -1,13 +1,15 @@
 package org.pnfolder.pnlibrary.core.observability
 
-import org.pnfolder.pnlibrary.api.activity.ActivityCategory
-import org.pnfolder.pnlibrary.api.activity.ActivitySeverity
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReport
-import org.pnfolder.pnlibrary.api.observability.ObservabilityReportRequest
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationLevel
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
+import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
 import org.pnfolder.pnlibrary.core.logging.DiagnosticCapture
@@ -15,15 +17,15 @@ import org.pnfolder.pnlibrary.core.logging.DiagnosticLogBuffer
 import org.pnfolder.pnlibrary.core.observability.history.IncidentHistoryStore
 import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator
-import org.pnfolder.pnlibrary.core.observability.reportSnapshot
+import org.pnfolder.pnlibrary.core.observability.report.reportSnapshot
 import org.pnfolder.pnlibrary.core.upload.UploadLedger
 import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnostics
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogObservation
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -42,22 +44,22 @@ internal class SupportRuntime(
     private val platformLogging: PlatformLogging,
     private val diagnostics: DiagnosticsRegistry,
     private val config: PnLibraryConfig,
-    dataFolder: Path,
+    paths: LibraryPaths,
     private val runtimeDiagnostics: () -> Map<String, Any?> = { emptyMap() },
-    private val journal: ((Any, LogLevel, String, Throwable?) -> Unit)? = null,
+    private val journal: ((Any, LogLevel, String, Throwable?, Map<String, Any?>) -> Unit)? = null,
     private val onRuntimeError: (Any, Throwable) -> Unit = { _, _ -> },
 ) : AutoCloseable {
-    private val observations = ObservabilityRuntime(dataFolder)
-    private val diagnosticBridge = DiagnosticObservationBridge(observations)
+    private val observations = ObservabilityRuntime(paths)
     val service = ObservabilityHub(diagnostics, observations)
     val logs = DiagnosticLogBuffer(config.logRecords.coerceIn(10, 2_000))
     val capture = DiagnosticCapture(ownership, platformLogging, logs, journal) { logOwner, message, error ->
         service.record(
-            type = "RUNTIME_ERROR",
-            category = ActivityCategory.ERROR,
-            severity = ActivitySeverity.ERROR,
-            source = logOwner.javaClass.name,
-            metadata = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ObservationRequest(
+                source = logOwner.javaClass.name,
+                message = "RUNTIME_ERROR",
+                level = ObservationLevel.ERROR,
+                data = mapOf("message" to message.take(512), "exception" to error.javaClass.name),
+            ),
         )
         onRuntimeError(logOwner, error)
     }
@@ -65,17 +67,18 @@ internal class SupportRuntime(
     fun logSummary(): Map<String, Any?> = logs.summary()
 
     private val delivery = SupportDeliveryFactory(config)
-    private val uploadLedger = UploadLedger(dataFolder.resolve("upload-ledger.json"))
+    private val uploadLedger = UploadLedger(paths.uploadLedger)
     private val encryption = delivery.encryptionCodec()
     private val history = IncidentHistoryStore(
-        directory = dataFolder.resolve("diagnostics/history"),
+        directory = paths.diagnosticsHistory,
         codec = encryption,
         retentionDays = config.historyRetentionDays,
         maxBytes = config.historyMaxBytes.toLong(),
     )
     private val uploader = delivery.uploader()
     private val reports = SupportReportGenerator(
-        dataFolder = dataFolder,
+        dataFolder = paths.pluginFolder,
+        reportsFolder = paths.reports,
         config = config,
         diagnosticsRegistry = diagnostics,
         platformIdentity = identity,
@@ -89,6 +92,7 @@ internal class SupportRuntime(
         runtimeDiagnostics = runtimeDiagnostics,
     )
     private val persistRequested = AtomicBoolean(false)
+    private val internalFailures = FailureThrottle()
     private val reportInProgress = AtomicBoolean(false)
     private val reportsCreated = AtomicLong()
     private val reportsFailed = AtomicLong()
@@ -103,10 +107,11 @@ internal class SupportRuntime(
     }
 
     fun initialize(isRuntimeClosed: () -> Boolean) {
+        diagnostics.onInternalFailure = ::reportInternalFailure
         observations.configureReportFactory(::createObservabilityReport)
         logs.onChange { persistHistory() }
         diagnostics.onEventsChanged(::persistHistory)
-        diagnostics.onActivityEvent(diagnosticBridge::record)
+        diagnostics.onActivityEvent(::recordDiagnostic)
         platformLogObservation.observeNativeLogs { nativeOwner, level, message, error ->
             if (config.journalForeignPlugins || nativeOwner === owner) capture.observe(nativeOwner, level, message, error)
             else capture.observeWithoutJournal(nativeOwner, level, message, error)
@@ -197,7 +202,7 @@ internal class SupportRuntime(
         diagnostics.onEventsChanged(null)
         diagnostics.onActivityEvent(null)
         worker.shutdownNow()
-        if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() }
+        if (persistRequested.getAndSet(false)) saveHistory()
         diagnostics.clear()
         service.close()
     }
@@ -210,7 +215,7 @@ internal class SupportRuntime(
         if (!persistRequested.compareAndSet(false, true)) return
         try {
             worker.schedule(
-                { if (persistRequested.getAndSet(false)) runCatchingNonFatal { writeHistory() } },
+                { if (persistRequested.getAndSet(false)) saveHistory() },
                 HISTORY_FLUSH_DELAY_MS,
                 TimeUnit.MILLISECONDS,
             )
@@ -219,12 +224,44 @@ internal class SupportRuntime(
         }
     }
 
+    /** Turns one diagnostic incident into one observation. */
+    private fun recordDiagnostic(
+        plugin: String,
+        level: DiagnosticLevel,
+        component: String,
+        code: String,
+        message: String,
+        error: Throwable?,
+        fields: Map<String, Any?>,
+    ) {
+        observations.record(
+            ObservationRequest(
+                plugin = plugin,
+                source = component,
+                message = message,
+                level = level.toObservationLevel(),
+                data = fields.toStringValues() + mapOf("code" to code, "hasException" to (error != null).toString()),
+                error = error,
+            ),
+        )
+    }
+
     /** Logs a failed background job; a periodic task must not throw, or the executor cancels it. */
+    /** Console only: recording it would raise another diagnostic event and run the failing callback again. */
+    private fun reportInternalFailure(what: String, error: Throwable) {
+        if (!internalFailures.shouldReport("$what|${error.javaClass.name}")) return
+        capture.write(this, LogLevel.WARNING, what, error, record = false)
+    }
+
     private fun warnBackgroundFailure(job: String): (Throwable) -> Unit = { error ->
         capture.log(this, LogLevel.WARNING, "$job failed", error)
     }
 
-    // History writes stay silent: logging their failure would record a new incident and request another write.
+    /** A failed write is shown on the console only: recording it would add an incident and request another write. */
+    private fun saveHistory() {
+        runCatchingNonFatal { writeHistory() }.onFailure { reportInternalFailure("Diagnostic history could not be saved", it) }
+    }
+
     private fun writeHistory() {
         history.save(logs.snapshot(), diagnostics.eventSnapshot())
     }

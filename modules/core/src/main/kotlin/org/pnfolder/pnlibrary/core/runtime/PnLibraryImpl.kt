@@ -1,21 +1,22 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
+import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -23,32 +24,36 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
 import org.pnfolder.pnlibrary.api.services.ServiceManager
-import org.pnfolder.pnlibrary.api.tasks.TaskId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskId
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
-import org.pnfolder.pnlibrary.core.commands.standardCommandFeedback
+import org.pnfolder.pnlibrary.core.commands.engine.standardCommandFeedback
+import org.pnfolder.pnlibrary.core.commands.settings.SettingsCommand
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
-import org.pnfolder.pnlibrary.core.diagnostics.configFileDiagnostics
-import org.pnfolder.pnlibrary.core.diagnostics.diagnosticCommand
+import org.pnfolder.pnlibrary.core.diagnostics.command.diagnosticCommand
+import org.pnfolder.pnlibrary.core.diagnostics.config.reportConfigFile
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
-import org.pnfolder.pnlibrary.core.events.EventHistory
+import org.pnfolder.pnlibrary.core.events.inspect.history.EventHistory
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
+import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
+import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
-import org.pnfolder.pnlibrary.core.metrics.MetricsSessions
+import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
+import org.pnfolder.pnlibrary.core.placeholders.builtin.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
-import org.pnfolder.pnlibrary.core.platform.NativePlatform
+import org.pnfolder.pnlibrary.core.plugin.LibraryWords
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
+import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler
@@ -56,12 +61,19 @@ import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeShutdownPlan
+import org.pnfolder.pnlibrary.core.runtime.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
+import org.pnfolder.pnlibrary.core.settings.LegacySettingsImport
+import org.pnfolder.pnlibrary.core.settings.LibraryInfoFiles
+import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
+import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsRuntime
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
+import org.pnfolder.pnlibrary.updates.paths.LegacyPathsMigration
+import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.ZoneId
@@ -76,7 +88,7 @@ internal class PnLibraryImpl(
     override val owner: Any,
     private val platform: PlatformRuntimeContext,
     override val diagnostics: DiagnosticsRegistry,
-    private val config: PnLibraryConfig = PnLibraryConfig(),
+    presetConfig: PnLibraryConfig? = null,
     private val onClose: () -> Unit = {},
 ) : PnLibrary, PlatformRegistration, RuntimeResources {
     private val closedFlag = AtomicBoolean(false)
@@ -88,13 +100,35 @@ internal class PnLibraryImpl(
     val dataFolder: Path = platform.dataFolder
         ?: platform.ownership.ownerDataFolder(owner)
         ?: Paths.get("plugins", owner.javaClass.simpleName)
+    init {
+        org.pnfolder.pnlibrary.core.commands.modules.DiskUsage.pluginsFolder = dataFolder.toAbsolutePath().parent
+    }
+    private val paths = LibraryPaths(dataFolder)
+
+    /** Every setting an administrator may change; the command `/pn settings` and the menu edit it. */
+    private val settings: SettingsStore
+    private val config: PnLibraryConfig
 
     init {
-        DisplayZone.zone = ZoneId.of(config.timeZone)
+        val warn = { text: String -> platform.logging.log(owner, LogLevel.WARNING, text) }
+        // The old files are moved into data and read once, before the settings are used.
+        LegacyPathsMigration(paths, warn).run()
+        settings = SettingsStore(paths.settings, warn).also { LegacySettingsImport(paths, warn).run(it) }
+        config = presetConfig ?: settings.config()
+        DisplayZone.zone = ZoneId.of(settings.current().timeZone)
+        settings.onChange { DisplayZone.zone = ZoneId.of(it.timeZone) }
+        // Help and settings overview for administrators: written again at every start and after every change.
+        LibraryInfoFiles(paths, settings::values, version, warning = warn).also { files ->
+            files.refresh()
+            settings.onChange { files.refreshSettings() }
+        }
     }
 
     // Support and journal come first: every later part reports its failures through them.
-    private val journalRuntime = RuntimeJournal(dataFolder, config, platform.ownership, startedAtMillis, EVENTS_COMMAND)
+    private val journalRuntime = RuntimeJournal(
+        paths.journal, config, platform.ownership, startedAtMillis, EVENTS_COMMAND,
+        onWriteFailure = ::reportJournalFailure,
+    )
 
     // Written by init and close, read by error reports from any thread.
     @Volatile private var libraryMetrics: PluginMetrics? = null
@@ -107,7 +141,7 @@ internal class PnLibraryImpl(
         platformLogging = platform.logging,
         diagnostics = diagnostics,
         config = config,
-        dataFolder = dataFolder,
+        paths = paths,
         runtimeDiagnostics = { runtimeDiagnostics.assemble() },
         journal = journalRuntime::record,
         onRuntimeError = ::reportRuntimeError,
@@ -122,8 +156,12 @@ internal class PnLibraryImpl(
         capture = support.capture,
     )
 
-    private val features = RuntimeFeatureSet(platform, dataFolder, support.capture).also { set ->
-        set.configurations.fileListener = configFileDiagnostics(diagnostics)
+    private val features = RuntimeFeatureSet(owner, platform, paths, support.capture, settings).also { set ->
+        set.configurations.fileListener = { file ->
+            val handles = listOfNotNull(diagnostics.reportConfigFile(file), set.updates.databaseSources.register(file))
+            AutoCloseable { handles.forEach(AutoCloseable::close) }
+        }
+        LibraryWords.register(set.configurations.scope(owner))
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,
@@ -131,19 +169,24 @@ internal class PnLibraryImpl(
         taskAdapter = platform.taskAdapter,
         platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
-        taskHistoryFile = dataFolder.resolve("task-history.tsv"),
+        taskHistoryFile = paths.taskHistory,
         errorLogger = support::recordRuntimeError,
         commandFeedback = standardCommandFeedback(config),
+        onAudienceFailure = { error ->
+            support.recordRuntimeError(owner, "[pnLibrary/audiences] A message could not be delivered to a player", error)
+        },
     )
     private val tasks = platformServices.tasks
     private val commands = platformServices.commands
     private val eventService = EventDispatcher(
-        EventHistory(dataFolder.resolve("event-history.tsv"), config.eventHistoryDays, { DisplayZone.zone }),
+        EventHistory(
+            paths.eventHistory, config.eventHistoryDays, { DisplayZone.zone },
+            onFailure = { support.recordRuntimeError(owner, "[pnLibrary/events] The event history could not be read or saved", it) },
+        ),
     ) { pluginId, message, error -> support.recordRuntimeError(owner, "[$pluginId] $message", error) }
     private val platformProvider = NativePlatform()
 
     override val observability get() = support.service
-    override val activity: ActivityService get() = support.service
     override val metrics: MetricsService get() = metricsService
     override val configurations: ConfigurationService get() = features.configurations
     override val updates: UpdateService get() = features.updates
@@ -153,6 +196,7 @@ internal class PnLibraryImpl(
     override val expansions: ExpansionManager get() = features.expansions
     override val events: EventService get() = eventService
     override val platforms: PlatformProvider get() = platformProvider
+    override val proxy: NetworkProxy? = platform.networkProxy
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
     override val placeholderValues: PlaceholderValueStore get() = features.placeholderValues
 
@@ -172,6 +216,7 @@ internal class PnLibraryImpl(
         shared = SharedFeatures(features.placeholders, features.currency, features.expansions, features.libraryExpansions),
         commands = commands,
         directDownloads = features.downloads,
+        modulePreferences = ModulePreferences(dataFolder.resolve("modules").resolve("preferences.json")),
     )
     private val runtimeDiagnostics: RuntimeDiagnosticsAssembler = RuntimeDiagnosticsAssembler(
         version = version,
@@ -187,7 +232,9 @@ internal class PnLibraryImpl(
         commands = commands,
         journal = journalRuntime::summary,
     )
-    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journalRuntime.store)
+    private val stats = StatsRuntime(::taskSnapshots, { events.inspector.events() }, journalRuntime.store) { error ->
+        support.recordRuntimeError(owner, "[pnLibrary/stats] Could not record statistics", error)
+    }
     private val mountable = LinkedHashMap<String, CommandDefinition>()
 
     fun init() {
@@ -200,10 +247,11 @@ internal class PnLibraryImpl(
         ).start()
         stats.start()
         // The platform's `/pn` control command mounts these as its subcommands.
-        mountable["debug"] = diagnosticCommand(this, "/pn debug")
-        mountable["events"] = journalRuntime.command()
-        mountable["stats"] = stats.command()
-        mountable["placeholders"] = placeholdersCommand(features.placeholders)
+        mountable[MountableCommands.DEBUG] = diagnosticCommand(this, "/pn debug")
+        mountable[MountableCommands.EVENTS] = journalRuntime.command()
+        mountable[MountableCommands.STATS] = stats.command()
+        mountable[MountableCommands.PLACEHOLDERS] = placeholdersCommand(features.placeholders)
+        mountable[MountableCommands.SETTINGS] = SettingsCommand(settings, settingPicker).definition()
         LibraryPlaceholders(features.placeholders, startedAtMillis, { plugins.all().size }, stats::values).register()
         registerRuntimeCommand(libraryInfoCommand(this, platform.identity) {
             platform.ownership.ownerDetails(owner)["version"] ?: "неизвестна"
@@ -253,6 +301,12 @@ internal class PnLibraryImpl(
     override fun <T : Any> registerPlatform(type: Class<T>, implementation: T): AutoCloseable =
         platformProvider.register(type, implementation)
 
+    override fun dependencyDownloads() = features.downloads
+
+    override fun librarySettings(): SettingsStore = settings
+
+    override val settingPicker = SettingPickerHook()
+
     override fun taskSnapshots(): List<TaskSnapshot> = tasks.query().filterNot { it.hidden }
 
     override fun cancelTask(id: String): TaskControl =
@@ -271,6 +325,12 @@ internal class PnLibraryImpl(
     override fun statsSnapshot() = stats.snapshot()
 
     override fun placeholderInfos() = features.placeholders.describe()
+
+    /** The journal cannot record its own failure, so the console and the error tracker get it directly. */
+    private fun reportJournalFailure(error: Throwable) {
+        platform.logging.console(owner, "[pnLibrary/journal] Could not write to the journal: ${error.javaClass.simpleName}: ${error.message}")
+        reportRuntimeError(owner, error)
+    }
 
     private fun reportRuntimeError(logOwner: Any, error: Throwable) {
         libraryMetrics?.errorReporter?.capture(

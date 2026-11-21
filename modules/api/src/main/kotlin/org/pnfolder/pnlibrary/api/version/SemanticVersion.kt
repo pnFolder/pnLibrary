@@ -64,8 +64,10 @@ class SemanticVersion private constructor(
 
     /** Returns whether two versions have equal SemVer precedence. */
     override fun equals(other: Any?): Boolean = other is SemanticVersion && compareTo(other) == 0
+
     /** Hashes exactly the fields that participate in [equals]. */
-    override fun hashCode(): Int = listOf(major, minor, patch, prerelease).hashCode()
+    override fun hashCode(): Int = 31 * (31 * (31 * major + minor) + patch) + prerelease.hashCode()
+
     /** Returns the normalized version with prerelease identifiers; build metadata is omitted. */
     override fun toString(): String = "$major.$minor.$patch" +
         prerelease.takeIf(List<String>::isNotEmpty)?.joinToString(".", prefix = "-").orEmpty()

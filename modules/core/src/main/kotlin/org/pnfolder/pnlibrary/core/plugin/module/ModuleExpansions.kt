@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.ModuleBinding
 import org.pnfolder.pnlibrary.core.expansions.ModuleBoundExpansion
 

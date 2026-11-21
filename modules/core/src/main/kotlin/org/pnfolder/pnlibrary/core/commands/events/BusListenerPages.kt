@@ -1,25 +1,29 @@
 package org.pnfolder.pnlibrary.core.commands.events
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.ListenerInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.commands.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
+import org.pnfolder.pnlibrary.core.text.nanosText
+import org.pnfolder.pnlibrary.core.text.shortName
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+/** Chat pages describing bus listeners. */
 internal class BusListenerPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
     fun listeners(context: CommandContext, requestedPage: Int) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val all = bus.listeners()
-        val pages = pageCount(all.size)
+        val pages = pageCount(all.size, PAGE_SIZE)
         val page = requestedPage.coerceIn(1, pages)
         val lines = mutableListOf(
             kit.blank(),
@@ -33,7 +37,7 @@ internal class BusListenerPages(private val library: PnLibrary) {
             lines += chatPager(kit, "$ROOT listeners", page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit))
+        lines += busFooter(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 
@@ -52,22 +56,22 @@ internal class BusListenerPages(private val library: PnLibrary) {
     fun topDenied(context: CommandContext) = top(context, "Чаще всего отклонялись", "Отказов не было.") { it.denied }
 
     private fun top(context: CommandContext, title: String, empty: String, count: (EventInfo) -> Long) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val ranked = bus.events().filter { count(it) > 0 }.sortedByDescending(count).take(TOP_SIZE)
         val busiest = ranked.firstOrNull()?.let(count) ?: 0
         val lines = mutableListOf(kit.blank(), kit.header(title, kit.text("${ranked.size}", ChatPalette.LABEL)), kit.blank())
         if (ranked.isEmpty()) lines += kit.note(empty)
         ranked.forEach {
-            lines += kit.text("   ").append(kit.text(bar(kit, count(it), busiest), ChatPalette.SOFT))
+            lines += kit.text("   ").append(kit.text(busBar(kit, count(it), busiest), ChatPalette.SOFT))
                 .append(kit.text(" ${count(it)}  ", ChatPalette.LABEL)).append(kit.text(shortName(it.eventType), ChatPalette.TEXT))
         }
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit))
+        lines += busFooter(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 
     fun range(context: CommandContext, word: String) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val hours = RANGES.getValue(word)
         val totals = callsSince(LocalDateTime.now(DisplayZone.zone).truncatedTo(ChronoUnit.HOURS).minusHours(hours - 1L))
         val ranked = totals.entries.sortedByDescending { it.value.calls }.take(TOP_SIZE)
@@ -80,17 +84,18 @@ internal class BusListenerPages(private val library: PnLibrary) {
         if (bus.historyDays <= 0) lines += kit.note("История выключена.")
         else if (ranked.isEmpty()) lines += kit.note("За этот период событий не было.")
         ranked.forEach { (name, sums) ->
-            var line = kit.text("   ").append(kit.text(bar(kit, sums.calls, busiest), ChatPalette.SOFT))
+            var line = kit.text("   ").append(kit.text(busBar(kit, sums.calls, busiest), ChatPalette.SOFT))
                 .append(kit.text(" ${sums.calls}  ", ChatPalette.LABEL)).append(kit.text(shortName(name), ChatPalette.TEXT))
                 .append(kit.text("  ${"%.1f".format(sums.calls.toDouble() / hours)}/ч", ChatPalette.FAINT))
             if (sums.denied > 0) line = line.append(kit.text("  отказов ${sums.denied}", ChatPalette.DANGER))
             lines += line
         }
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit))
+        lines += busFooter(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 
+    /** Running call counters of a listener group. */
     private class Totals(var calls: Long = 0, var denied: Long = 0)
 
     private fun callsSince(since: LocalDateTime): Map<String, Totals> {
@@ -120,16 +125,16 @@ internal class BusListenerPages(private val library: PnLibrary) {
     }
 
     private fun listenerPage(context: CommandContext, requestedPage: Int, all: List<ListenerInfo>, title: String, empty: String, base: String) {
-        val kit = kit(context)
-        val pages = pageCount(all.size)
+        val kit = busKit(context)
+        val pages = pageCount(all.size, PAGE_SIZE)
         val page = requestedPage.coerceIn(1, pages)
         val lines = mutableListOf(kit.blank(), kit.header(title, kit.text("${all.size}", ChatPalette.LABEL)), kit.blank())
         if (all.isEmpty()) lines += kit.note(empty)
         all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { info ->
-            var line = kit.text("   ").append(kit.text(ownerOf(info), ChatPalette.ACCENT)).append(kit.dot())
+            var line = kit.text("   ").append(kit.text(info.ownerLabel(), ChatPalette.ACCENT)).append(kit.dot())
                 .append(kit.text(shortName(info.eventType), ChatPalette.TEXT))
-                .append(kit.text("  средн. ${micros(info.averageNanos)}", ChatPalette.LABEL))
-                .append(kit.text("  макс. ${micros(info.maxNanos)}", ChatPalette.SOFT))
+                .append(kit.text("  средн. ${nanosText(info.averageNanos)}", ChatPalette.LABEL))
+                .append(kit.text("  макс. ${nanosText(info.maxNanos)}", ChatPalette.SOFT))
                 .append(kit.text("  запусков ${info.invocations}", ChatPalette.FAINT))
             if (info.failures > 0) line = line.append(kit.text("  ошибок ${info.failures}", ChatPalette.DANGER))
             lines += line
@@ -139,7 +144,7 @@ internal class BusListenerPages(private val library: PnLibrary) {
             lines += chatPager(kit, base, page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit))
+        lines += busFooter(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 }

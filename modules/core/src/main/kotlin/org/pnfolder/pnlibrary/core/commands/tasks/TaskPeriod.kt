@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.core.commands.tasks
 
-import org.pnfolder.pnlibrary.api.tasks.TaskSnapshot
+import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import java.time.Duration
 import java.time.Instant
 
+/** Age bucket of a finished task in the task list; [word] is the command argument. */
 enum class TaskPeriod(val word: String, val label: String) {
     TODAY("today", "сегодня"),
 
@@ -15,9 +16,9 @@ enum class TaskPeriod(val word: String, val label: String) {
     ;
 
     fun keep(task: TaskSnapshot): Boolean = when (this) {
-        TODAY -> TaskLabels.isToday(task) || TaskLabels.isActive(task.status)
-        WEEK -> TaskLabels.activity(task).isAfter(Instant.now().minus(Duration.ofDays(WEEK_DAYS))) || TaskLabels.isActive(task.status)
-        OLDER -> !TaskLabels.isToday(task) && !TaskLabels.isActive(task.status)
+        TODAY -> TaskLabels.isToday(task) || task.isActive
+        WEEK -> TaskLabels.activity(task).isAfter(Instant.now().minus(Duration.ofDays(WEEK_DAYS))) || task.isActive
+        OLDER -> !TaskLabels.isToday(task) && !task.isActive
         ANY -> true
     }
 

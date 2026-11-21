@@ -17,6 +17,7 @@ internal class JdbcCurrencyLedger(
     private val accountsTable = schema.accountsTable
     private val transactionsTable = schema.transactionsTable
 
+    /** Returns the balance without locking; absent accounts read as zero. */
     fun readBalance(connection: Connection, currency: CurrencyKey, account: CurrencyAccount): BigDecimal =
         selectBalance(connection, currency, account, "")
 
@@ -26,6 +27,7 @@ internal class JdbcCurrencyLedger(
         return selectBalance(connection, currency, account, if (sqlite) "" else " FOR UPDATE")
     }
 
+    /** Selects the balance row, appending [suffix] (a lock clause or nothing). */
     private fun selectBalance(connection: Connection, currency: CurrencyKey, account: CurrencyAccount, suffix: String): BigDecimal {
         val sql = "SELECT balance FROM $accountsTable WHERE currency_id = ? AND account_id = ?$suffix"
         connection.prepareStatement(sql).use { statement ->
@@ -64,6 +66,7 @@ internal class JdbcCurrencyLedger(
         }
     }
 
+    /** Returns whether a balance row exists for [account]. */
     fun accountExists(connection: Connection, currency: CurrencyKey, account: CurrencyAccount): Boolean {
         connection.prepareStatement(
             "SELECT 1 FROM $accountsTable WHERE currency_id = ? AND account_id = ?",
@@ -91,6 +94,7 @@ internal class JdbcCurrencyLedger(
         }
     }
 
+    /** Inserts one ledger row. */
     fun insertTransaction(connection: Connection, value: CurrencyTransaction) {
         connection.prepareStatement(schema.insertTransactionSql()).use { statement ->
             val values = listOf(
@@ -119,6 +123,7 @@ internal class JdbcCurrencyLedger(
         }
     }
 
+    /** Returns the transaction already stored under [key], or null when the key is new. */
     fun findIdempotent(connection: Connection, currency: CurrencyKey, key: String): CurrencyTransaction? {
         connection.prepareStatement(
             "SELECT * FROM $transactionsTable WHERE currency_id = ? AND idempotency_key = ?",
@@ -129,6 +134,7 @@ internal class JdbcCurrencyLedger(
         }
     }
 
+    /** Deletes all balances and ledger rows of [currency]. */
     fun deleteCurrency(connection: Connection, currency: CurrencyKey) {
         listOf(transactionsTable, accountsTable).forEach { table ->
             connection.prepareStatement("DELETE FROM $table WHERE currency_id = ?").use { statement ->

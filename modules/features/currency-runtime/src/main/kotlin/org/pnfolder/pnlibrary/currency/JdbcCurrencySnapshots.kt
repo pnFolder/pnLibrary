@@ -20,6 +20,7 @@ internal class JdbcCurrencySnapshots(
     private val accountsTable = schema.accountsTable
     private val transactionsTable = schema.transactionsTable
 
+    /** Reads all balances and the full ledger of [currency] in the caller's transaction. */
     fun export(connection: Connection, currency: CurrencyKey): CurrencyStorageSnapshot {
         val balances = linkedMapOf<UUID, BigDecimal>()
         connection.prepareStatement(

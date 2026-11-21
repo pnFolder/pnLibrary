@@ -3,11 +3,11 @@ package org.pnfolder.pnlibrary.core.plugin.module
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 
 class ModuleRuntimeSummaryTest {
     private val metadata = PluginMetadata(

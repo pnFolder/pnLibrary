@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
+import org.pnfolder.pnlibrary.core.metrics.factory.CompositePluginMetrics
+import org.pnfolder.pnlibrary.core.metrics.factory.ProviderMetricsFactory
 import org.pnfolder.pnlibrary.spi.metrics.NoopMetricsFactory
 
 class ProviderMetricsFactoryTest {

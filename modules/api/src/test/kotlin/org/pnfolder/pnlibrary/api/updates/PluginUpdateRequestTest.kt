@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 
@@ -19,6 +21,13 @@ class PluginUpdateRequestTest {
 
         assertEquals(ApiVersionRange(1, 2), request.supportedApi)
         assertEquals(PlatformType.BUKKIT, request.artifacts.single().platform)
+    }
+
+    @Test
+    fun `a plugin with one jar needs no artifact rule`() {
+        val request = PluginUpdateRequest.builder().repository("pnFolder", "pnCases").build()
+
+        assertTrue(request.artifacts.isEmpty())
     }
 
     @Test

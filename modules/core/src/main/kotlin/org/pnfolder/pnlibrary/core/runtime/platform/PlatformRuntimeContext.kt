@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.platform
 
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
@@ -16,6 +17,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformShutdown
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
+/** All platform adapters the runtime needs, gathered in one place. */
 internal data class PlatformRuntimeContext(
     val identity: PlatformIdentity,
     val execution: PlatformExecution,
@@ -31,6 +33,7 @@ internal data class PlatformRuntimeContext(
     val dataFolder: Path,
     val binding: PlatformBinding,
     val shutdown: PlatformShutdown,
+    val networkProxy: NetworkProxy?,
 ) {
     val summaryName: String
         get() = if (identity.implementationName.equals(identity.type.displayName, ignoreCase = true)) {
@@ -55,4 +58,5 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     dataFolder = dataFolder,
     binding = this,
     shutdown = this,
+    networkProxy = networkProxy,
 )

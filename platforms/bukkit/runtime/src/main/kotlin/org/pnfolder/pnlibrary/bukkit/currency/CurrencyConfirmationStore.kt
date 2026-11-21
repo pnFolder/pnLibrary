@@ -5,12 +5,10 @@ import java.security.SecureRandom
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 
-/** Console-confirmation queue holding currency operations until an administrator approves them. */
 internal class CurrencyConfirmationStore {
     private val pending = ConcurrentHashMap<String, PendingOperation>()
     private val random = SecureRandom()
 
-    /** Stores an operation and returns its confirmation code, or null when the queue is full. */
     fun add(
         timeoutSeconds: Int,
         currency: String,
@@ -26,7 +24,6 @@ internal class CurrencyConfirmationStore {
             .also { pending[token] = it }
     }
 
-    /** Removes and returns the operation for [token], or null when unknown. */
     fun take(token: String): PendingOperation? = pending.remove(token.uppercase())
 
     fun discardExpired() {

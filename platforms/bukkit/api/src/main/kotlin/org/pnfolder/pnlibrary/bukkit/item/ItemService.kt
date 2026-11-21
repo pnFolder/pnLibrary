@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack
  */
 interface ItemService {
 
+    /** Builds an item stack from [spec]. */
     fun create(spec: ItemSpec): ItemStack
 
     /** Reads [section] in the default format; `null` when the section is absent. */
@@ -85,5 +86,6 @@ interface ItemService {
      */
     fun decode(encoded: String): ItemStack
 
+    /** Whether [item] is a real item: not `null` and not air. */
     fun isReal(item: ItemStack?): Boolean
 }

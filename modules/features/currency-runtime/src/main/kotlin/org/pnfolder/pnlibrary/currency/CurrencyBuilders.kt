@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.currency
 
-import org.pnfolder.pnlibrary.api.currency.CurrencyAccess
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
 import org.pnfolder.pnlibrary.api.currency.CurrencyConfirmationMode
@@ -14,10 +13,10 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderKey
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.time.Duration
@@ -29,12 +28,14 @@ import java.util.function.Consumer
 
 /** Common access and alias configuration shared by all currency builders. */
 internal open class CurrencyOptions : CurrencyRegistrationOptions {
-    var access: CurrencyAccess = CurrencyAccess.ownerOnly()
+    /** Visibility policy; owner-only until the plugin widens it. */
+    var access: PluginAccess = PluginAccess.ownerOnly()
+    /** Extra names under which the same currency can be resolved. */
     val aliases = linkedSetOf<String>()
 
-    override fun access(access: CurrencyAccess) = apply { this.access = access }
-    override fun access(configure: Consumer<CurrencyAccess.Builder>) = apply {
-        access = CurrencyAccess.builder().also(configure::accept).build()
+    override fun access(access: PluginAccess) = apply { this.access = access }
+    override fun access(configure: Consumer<PluginAccess.Builder>) = apply {
+        access = PluginAccess.builder().also(configure::accept).build()
     }
     override fun aliases(vararg aliases: String) = apply { this.aliases += aliases }
 }
@@ -46,6 +47,7 @@ internal class CurrencyDefinition(private val name: String) : CurrencyOptions(),
 
     override fun descriptor(configure: Consumer<CurrencyDescriptor.Builder>) = apply { configure.accept(descriptor) }
     override fun operations(configure: Consumer<CurrencyOperations>) = apply { configure.accept(operations) }
+    /** Builds the callback-backed provider; call after the user's configuration has run. */
     fun provider(): CurrencyProvider = operations.build(descriptor.build(), name)
 }
 
@@ -77,6 +79,7 @@ internal class ManagedCurrencyDefinition(
     override fun placeholders(configure: Consumer<CurrencyPlaceholderOptions>) = apply { configure.accept(placeholderOptions) }
     override fun commands(configure: Consumer<CurrencyCommandOptions>) = apply { configure.accept(commandOptions) }
 
+    /** Builds the storage-backed provider; fails when no storage was configured. */
     fun provider(): CurrencyProvider = ManagedCurrencyProvider(
         key = CurrencyKey(owner, normalizeCurrencyName(name)),
         descriptor = descriptor.build(),
@@ -86,6 +89,7 @@ internal class ManagedCurrencyDefinition(
         commandSettings = commandOptions.build(),
     )
 
+    /** Registers balance, formatted and symbol placeholders for [currency]; the caller closes the returned handles. */
     fun installPlaceholders(currency: CurrencyRegistration, placeholders: PlaceholderService): List<AutoCloseable> {
         if (!placeholderOptions.enabled) return emptyList()
         val normalizedName = normalizeCurrencyName(name)
@@ -115,14 +119,19 @@ internal class ManagedCurrencyDefinition(
     }
 }
 
+/** Mutable placeholder switches collected from the plugin's configuration callback. */
 private class ManagedPlaceholderOptions(defaultNamespace: String) : CurrencyPlaceholderOptions {
+    /** Whether placeholders are registered at all. */
     var enabled = true
-    var access: PlaceholderAccess = PlaceholderAccess.ownerOnly()
+    /** Who may resolve the placeholders. */
+    var access: PluginAccess = PluginAccess.ownerOnly()
+    /** Whether the placeholders are also published to PlaceholderAPI. */
     var placeholderApi = false
+    /** PlaceholderAPI identifier prefix. */
     var namespace = defaultNamespace
 
     override fun enabled(value: Boolean) = apply { enabled = value }
-    override fun access(access: PlaceholderAccess) = apply { this.access = access }
+    override fun access(access: PluginAccess) = apply { this.access = access }
     override fun placeholderApi(enabled: Boolean) = apply { placeholderApi = enabled }
     override fun placeholderApi(namespace: String) = apply {
         require(namespace.isNotBlank()) { "PlaceholderAPI namespace must not be blank" }
@@ -131,6 +140,7 @@ private class ManagedPlaceholderOptions(defaultNamespace: String) : CurrencyPlac
     }
 }
 
+/** Mutable command settings collected from the plugin's configuration callback, starting from the defaults. */
 private class ManagedCommandOptions : CurrencyCommandOptions {
     private val defaults = CurrencyCommandSettings()
     private var enabled = defaults.enabled
@@ -153,6 +163,7 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
     override fun confirmation(mode: CurrencyConfirmationMode) = apply { confirmationMode = mode }
     override fun confirmationTimeout(value: Duration) = apply { confirmationTimeout = value }
 
+    /** Creates immutable settings; validates the confirmation timeout. */
     fun build() = CurrencyCommandSettings(
         enabled = enabled,
         permissionPrefix = permissionPrefix,
@@ -166,6 +177,7 @@ private class ManagedCommandOptions : CurrencyCommandOptions {
     )
 }
 
+/** Lowercases and validates a currency name or alias (`a-z`, digits, `_`, `.`, `-`). */
 internal fun normalizeCurrencyName(value: String): String = value.trim().lowercase(Locale.ROOT).also {
     require(it.matches(Regex("[a-z0-9_.-]+"))) { "Invalid currency name: $value" }
 }

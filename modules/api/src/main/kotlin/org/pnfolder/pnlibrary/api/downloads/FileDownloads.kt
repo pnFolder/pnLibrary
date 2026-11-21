@@ -4,20 +4,6 @@ import java.nio.file.Path
 import java.util.Collections
 import java.util.function.Consumer
 
-/** Lifecycle state reported for one managed file download. */
-enum class DownloadState {
-    DECLARED,
-    CURRENT,
-    DOWNLOADING,
-    STAGED,
-    BLOCKED,
-    FAILED,
-    CLOSED
-}
-
-/** Root used to resolve a downloaded file's relative destination path. */
-enum class DownloadDestination { DATA_FOLDER, CACHE }
-
 /**
  * Immutable collection of files registered as one download unit.
  *
@@ -53,6 +39,7 @@ class FileDownloads private constructor(builder: Builder) {
     }
 
     companion object {
+        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

@@ -14,6 +14,7 @@ import java.util.Locale
  * @property maximumJava newest supported Java feature version, or `null` when unbounded
  * @property size expected byte length, when integrity metadata is available
  * @property sha256 expected lowercase SHA-256 digest, when available
+ * @property mirrors other addresses of the same file
  */
 class DirectDownloadSource private constructor(builder: Builder) {
     val uri: URI = requireNotNull(builder.uri) { "Download URL is required" }
@@ -22,6 +23,12 @@ class DirectDownloadSource private constructor(builder: Builder) {
     val maximumJava: Int? = builder.maximumJava
     val size: Long? = builder.size
     val sha256: String? = builder.sha256
+
+    /** Largest accepted file in bytes for this file only; `null` means the library-wide limit (512 MB). */
+    val maxBytes: Long? = builder.maxBytes
+
+    /** Other HTTPS addresses of the same file, tried in order after [uri] when it does not answer; with a checksum, the first file that matches wins. */
+    val mirrors: List<URI> = builder.mirrors.toList()
 
     /** Returns whether this source supports [platform] on [javaFeature]. */
     fun supports(platform: PlatformType, javaFeature: Int): Boolean =
@@ -36,9 +43,17 @@ class DirectDownloadSource private constructor(builder: Builder) {
         internal var maximumJava: Int? = null
         internal var size: Long? = null
         internal var sha256: String? = null
+        internal var maxBytes: Long? = null
+        internal val mirrors = mutableListOf<URI>()
 
+        /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply {
             uri = requireHttpsUri(value, "Download URL must use HTTPS")
+        }
+
+        /** Adds another HTTPS address of the same file. */
+        fun mirror(value: String): Builder = apply {
+            mirrors += requireHttpsUri(value, "Mirror URL must use HTTPS")
         }
 
         /** Restricts the source to [value]. */
@@ -52,10 +67,23 @@ class DirectDownloadSource private constructor(builder: Builder) {
             maximumJava = maximum
         }
 
+        /** Sets the expected size and SHA-256 checksum the downloaded file must match. */
         fun integrity(size: Long, sha256: String): Builder = apply {
             require(size > 0) { "Download size must be positive" }
             require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.size = size
+            this.sha256 = sha256.lowercase(Locale.ROOT)
+        }
+
+        /** Sets the largest accepted size of this file in bytes, smaller or larger than the library-wide limit (up to 2 GB). */
+        fun maxBytes(value: Long): Builder = apply {
+            require(value in 1..Int.MAX_VALUE.toLong()) { "Size limit must be between 1 byte and 2 GB" }
+            maxBytes = value
+        }
+
+        /** Sets the SHA-256 checksum the downloaded file must match; the size is not checked. */
+        fun sha256(sha256: String): Builder = apply {
+            require(sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "SHA-256 must contain 64 hexadecimal characters" }
             this.sha256 = sha256.lowercase(Locale.ROOT)
         }
 
@@ -64,6 +92,7 @@ class DirectDownloadSource private constructor(builder: Builder) {
     }
 
     companion object {
+        /** Creates a new [Builder]. */
         @JvmStatic
         fun builder(): Builder = Builder()
     }

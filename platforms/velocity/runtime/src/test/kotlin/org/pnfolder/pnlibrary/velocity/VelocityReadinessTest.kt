@@ -10,10 +10,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.pnfolder.pnlibrary.spi.metrics.NoopMetricsFactory
-import org.slf4j.Logger
 import java.nio.file.Path
 import java.util.Optional
 
+/** Checks that startup-dependent work waits until the Velocity adapter is marked ready. */
 class VelocityReadinessTest {
     @TempDir
     lateinit var directory: Path
@@ -55,6 +55,6 @@ class VelocityReadinessTest {
             callbacks += it.getArgument<Runnable>(1)
             builder
         }
-        return VelocityPlatformAdapter(owner, proxy, NoopMetricsFactory, directory, mock(Logger::class.java))
+        return VelocityPlatformAdapter(owner, proxy, NoopMetricsFactory, directory)
     }
 }

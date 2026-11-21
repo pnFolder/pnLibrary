@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.api.audiences
 
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
+import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import java.time.Duration
 import java.util.function.Supplier
 

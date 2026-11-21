@@ -3,14 +3,17 @@ package org.pnfolder.pnlibrary.bukkit.inventory
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.Plugin
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.util.UUID
 
+/** Opens, tracks and closes the menus of every plugin; one instance serves the whole library. */
 internal class BukkitMenus(
     private val host: Plugin,
     private val tasks: TaskScope,
-    private val execution: MenuExecution = NativeMenuExecution(host),
+    pnLogger: () -> PnLogger,
+    private val execution: MenuExecution = NativeMenuExecution(host, pnLogger),
     private val inventories: MenuInventories = NativeMenuInventories,
 ) : MenuService, AutoCloseable {
     private val sessions = MenuSessions()

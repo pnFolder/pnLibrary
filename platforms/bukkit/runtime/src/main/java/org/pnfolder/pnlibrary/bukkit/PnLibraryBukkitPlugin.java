@@ -26,6 +26,9 @@ public final class PnLibraryBukkitPlugin extends JavaPlugin {
         LibrarySettings settings = LibrarySettings.DEFAULT;
         try {
             LibraryLoader.load(new BukkitLibraryManager(this, settings.directoryFor(getDataFolder().toPath())), getClassLoader(), settings, RuntimeLibraries.BUKKIT);
+            LibraryLoader.useManagers(owner -> owner instanceof org.bukkit.plugin.Plugin
+                    ? new BukkitLibraryManager((org.bukkit.plugin.Plugin) owner, settings.directoryFor(((org.bukkit.plugin.Plugin) owner).getDataFolder().toPath()))
+                    : null);
             Class<?> type = Class.forName("org.pnfolder.pnlibrary.bukkit.BukkitRuntime", true, getClassLoader());
             Constructor<?> constructor = type.getDeclaredConstructors()[0];
             runtime = constructor.newInstance(this);

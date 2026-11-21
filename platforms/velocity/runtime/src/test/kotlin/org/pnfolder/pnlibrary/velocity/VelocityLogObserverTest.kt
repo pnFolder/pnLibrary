@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.velocity.log.VelocityLogObserver
 
+/** Checks attribution of Log4j events to the plugin that wrote them. */
 class VelocityLogObserverTest {
     private class Seen(val owner: Any, val level: LogLevel, val message: String, val error: Throwable?)
 

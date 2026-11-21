@@ -2,8 +2,9 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
-import org.pnfolder.pnlibrary.api.plugin.PluginMessages
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
 
+/** Plugin message helpers bound to one module owner. */
 internal class ModuleMessages(
     private val owner: Any,
     private val logging: LoggingService,

@@ -14,7 +14,7 @@ evaluationDependsOn(":modules:core")
 evaluationDependsOn(":modules:updates")
 evaluationDependsOn(":modules:common")
 evaluationDependsOn(":modules:features:config-api")
-evaluationDependsOn(":modules:features:minecraft-localization-api")
+evaluationDependsOn(":modules:features:localization-api")
 evaluationDependsOn(":platforms:bukkit:api")
 evaluationDependsOn(":platforms:bukkit:localization")
 evaluationDependsOn(":platforms:bungee:api")
@@ -163,7 +163,7 @@ tasks.register<ShadowJar>("shadowUniversal") {
 }
 
 // The same universal JAR with Kotlin and Adventure packed, for servers that cannot reach a repository at start or
-// when a download must never be needed. It is a manual download: it is not in the release catalog, because the
+// when a download must never be needed. It is a release asset with a checksum, a manual download: it is not in the catalog, because the
 // updater picks one UNIVERSAL file per release and two would be ambiguous. LibraryLoader sees Kotlin already there
 // and downloads nothing.
 tasks.register<ShadowJar>("shadowUniversalFull") {
@@ -203,7 +203,7 @@ val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
     archiveBaseName = "${rootProject.property("pnlibrary.name")}-updater"
     configurations = listOf(updaterRuntime)
     applyCommonConfig()
-    manifest { attributes["Main-Class"] = "org.pnfolder.pnlibrary.core.updates.install.OfflineUpdateInstaller" }
+    manifest { attributes["Main-Class"] = "org.pnfolder.pnlibrary.updates.install.OfflineUpdateInstaller" }
 }
 
 val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") {
@@ -214,7 +214,7 @@ val verifyOfflineInstaller = tasks.register<JavaExec>("verifyOfflineInstaller") 
     // When both tasks are requested, finish copying before reading a JAR from it.
     mustRunAfter("copyDeveloperArtifacts")
     classpath = files(shadowUpdater.flatMap { it.archiveFile })
-    mainClass.set("org.pnfolder.pnlibrary.core.updates.install.OfflineUpdateInstaller")
+    mainClass.set("org.pnfolder.pnlibrary.updates.install.OfflineUpdateInstaller")
     val fixture = layout.buildDirectory.dir("offline-installer-smoke/plugins/pnLibrary")
     args("--server-stopped", fixture.get().asFile.absolutePath)
     doFirst { fixture.get().asFile.mkdirs() }
@@ -232,8 +232,8 @@ val commonJar = project(":modules:common").tasks.named<Jar>("jar")
 val commonSources = project(":modules:common").tasks.named<Jar>("sourcesJar")
 val configApiJar = project(":modules:features:config-api").tasks.named<Jar>("jar")
 val configApiSources = project(":modules:features:config-api").tasks.named<Jar>("sourcesJar")
-val localizationApiJar = project(":modules:features:minecraft-localization-api").tasks.named<Jar>("jar")
-val localizationApiSources = project(":modules:features:minecraft-localization-api").tasks.named<Jar>("sourcesJar")
+val localizationApiJar = project(":modules:features:localization-api").tasks.named<Jar>("jar")
+val localizationApiSources = project(":modules:features:localization-api").tasks.named<Jar>("sourcesJar")
 val localizationJar = project(":platforms:bukkit:localization").tasks.named<Jar>("jar")
 val localizationSources = project(":platforms:bukkit:localization").tasks.named<Jar>("sourcesJar")
 val apiJar = project(":modules:api").tasks.named<Jar>("jar")
@@ -471,10 +471,10 @@ tasks.named("check") { dependsOn(verifyBukkitLocalizationLoads) }
 val writeReleaseManifest = tasks.register("writeReleaseManifest") {
     group = "distribution"
     description = "Derives release catalog data, sidecars and checksums from verified packaged artifacts"
-    dependsOn(verifyEmbeddedMetadata, shadowUpdater)
+    dependsOn(verifyEmbeddedMetadata, shadowUpdater, "shadowUniversalFull")
     mustRunAfter("copyDeveloperArtifacts")
     val artifactNames = releasePlatforms.map { "pnLibrary-$pnVer-${it.id}.jar" } +
-        listOf("pnLibrary-updater-$pnVer.jar")
+        listOf("pnLibrary-$pnVer-universal-full.jar", "pnLibrary-updater-$pnVer.jar")
     val directory = layout.buildDirectory.dir("libs")
     inputs.files(artifactNames.map { directory.map { dir -> dir.file(it) } })
     inputs.property("repository", rootProject.property("pnlibrary.repository").toString())

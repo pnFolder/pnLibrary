@@ -1,13 +1,14 @@
 package org.pnfolder.pnlibrary.api.currency
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 /** Restricted registry for platform integrations; consumer plugins use their owned [CurrencyService]. */
 interface CurrencyProviderRegistry {
     /** Registers a provider shared with every pnLibrary plugin. */
-    fun register(owner: PluginId, name: String, provider: CurrencyProvider): CurrencyRegistration = register(owner, name, provider, CurrencyAccess.shared())
+    fun register(owner: PluginId, name: String, provider: CurrencyProvider): CurrencyRegistration = register(owner, name, provider, PluginAccess.shared())
     /** Registers a provider with explicit cross-plugin [access]. */
-    fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: CurrencyAccess): CurrencyRegistration
+    fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: PluginAccess): CurrencyRegistration
     /** Resolves an active canonical `owner:name` reference without consumer filtering. */
     fun get(reference: String): Currency?
     /** Resolves [reference] or fails when no active provider is registered. */

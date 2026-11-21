@@ -3,6 +3,10 @@ package org.pnfolder.pnlibrary.api.tasks
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
+import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import java.util.function.BooleanSupplier
 
 class TaskQueryTest {

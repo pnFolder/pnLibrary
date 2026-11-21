@@ -43,30 +43,38 @@ class RemotePolicyResult private constructor(
         private val steps = mutableListOf<String>()
         private val links = linkedMapOf<String, String>()
 
+        /** Sets the short status word shown to the administrator. */
         fun status(value: String): Builder = apply { status = value.trim().ifEmpty { null } }
 
+        /** Sets the one-line summary of the decision. */
         fun headline(value: String): Builder = apply { headline = value.trim().ifEmpty { null } }
 
+        /** Adds a reason without nested details. */
         fun reason(text: String): Builder = apply { reasons.child(text) }
 
+        /** Adds a reason with nested details configured by [configure]. */
         fun reason(text: String, configure: java.util.function.Consumer<RemotePolicyExplanation.Builder>): Builder =
             apply { reasons.branch(text, configure) }
 
+        /** Adds a labelled detail line. */
         fun detail(label: String, value: Any): Builder = apply {
             require(label.isNotBlank()) { "Detail label must not be blank" }
             details[label.trim()] = value.toString()
         }
 
+        /** Adds a step the administrator can take to resolve the denial. */
         fun step(text: String): Builder = apply {
             require(text.isNotBlank()) { "Step must not be blank" }
             steps += text.trim()
         }
 
+        /** Adds a labelled link with more information. */
         fun link(label: String, url: String): Builder = apply {
             require(label.isNotBlank() && url.isNotBlank()) { "Link label and address must not be blank" }
             links[label.trim()] = url.trim()
         }
 
+        /** Creates the immutable result. */
         fun build(): RemotePolicyResult = RemotePolicyResult(
             allowed, reasons.build(), status, headline,
             java.util.Collections.unmodifiableMap(LinkedHashMap(details)),
@@ -76,14 +84,17 @@ class RemotePolicyResult private constructor(
     }
 
     companion object {
+        /** Returns a result that lets the remote action proceed. */
         @JvmStatic
         fun allow(): RemotePolicyResult =
             RemotePolicyResult(true, RemotePolicyExplanation.builder("Проверка пройдена").build())
 
+        /** Returns a result that blocks the action with a plain message. */
         @JvmStatic
         fun deny(message: String): RemotePolicyResult =
             deny(RemotePolicyExplanation.builder(message.trim().ifEmpty { "Запуск запрещён" }).build())
 
+        /** Returns a result that blocks the action with a structured explanation. */
         @JvmStatic
         fun deny(explanation: RemotePolicyExplanation): RemotePolicyResult =
             RemotePolicyResult(false, explanation)

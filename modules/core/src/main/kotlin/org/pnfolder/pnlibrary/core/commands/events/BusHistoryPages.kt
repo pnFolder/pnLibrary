@@ -3,15 +3,20 @@ package org.pnfolder.pnlibrary.core.commands.events
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.events.EventDay
-import org.pnfolder.pnlibrary.api.events.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.common.time.DisplayZone
-import org.pnfolder.pnlibrary.core.commands.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
+import org.pnfolder.pnlibrary.core.text.DAY
+import org.pnfolder.pnlibrary.core.text.dayTitle
+import org.pnfolder.pnlibrary.core.text.shortName
 
+/** Chat pages with recent bus history. */
 internal class BusHistoryPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
@@ -20,10 +25,10 @@ internal class BusHistoryPages(private val library: PnLibrary) {
      * events were called and how many calls were denied. A click opens that day; for one event it opens the event.
      */
     fun history(context: CommandContext, typed: String?, requestedPage: Int) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val name = typed?.let(bus::resolve)
         val days = bus.history(name).groupBy { it.date }.entries.toList()
-        val pages = ((days.size + DAYS_PER_PAGE - 1) / DAYS_PER_PAGE).coerceAtLeast(1)
+        val pages = pageCount(days.size, DAYS_PER_PAGE)
         val page = requestedPage.coerceIn(1, pages)
         val shown = days.drop((page - 1) * DAYS_PER_PAGE).take(DAYS_PER_PAGE)
         val keep = bus.historyDays
@@ -44,7 +49,7 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         }
         if (name == null && shown.isNotEmpty()) lines += kit.note("Нажмите на день, чтобы увидеть его события.", ChatPalette.FAINT)
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit))
+        lines += busFooter(kit, backToEvents(kit))
         lines.forEach(context.sender::send)
     }
 
@@ -58,7 +63,7 @@ internal class BusHistoryPages(private val library: PnLibrary) {
     ): Component {
         val total = entries.sumOf { it.calls }
         val denied = entries.sumOf { it.denied }
-        val bar = bar(kit, total, busiest)
+        val bar = busBar(kit, total, busiest)
         var line = kit.text("  ").append(kit.text(bar, ChatPalette.INFO)).append(kit.text(" ${dayTitle(date, today)}", ChatPalette.ACCENT))
             .append(kit.text("  $total ${RussianText.plural(total, "вызов", "вызова", "вызовов")}", ChatPalette.TEXT))
         if (name == null) {
@@ -78,14 +83,14 @@ internal class BusHistoryPages(private val library: PnLibrary) {
     }
 
     fun historyDay(context: CommandContext, typed: String, requestedPage: Int) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val date = runCatching { java.time.LocalDate.parse(typed) }.getOrNull()
         if (date == null) {
             context.sender.send(kit.text("Дата должна быть вида 2026-10-27. Список дней: $ROOT history", ChatPalette.DANGER))
             return
         }
         val entries = bus.history().filter { it.date == date }.sortedByDescending { it.calls }
-        val pages = ((entries.size + EVENTS_PER_PAGE - 1) / EVENTS_PER_PAGE).coerceAtLeast(1)
+        val pages = pageCount(entries.size, EVENTS_PER_PAGE)
         val page = requestedPage.coerceIn(1, pages)
         val today = java.time.LocalDate.now(DisplayZone.zone)
         val total = entries.sumOf { it.calls }
@@ -104,12 +109,12 @@ internal class BusHistoryPages(private val library: PnLibrary) {
             lines += chatPager(kit, "$ROOT history day $date", page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, kit.button("назад", "$ROOT history", "К списку дней", ChatPalette.ACCENT))
+        lines += busFooter(kit, kit.button("назад", "$ROOT history", "К списку дней", ChatPalette.ACCENT))
         lines.forEach(context.sender::send)
     }
 
     private fun historyRow(kit: ChatKit, day: EventDay, busiest: Long): Component {
-        var line = kit.text("    ").append(kit.text(bar(kit, day.calls, busiest), ChatPalette.INFO))
+        var line = kit.text("    ").append(kit.text(busBar(kit, day.calls, busiest), ChatPalette.INFO))
             .append(kit.text(" ${day.calls}", ChatPalette.TEXT)).append(kit.text("  ${shortName(day.eventType)}", ChatPalette.ACCENT))
         if (day.denied > 0) line = line.append(kit.text("  отказов ${day.denied}", ChatPalette.DANGER))
         if (!kit.reader.interactive) return line
@@ -126,3 +131,5 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         ).clickEvent(ClickEvent.runCommand("$ROOT view ${day.eventType}"))
     }
 }
+
+private const val HOVER_EVENTS = 5

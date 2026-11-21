@@ -23,7 +23,4 @@ data class CommandContext(
 
     /** Returns whether a parsed argument named [name] is available. */
     fun contains(name: String): Boolean = parsedValues.containsKey(name)
-
-    internal fun withParsedValues(values: Map<String, Any>, input: String = currentInput): CommandContext =
-        copy(parsedValues = values, currentInput = input)
 }

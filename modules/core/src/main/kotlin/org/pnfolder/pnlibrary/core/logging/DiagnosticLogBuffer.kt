@@ -2,8 +2,11 @@ package org.pnfolder.pnlibrary.core.logging
 
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticRedactor
-import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticThrowables
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticRedactor
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.fingerprint
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.originData
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.originFrame
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.significantCause
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -11,7 +14,28 @@ import java.time.Instant
 import java.util.ArrayDeque
 import java.util.LinkedHashMap
 
-internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
+/**
+ * Bounded in-memory buffer of logged incidents that collapses repeated occurrences of the same problem.
+ *
+ * [redact] and [fingerprintOf] are the expensive steps (a dozen regexes, SHA-256), so they run only the first time
+ * a raw combination of plugin, level, text and error shape is seen; a repeat is found by that raw key alone.
+ */
+internal class DiagnosticLogBuffer(
+    private val capacity: Int = 2_000,
+    private val redact: (String) -> String = DiagnosticRedactor()::redact,
+    private val fingerprintOf: (List<String>, String, Throwable?) -> String = { context, message, error -> error.fingerprint(context, message) },
+) {
+    /** What a record looks like before redaction; equal keys always redact and fingerprint to the same incident. */
+    private data class RawKey(
+        val plugin: String,
+        val level: LogLevel,
+        val message: String,
+        val errorClass: String?,
+        val errorMessage: String?,
+        val frameClass: String?,
+        val frameMethod: String?,
+    )
+
     internal data class CaptureResult(val emitOriginal: Boolean, val summary: String? = null)
 
     private data class Occurrence(val timeUtc: String, val thread: String)
@@ -35,6 +59,9 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
 
     private val incidents = LinkedHashMap<String, Incident>()
     private val redactor = DiagnosticRedactor()
+    private val incidentOfRaw = object : LinkedHashMap<RawKey, String>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<RawKey, String>): Boolean = size > RAW_KEYS_LIMIT
+    }
     private var timelineEntryCount = 0
     @Volatile
     private var changeListener: ((List<Map<String, Any?>>) -> Unit)? = null
@@ -59,13 +86,24 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
 
         val nowMs = System.currentTimeMillis()
         val now = Instant.ofEpochMilli(nowMs).toString()
-        val plugin = redactor.redact(platform.ownerDetails(owner)["name"] ?: owner.javaClass.simpleName).take(96)
-        val safeMessage = redactor.redact(message).take(MAX_MESSAGE_CHARS)
-        val fingerprint = fingerprint(plugin, level, safeMessage, error)
-        val existing = incidents[fingerprint]
+        val rawPlugin = platform.ownerDetails(owner)["name"] ?: owner.javaClass.simpleName
+        val rawKey = rawKeyOf(rawPlugin, level, message, error)
+        val known = incidentOfRaw[rawKey]?.let(incidents::get)
+        if (known != null) return repeatIncident(known, known.plugin, nowMs, now)
 
+        val plugin = redact(rawPlugin).take(96)
+        val safeMessage = redact(message).take(MAX_MESSAGE_CHARS)
+        val fingerprint = fingerprintOf(listOf(plugin, level.name), safeMessage, error)
+        incidentOfRaw[rawKey] = fingerprint
+        val existing = incidents[fingerprint]
         if (existing == null) return startIncident(fingerprint, level, plugin, safeMessage, error, nowMs, now)
         return repeatIncident(existing, plugin, nowMs, now)
+    }
+
+    private fun rawKeyOf(plugin: String, level: LogLevel, message: String, error: Throwable?): RawKey {
+        val significant = error.significantCause()
+        val frame = error.originFrame()
+        return RawKey(plugin, level, message, significant?.javaClass?.name, significant?.message, frame?.className, frame?.methodName)
     }
 
     private fun startIncident(
@@ -84,7 +122,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
             plugin = plugin,
             message = message,
             exceptionType = error?.javaClass?.name,
-            origin = error?.let(DiagnosticThrowables::origin),
+            origin = error?.originData(),
             fullError = completeError,
             consoleBlock = consoleBlock(now, level, message, completeError),
             firstSeenUtc = now,
@@ -169,9 +207,6 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
         changeListener?.let { listener -> runCatchingNonFatal { listener(snapshot()) } }
     }
 
-    private fun fingerprint(plugin: String, level: LogLevel, message: String, error: Throwable?): String =
-        DiagnosticThrowables.fingerprint(listOf(plugin, level.name), message, error)
-
     private fun fullStackTrace(error: Throwable): String {
         val writer = StringWriter()
         error.printStackTrace(PrintWriter(writer))
@@ -198,6 +233,7 @@ internal class DiagnosticLogBuffer(private val capacity: Int = 2_000) {
 
     companion object {
         private const val MAX_MESSAGE_CHARS = 4_096
+        private const val RAW_KEYS_LIMIT = 8_192
         private const val MAX_ERROR_CHARS = 1_048_576
         private const val MAX_TIMELINE_OCCURRENCES = 100_000
         private const val SUMMARY_INTERVAL_MS = 5 * 60 * 1_000L

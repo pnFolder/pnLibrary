@@ -1,49 +1,61 @@
 package org.pnfolder.pnlibrary.velocity
 
+import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.proxy.ProxyServer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
-import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
-import org.pnfolder.pnlibrary.spi.platform.PlatformLifecycle
+import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
-import org.pnfolder.pnlibrary.spi.platform.StartupGate
-import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
+import org.pnfolder.pnlibrary.velocity.diagnostics.VelocityDiagnosticDetailsCollector
+import org.pnfolder.pnlibrary.velocity.log.VelocityLogObserver
+import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityNetworkProxy
 import org.pnfolder.pnlibrary.velocity.remote.VelocityRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter
-import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import java.time.Duration
+import kotlin.jvm.optionals.getOrDefault
 
 /**
  * Runtime adapter for Velocity proxy servers.
  *
  * Composes native command, task, audience, plugin metadata and diagnostics bridges.
- * Consumer tasks carry their own plugin owner; internal global/reply work belongs to [plugin].
  * Startup-dependent callbacks wait for [markReady], called by the plugin entry point after
  * runtime creation and native API registration. Velocity has no entity-region scheduler.
  */
 internal class VelocityPlatformAdapter(
+    /** The pnLibrary plugin; every task and internal work such as global tasks runs on its behalf. */
     private val plugin: Any,
     private val proxy: ProxyServer,
     override val metricsFactory: PlatformMetricsFactory,
     override val dataFolder: Path,
-    logger: Logger,
-) : PlatformAdapter {
+) : ProxyPlatformAdapter(plugin) {
+    private val nativeLogger = LoggerFactory.getLogger(plugin::class.java)
     private val diagnosticDetailsCollector = VelocityDiagnosticDetailsCollector(proxy)
-    private val lifecycle = PlatformLifecycle()
-    private val plugins = velocityPlugins(proxy)
-    private val startup = StartupGate(lifecycle, ::executeGlobal)
+    private val legacySerializer = LegacyComponentSerializer.legacySection()
 
-    private val uncaughtExceptionObserver = UncaughtExceptionLogObserver(plugin)
+    private val plugins = PlatformPlugins<PluginContainer>(
+        platformName = "Velocity",
+        installed = { proxy.pluginManager.plugins },
+        resolve = { owner -> proxy.pluginManager.fromInstance(owner).orElse(null) },
+    ) { container ->
+        val description = container.description
+        PluginSnapshot(
+            id = description.id,
+            name = description.name.getOrDefault(description.id),
+            version = description.version.getOrDefault("unknown"),
+            authors = description.authors,
+        )
+    }
+
     private val logObserver = VelocityLogObserver(
         plugin,
         pluginInstances = { proxy.pluginManager.plugins.mapNotNull { it.instance.orElse(null) } },
@@ -55,6 +67,8 @@ internal class VelocityPlatformAdapter(
     override val implementationName: String
         get() = proxy.version.name.ifBlank { type.displayName }
 
+    override val networkProxy: VelocityNetworkProxy = VelocityNetworkProxy(proxy)
+
     override val audienceAdapter: VelocityAudienceAdapter =
         VelocityAudienceAdapter(proxy)
 
@@ -62,47 +76,29 @@ internal class VelocityPlatformAdapter(
         VelocityCommandAdapter(proxy, audienceAdapter)
 
     override val taskAdapter: PlatformTaskAdapter =
-        VelocityTaskAdapter(
-            server = proxy,
-            describeOwner = { owner ->
-                owner?.let { proxy.pluginManager.fromInstance(it).orElse(null)?.description?.name?.orElse(null) }
-                    ?: owner?.javaClass?.simpleName
-                    ?: "неизвестен"
-            },
-            warning = { message -> logger.error(message) },
-        )
+        VelocityTaskAdapter(proxy, plugin, ::warn)
 
     override val logHandler: (Any, LogLevel, String, Throwable?) -> Unit =
         { _, level, message, error ->
-            logObserver.runOwn {
-                when (level) {
-                    LogLevel.WARNING -> logger.warn(message, error)
-                    LogLevel.ERROR, LogLevel.CRITICAL -> logger.error(message, error)
-                    else -> logger.info(message, error)
-                }
+            when (level) {
+                LogLevel.WARNING -> nativeLogger.warn(message, error)
+                LogLevel.ERROR, LogLevel.CRITICAL -> nativeLogger.error(message, error)
+                else -> nativeLogger.info(message, error)
             }
         }
 
-    override fun console(owner: Any, message: String) {
-        proxy.consoleCommandSource.sendMessage(
-            LEGACY_SERIALIZER.deserialize(message),
-        )
+    override fun observeProxyLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
+        logObserver.observe(observer)
     }
 
-    /** Forwards proxy and plugin warnings/errors and uncaught JVM exceptions, or stops doing so. */
-    @Synchronized
-    override fun observeNativeLogs(observer: ((Any, LogLevel, String, Throwable?) -> Unit)?) {
-        if (observer != null) lifecycle.checkOpen()
-        logObserver.observe(observer)
-        uncaughtExceptionObserver.observe(observer)
+    override fun console(owner: Any, message: String) {
+        proxy.consoleCommandSource.sendMessage(legacySerializer.deserialize(message))
     }
 
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
-    override fun installedPlugins(): Map<String, String> =
-        plugins.versions()
+    override fun installedPlugins(): Map<String, String> = plugins.versions()
 
-    /** Captures a lightweight, non-sensitive snapshot of the proxy. */
     override fun snapshot(): PlatformSnapshot {
         val platformVersion = proxy.version
 
@@ -122,40 +118,15 @@ internal class VelocityPlatformAdapter(
     override fun remotePolicyContext(
         owner: Any,
         values: Map<String, String>,
-    ): RemotePolicyContext =
-        VelocityRemotePolicyContextFactory.create(owner, plugins.requireInstalled(owner, "Remote policy owner"), proxy, values)
+    ): RemotePolicyContext {
+        val installed = plugins.requireInstalled(owner, "Remote policy owner")
+        return VelocityRemotePolicyContextFactory.create(owner, installed, proxy, values)
+    }
 
+    /** Dispatches work on Velocity's scheduler on behalf of the pnLibrary plugin. */
     override fun executeGlobal(task: Runnable) {
-        if (lifecycle.isClosed) {
-            return
-        }
+        if (lifecycle.isClosed) return
 
-        taskAdapter.schedule(PlatformTaskRequest(
-            TaskExecution.Kind.GLOBAL, null, Duration.ZERO, null, task, plugin,
-        ))
-    }
-
-    /** Defers startup-dependent work until the entry point has published the native API. */
-    override fun whenServerReady(task: Runnable) {
-        startup.whenReady(task)
-    }
-
-    /** Called once the runtime and Velocity API registration both succeeded. */
-    internal fun markReady() {
-        startup.markReady()
-    }
-
-    override fun executeReply(recipient: Any, task: Runnable) {
-        executeGlobal(task)
-    }
-
-    /** Discards pending startup work, cancels native tasks and stops native log observation once. */
-    override fun close() {
-        lifecycle.closeAdapter(startup, taskAdapter) { observeNativeLogs(null) }
-    }
-
-    private companion object {
-        val LEGACY_SERIALIZER: LegacyComponentSerializer =
-            LegacyComponentSerializer.legacySection()
+        taskAdapter.buildTask().task(task).schedule()
     }
 }

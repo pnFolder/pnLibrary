@@ -17,6 +17,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -39,7 +40,7 @@ class BukkitMenusTest {
             if (region.get() == player.uniqueId) action() else queued.add(player to action)
         }
     }
-    private val service = BukkitMenus(host, mock<TaskScope>(), execution) { menu, holder ->
+    private val service = BukkitMenus(host, mock<TaskScope>(), { mock<PnLogger>() }, execution) { menu, holder ->
         mock<Inventory>().also { `when`(it.holder).thenReturn(holder); `when`(it.size).thenReturn(menu.size) }
     }
     private fun menu(renderer: MenuRenderer? = null) = Menu("test", 1, MenuType.CHEST,

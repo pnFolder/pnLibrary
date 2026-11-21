@@ -1,16 +1,17 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
+import org.pnfolder.pnlibrary.api.plugin.PluginAccess;
+
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition;
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAccess;
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
 import org.pnfolder.pnlibrary.api.remote.DenyAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
-import org.pnfolder.pnlibrary.api.tasks.TaskExecution;
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec;
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest;
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
 
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -22,7 +23,7 @@ class ApiStyleJavaTest {
     private static PlaceholderRegistration<String> registerPlaceholder(PlaceholderService service) {
         return service.register("status", String.class, placeholder -> placeholder
             .resolve(request -> "online")
-            .access(PlaceholderAccess.ownerOnly())
+            .access(PluginAccess.ownerOnly())
             .fallback("offline"));
     }
 

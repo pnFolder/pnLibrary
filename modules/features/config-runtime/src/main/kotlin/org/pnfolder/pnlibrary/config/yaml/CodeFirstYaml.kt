@@ -18,9 +18,9 @@ import java.util.function.UnaryOperator
  * Loads typed YAML and synchronizes it with code-defined defaults.
  *
  * Missing keys and their comments are added recursively. Existing values,
- * ordering, comments, and extension keys are preserved. A `.bak` file is
- * created before synchronization, and the target is replaced atomically only
- * after successful decoding.
+ * ordering, comments, and extension keys are preserved. A `.before-sync-*.bak`
+ * copy is made before a rewrite when [ConfigOptions.backups] is on, and the target
+ * is replaced atomically only after successful decoding.
  *
  * ```kotlin
  * val config = CodeFirstYaml(file, Settings(), codec, logger).load().value
@@ -42,6 +42,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     /** `true` after a successful [load] or [reload] and before [unload]. */
     override val isLoaded: Boolean get() = loadedValue != null
 
+    /** Returns the loaded value or fails when the file is not loaded. */
     override fun get(): T = loadedValue ?: error("Configuration ${file.name} is not loaded")
 
     /**
@@ -50,12 +51,13 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
      */
     @Synchronized
     override fun load(): ConfigLoadResult<T> {
+        if (options.readOnly) return loadWithoutWriting()
+        // Nothing may be created for a file that must already exist, not even its folder.
+        check(file.exists() || options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
         val parent = file.absoluteFile.parentFile
         require(parent.isDirectory || parent.mkdirs()) { "Cannot create configuration directory $parent" }
         val rawDefaultsYaml = fileStore.normalize(codec.encode(defaults))
-        val defaultsYaml = SupportHeader.apply(
-            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it)) } ?: rawDefaultsYaml,
-        )
+        val defaultsYaml = options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(rawDefaultsYaml, it)) } ?: rawDefaultsYaml
         if (!file.exists()) return createFromDefaults(defaultsYaml)
 
         val original = fileStore.normalize(file.readText())
@@ -65,7 +67,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         val working = migration?.takeIf { it.applied.isNotEmpty() }?.content?.let(fileStore::normalize) ?: original
         val differences = differences(defaultsYaml, working)
         val syncResult = synchronize(working, defaultsYaml)
-        val synchronized = SupportHeader.apply(syncResult.content)
+        val synchronized = LegacySupportNote.removeFrom(syncResult.content)
         val value = decodeAndValidate(synchronized)
         if (synchronized == original) {
             loadedValue = value
@@ -74,10 +76,18 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return writeChanges(original, synchronized, value, differences, migration?.applied.orEmpty(), syncResult)
     }
 
+    /** A read-only file is read as it is: nothing is created, migrated, synchronized or backed up. */
+    private fun loadWithoutWriting(): ConfigLoadResult<T> {
+        check(file.exists()) { "Configuration ${file.name} does not exist" }
+        val value = decodeAndValidate(fileStore.normalize(file.readText()))
+        loadedValue = value
+        return ConfigLoadResult(value, emptyList(), null)
+    }
+
     private fun createFromDefaults(defaultsYaml: String): ConfigLoadResult<T> {
         check(options.missingFile == MissingFilePolicy.CREATE) { "Configuration ${file.name} does not exist" }
-        fileStore.write(defaultsYaml)
         val value = decodeAndValidate(defaultsYaml)
+        fileStore.writeDecoded(defaultsYaml)
         loadedValue = value
         return ConfigLoadResult(value, YamlDefaultsMerger.paths(defaultsYaml), null)
     }
@@ -90,6 +100,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return ConfigLoadResult(value, emptyList(), null)
     }
 
+    /** Paths missing from the file and paths unknown to the code. */
     private class Differences(val missing: List<String>, val unknown: List<String>)
 
     /** The paths the file lacks and the paths the code does not know; fails when the policy forbids either. */
@@ -129,7 +140,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         syncResult: YamlDefaultsMerger.Result,
     ): ConfigLoadResult<T> {
         val backup = if (options.backups) fileStore.backup(original) else null
-        fileStore.write(synchronized)
+        fileStore.writeDecoded(synchronized)
         val removeUnknown = options.unknownValues == UnknownValuePolicy.REMOVE
         if (differences.missing.isNotEmpty()) logger.info("Добавлены новые параметры в ${file.name}: ${differences.missing.joinToString()}")
         if (differences.unknown.isNotEmpty() && removeUnknown) {
@@ -151,21 +162,26 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     @Synchronized
     override fun reload(): ConfigLoadResult<T> = load()
 
+    /** Saves the value that is currently loaded. */
     @Synchronized
     override fun save() = save(get())
 
     /** Atomically saves [value] after decoding and semantic validation. */
     @Synchronized
     override fun save(value: T) {
+        check(!options.readOnly) { "Configuration ${file.name} is read-only" }
+        check(skippedUnknownTypes.isEmpty()) {
+            "Configuration ${file.name} has elements of an unknown type that are not in memory: " +
+                "${skippedUnknownTypes.joinToString("; ")}. Saving would delete them from the file"
+        }
         val raw = fileStore.normalize(codec.encode(value))
-        val encoded = SupportHeader.apply(
-            options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw,
-        )
+        val encoded = options.migrations?.let { fileStore.normalize(migrationEngine.stampDefaults(raw, it)) } ?: raw
         decodeAndValidate(encoded)
-        fileStore.write(encoded)
+        fileStore.writeDecoded(encoded)
         loadedValue = value
     }
 
+    /** Applies [updater] to the loaded value and saves the result. */
     @Synchronized
     override fun update(updater: UnaryOperator<T>): T {
         val updated = updater.apply(get())
@@ -173,8 +189,10 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
         return updated
     }
 
+    /** Runs the validator on the loaded value without writing anything. */
     override fun validate(): List<ConfigProblem> = validator.validate(get())
 
+    /** Writes the code defaults to the file and makes them the loaded value. */
     @Synchronized
     override fun resetToDefaults(): T {
         save(defaults)
@@ -185,6 +203,14 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
     @Synchronized
     override fun unload() { loadedValue = null }
 
+    /**
+     * List elements skipped at the last read because their `type` is unknown, empty when nothing was skipped.
+     * While it is not empty, saving is refused: the elements exist only in the file.
+     */
+    @Volatile
+    var skippedUnknownTypes: List<String> = emptyList()
+        private set
+
     private fun decodeAndValidate(content: String): T {
         val value = try {
             codec.decode(content)
@@ -192,6 +218,7 @@ class CodeFirstYaml<T> @JvmOverloads constructor(
             logger.error("Не удалось прочитать ${file.name}: ${error.message}", error)
             throw error
         }
+        skippedUnknownTypes = (codec as? AnnotatedYamlCodec<*>)?.skippedUnknownTypes.orEmpty()
         val problems = validator.validate(value)
         if (problems.isNotEmpty()) throw ConfigValidationException(problems)
         return value

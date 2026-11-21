@@ -24,7 +24,7 @@ class DiagnosticCaptureTest {
                 capture.observe(owner, level, message, error)
             }
         }
-        capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
+        capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
         val error = IllegalStateException("failure")
         repeat(2) { capture.log(this, LogLevel.ERROR, "command failed", error) }
         assertEquals(1, printed)
@@ -48,7 +48,7 @@ class DiagnosticCaptureTest {
         val native = object : PlatformLogging {
             override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
         }
-        val capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
+        val capture = DiagnosticCapture(ownership, native, buffer, { _, _, _, _, _ -> journaled++ }) { _, _, _ -> observed++ }
         val error = IllegalStateException("failure")
 
         capture.write(this, LogLevel.ERROR, "noisy but harmless", error, false)
@@ -71,7 +71,7 @@ class DiagnosticCaptureTest {
         val native = object : PlatformLogging {
             override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
         }
-        val capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
+        val capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _, _ -> journaled++ })
 
         capture.write(this, LogLevel.DEBUG, "detail", null)
         capture.write(this, LogLevel.DEBUG, "skipped detail", null, false)
@@ -89,7 +89,7 @@ class DiagnosticCaptureTest {
                 Thread { capture.observe(owner, level, message, error) }.apply { start() }.join()
             }
         }
-        capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _ -> journaled++ })
+        capture = DiagnosticCapture(ownership, native, DiagnosticLogBuffer(), { _, _, _, _, _ -> journaled++ })
         capture.log(this, LogLevel.WARNING, "disk is slow", null)
         assertEquals(1, journaled)
 
@@ -103,8 +103,48 @@ class DiagnosticCaptureTest {
         val native = object : PlatformLogging {
             override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) { printed++ }
         }
-        val capture = DiagnosticCapture(ownership, native, journal = { _, _, _, _ -> error("journal") }) { _, _, _ -> error("metrics") }
+        val capture = DiagnosticCapture(ownership, native, journal = { _, _, _, _, _ -> error("journal") }) { _, _, _ -> error("metrics") }
         capture.log(this, LogLevel.ERROR, "failure", IllegalStateException())
-        assertEquals(1, printed)
+        // The line itself plus one report for each of the two broken stages.
+        assertEquals(3, printed)
+    }
+
+    @Test
+    fun `a stage that fails is reported once to the console and does not stop the other stages`() {
+        val buffer = DiagnosticLogBuffer()
+        val printed = mutableListOf<Pair<LogLevel, Throwable?>>()
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) {
+                printed += level to error
+            }
+        }
+        var reports = 0
+        val capture = DiagnosticCapture(
+            ownership, native, buffer,
+            journal = { _, _, _, _, _ -> throw IllegalStateException("journal broke") },
+            onError = { _, _, _ -> reports++; throw IllegalStateException("report broke") },
+        )
+
+        repeat(2) { capture.log(this, LogLevel.ERROR, "command failed", IllegalArgumentException("boom")) }
+
+        assertEquals(2, reports)
+        assertEquals(2L, buffer.summary()["occurrenceCount"])
+        val failures = printed.filter { (level, error) -> level == LogLevel.ERROR && error is IllegalStateException }
+        assertEquals(listOf("journal broke", "report broke"), failures.map { it.second?.message })
+    }
+
+    @Test
+    fun `an error logged as text only still reaches the error report`() {
+        val native = object : PlatformLogging {
+            override fun log(owner: Any, level: LogLevel, message: String, error: Throwable?) = Unit
+        }
+        val reported = mutableListOf<Pair<LogLevel, Throwable>>()
+        val capture = DiagnosticCapture(ownership, native, onError = { _, _, error -> reported += LogLevel.ERROR to error })
+
+        capture.log(this, LogLevel.ERROR, "text only", null)
+        capture.log(this, LogLevel.WARNING, "just a warning", null)
+
+        assertEquals(1, reported.size)
+        assertEquals("text only", reported.single().second.message)
     }
 }

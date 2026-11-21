@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsContributor
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.core.diagnostics.redaction.DiagnosticValueSanitizer
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Contributor registrations and configuration declarations for one plugin. */
 internal class DiagnosticContributors(
     private val sanitizer: DiagnosticValueSanitizer,
+    private val onFailure: (what: String, error: Throwable) -> Unit = { _, _ -> },
 ) {
     private val contributors = ConcurrentHashMap<String, RegisteredContributor>()
 
@@ -71,8 +73,9 @@ internal class DiagnosticContributors(
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
             // One malformed contributor must not prevent collection from the others.
+            onFailure("A diagnostics contributor of $plugin failed to list its configuration files", error)
         }
     }
 

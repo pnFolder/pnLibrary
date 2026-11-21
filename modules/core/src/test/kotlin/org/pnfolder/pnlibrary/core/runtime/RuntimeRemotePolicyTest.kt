@@ -16,6 +16,9 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.remote.ServerInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.*
+import org.pnfolder.pnlibrary.api.tasks.run.TaskContext
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import org.pnfolder.pnlibrary.core.remote.PolicyDeniedException
@@ -72,6 +75,19 @@ class RuntimeRemotePolicyTest {
             verify(fixture.platform).disableDependents(fixture.owner)
             verify(fixture.platform).disableOwner(fixture.owner)
         }
+    }
+
+    @Test
+    fun `a denial that cannot disable the library is logged as critical`() {
+        val fixture = fixture(PlatformType.BUKKIT)
+        val failure = IllegalStateException("plugin manager is gone")
+        `when`(fixture.platform.disableDependents(fixture.owner)).thenThrow(failure)
+        `when`(fixture.platform.disableOwner(fixture.owner)).thenThrow(failure)
+
+        assertThrows(PolicyDeniedException::class.java) { fixture.start(policy("StuckPolicy", false)) }
+
+        verify(fixture.logger).error(anyString(), eq(failure))
+        verify(fixture.logger).critical(anyString(), eq(failure))
     }
 
     @Test
@@ -201,6 +217,7 @@ class RuntimeRemotePolicyTest {
         val library = mock(PnLibrary::class.java, withSettings().extraInterfaces(RuntimeResources::class.java))
         val platform = mock(PlatformAdapter::class.java)
         val tasks = mock(TaskScope::class.java)
+        val logger = mock(PnLogger::class.java)
         val ready = mutableListOf<Runnable>()
         var task: TaskSpec? = null
         var closed = false
@@ -211,7 +228,7 @@ class RuntimeRemotePolicyTest {
             `when`((library as RuntimeResources).runtimeTasks).thenReturn(tasks)
             val logging = mock(LoggingService::class.java)
             `when`(library.logging).thenReturn(logging)
-            `when`(logging.logger(owner, "remote-policy")).thenReturn(mock(PnLogger::class.java))
+            `when`(logging.logger(owner, "remote-policy")).thenReturn(logger)
             `when`(platform.type).thenReturn(type)
             `when`(platform.implementationName).thenReturn(type.name)
             `when`(platform.ownerDetails(owner)).thenReturn(mapOf("name" to "pnLibrary", "authors" to "pnFolder"))

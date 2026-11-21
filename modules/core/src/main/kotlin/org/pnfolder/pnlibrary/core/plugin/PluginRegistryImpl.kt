@@ -1,17 +1,17 @@
 package org.pnfolder.pnlibrary.core.plugin
 
-import org.pnfolder.pnlibrary.api.actions.ActionService
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.CommandError
-import org.pnfolder.pnlibrary.api.commands.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.error.CommandError
+import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
-import org.pnfolder.pnlibrary.api.events.EventScope
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventService
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
@@ -21,37 +21,45 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.api.plugin.PluginLifecycle
-import org.pnfolder.pnlibrary.api.plugin.PluginMessages
-import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
+import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
+import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.cleanup.ResourceCleanup
-import org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope
-import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
+import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope
+import org.pnfolder.pnlibrary.core.commands.engine.CommandService
+import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleController
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions
+import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibrariesImpl
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleLifecycleReporter
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleMessages
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKeyFactory
+import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
+import org.pnfolder.pnlibrary.core.plugin.module.moduleServiceKey
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
@@ -88,8 +96,11 @@ internal class PluginRegistryImpl(
     private val commands: CommandService? = null,
     private val directDownloads: DirectDownloads? = null,
     libraryVersion: String? = null,
+    private val modulePreferences: ModulePreferences = ModulePreferences(),
+    private val libraryFetcher: LibraryFetcher = LibraryFetcher.THROUGH_LIBBY,
 ) : PluginRegistry {
 
+    private val scenarioDefinitions = ScenarioDefinitions()
     private val plugins = IdentityHashMap<Any, Plugin>()
     private val productDescriptors = linkedMapOf<String, ProductDescriptor>().apply {
         libraryVersion?.let(SemanticVersion::tryParse)?.let { put(PnLibraryIdentity.PRODUCT_ID, ProductDescriptor.library(it.toString())) }
@@ -147,6 +158,7 @@ internal class PluginRegistryImpl(
         serviceKey: PluginId,
         definition: ModuleDefinitionBuilder,
         productDescriptor: ProductDescriptor?,
+        module: PluginModule?,
     ): Context {
         val owner = parent.owner
         val metadata = metadataFactory.create(owner, id, definition)
@@ -159,6 +171,7 @@ internal class PluginRegistryImpl(
             resources = resources,
             placeholderApiEnabled = definition.placeholderApiEnabled,
             productId = productDescriptor?.id?.value,
+            module = module,
         )
     }
 
@@ -169,7 +182,11 @@ internal class PluginRegistryImpl(
         val nativeId: PluginId,
         private val registrationId: Long,
     ) : PluginRegistration {
+        override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
+        override val libraries: ModuleLibraries = ModuleLibrariesImpl.through(
+            "p-${nativeId.value}-$registrationId", PluginRegistryImpl::class.java.classLoader, owner, null, libraryFetcher, identity.type,
+        )
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()
 
@@ -180,6 +197,15 @@ internal class PluginRegistryImpl(
         }
 
         override fun registerModule(id: ModuleId, configure: Consumer<PluginBuilder>): ModuleContext =
+            start(id, null, configure)
+
+        override fun registerModule(id: ModuleId, module: PluginModule, configure: Consumer<PluginBuilder>): ModuleContext =
+            start(id, module, configure)
+
+        private fun start(id: ModuleId, module: PluginModule?, configure: Consumer<PluginBuilder>): ModuleContext =
+            register(id, module, configure).also { (it as Context).control.start() }
+
+        private fun register(id: ModuleId, module: PluginModule?, configure: Consumer<PluginBuilder>): ModuleContext =
             synchronized(plugins) { synchronized(moduleContexts) {
                 check(!pluginClosed.get()) { "Plugin context is closed" }
                 check(!closed.get()) { "PluginRegistry is closed" }
@@ -191,8 +217,8 @@ internal class PluginRegistryImpl(
                 }
                 definition.bindUpdatesTo(descriptor)
                 dependencyValidator.validate(definition.dependencies, productDescriptors)
-                val serviceKey = ModuleServiceKeyFactory.create(registrationId, nativeId, id)
-                createContext(this, id, serviceKey, definition, descriptor).also { context ->
+                val serviceKey = moduleServiceKey(registrationId, nativeId, id)
+                createContext(this, id, serviceKey, definition, descriptor, module).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
                     try {
@@ -241,6 +267,7 @@ internal class PluginRegistryImpl(
         private val resources: ModuleResources,
         private val placeholderApiEnabled: Boolean,
         private val productId: String?,
+        module: PluginModule?,
     ) : ModuleContext {
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
@@ -251,6 +278,13 @@ internal class PluginRegistryImpl(
             commandFeedback.handlers[type] = handler
         }
         override val isClosed: Boolean get() = contextClosed.get()
+        override val libraries = ModuleLibrariesImpl.through(
+            key.value, PluginRegistryImpl::class.java.classLoader, parent.owner, parent.libraries, libraryFetcher, identity.type,
+        )
+        override val control = ModuleController(key.value, module, modulePreferences) {
+            resources.tasks.cancelAll()
+            moduleCommands.drain().asReversed().forEach { it.close() }
+        }.also { it.bind(this) }
         override val tasks: TaskScope get() = resources.tasks
         override val events: EventScope get() = resources.events
         override val services: ServiceManager get() = resources.services
@@ -279,7 +313,7 @@ internal class PluginRegistryImpl(
             isClosed = { isClosed },
         )
         override val messages: PluginMessages = ModuleMessages(owner, logging)
-        override val actions: ActionService = ModuleActionService(resources)
+        override val actions: ActionService = ModuleActionService(resources, scenarioDefinitions, key.value)
 
         override fun close() {
             parent.detach(id)?.closeInternal()
@@ -287,6 +321,7 @@ internal class PluginRegistryImpl(
 
         fun closeInternal() {
             if (!contextClosed.compareAndSet(false, true)) return
+            control.stop()
             productId?.let { value -> synchronized(plugins) { productDescriptors.remove(value) } }
             val registrations = moduleCommands.drain()
             ResourceCleanup.closeAll(

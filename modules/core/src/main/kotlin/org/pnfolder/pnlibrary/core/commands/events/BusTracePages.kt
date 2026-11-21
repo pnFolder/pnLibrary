@@ -2,19 +2,22 @@ package org.pnfolder.pnlibrary.core.commands.events
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.events.DispatchMode
-import org.pnfolder.pnlibrary.api.events.EventInspector
-import org.pnfolder.pnlibrary.api.events.EventTrace
+import org.pnfolder.pnlibrary.api.events.bus.DispatchMode
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.text.NANOS_PER_MICRO
+import org.pnfolder.pnlibrary.core.text.shortName
 
+/** Chat pages with event trace output. */
 internal class BusTracePages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
     fun traces(context: CommandContext, typed: String?) {
         val name = typed?.let(bus::resolve)
-        val kit = kit(context)
+        val kit = busKit(context)
         val all = bus.traces().filter { name == null || it.eventName == name }
         val lines = mutableListOf(
             kit.blank(),
@@ -23,7 +26,7 @@ internal class BusTracePages(private val library: PnLibrary) {
         )
         if (all.isEmpty()) lines += kit.note("Пусто. Включите запись на странице события: $ROOT view <событие>")
         all.takeLast(MAX_TRACES).reversed().forEach { lines += traceBlock(kit, it) }
-        lines += footer(kit, backToEvents(kit),
+        lines += busFooter(kit, backToEvents(kit),
             if (all.isEmpty()) null else kit.button("очистить", "$ROOT clear", "Забыть записанные вызовы", ChatPalette.DANGER))
         lines.forEach(context.sender::send)
     }
@@ -54,3 +57,5 @@ internal class BusTracePages(private val library: PnLibrary) {
         return lines
     }
 }
+
+private const val MAX_TRACES = 6

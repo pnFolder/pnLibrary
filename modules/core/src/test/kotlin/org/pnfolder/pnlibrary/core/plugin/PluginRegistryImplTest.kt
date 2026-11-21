@@ -12,40 +12,46 @@ import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.dependencies.Dependencies
-import org.pnfolder.pnlibrary.api.dependencies.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
+import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
 import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventHandler
-import org.pnfolder.pnlibrary.api.events.Listener
+import org.pnfolder.pnlibrary.api.events.listener.EventHandler
+import org.pnfolder.pnlibrary.api.events.listener.Listener
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.metrics.MetricsProvider
-import org.pnfolder.pnlibrary.api.metrics.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
+import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.plugin.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
+import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
-import org.pnfolder.pnlibrary.api.tasks.TaskSpec
-import org.pnfolder.pnlibrary.api.updates.PluginUpdateRequest
-import org.pnfolder.pnlibrary.api.updates.ProductDescriptor
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
+import org.pnfolder.pnlibrary.api.updates.UpdateBackups
+import org.pnfolder.pnlibrary.api.updates.UpdateHistory
+import org.pnfolder.pnlibrary.api.updates.UpdatePlans
+import org.pnfolder.pnlibrary.api.updates.UpdateProducts
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.UpdateSettings
+import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
+import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
-import org.pnfolder.pnlibrary.core.commands.CommandService
-import org.pnfolder.pnlibrary.core.downloads.DirectDownloads
+import org.pnfolder.pnlibrary.core.commands.engine.CommandService
+import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
@@ -54,8 +60,8 @@ import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.currency.CurrencyFeature
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle
-import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest
 import java.lang.reflect.Proxy
 import java.nio.file.Paths
 import java.util.function.Consumer
@@ -397,12 +403,8 @@ class PluginRegistryImplTest {
 
     @Test
     fun `sibling modules receive isolated task scopes`() {
-        val nativeOwners = mutableListOf<Any?>()
         val native = object : PlatformTaskAdapter {
-            override fun schedule(request: PlatformTaskRequest): PlatformTaskHandle {
-                nativeOwners += request.owner
-                return PlatformTaskHandle { true }
-            }
+            override fun buildTask() = PlatformTaskBuilder { PlatformTaskHandle { true } }
         }
         val tasks = ScheduledTasks(native)
         val owner = Any()
@@ -414,8 +416,6 @@ class PluginRegistryImplTest {
         val spec = TaskSpec.builder().action { }.build()
         val firstTask = first.tasks.schedule(spec)
         val secondTask = second.tasks.schedule(spec)
-        assertSame(owner, nativeOwners[0])
-        assertSame(owner, nativeOwners[1])
         first.close()
         assertTrue(firstTask.isCancelled)
         assertFalse(secondTask.isCancelled)
@@ -643,6 +643,7 @@ class PluginRegistryImplTest {
             directDownloads: DirectDownloads? = null,
             expansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryExpansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
+            libraryFetcher: LibraryFetcher = LibraryFetcher { _, _, _, _ -> null },
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
@@ -660,6 +661,7 @@ class PluginRegistryImplTest {
                 commands = commands,
                 directDownloads = directDownloads,
                 libraryVersion = libraryVersion,
+                libraryFetcher = libraryFetcher,
             )
 
         private class RecordingUpdateService : UpdateService {
@@ -677,8 +679,14 @@ class PluginRegistryImplTest {
                 this.dependencies = dependencies
                 return emptyProxy(UpdateRegistration::class.java)
             }
-            override fun all(): List<UpdateRegistration> = emptyList()
-            override fun get(product: String): UpdateRegistration? = null
+            override val products = object : UpdateProducts {
+                override fun all(): List<UpdateRegistration> = emptyList()
+                override fun get(product: String): UpdateRegistration? = null
+            }
+            override val plans: UpdatePlans get() = error("not used")
+            override val settings: UpdateSettings get() = error("not used")
+            override val backups: UpdateBackups get() = error("not used")
+            override val history: UpdateHistory get() = error("not used")
         }
 
         fun platform(): PlatformAdapter = proxy(PlatformAdapter::class.java) { methodName ->
@@ -736,7 +744,7 @@ class PluginRegistryImplTest {
         val unregisteredOwners = mutableListOf<Any>()
         val registeredOwners = mutableListOf<Any>()
         override fun register(owner: Any, command: CommandDefinition,
-            feedback: org.pnfolder.pnlibrary.core.commands.CommandFeedbackScope?): CommandRegistration =
+            feedback: org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope?): CommandRegistration =
             object : CommandRegistration {
                 init { registeredOwners += owner }
                 override val command = command

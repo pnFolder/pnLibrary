@@ -2,15 +2,179 @@
 
 ## Ветка next (0.1.0-dev)
 
-- **Плейсхолдеры.** Дерево с аргументами (`player`, `param`, `choice`), адрес `плагин/модуль:путь`, генерация веток
-  `from<R>`, `table`, `list`, форматы по четырём уровням и свои форматы модуля, доступ `access`, запись `update`,
-  публикация в PlaceholderAPI из той же регистрации. Команда `/pn placeholders`, страница в `/pn gui`.
-  Подробности: docs/placeholders.md.
+- Версия 0.1.0-dev.6: API несовместим с dev.5, поколение API (`PnLibraryApi.VERSION`) поднято с 1 до 2. Плагины, которые объявляли `pnLibraryApi(1, 1)`, нужно перевести на новое API и объявить `pnLibraryApi(2, 2)`.
+### Сценарии в одной папке
+- Загрузки: `maxBytes` задаёт наибольший размер для одного файла, больше или меньше общего потолка в 512 МБ (`FileDownload`, `variant`, зависимости).
+- Загрузки: без SHA-256 файл берётся с первой ссылки, которая ответила; сравнение копий между зеркалами и запоминание сумм убраны, остальные адреса служат запасными.
+- Зависимости плагинов, варианты файла: `variant(...)` задаёт отдельный файл под платформу и версию Minecraft со своими ссылкой, SHA-256 и зеркалами; скачивается и проверяется только подходящий. В меню появился экран «Что не хватает» со скачиванием группы кликом.
+- Зависимости плагинов: у `ExternalPluginDependency` появились `title` и `description`. Карточка «не хватает плагинов» и `/pn deps` делят список на обязательные и необязательные, показывают название, описание, все ссылки и способ проверки файла (есть ли SHA-256 автора). Описание в `docs/dependencies.md`.
+- Обновления, ремастер API: `UpdateService` разделён на пять частей: `products`, `plans`, `settings`, `backups`, `history`. Убраны методы-заглушки «не поддерживается»: в каждой части работает всё. `checkNow` стал `plans.check`, `currentPlan` стал `plans.current`, `history()` стал `plans.recent`, `setChannel` стал `settings.channel`, `setHeld` разделён на `settings.hold` и `settings.release`, `backups()` стал `backups.list`, `rollback(id, restoreConfigurations, actor)` стал `backups.rollback(id, actor, restoreConfigurations)`, `historyPage` и `historyCount` стали `history.page` и `history.count`. `confirm` из API убран: он никогда не работал, подтверждение идёт командой `/pn update confirm`. Все методы с `actor` его принимают необязательным.
+- Плейсхолдеры в тексте: один вид скобок `{...}` вместо трёх. `{имя}` читает сначала значение запуска (`player`, `price`), затем плейсхолдер pnLibrary; `{плагин/модуль:путь}` адресует плейсхолдер явно, `{papi:имя}` берёт из PlaceholderAPI (`%имя%` остаётся тоже). Старые `[имя]` больше не плейсхолдер: префикс вроде `[pnTest]` остаётся текстом и не даёт предупреждения «Placeholder … is not registered». Нужно заменить `[имя]` на `{имя}` в действиях, сообщениях и выражениях. Описание в `docs/placeholders.md`.
+- Меню «Библиотеки плагинов»: сначала выбор плагина (сколько у него библиотек, модулей, какой размер, есть ли конфликт версий) или «Все библиотеки» одним списком; у библиотеки «Принадлежит» (плагину или модулю плагина), «Файл» и «Папка» считаются от папки сервера, а не обрезанный хвост пути.
+- Диск: `/pn modules disk` и кнопка «Диск плагинов» в меню показывают, сколько места занимает каждый плагин сервера (jar, настройки, библиотеки, журналы, данные), сколько свободно на диске. У библиотек плагинов видны размер и место, где лежит jar.
+- Библиотеки: на плагин (`PluginRegistration.libraries`) и на модуль, `title` и `description` у библиотеки и у модуля (`metadata { description(...) }`), `loadClass`, `find`, `remove`, `PluginRegistry.allModules()` и `libraryUsage()`, `/pn modules libs|plugins`, экраны «Библиотеки». `shared()` на Bukkit и BungeeCord грузит в загрузчик плагина-владельца.
+- Библиотеки модуля: `PluginModule.libraries()` и `ModuleLibrary`. Откуда качать: один список мест `source { link(...) | repository(...) }`, у каждого своя сумма и имя, сколько угодно; пробуются по порядку, затем Maven Central, первое рабочее побеждает. `LibraryScope` (плагин, отдельный загрузчик, pnLibrary), `platforms`, необязательность, классификатор.
+- Модули: `registerModule(id, PluginModule)` с методами `onEnable`/`onDisable`/`onReload`, `ModuleContext.control` (`enable`, `disable`, `restart`, `reload`, `autoStart`), команда `/pn modules` и экраны меню «Модули плагинов» (также кнопка «Модули» в карточке плагина). Выключенные навсегда модули хранятся в `data/modules/preferences.json`. Подробности в `docs/modules.md`.
+- Обновления: в карточке продукта можно выбрать сборку Java (`UpdateService.setJavaBuild`, `UpdateSnapshot.javaBuilds/javaBuild/recommendedJava`, команда `/pn updates set <плагин> java <n|default>`). Без выбора берётся сборка, как у установленного продукта.
+- `api.tasks`: по одному типу на файл и подпапки `spec` (`TaskSpec`, `TaskSpecBuilder`, `TaskAction`, `TaskContext`, `TaskExecution`, `TaskConflictPolicy`) и `info` (`TaskId`, `TaskStatus`, `TaskSnapshot`, `TaskQuery`). Новое: задача классом `ScheduledTask` (`scope.schedule(MyTask(args))`), `TaskStatus.isTerminal`, `TaskSnapshot.isActive`, `TaskQuery.matches(snapshot)`; дубли в `core` удалены. Импорты нужно поправить.
+- (теперь в пакете `api.tasks.run` вместе с `TaskLagHandler`/`LagResponse`) `TaskContext` расширен: `key`, `tags`, `executionKind`, `interval`, `skippedCount`, `previousStartedAt`, `isCancelled`, `snapshot()`, `isFirstRun`, `isRepeating`, `lag`, `elapsed`, `every(n)`, `cancelAfter(n)`. Исправлено: `scheduledAt` у повторяющейся задачи теперь плановое время каждого запуска, а не время первого. Подзадачи: `context.later(delay) { ... }`, `context.spawn(spec или ScheduledTask)` запускают следующую задачу в той же области, без доступа к `tasks`; новые `execution` и `TaskContext.SUBTASK_TAG`. Новое в задачах: `maxLag` (пропустить запуск, который запоздал дольше заданного), `tolerateFailures` (повторяющаяся задача переживает N ошибок подряд), `TaskSnapshot.failedCount`, `TaskContext.isLate(порог)`.
+- `PluginUpdateRequest`: правило `.artifact(...)` стало необязательным. Какой файл подходит серверу, решает каталог `releases.json` (платформа и диапазон Java у каждого файла), а Java плагина берётся из его `ProductDescriptor`.
+- `api.updates` разложен: `request` (`PluginUpdateRequest`, `PluginUpdateArtifact`, `CatalogSource`), `product` (`ProductDescriptor`, `ProductId`, `UpdateChannel`), `history` (`UpdateHistoryEntry`); в корне остались `UpdateService` и `UpdateRegistration`.
+- `api.proxy` переименован в `api.network` (`NetworkProxy`, `NetworkServer`, `NetworkPlayer`); `placeholders.model`, `placeholders.tree.scope`; файлы API, где лежало несколько разных классов, разделены по одному на файл (каталоги однотипных классов вроде ошибок команд и встроенных действий оставлены вместе).
+- `metrics` и `observability` разложены: `metrics.provider`, `metrics.error`, `observability.report`, `observability.observation`; в ядре `metrics.session`, `metrics.factory`, `observability.store`.
+- Остальные пакеты API разложены: `dependencies.external`, `diagnostics.report`, `plugin.lifecycle`, `plugin.metadata`, `audiences.player`; файлы с несколькими классами (`logging`, `dependencies`, `downloads`, `observability`, `metrics`, `cooldowns`) разделены по одному классу на файл. В ядре `diagnostics` разделён на `config`, `command`, `redaction`, `journal` на `store` и `view`.
+- `LagResponse.CANCEL`: обработчик лага может отменить задачу насовсем, если после такой задержки запускать её уже незачем.
+- Команды в API разложены: `api.commands.definition` (`CommandDefinition`, `CommandNode`, `ArgumentType`, DSL `command`) и `api.commands.error` (`CommandError`, `fail`, `ensure`); `CommandContext`, `CommandSender`, `CommandRegistration` остались в корне. Движок команд ядра лежит в `core.commands.engine`.
+- Подзадачи — полноценные задачи: у них есть `parentId`, `context.repeat(n, every) { }`, `context.spawn { ... }` (DSL), `cancelWithParent` (отмена вместе с родителем); `/pn tasks` и меню показывают в `/pn tasks` и меню подзадачи вложены в родителя (список показывает только верхний уровень, у родителя кнопка «Подзадачи», у подзадачи «Подзадача от»), есть слот «Опоздания». Лаги сервера: `TaskLag` (`lag`, `missedRuns`), `ScheduledTask.onLag`, `onLag(порог, handler)`/`whenLate(порог, consumer)` в билдере, ответ `LagResponse` (RUN/SKIP), `TaskSnapshot.lastLag/worstLag`, «Опоздание» в чате и GUI.
+- `api.text` разложен на `cache` (`ComponentCachePolicy`, `ComponentCacheScope`, `ComponentCacheStatistics`) и `serializer` (`ComponentSerializer`, `ComponentSerializerType`). Новое: `ComponentCachePolicy.DISABLED`, `ComponentCacheStatistics.lookups`, `ComponentTemplate.values(map)`. Импорты нужно поправить.
+- `api.updates` разложен на `catalog` (`CatalogSource`, `ProductDescriptor`, `ProductId`, `UpdateChannel`) и `state` (`UpdateState`, `UpdateSnapshot`, `UpdatePlanSnapshot`, `BlockedReason`, `UpdateActor`); `api.placeholders` на `adapter` и `cache`. Импорты нужно поправить.
+- `api.actions` стал `api.scenario.actions`, `api.requirements` стал `api.scenario.requirements`, калькулятор вынесен в `api.scenario.expression`. `ChatPalette` и `ChatTone` перенесены в `api.chat.style`. Несовместимое изменение API: нужно поправить импорты.
+
+### События по папкам
+- Пакет `api.events` разложен: корень (`Event`, `ResultedEvent`, `EventDescription`), `bus` (`EventService`, `EventScope`, `DispatchMode`), `listener` (`Listener`, `EventHandler`, `EventPriority`, `EventSubscription`, `EventListenerRegistration`, `EventListenerBuilder`, `subscribe`), `inspect` (`EventInspector`, `EventInfo`, `ListenerInfo`), `inspect.history` (`EventDay`, `EventHour`), `inspect.trace` (`EventTrace`), `player`. В `core.events`: `registration`, `player`, `inspect`, `inspect.history`, `inspect.trace`.
+- `EventInspector`: убраны заглушки по умолчанию у `hourly`, `asyncQueued`, `exportHistory`. Новое: `on<E>().listenOnce { }` слушает только первое событие. Несовместимое изменение API.
+
+### Новая система действий и требований
+- `api.actions` переписан: `Action.run` возвращает `ActionResult` (`Done`, `Stopped`, `Failed`). Ошибка шага откатывает прошлые шаги через `ActionContext.onUndo`; блок `attempt` ловит ошибку и показывает сообщение.
+- `api.checks` заменён на `api.requirements`: `Requirement` отвечает `Verdict.Met` или `Verdict.Unmet(reason)`, значения берутся из контекста, плейсхолдеров pnLibrary и PlaceholderAPI. Списание денег — действие `charge` (`give`, требование `balance`), слова добавляет сама библиотека для всех плагинов.
+- Выражения: `Expression` (математика, логика, функции, плейсхолдеры), требование `expression`, текст `{= ... }`, действия `set`, `call`, `random`, обработчики ошибок по коду в `attempt`, именованные `define`/`defineRequirement`/`defineFunction` (на модуль или на библиотеку, с политикой конфликтов).
+- Удалены `ActionNode`, `ActionText`, форматы DeluxeMenus, шаблоны `run`, `group`, `require` со старыми полями, `InternalPnLibraryApi`. Несовместимое изменение API.
+
+### Убран Activity API
+- Удалены `PnLibrary.activity`, `ActivityService`, `ActivityEvent` и остальные типы пакета `api.activity`. Вместо них `PnLibrary.observability`:
+  `capture { }` для события, `failure(error)` для ошибки, `recent(query)` для чтения. Несовместимое изменение API.
+- Слои игроков: `AudienceSender` и `PlayerCapability` вынесены в отдельные файлы, `PlayerEffects.kt` разделён на `PlayerEffect` и `PlayerParticle`.
+
+### Настройки библиотеки без файлов
+- `config.yml` и `downloads.yml` больше не читаются. Все настройки меняются командой `/pn settings list|get|set|reset` (право `pnlibrary.settings`)
+  и в меню «Настройки» → «Параметры библиотеки»; значения лежат в `data/settings.json`, список настроек один (`SettingsRegistry`), описание в
+  [docs/settings.md](docs/settings.md).
+- Старые файлы при первом запуске переносятся в `settings.json` и переименовываются в `*.yml.old`; выбор `/pn deps auto` главнее `downloads.yml`.
+- Новые настройки: время проверки обновлений (`updates.check-interval`) и таймауты скачивания обновлений. Настройки загрузок и часового пояса
+  работают сразу, остальные после перезапуска.
+
+### Справка в папке плагина
+- В `plugins/pnLibrary` библиотека сама пишет `Помощь.txt` (помощь, Discord, репозиторий, главные команды), `Настройки.txt` (все настройки с
+  текущими значениями, описаниями и командой для изменения) и `Команды.txt` (все команды `/pn` и права, в том числе `/pn settings`, `/pn configs`,
+  `/pn support`, `/pn gui`, `/pn deps`, подкоманды `/pn updates` и `/pn update`). Они создаются заново при каждом запуске, `Настройки.txt` ещё и после
+  изменения настройки. Если JVM не умеет русские имена файлов, они называются `HELP.txt`, `SETTINGS.txt` и `COMMANDS.txt`.
+- Список команд и прав один, в коде (`LibraryCommandGuide`); тест сверяет его с правами в `plugin.yml`. В `plugin.yml` добавлены права
+  `pnlibrary.configs`, `pnlibrary.configs.edit`, `pnlibrary.servers` и `pnlibrary.currency.list` (по умолчанию у операторов, как и раньше).
+- В файлы настроек плагинов больше не пишется заметка с Discord; в старых файлах она удаляется при следующей записи.
+
+### Настройки в меню
+- Переключатели везде показываются словами `включено` и `выключено` (меню, `/pn settings`, `Настройки.txt`); в команде принимаются также
+  `вкл`, `выкл`, `да`, `нет`, `true`, `false`, `on`, `off`. В подсказке переключателя вариант по умолчанию помечен серым курсивом `(по умолчанию)`,
+  отдельной строки «По умолчанию» у переключателя больше нет.
+- Часовой пояс выбирается в меню из одного постраничного списка всех поясов. У каждого пояса видно время там сейчас (`21:45`) и смещение
+  (`UTC+03:00`, с учётом летнего времени). Кнопки: сортировка (по смещению UTC или по алфавиту), «Популярные» (Москва, Лондон, Нью-Йорк и другие),
+  «Поиск» и «Ввести в чате». Поиск: `/pn settings pick <ключ> [часть названия]`, например `new york`. Настройки с длинным списком значений
+  описываются типом `CHOICE` и `ChoiceSource`; Tab в `/pn settings set` подсказывает пояса.
+- В меню часовой пояс переключается кликом, как настройка с вариантами в конфигах: клик следующий пояс из «Популярных», правый клик предыдущий,
+  Shift + клик открывает полный список. В подсказке окно значений со строками `▲ выше ещё N` и `▼ ниже ещё N`, смещение и время там сейчас;
+  пояс вне популярных стоит первой строкой. `ChoiceSource.cycle` задаёт набор для прокрутки.
+- Числа: `@ConfigStep(шаг, единица)`, `@ConfigDuration(TimeUnit)` (в меню «1 ч 30 мин», шаги секунда/минута/час, ввод `90m`, `1h30m`).
+  Колёсико мыши открывает редактор числа: шаги вниз и вверх разного размера, «Минимум», «Максимум», ввод в чате.
+- Тексты: `@ConfigHint(format, examples, values, strict)`; со `strict` текст становится списком выбора. Длинный список листается
+  отдельным экраном (Shift + клик).
+- В списках: кнопки страниц `◀ Страница N` / `Страница N ▶`, номер страницы и диапазон на средней кнопке. В карточке файла виден полный класс.
+
+### Зависимости
+- У внешней зависимости несколько источников без контрольной суммы: `Dependencies.plugin(имя, версия, listOf(url1, url2))`,
+  `ExternalPluginDependency.Builder.mirror(url)`, `FileDownload.Builder.mirror(url)`. Файлы с разных адресов сверяются; при расхождении загрузка отклоняется.
+  Единственный адрес запоминает SHA-256 первой загрузки: если файл по нему изменился, нужно подтверждение администратора.
+- Автозагрузка недостающих плагинов включена по умолчанию (у зависимости с прямой ссылкой). Выбор администратора лежит в данных
+  (`downloads/preferences.state`), а не в конфиге, и главнее `downloads.yml`; переключатель есть в меню настроек и в `/pn deps auto on|off`.
+- Чего не хватает: сообщение в консоли со ссылками и кодом. `/pn deps` показывает список, `/pn deps install <код>` скачивает сразу, даже при выключенной автозагрузке.
+  Право `pnlibrary.deps`.
+
+### Конфигурации
+- Регистрация полиморфных типов по адресу: `.into("плагин" | "плагин/модуль" | "плагин/модуль:путь" | ConfigAddress | ManagedConfig)`.
+  `ConfigTypeAccess` и `.access(...)` удалены. Регистрация живёт и умирает с модулем регистранта.
+- Защита: нельзя занять слова базового типа и хозяина файла; хозяин ограничивает расширения `extensions { allow/deny/denyAll }`.
+- `ConfigOptions.unknownTypes` (`FAIL`/`SKIP`): при `SKIP` элемент списка с незнакомым `type` пропускается и остаётся в файле;
+  запись заблокирована, пока есть пропущенные. Ожидающие конфиги перечитываются при регистрации типа.
+- Идентификаторы `плагин/модуль:путь` (`ConfigId`, `ConfigAddress`, `ConfigInfo`) и каталог:
+  `library.configurations.all/find/get/require/byModel/types`, `library.plugins.getById/requireById`, `PluginRegistration.configs()`,
+  `ConfigScope.list/get/require`, `ManagedConfig.id/info`.
+- `ConfigOptions.root` (`PLUGIN`, `PLUGINS`, `SERVER`) и `ConfigOptions.readOnly`.
+- Команда `/pn configs [страница] | info | reload | validate | types`, право `pnlibrary.configs`.
+- Файл по любому абсолютному пути: `scope.yamlAt(Path)` (корень `ConfigRoot.EXTERNAL`, ID `плагин/модуль:@external/<путь>`).
+  Путь может прийти из собственного конфига плагина. Файл считается своим: создаётся и перезаписывается, секреты скрываются в отчётах.
+- Один класс `PluginAccess` (`ownerOnly()`, `shared()`, `only(...)`, `builder()`) вместо `PlaceholderAccess`, `CurrencyAccess`
+  и `ConfigExtensionPolicy`; `configs.extensions { }` теперь тоже на нём.
+- Правка настроек в игре: аннотация `@ConfigEditable(title, description, apply)`, `ManagedConfig.settings` и `edit(path, text)`,
+  `ConfigApply` (`LIVE`, `RELOAD`, `RESTART`). Секреты (`@ConfigSecret`) не показываются. Команды `/pn configs settings <id>` и
+  `/pn configs edit <id> <путь> <значение>` (право `pnlibrary.configs.edit`), страница «Конфигурации» в `/pn gui`: плагины → модули → файлы (или все файлы плагина с названием модуля), с переключением и страницами.
+- Колбэки: `ManagedConfig.onChanged(...)` (чтение, запись, правка) и `onReloadRequired(...)` (изменена настройка, которой нужно
+  перечитывание или перезапуск); принимают несколько обработчиков, ошибка одного не мешает другим. `ConfigInfo.pendingApply`.
+- Адрес собирается из частей, строки не нужны: `ConfigAddress.plugin("shop").inModule("main").inFile("a.yml")`; `into` принимает ещё `PluginId`, `ConfigScope`, `ConfigInfo`, `ManagedConfig`.
+- Адрес `*` (`ConfigAddress.everywhere()`, в билдерах `.everywhere()`): слово типа и сериализатор можно добавить во все файлы всех плагинов.
+- Сериализаторы в чужих файлах: `scope.serializerFor(serializer).into(адрес).priority(n).register()`, список `configurations.serializers()`.
+  Свои сериализаторы модуля главнее добавленных, хозяин ограничивает `extensions { }`, чужим файлам нельзя подменить примитивы
+  и типы `java.`/`kotlin.`. Сериализаторы читаются при каждом чтении файла, поэтому добавление после `yaml(...)` тоже работает.
+
+### Плейсхолдеры
+- Дерево с аргументами (`player`, `param`, `choice`), адрес `плагин/модуль:путь`, генерация веток `from<R>`, `table`, `list`,
+  форматы по четырём уровням и свои форматы модуля, доступ `access`, запись `update`, публикация в PlaceholderAPI из той же
+  регистрации. Команда `/pn placeholders`, страница в `/pn gui`. Подробности: docs/placeholders.md.
+
+### Обновления
+- `updates.yml` и список `ignored` удалены. Автообновление включено по умолчанию, меняется командой или в меню:
+  `/pn updates set <плагин> auto on|off` и `/pn updates set all auto on|off` (новый метод `UpdateService.setAutomaticDownloadForAllPlugins`).
+  Отложить обновление можно только паузой до 7 суток. Старый файл переименовывается в `updates.yml.old`.
+- Напоминания об обновлении идут по своему интервалу (6 часов по умолчанию, в коде от 1 минуты до 6 часов) в консоль и
+  в чат администраторам (Bukkit, Velocity, BungeeCord), без обращения к GitHub. Администратор их не отключает.
+- Обновление библиотеки сохраняет вариант сборки: если стоит `universal.jar` (его кладёт установщик в плагинах), берётся новый
+  `universal.jar`, а не файл платформы.
+- Релиз: `pnLibrary-<версия>-universal-full.jar` (Kotlin и Adventure внутри, без скачивания при старте) загружается в релиз
+  GitHub и попадает в `checksums.sha256`.
+- Необязательные библиотеки (драйверы баз, компилятор ECJ) скачиваются через Libby только при первом использовании
+  (`LibraryLoader.loadOptional`, `OptionalLibrary`), а не на старте.
+
+### Резервные копии перед обновлением
+- Копии с типом и именем (`BackupKind`: конфигурация, база данных, данные игроков, прочее; `PluginUpdateRequest.Builder.backup`).
+  Наборы хранятся 30 дней, при 500 МБ и больше в консоль идёт предупреждение; удалить: `/pn updates backups delete <id>`
+  (`UpdateService.deleteBackup`).
+- `PluginUpdateRequest.Builder.backupExport`: плагин сам выгружает данные перед обновлением; файл хранится с набором,
+  откат его не восстанавливает.
+- Базы по аннотациям: MySQL/MariaDB, PostgreSQL (`DatabaseKind.POSTGRESQL`: таблицы текущей схемы с индексами, ограничениями
+  и последовательностями) и MongoDB (`DatabaseKind.MONGODB`, `DatabaseRole.URI`). Аннотации: `@BackupDatabase`, `@DatabaseField`, `@BackupTable`.
+  Вернуть базу можно кнопкой в меню отката (с предупреждением о потере данных) или `/pn updates backups restore` (`UpdateService.restoreDatabase`).
+- Только нужные таблицы или коллекции: `@BackupDatabase(..., tables = [...])` и `@BackupTable`; в имени работает `*`. Без них копируется вся база.
+- Несколько баз в одном классе: поля привязываются к базе через `database = "ID"` у `@DatabaseField` и `@BackupTable`,
+  отдельные классы и аннотации на классе не нужны.
+- Меню копий идёт по плагинам и датам. Выдать файлы копии вместо возврата: кнопка «Выдать файлы» или `/pn updates backups files <id> <плагин>`.
+
+### Ошибки, безопасность, скорость
+- **Ошибки не теряются.** Сбои журнала, статистики, задач, закрытия платформ, валют и плейсхолдеров пишутся в логгер на уровне
+  `ERROR`/`CRITICAL`; запись уровня `ERROR` и выше без исключения тоже уходит в трекер ошибок (FastStats).
+- **Срок хранения записей.** `ObservationScope.keepFor(Duration)` задаёт автор плагина в коде, срок перекрывает срок уровня.
+  В отчёте поддержки у записей есть `timeUtc` и `expiresUtc`. Раздел «Сообщить о проблеме» в docs/diagnostics.md.
+- **Безопасность.** Права на опасные действия по связи проверяет получатель, а не вызывающий; `link.key` и файлы копий
+  создаются с правами владельца; каталог релизов берёт raw/API раньше jsDelivr; хосты скачивания ограничены списком;
+  имя JAR платформы должно начинаться с `pnLibrary-`; битый `journal.json` не блокирует обновления и откаты;
+  `@ConfigSecret` работает внутри списков и карт (`by-name.*.pin`).
+- **Старый Adventure.** На серверах, где Adventure слишком старый для MiniMessage (например Paper 1.16.5), MiniMessage заменяется
+  упрощённым разбором (цвета, `#rrggbb`, декорации, `reset`, `br`, экранирование `\<`), в лог пишется одно предупреждение.
+- **Копии баз.** PostgreSQL возвращается одной транзакцией, копируются enum-типы, параметры последовательностей и внешние
+  ключи таблиц вне маски; MySQL сохраняет переводы строк в литералах и режет `INSERT` по размеру; Mongo-индексы сохраняют
+  `partialFilterExpression` и `collation`.
+- **Скорость.** Журнал пишется пачками, буфер логов не очищает повторы заново, групповой коммит и кеш закодированных
+  транзакций в валюте, индекс плейсхолдеров, кеш шаблонов `Wildcards`, история событий без общей блокировки, предрассчитанные
+  триграммы в поиске перевода, одна проверка HMAC на кадр связи, журнал при входе админа собирается не на главном потоке.
+- **Лёгкий universal на Bukkit и BungeeCord.** Libby не скачивал MiniMessage и plain-сериализатор (на BungeeCord ещё gson-сериализатор), плагин падал при старте с `NoClassDefFoundError: net/kyori/adventure/text/minimessage/MiniMessage`. Эти библиотеки добавлены в списки загрузки, тест `RuntimeLibrariesTest` следит за списками.
+- **Ссылки поддержки.** `PnLibraryIdentity.SUPPORT_URL` и `REPOSITORY_URL` больше не `const`: компилятор не копирует их в плагины, они читаются из запущенной библиотеки, и новая ссылка доходит до плагинов без пересборки (после одной пересборки на этом API). В карточку уведомления об обновлении добавлена строка поддержки.
+- **Vault.** Пока Essentials не загрузил настройки, подключение валюты Vault тихо откладывается до следующего события, а не пишет SEVERE на каждой попытке.
+- **Публикация.** Без ключа подписи `publishToMavenLocal` работает (артефакты неподписанные); подключение без публикации
+  описано в integration/README.md.
+
+### Прочее
 - **Статистика.** Почасовые срезы в журнал, `/pn stats`, страница меню.
-- **Модули.** Из `core` вынесены `link`, `placeholders`, `events`, `upload`, `journal`: границы между функциями теперь проверяет
+- **Модули.** Из `core` вынесены `link`, `placeholders`, `events`, `upload`, `journal`: границы между функциями проверяет
   компилятор. Имена пакетов не менялись.
 - **Исправлено.** Folia: библиотека стартует с `link.key`, задачи вышедшего игрока снимаются с учёта. Карта сети не превышает лимит кадра.
-  Прокси не затирает нечитаемый `link.key`. Обновления: на Paper плагины работают из `plugins/.paper-remapped`, папка бэкапа конфигов
+  Прокси не затирает нечитаемый `link.key`. На Paper плагины работают из `plugins/.paper-remapped`, папка бэкапа конфигов
   больше не отклоняется. Отчёт поддержки не содержит значений `@ConfigSecret` и `excluded-paths`, а сбой скрытия прячет значение целиком.
   Пулы данных меню закрываются при остановке.
 - **Структура.** `core/commands` разнесён по функциям, длинные файлы и методы разбиты, классы с `Impl`/`Manager`
@@ -40,6 +204,7 @@
 
 ## config.yml
 
+- В шапке `config.yml` на русском и английском перечислены все команды и права; тест сверяет её с `plugin.yml`.
 - `privacy` по умолчанию `false`: личные данные в отчёте показываются, скрыть их можно, поставив `true`.
 - В комментарии к `excluded-paths` пример: путь для всех файлов или `плагин/файл.yml:путь` для одного файла одного плагина.
 - Параметр `journal-join-notice` убран: сводка недавних проблем при входе администратора показывается всегда.

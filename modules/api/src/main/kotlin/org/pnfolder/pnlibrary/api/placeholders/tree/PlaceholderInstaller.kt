@@ -1,11 +1,11 @@
 package org.pnfolder.pnlibrary.api.placeholders.tree
 
-import org.pnfolder.pnlibrary.api.placeholders.AsyncPlaceholderResolver
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderBuilder
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRequest
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderUpdater
+import org.pnfolder.pnlibrary.api.placeholders.model.AsyncPlaceholderResolver
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderRequest
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
@@ -15,6 +15,7 @@ internal class PlaceholderInstaller(
     private val service: PlaceholderService,
     private val moduleId: String,
 ) {
+    /** Registers the placeholder group with the platform. */
     fun install(group: GroupData) {
         val format = group.format.resolve(null)
         group.roots.forEach { walk(group, it, emptyList(), format, group.access, false) }
@@ -47,7 +48,8 @@ internal class PlaceholderInstaller(
 
     private fun evaluate(node: Node, path: List<Segment>, request: PlaceholderRequest): CompletionStage<Any?> {
         val call = callFor(path, request) ?: return CompletableFuture.completedFuture(null)
-        return node.value!!(call)
+        val value = checkNotNull(node.value) { "A placeholder node without a value cannot be evaluated" }
+        return value(call)
     }
 
     private fun change(updater: Updater, path: List<Segment>, request: PlaceholderRequest, text: String): Any? {

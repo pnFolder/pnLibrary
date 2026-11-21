@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.observability.report
 
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
-import org.pnfolder.pnlibrary.core.security.EncryptedEnvelopeCodec
+import org.pnfolder.pnlibrary.core.observability.report.EncryptedEnvelopeCodec
 import org.pnfolder.pnlibrary.core.upload.CatboxUploader
 import org.pnfolder.pnlibrary.core.upload.EncryptedReportUploader
 import org.pnfolder.pnlibrary.core.upload.FileIoUploader

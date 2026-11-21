@@ -8,7 +8,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-config" }
 
 dependencies {
     api(project(":modules:features:config-api"))
-    api(project(":modules:runtime-spi"))
+    api(project(":modules:spi"))
     implementation(project(":modules:common"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.snakeyaml)
@@ -19,7 +19,8 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    // Without a key (a local build) the artifacts are published unsigned.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) signAllPublications()
     coordinates("io.github.pnfolder", "pnlibrary-config", project.version.toString())
     pom {
         name.set("pnLibrary Config")

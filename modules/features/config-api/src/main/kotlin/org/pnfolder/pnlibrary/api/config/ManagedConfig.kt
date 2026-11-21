@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.config
 
+import java.util.function.Consumer
 import java.util.function.UnaryOperator
 
 /** Converts between a typed code-first model [T] and YAML text. */
@@ -53,6 +54,40 @@ class ConfigValidationException(
  * [unload] only clears memory and never deletes or rewrites the YAML file.
  */
 interface ManagedConfig<T> : AutoCloseable {
+    /** Identifier `plugin/module:path`, or `null` for a library-internal file that no plugin registered. */
+    val id: ConfigId? get() = null
+
+    /** Read-only description of this file without any values from it, or `null` when [id] is `null`. */
+    val info: ConfigInfo? get() = null
+
+    /**
+     * The settings of this file that an administrator may change in game (fields marked [ConfigEditable]),
+     * with their current values. Empty for a file registered outside a configuration scope.
+     */
+    val settings: List<ConfigSetting> get() = emptyList()
+
+    /**
+     * Changes one setting by its dotted [path] from the typed [text], validates the whole file and writes it.
+     * When the new value is refused, the file and the value in memory stay as they were.
+     *
+     * @throws ConfigEditException when the path is unknown, the text does not fit, or validation fails
+     */
+    fun edit(path: String, text: String): ConfigEditResult =
+        throw UnsupportedOperationException("Settings of this configuration cannot be edited")
+
+    /**
+     * Calls [listeners] after the file is read or written, or one of its settings is edited. A failing listener is
+     * logged and does not stop the others. Closing the result removes them.
+     */
+    fun onChanged(vararg listeners: Consumer<ConfigChange>): AutoCloseable = AutoCloseable { }
+
+    /**
+     * Calls [listeners] when a setting that does not work at once ([ConfigApply.RELOAD], [ConfigApply.RESTART]) was
+     * changed, so the plugin can apply it (usually by re-reading what it caches) or tell the administrator to restart.
+     * Closing the result removes them.
+     */
+    fun onReloadRequired(vararg listeners: Consumer<ReloadRequest>): AutoCloseable = AutoCloseable { }
+
     /** Whether a configuration value is currently loaded in memory. */
     val isLoaded: Boolean
 

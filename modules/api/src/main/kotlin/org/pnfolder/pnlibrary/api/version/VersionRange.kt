@@ -7,16 +7,12 @@ package org.pnfolder.pnlibrary.api.version
  * Java: `VersionRange.closed("2.0.0", "3.0.0").contains(version)`.
  */
 class VersionRange private constructor(
-
     /** Lower boundary, or `null` when unbounded below. */
     val minimum: SemanticVersion?,
-
     /** Upper boundary, or `null` when unbounded above. */
     val maximum: SemanticVersion?,
-
     /** Whether [minimum] itself is included. Ignored when no minimum exists. */
     val includeMinimum: Boolean,
-
     /** Whether [maximum] itself is included. Ignored when no maximum exists. */
     val includeMaximum: Boolean,
 ) {
@@ -36,23 +32,32 @@ class VersionRange private constructor(
     /** Parses and checks a version string. */
     fun contains(version: String): Boolean = contains(SemanticVersion.parse(version))
 
+    /** Interval notation such as `[2.0.0, 3.0.0)`; a missing boundary is shown as `*`. */
+    override fun toString(): String =
+        (if (includeMinimum) "[" else "(") + (minimum ?: "*") + ", " + (maximum ?: "*") + (if (includeMaximum) "]" else ")")
+
     /** Factories for unbounded, one-sided, and closed semantic-version ranges. */
     companion object {
+        /** Returns a range that accepts every version. */
         @JvmStatic
         fun any(): VersionRange = VersionRange(null, null, true, true)
 
+        /** Returns a range accepting versions from [minimum], inclusive. */
         @JvmStatic
         fun atLeast(minimum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), null, true, true)
 
+        /** Returns a range accepting versions above [minimum], exclusive. */
         @JvmStatic
         fun greaterThan(minimum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), null, false, true)
 
+        /** Returns a range accepting versions from [minimum] to [maximum], both inclusive. */
         @JvmStatic
         fun closed(minimum: String, maximum: String): VersionRange =
             VersionRange(SemanticVersion.parse(minimum), SemanticVersion.parse(maximum), true, true)
 
+        /** Returns a range accepting versions below [maximum], exclusive. */
         @JvmStatic
         fun until(maximum: String): VersionRange =
             VersionRange(null, SemanticVersion.parse(maximum), true, false)

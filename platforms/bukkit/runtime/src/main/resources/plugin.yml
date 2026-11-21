@@ -27,11 +27,29 @@ permissions:
   pnlibrary.tasks:
     description: 'Смотреть задачи плагинов (/pn tasks) и отменять их'
     default: op
+  pnlibrary.deps:
+    description: 'Недостающие плагины: список, установка по коду, автозагрузка (/pn deps)'
+    default: op
+  pnlibrary.settings:
+    description: 'Настройки библиотеки: смотреть и менять (/pn settings, раздел меню «Параметры библиотеки»)'
+    default: op
   pnlibrary.placeholders:
     description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
     default: op
   pnlibrary.stats:
     description: 'Смотреть сводную статистику библиотеки (/pn stats)'
+    default: op
+  pnlibrary.configs:
+    description: 'Смотреть конфигурации плагинов и перечитывать их (/pn configs)'
+    default: op
+  pnlibrary.configs.edit:
+    description: 'Менять настройки конфигураций плагинов в игре (/pn configs edit)'
+    default: op
+  pnlibrary.servers:
+    description: 'Серверы сети и удалённые действия обновлений (/pn servers)'
+    default: op
+  pnlibrary.currency.list:
+    description: 'Список валют (/pn money list)'
     default: op
   pnlibrary.updates.view:
     description: Просматривать совместимый план обновлений

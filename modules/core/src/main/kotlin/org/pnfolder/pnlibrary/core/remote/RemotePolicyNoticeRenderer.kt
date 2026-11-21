@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.remote
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.plugin.PluginMetadata
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult
@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.console.ConsoleCard
 import org.pnfolder.pnlibrary.console.ConsoleTree
-import org.pnfolder.pnlibrary.core.ui.ConsoleStyle
+import org.pnfolder.pnlibrary.core.text.ConsoleStyle
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 
 /** Prints the console card with the result of a remote compatibility check. */

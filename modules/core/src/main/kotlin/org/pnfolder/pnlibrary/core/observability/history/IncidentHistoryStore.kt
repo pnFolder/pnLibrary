@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.observability.history
 
 import com.google.gson.Gson
 import org.pnfolder.pnlibrary.common.io.AtomicFiles
-import org.pnfolder.pnlibrary.core.security.EncryptedEnvelopeCodec
+import org.pnfolder.pnlibrary.core.observability.report.EncryptedEnvelopeCodec
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

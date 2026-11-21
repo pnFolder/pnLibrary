@@ -1,5 +1,13 @@
 package org.pnfolder.pnlibrary.api.observability
 
+import org.pnfolder.pnlibrary.api.observability.observation.Observation
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
+import org.pnfolder.pnlibrary.api.observability.observation.ObservationScope
+import org.pnfolder.pnlibrary.api.observability.report.ComponentStatus
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReport
+import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportRequest
+
 /**
  * Records operational history, tracks current component state, and creates
  * support reports from one consistent data source.
@@ -33,5 +41,6 @@ interface ObservabilityService : AutoCloseable {
     /** Stores and returns the latest state for one plugin component. */
     fun status(status: ComponentStatus): ComponentStatus
 
+    /** Builds a report of the current state of the monitored components, filtered by [request]. */
     fun createReport(request: ObservabilityReportRequest = ObservabilityReportRequest()): ObservabilityReport
 }

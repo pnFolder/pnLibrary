@@ -1,6 +1,12 @@
 package org.pnfolder.pnlibrary.config.yaml
 
-/** Metadata used to place documentation around one generated YAML field. */
+/**
+ * Metadata used to place documentation around one generated YAML field.
+ *
+ * @property comments comment lines written above the field
+ * @property separateWithBlankLine whether an empty line precedes the comments
+ * @property children metadata of the nested fields, by YAML key
+ */
 internal data class YamlFieldMetadata(
     val comments: List<String>,
     val separateWithBlankLine: Boolean,

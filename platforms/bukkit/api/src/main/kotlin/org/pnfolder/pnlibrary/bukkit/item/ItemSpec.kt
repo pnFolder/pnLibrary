@@ -5,6 +5,7 @@ import java.util.Collections
 
 /** Anything [ItemSpec] has no field for: flags, custom model data, persistent data. Runs last, on the created item. */
 fun interface ItemCustomizer {
+    /** Changes [item] in place. */
     fun apply(item: ItemStack)
 }
 
@@ -43,6 +44,7 @@ class ItemSpec private constructor(
     val exact: String?,
     val customizers: List<ItemCustomizer>,
 ) {
+    /** Returns a builder that starts with every value of this spec. */
     fun toBuilder(): Builder = Builder().also { builder ->
         builder.material(material).amount(amount).name(name).lore(lore).texture(texture).exact(exact)
         enchantments.forEach { (key, level) -> builder.enchant(key, level) }
@@ -75,13 +77,16 @@ class ItemSpec private constructor(
         /** Sets the display name; `null` keeps the default. */
         fun name(value: String?): Builder = apply { name = value }
 
+        /** Replaces the lore with [lines]. */
         fun lore(lines: List<String>): Builder = apply {
             lore.clear()
             lore += lines
         }
 
+        /** Replaces the lore with [lines]. */
         fun lore(vararg lines: String): Builder = lore(lines.toList())
 
+        /** Appends one line to the lore. */
         fun addLore(line: String): Builder = apply { lore += line }
 
         /** Adds or replaces an enchantment by name, for example `sharpness`. */
@@ -99,6 +104,7 @@ class ItemSpec private constructor(
         /** Adds a change for anything the spec has no field for; changes run in the order they were added. */
         fun customize(customizer: ItemCustomizer): Builder = apply { customizers += customizer }
 
+        /** Creates the immutable spec. */
         fun build(): ItemSpec = ItemSpec(
             material, amount, name,
             Collections.unmodifiableList(ArrayList(lore)),

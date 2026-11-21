@@ -1,11 +1,12 @@
 package org.pnfolder.pnlibrary.core.commands.events
 
-import org.pnfolder.pnlibrary.api.commands.ArgumentType
-import org.pnfolder.pnlibrary.api.commands.CommandBuilder
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
-import org.pnfolder.pnlibrary.api.commands.command
-import org.pnfolder.pnlibrary.api.events.EventInspector
+import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
+import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.text.shortName
 
 /**
  * `/pn bus`: a window into the event bus, shared by every platform and drawn like the other `/pn` pages.
@@ -51,7 +52,7 @@ class EventBusCommand(private val library: PnLibrary) {
 
     private fun CommandBuilder.eventViews() {
         executes { events.list(it, "all", 1) }
-        FILTERS.forEach { (word, _) ->
+        BusFilter.entries.map(BusFilter::word).forEach { word ->
             literal(word) {
                 executes { events.list(it, word, 1) }
                 argument("page", ArgumentType.integer()) { executes { events.list(it, word, it.get<Int>("page")) } }
@@ -159,3 +160,5 @@ class EventBusCommand(private val library: PnLibrary) {
         const val PERMISSION = "pnlibrary.events.bus"
     }
 }
+
+private const val MAX_SUGGESTED_DAYS = 31

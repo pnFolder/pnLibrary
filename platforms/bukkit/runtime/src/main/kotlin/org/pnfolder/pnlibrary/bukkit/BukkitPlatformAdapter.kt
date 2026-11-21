@@ -5,13 +5,17 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.currency.currencyProviders
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
+import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
@@ -45,6 +49,8 @@ internal class BukkitPlatformAdapter(
     val plugin: Plugin,
     audienceService: BukkitAudienceService,
     private val link: Link = Link.OFF,
+    private val pnLogger: () -> PnLogger,
+    private val logBuffer: PnLoggerBuffer,
 ) : PlatformAdapter {
 
     private val lifecycle = PlatformLifecycle()
@@ -73,6 +79,7 @@ internal class BukkitPlatformAdapter(
     private var lifecycleListener: BukkitLifecycleListener? = null
 
     override val type: PlatformType = PlatformType.BUKKIT
+    override val minecraftVersion: String? get() = runCatching { ServerCapabilities.rawMinecraftVersion }.getOrNull()
     override val dataFolder = plugin.dataFolder.toPath()
 
     override val implementationName: String
@@ -88,10 +95,10 @@ internal class BukkitPlatformAdapter(
     }
 
     override val metricsFactory: PlatformMetricsFactory =
-        BukkitMetricsFactory()
+        BukkitMetricsFactory(pnLogger)
 
     override val commandAdapter: PlatformCommandAdapter =
-        BukkitCommandAdapter(audienceService, plugin)
+        BukkitCommandAdapter(audienceService, plugin, pnLogger, logBuffer)
 
     override val audienceAdapter: PlatformAudienceAdapter =
         BukkitAudienceAdapter(audienceService)
@@ -107,7 +114,6 @@ internal class BukkitPlatformAdapter(
         Bukkit.getConsoleSender().sendMessage(message)
     }
 
-    /** Reads native plugin metadata, warning and returning null for unsupported owners. */
     override fun ownerMetadata(owner: Any): PluginSnapshot? = plugins.metadata(owner, this)
 
     override fun ownerDataFolder(owner: Any): Path? = plugins.find(owner)?.dataFolder?.toPath()
@@ -116,7 +122,6 @@ internal class BukkitPlatformAdapter(
 
     override fun installedPlugins(): Map<String, String> = plugins.versions()
 
-    /** Collects typed platform metadata without individual player identities. */
     override fun snapshot(): PlatformSnapshot =
         PlatformSnapshot(
             name = implementationName,
@@ -133,7 +138,7 @@ internal class BukkitPlatformAdapter(
 
     override fun disableOwner(owner: Any): Boolean {
         val installed = plugins.requireInstalled(owner, "Disabled owner")
-        BukkitDependentGuard.disableDependentsOf(installed) { plugin.logger.warning(it) }
+        BukkitDependentGuard.disableDependentsOf(installed) { pnLogger().warning(it) }
         Bukkit.getPluginManager().disablePlugin(installed)
         return true
     }
@@ -141,7 +146,9 @@ internal class BukkitPlatformAdapter(
     /** Disables dependents as they enable and switches [owner] off once the server has started. */
     override fun disableDependents(owner: Any): Boolean {
         if (owner !== plugin) return false
-        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { plugin.logger.warning(it) }.arm() }.isSuccess
+        return runCatchingNonFatal { BukkitDependentGuard(plugin, scheduler::nextTick) { pnLogger().warning(it) }.arm() }
+            .onFailure { pnLogger().error("Could not watch plugins that depend on pnLibrary", it) }
+            .isSuccess
     }
 
     /** Registers or removes the observer of server and plugin warnings, errors and uncaught thread exceptions. */

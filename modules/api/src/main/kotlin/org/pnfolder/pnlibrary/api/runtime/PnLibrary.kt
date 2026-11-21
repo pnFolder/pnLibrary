@@ -1,18 +1,18 @@
 package org.pnfolder.pnlibrary.api.runtime
 
-import org.pnfolder.pnlibrary.api.activity.ActivityService
 import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticReport
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
+import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
+import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.services.ServiceManager
@@ -45,9 +45,6 @@ interface PnLibrary : Closeable {
     /** Observations, component status and support reports. */
     val observability: ObservabilityService
 
-    /** Local bounded activity journal used by diagnostics and support reports. */
-    val activity: ActivityService
-
     /** Managed bStats sessions; every plugin supplies its own project ID. */
     val metrics: MetricsService
 
@@ -77,6 +74,9 @@ interface PnLibrary : Closeable {
 
     /** Type-safe native API for the active Bukkit, Bungee, or Velocity runtime. */
     val platforms: PlatformProvider
+
+    /** The proxy layer; null when running on a game server instead of a proxy. */
+    val proxy: NetworkProxy?
 
     /**
      * Runtime-detected placeholder bridges such as PlaceholderAPI.

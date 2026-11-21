@@ -1,3 +1,49 @@
+public final class org/pnfolder/pnlibrary/api/plugin/ModuleId {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/ModuleId$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/plugin/ModuleId$Companion {
+	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+}
+
+public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess {
+	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Companion;
+	public synthetic fun <init> (ZZLjava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun allows (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Z
+	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun getAllowAll ()Z
+	public final fun getAllowedPatterns ()Ljava/util/Set;
+	public final fun getAllowedPlugins ()Ljava/util/Set;
+	public final fun getDeniedPlugins ()Ljava/util/Set;
+	public final fun getOwnerAllowed ()Z
+	public static final fun only ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+	public static final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+	public static final fun shared ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+}
+
+public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder {
+	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun allowAll ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun build ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+	public final fun deny ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun denyAll ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun owner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess$Companion {
+	public final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
+	public final fun only ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+	public final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+	public final fun shared ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
+}
+
 public final class org/pnfolder/pnlibrary/api/plugin/PluginId {
 	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/PluginId$Companion;
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -10,6 +56,14 @@ public final class org/pnfolder/pnlibrary/api/plugin/PluginId {
 
 public final class org/pnfolder/pnlibrary/api/plugin/PluginId$Companion {
 	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+}
+
+public final class org/pnfolder/pnlibrary/common/concurrent/FailureThrottle {
+	public static final field MAX_KEYS I
+	public fun <init> ()V
+	public fun <init> (JLkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (JLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun shouldReport (Ljava/lang/String;)Z
 }
 
 public final class org/pnfolder/pnlibrary/common/concurrent/ManagedWorker : java/lang/AutoCloseable {

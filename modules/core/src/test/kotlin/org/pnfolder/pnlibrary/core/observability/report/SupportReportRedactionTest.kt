@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
-import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
+import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry
@@ -35,7 +35,7 @@ class SupportReportRedactionTest {
             diagnosticsPlatform = platform,
             diagnosticLogs = { emptyList() },
             diagnosticHistory = { emptyList() },
-            observabilitySnapshot = { org.pnfolder.pnlibrary.core.observability.ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap()) },
+            observabilitySnapshot = { org.pnfolder.pnlibrary.core.observability.report.ObservabilityReportSnapshot(ByteArray(0), ByteArray(0), emptyMap()) },
         ).assemble(DebugRequest("all", configs = true, logs = false, local = true), encrypted = false)
         val file = temporary.resolve("report.zip")
         Files.write(file, bytes)

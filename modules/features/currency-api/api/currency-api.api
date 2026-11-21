@@ -1,3 +1,37 @@
+public final class org/pnfolder/pnlibrary/api/currency/BalanceRequirement : org/pnfolder/pnlibrary/api/scenario/requirements/Requirement {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/BalanceRequirement;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/currency/BalanceRequirement;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/currency/BalanceRequirement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAtLeast ()Ljava/lang/String;
+	public final fun getCurrency ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun test (Lorg/pnfolder/pnlibrary/api/scenario/requirements/RequirementContext;)Lorg/pnfolder/pnlibrary/api/scenario/requirements/Verdict;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/currency/ChargeAction : org/pnfolder/pnlibrary/api/scenario/actions/Action {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/currency/ChargeAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/currency/ChargeAction;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/currency/ChargeAction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()Ljava/lang/String;
+	public final fun getCurrency ()Ljava/lang/String;
+	public final fun getUndo ()Z
+	public fun hashCode ()I
+	public fun run (Lorg/pnfolder/pnlibrary/api/scenario/actions/ActionContext;)Lorg/pnfolder/pnlibrary/api/scenario/actions/ActionResult;
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/currency/Currency {
 	public abstract fun balance (Ljava/util/UUID;)Ljava/util/concurrent/CompletionStage;
 	public fun deposit (Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
@@ -16,30 +50,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/Currency {
 	public abstract fun transfer (Ljava/util/UUID;Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
 	public fun withdraw (Ljava/util/UUID;J)Ljava/util/concurrent/CompletionStage;
 	public abstract fun withdraw (Ljava/util/UUID;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class org/pnfolder/pnlibrary/api/currency/CurrencyAccess {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Companion;
-	public synthetic fun <init> (ZZLjava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun allows (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Z
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public static final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;
-	public static final fun shared ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;
-}
-
-public final class org/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder {
-	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun allowAll ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;
-	public final fun deny ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun owner ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/currency/CurrencyAccess$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess$Builder;
-	public final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;
-	public final fun shared ()Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;
 }
 
 public final class org/pnfolder/pnlibrary/api/currency/CurrencyAccount {
@@ -349,7 +359,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyOper
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions {
-	public abstract fun access (Lorg/pnfolder/pnlibrary/api/placeholders/PlaceholderAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions;
+	public abstract fun access (Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions;
 	public abstract fun enabled (Z)Lorg/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions;
 	public abstract fun placeholderApi (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions;
 	public abstract fun placeholderApi (Z)Lorg/pnfolder/pnlibrary/api/currency/CurrencyPlaceholderOptions;
@@ -365,7 +375,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyProv
 	public abstract fun all ()Ljava/util/List;
 	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/Currency;
 	public fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyProvider;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistration;
-	public abstract fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyProvider;Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistration;
+	public abstract fun register (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/currency/CurrencyProvider;Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistration;
 	public fun require (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/Currency;
 }
 
@@ -377,7 +387,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyRegi
 
 public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions {
 	public abstract fun access (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions;
-	public abstract fun access (Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions;
+	public abstract fun access (Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions;
 	public abstract fun aliases ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions;
 }
 
@@ -613,6 +623,24 @@ public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyTran
 
 public abstract interface class org/pnfolder/pnlibrary/api/currency/CurrencyWithdrawals {
 	public abstract fun withdraw (Lorg/pnfolder/pnlibrary/api/currency/CurrencyAccount;Ljava/math/BigDecimal;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class org/pnfolder/pnlibrary/api/currency/GiveAction : org/pnfolder/pnlibrary/api/scenario/actions/Action {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/api/currency/GiveAction;
+	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/api/currency/GiveAction;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/api/currency/GiveAction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()Ljava/lang/String;
+	public final fun getCurrency ()Ljava/lang/String;
+	public final fun getUndo ()Z
+	public fun hashCode ()I
+	public fun run (Lorg/pnfolder/pnlibrary/api/scenario/actions/ActionContext;)Lorg/pnfolder/pnlibrary/api/scenario/actions/ActionResult;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/currency/ManagedCurrencyBuilder : org/pnfolder/pnlibrary/api/currency/CurrencyRegistrationOptions {

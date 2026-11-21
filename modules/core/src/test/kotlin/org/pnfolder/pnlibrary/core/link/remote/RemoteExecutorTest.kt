@@ -1,0 +1,120 @@
+package org.pnfolder.pnlibrary.core.link.remote
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.updates.UpdateProducts
+import org.pnfolder.pnlibrary.api.updates.UpdateService
+import org.pnfolder.pnlibrary.api.updates.UpdateSettings
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+
+class RemoteExecutorTest {
+    private class Call(val product: String, val enabled: Boolean, val actor: UpdateActor)
+
+    private val calls = mutableListOf<Call>()
+    private var automaticAnswer: CompletionStage<UpdateSnapshot> = CompletableFuture.completedFuture(null)
+    private val settings: UpdateSettings = mock(UpdateSettings::class.java) { call ->
+        when (call.method.name) {
+            "automaticDownload" -> {
+                calls += Call(call.getArgument(0), call.getArgument(1), call.getArgument(2))
+                automaticAnswer
+            }
+            else -> null
+        }
+    }
+    private val products: UpdateProducts = mock(UpdateProducts::class.java)
+    private val updates: UpdateService = mock(UpdateService::class.java).also {
+        `when`(it.settings).thenReturn(settings)
+        `when`(it.products).thenReturn(products)
+    }
+    private val library = mock(PnLibrary::class.java).also { `when`(it.updates).thenReturn(updates) }
+    private var now = Instant.parse("2026-11-04T10:00:00Z")
+    private val executor = RemoteExecutor(library) { now }
+    private val results = mutableListOf<RemoteResult>()
+
+    private fun request(id: UUID = UUID.randomUUID(), action: RemoteAction = RemoteAction.AUTO_ON, product: String? = "shop") =
+        RemoteRequest(id, "lobby", "proxy", "Admin", action, product, now)
+
+    private fun run(request: RemoteRequest) = executor.run(request) { results += it }
+
+    @Test
+    fun `automatic download is switched through the update service for a remote actor`() {
+        run(request(action = RemoteAction.AUTO_ON))
+
+        val call = calls.single()
+        assertEquals("shop", call.product)
+        assertTrue(call.enabled)
+        assertEquals(UpdateActor.Kind.INTEGRATION, call.actor.kind)
+        assertEquals("remote:proxy", call.actor.id)
+        assertTrue(results.single().ok)
+        assertTrue(results.single().text.contains("включена"))
+    }
+
+    @Test
+    fun `a failure of the update service becomes a refusal with its reason`() {
+        automaticAnswer = CompletableFuture<UpdateSnapshot>().also { it.completeExceptionally(IllegalStateException("диск полон")) }
+
+        run(request(action = RemoteAction.AUTO_OFF))
+
+        assertFalse(results.single().ok)
+        assertTrue(results.single().text.contains("диск полон"))
+    }
+
+    @Test
+    fun `an action that throws is logged as an error and refused`() {
+        val logger = mock(org.pnfolder.pnlibrary.api.logging.PnLogger::class.java)
+        val logging = mock(org.pnfolder.pnlibrary.api.logging.LoggingService::class.java)
+        val owner = Any()
+        `when`(logging.logger(owner, "link")).thenReturn(logger)
+        `when`(library.logging).thenReturn(logging)
+        `when`(library.owner).thenReturn(owner)
+        val failure = IllegalStateException("update service is down")
+        `when`(products.get("shop")).thenThrow(failure)
+
+        run(request(action = RemoteAction.UPDATE))
+
+        org.mockito.Mockito.verify(logger).error(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(failure))
+        assertFalse(results.single().ok)
+    }
+
+    @Test
+    fun `a request that was already carried out is refused`() {
+        val same = request()
+
+        run(same)
+        run(same)
+
+        assertEquals(listOf(true, false), results.map { it.ok })
+        assertTrue(results.last().text.contains("уже выполнялся"))
+        assertEquals(1, calls.size)
+    }
+
+    @Test
+    fun `an old request id is forgotten after ten minutes`() {
+        val same = request()
+
+        run(same)
+        now = now.plus(Duration.ofMinutes(11))
+        run(same)
+
+        assertEquals(listOf(true, true), results.map { it.ok })
+    }
+
+    @Test
+    fun `updating a plugin the library does not know is refused`() {
+        run(request(action = RemoteAction.UPDATE))
+
+        assertFalse(results.single().ok)
+        assertTrue(results.single().text.contains("не подключён"))
+    }
+}

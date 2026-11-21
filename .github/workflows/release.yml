@@ -94,6 +94,9 @@ jobs:
       - name: Build and verify
         run: .\gradlew.bat clean check :distribution:build --console=plain
 
+      - name: Check binary API compatibility
+        run: .\gradlew.bat apiCheck --console=plain
+
       - name: Verify release tooling
         shell: pwsh
         run: ./tools/release/check-release-tools.tests.ps1
@@ -115,7 +118,7 @@ jobs:
             git commit -m "release: $env:RELEASE_VERSION"
             if ($LASTEXITCODE -ne 0) { throw 'Release commit failed' }
           }
-          # A re-run after a partial failure may reuse the tag only if it already points at this commit.
+          # Повторный запуск после сбоя может взять существующий тег, только если он указывает на этот коммит.
           $existingTag = git rev-parse -q --verify "refs/tags/v$env:RELEASE_VERSION^{commit}"
           if ($LASTEXITCODE -eq 0) {
             if ($existingTag -ne (git rev-parse HEAD)) { throw "Tag v$env:RELEASE_VERSION already points at another commit" }
@@ -148,7 +151,6 @@ jobs:
             '--title', "pnLibrary $env:RELEASE_VERSION",
             '--notes', $env:RELEASE_NOTES
           )
-          if ($env:RELEASE_VERSION.Contains('-')) { $arguments += '--prerelease' }
           & gh @arguments
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed' }
 

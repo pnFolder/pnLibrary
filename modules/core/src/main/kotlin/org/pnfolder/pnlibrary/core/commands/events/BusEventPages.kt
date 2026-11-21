@@ -3,25 +3,27 @@ package org.pnfolder.pnlibrary.core.commands.events
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.events.Event
-import org.pnfolder.pnlibrary.api.events.EventInfo
-import org.pnfolder.pnlibrary.api.events.EventInspector
+import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
+import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.common.text.RussianText
-import org.pnfolder.pnlibrary.core.commands.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.chatPager
+import org.pnfolder.pnlibrary.core.commands.engine.pageCount
+import org.pnfolder.pnlibrary.core.text.shortName
 
+/** Chat pages describing bus events. */
 internal class BusEventPages(private val library: PnLibrary) {
     private val bus: EventInspector get() = library.events.inspector
 
     fun list(context: CommandContext, word: String, requestedPage: Int) {
-        val kit = kit(context)
+        val kit = busKit(context)
         val all = bus.events()
-        val filter = FILTERS.first { it.first == word }
-        val shown = all.filter(filter.second)
+        val shown = all.filter(BusFilter.named(word)::keeps)
         val traced = bus.tracedEvents()
-        val pages = pageCount(shown.size)
+        val pages = pageCount(shown.size, PAGE_SIZE)
         val page = requestedPage.coerceIn(1, pages)
         val total = bus.listeners().size
         val queued = bus.asyncQueued().let { if (it > 0) ", в очереди $it" else "" }
@@ -39,26 +41,27 @@ internal class BusEventPages(private val library: PnLibrary) {
             lines += chatPager(kit, "$ROOT $word", page, pages)
         }
         lines += kit.blank()
-        lines += footer(kit, kit.option("все слушатели", "$ROOT listeners", "Каждый слушатель каждого плагина", ChatPalette.ACCENT),
+        lines += busFooter(kit, kit.option("все слушатели", "$ROOT listeners", "Каждый слушатель каждого плагина", ChatPalette.ACCENT),
             kit.option("записи", "$ROOT traces", "Записанные вызовы", ChatPalette.ACCENT),
             kit.option("история", "$ROOT history", "Сколько раз вызывали по дням", ChatPalette.ACCENT))
-        lines += hints(kit)
+        lines += busHints(kit)
         lines.forEach(context.sender::send)
     }
 
     private fun tabs(kit: ChatKit, all: List<EventInfo>, current: String): Component {
         var line = kit.text(" Показать: ", ChatPalette.LABEL)
-        FILTERS.forEachIndexed { index, (word, predicate) ->
+        BusFilter.entries.forEachIndexed { index, filter ->
+            val word = filter.word
             if (index > 0) line = line.append(kit.text(" "))
-            val count = all.count(predicate)
+            val count = all.count(filter::keeps)
             val open = word == current
             val body = if (open) ChatPalette.ACCENT else if (count == 0) ChatPalette.FAINT else ChatPalette.SOFT
-            val label = "${LABELS.getValue(word)} $count"
+            val label = "${filter.label} $count"
             val button = kit.text("[", ChatPalette.FAINT).append(kit.text(label, body)).append(kit.text("]", ChatPalette.FAINT))
             line = line.append(
                 if (open || !kit.reader.interactive) button
                 else button.clickEvent(ClickEvent.runCommand("$ROOT $word")).hoverEvent(
-                    kit.tooltip(kit.text("Нажмите, чтобы показать: ${LABELS.getValue(word)}", ChatPalette.ACCENT), kit.blank(),
+                    kit.tooltip(kit.text("Нажмите, чтобы показать: ${filter.label}", ChatPalette.ACCENT), kit.blank(),
                         kit.text("$ROOT $word", ChatPalette.LABEL)),
                 ),
             )
@@ -103,7 +106,7 @@ internal class BusEventPages(private val library: PnLibrary) {
 
     fun view(context: CommandContext, typed: String) {
         val name = bus.resolve(typed)
-        val kit = kit(context)
+        val kit = busKit(context)
         val type = bus.eventType(name)
         val info = bus.events().firstOrNull { it.eventType == name }
         if (info == null) {
@@ -128,7 +131,7 @@ internal class BusEventPages(private val library: PnLibrary) {
         if (listeners.isEmpty()) lines += kit.note("   Никто не слушает это событие.")
         listeners.forEach { lines += eventListenerRow(kit, it) }
         lines += kit.blank()
-        lines += footer(kit, backToEvents(kit),
+        lines += busFooter(kit, backToEvents(kit),
             kit.button("записи", "$ROOT traces $name", "Записанные вызовы этого события", ChatPalette.ACCENT),
             kit.button("история", "$ROOT history of $name", "Вызовы этого события по дням", ChatPalette.ACCENT))
         if (!kit.reader.interactive) lines += kit.note("Запись: $ROOT trace $name | $ROOT trace off $name")
@@ -152,7 +155,7 @@ internal class BusEventPages(private val library: PnLibrary) {
         val name = bus.resolve(typed)
         val type = bus.eventType(name)
         if (type == null) {
-            context.sender.send(kit(context).text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.send(busKit(context).text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         change(type)

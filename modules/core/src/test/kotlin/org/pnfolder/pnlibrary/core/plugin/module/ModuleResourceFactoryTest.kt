@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.currency.CurrencyService
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageFactory
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.events.EventScope
-import org.pnfolder.pnlibrary.api.events.EventService
+import org.pnfolder.pnlibrary.api.events.bus.EventScope
+import org.pnfolder.pnlibrary.api.events.bus.EventService
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
@@ -57,7 +57,7 @@ class ModuleResourceFactoryTest {
     private fun factory(): ModuleResourceFactory {
         `when`(events.scope(key, PluginId.of("native"), id)).thenReturn(eventScope)
         `when`(tasks.scope(owner, key)).thenReturn(taskScope)
-        `when`(configurations.scope(owner, key)).thenReturn(configScope)
+        `when`(configurations.scope(owner, key, PluginId.of("native"), id)).thenReturn(configScope)
         `when`(placeholders.scope(key, false, "native", id.value)).thenReturn(placeholderScope)
         `when`(currency.scope(key, placeholderScope)).thenReturn(currencyScope)
         `when`(currency.storages).thenReturn(storageFactory)

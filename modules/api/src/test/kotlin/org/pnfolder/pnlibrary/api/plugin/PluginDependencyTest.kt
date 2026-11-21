@@ -22,7 +22,7 @@ class PluginDependencyTest {
     fun `dependency can explicitly override automatic download policy`() {
         val dependency = Dependencies.plugin(
             "OptionalPlugin", "1.0.0", "https://example.org/plugin.jar",
-            size = 4, sha256 = "00".repeat(32), required = false,
+            sha256 = "00".repeat(32), required = false,
             automaticDownload = true, forceAutomaticDownload = true,
         )
         assertTrue(dependency.forceAutomaticDownload)

@@ -12,6 +12,7 @@ import org.mockito.kotlin.whenever
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.util.Optional
 
+/** Checks the remote-policy context built from Velocity metadata. */
 class VelocityRemotePolicyContextFactoryTest {
     private val server = mock<ProxyServer>().also {
         whenever(it.version).thenReturn(ProxyVersion("Velocity", "Velocity Team", "3.4-test"))

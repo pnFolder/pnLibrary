@@ -4,23 +4,27 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.commands.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.api.commands.command
+import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
+import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
+import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
 import org.pnfolder.pnlibrary.core.commands.groups.GroupsCommand
+import org.pnfolder.pnlibrary.core.commands.modules.ModulesCommand
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand
+import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands
 import org.pnfolder.pnlibrary.core.lifecycle.dispatchRuntimeCommand
 import org.pnfolder.pnlibrary.core.lifecycle.mountableCommand
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.core.link.LinkReports
-import org.pnfolder.pnlibrary.core.link.NetworkServer
 import org.pnfolder.pnlibrary.core.link.ServerGroups
+import org.pnfolder.pnlibrary.core.link.report.LinkReports
+import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand
 import java.util.Collections
 import java.util.UUID
@@ -82,12 +86,12 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
             aliases(*ProxyCommandNames.ALIASES.toTypedArray())
             executes { updates.overview(it, OTHERS) }
             updates.install(this)
-            library.mountableCommand("events")?.let { mount("events", it) }
-            library.mountableCommand("debug")?.let { mount("debug", it) }
-            library.mountableCommand("stats")?.let { mount("stats", it) }
-            library.mountableCommand("placeholders")?.let { mount("placeholders", it) }
+            for (name in MountableCommands.ALL) library.mountableCommand(name)?.let { mount(name, it) }
             mount("bus", EventBusCommand(library).definition())
             mount("tasks", TaskCommand(library).definition())
+            mount("modules", ModulesCommand(library).definition())
+            mount("configs", ConfigsCommand(library).definition())
+            mount("deps", DepsCommand(library).definition())
             mount("servers", ServersCommand(link, ServersCommand.fromReports(link)).definition())
             mount("groups", GroupsCommand(link, withProxy()).definition())
         }
@@ -108,6 +112,7 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
             "/pn tasks" to "pnlibrary.tasks",
             "/pn stats" to "pnlibrary.stats",
             "/pn placeholders" to "pnlibrary.placeholders",
+            "/pn settings" to "pnlibrary.settings",
             "/pn servers" to ServersCommand.PERMISSION,
             "/pn groups" to GroupsCommand.PERMISSION,
             "/pn debug" to "pnlibrary.debug",
