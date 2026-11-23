@@ -7,7 +7,6 @@ import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.placeholders.adapter.PlaceholderAdapterState
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
@@ -227,12 +226,6 @@ class ActionContext(
         return placeholders?.resolve(expression, player.uniqueId, runtimeValues)?.toCompletableFuture()?.join()
     }
 
-    /** Updates a writable registered placeholder and returns its resulting value. */
-    fun updatePlaceholder(reference: String, value: String): Any? {
-        val service = placeholders ?: error("This scenario has no placeholder service")
-        return service.update(reference, value, player.uniqueId, runtimeValues).toCompletableFuture().join()
-    }
-
     private fun valueOf(match: MatchResult): Any? {
         val braced = match.groups[1]?.value
         if (braced != null && braced.startsWith("=")) return calculate(braced.substring(1))
@@ -266,7 +259,7 @@ class ActionContext(
 
     private fun external(name: String): Any? {
         val adapter = placeholders?.adapters()?.get(EXTERNAL_ADAPTER) ?: return null
-        if (adapter.state != PlaceholderAdapterState.AVAILABLE && adapter.state != PlaceholderAdapterState.REGISTERED) return null
+        if (!adapter.available) return null
         return adapter.resolve(player.uniqueId, name)
     }
 

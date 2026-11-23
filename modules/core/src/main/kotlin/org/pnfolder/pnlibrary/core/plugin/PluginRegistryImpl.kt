@@ -4,6 +4,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.compat.MinecraftCompatibility
+import org.pnfolder.pnlibrary.api.compat.MinecraftSupportRule
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -44,6 +46,7 @@ import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
+import org.pnfolder.pnlibrary.core.plugin.module.MinecraftGate
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleController
@@ -59,6 +62,7 @@ import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources
 import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
+import org.pnfolder.pnlibrary.core.plugin.module.moduleDiagnosticsName
 import org.pnfolder.pnlibrary.core.plugin.module.moduleServiceKey
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
@@ -101,6 +105,9 @@ internal class PluginRegistryImpl(
 ) : PluginRegistry {
 
     private val scenarioDefinitions = ScenarioDefinitions()
+
+    /** Every named action, requirement and function of every module. */
+    fun scenarioDefinitionInfos() = scenarioDefinitions.infos()
     private val plugins = IdentityHashMap<Any, Plugin>()
     private val productDescriptors = linkedMapOf<String, ProductDescriptor>().apply {
         libraryVersion?.let(SemanticVersion::tryParse)?.let { put(PnLibraryIdentity.PRODUCT_ID, ProductDescriptor.library(it.toString())) }
@@ -159,6 +166,7 @@ internal class PluginRegistryImpl(
         definition: ModuleDefinitionBuilder,
         productDescriptor: ProductDescriptor?,
         module: PluginModule?,
+        gate: MinecraftGate,
     ): Context {
         val owner = parent.owner
         val metadata = metadataFactory.create(owner, id, definition)
@@ -172,6 +180,7 @@ internal class PluginRegistryImpl(
             placeholderApiEnabled = definition.placeholderApiEnabled,
             productId = productDescriptor?.id?.value,
             module = module,
+            minecraftGate = gate,
         )
     }
 
@@ -184,8 +193,10 @@ internal class PluginRegistryImpl(
     ) : PluginRegistration {
         override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
+        override val minecraftRule = MinecraftSupportRule()
         override val libraries: ModuleLibraries = ModuleLibrariesImpl.through(
             "p-${nativeId.value}-$registrationId", PluginRegistryImpl::class.java.classLoader, owner, null, libraryFetcher, identity.type,
+            modulePreferences, nativeId.value,
         )
         private val pluginClosed = AtomicBoolean(false)
         override val isClosed: Boolean get() = pluginClosed.get()
@@ -218,10 +229,18 @@ internal class PluginRegistryImpl(
                 definition.bindUpdatesTo(descriptor)
                 dependencyValidator.validate(definition.dependencies, productDescriptors)
                 val serviceKey = moduleServiceKey(registrationId, nativeId, id)
-                createContext(this, id, serviceKey, definition, descriptor, module).also { context ->
+                val gate = MinecraftGate.open(
+                    nativeId.value + ":" + id.value, modulePreferences, definition.minecraftRule, minecraftRule, identity.minecraftVersion,
+                )
+                if (gate.mustFail(module != null)) {
+                    throw IllegalStateException("${gate.reason()} Запустить всё равно: /pn modules mc force ${nativeId.value}:${id.value} on")
+                }
+                createContext(this, id, serviceKey, definition, descriptor, module, gate).also { context ->
                     moduleContexts[id] = context
                     if (descriptor != null) productDescriptors[descriptor.id.value] = descriptor
                     try {
+                        (gate.warning ?: gate.reason()?.takeIf { gate.forced })?.let { context.logger.warning(it) }
+                        loadDeclaredLibraries(context, definition)
                         definition.remotePolicy?.let(context::startRemotePolicy)
                     } catch (error: Throwable) {
                         moduleContexts.remove(id)
@@ -230,6 +249,19 @@ internal class PluginRegistryImpl(
                     }
                 }
             } }
+
+        /** Loads the libraries the module declared in its builder; an optional one that fails only warns. */
+        private fun loadDeclaredLibraries(context: Context, definition: ModuleDefinitionBuilder) {
+            for ((library, enabled) in definition.libraries) {
+                if (!enabled.asBoolean) continue
+                try {
+                    context.libraries.load(library)
+                } catch (failure: IllegalStateException) {
+                    if (library.required) throw failure
+                    context.logger.warning("Optional library ${library.coordinates} is not loaded: ${failure.message}")
+                }
+            }
+        }
 
         override fun getModule(id: ModuleId): ModuleContext? =
             synchronized(moduleContexts) { moduleContexts[id] }
@@ -268,7 +300,10 @@ internal class PluginRegistryImpl(
         private val placeholderApiEnabled: Boolean,
         private val productId: String?,
         module: PluginModule?,
-    ) : ModuleContext {
+        val minecraftGate: MinecraftGate,
+    ) : ModuleContext, org.pnfolder.pnlibrary.core.plugin.module.MinecraftForcible {
+        override fun forceMinecraft(on: Boolean) = minecraftGate.setForced(on)
+        override val minecraft: MinecraftCompatibility get() = minecraftGate.compatibility()
         private val owner: Any get() = parent.owner
         private val contextClosed = AtomicBoolean(false)
         private val commandFeedback = CommandFeedbackScope(parent.commandFeedback)
@@ -280,8 +315,9 @@ internal class PluginRegistryImpl(
         override val isClosed: Boolean get() = contextClosed.get()
         override val libraries = ModuleLibrariesImpl.through(
             key.value, PluginRegistryImpl::class.java.classLoader, parent.owner, parent.libraries, libraryFetcher, identity.type,
+            modulePreferences, parent.nativeId.value + ":" + id.value,
         )
-        override val control = ModuleController(key.value, module, modulePreferences) {
+        override val control = ModuleController(key.value, module, modulePreferences, { minecraftGate.reason() }) {
             resources.tasks.cancelAll()
             moduleCommands.drain().asReversed().forEach { it.close() }
         }.also { it.bind(this) }
@@ -313,7 +349,7 @@ internal class PluginRegistryImpl(
             isClosed = { isClosed },
         )
         override val messages: PluginMessages = ModuleMessages(owner, logging)
-        override val actions: ActionService = ModuleActionService(resources, scenarioDefinitions, key.value)
+        override val actions: ActionService = ModuleActionService(resources, scenarioDefinitions, moduleDiagnosticsName(key, id))
 
         override fun close() {
             parent.detach(id)?.closeInternal()
@@ -327,7 +363,8 @@ internal class PluginRegistryImpl(
             ResourceCleanup.closeAll(
                 { ResourceCleanup.closeAll(*registrations.asReversed().map { registration -> { registration.close() } }.toTypedArray()) },
                 { expansions.close() },
-                { resources.close(this@PluginRegistryImpl.diagnostics, key) },
+                { scenarioDefinitions.removeOwner(moduleDiagnosticsName(key, id)) },
+                { resources.close(this@PluginRegistryImpl.diagnostics) },
             )
         }
     }

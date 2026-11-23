@@ -27,6 +27,7 @@ internal const val BUS = MenuPermissions.EVENTS_BUS
 internal const val TASKS = MenuPermissions.TASKS
 internal const val STATS = MenuPermissions.STATS
 internal const val PLACEHOLDERS = MenuPermissions.PLACEHOLDERS
+internal const val ACTIONS = MenuPermissions.ACTIONS
 internal const val CONFIGS = "pnlibrary.configs"
 internal const val DETAIL_ROWS = 5
 internal const val DETAIL_BACK = 40

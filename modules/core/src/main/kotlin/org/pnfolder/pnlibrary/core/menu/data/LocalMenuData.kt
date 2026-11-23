@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -28,13 +29,14 @@ import org.pnfolder.pnlibrary.core.lifecycle.journalGroups
 import org.pnfolder.pnlibrary.core.lifecycle.librarySettings
 import org.pnfolder.pnlibrary.core.lifecycle.placeholderInfos
 import org.pnfolder.pnlibrary.core.lifecycle.runTaskNow
+import org.pnfolder.pnlibrary.core.lifecycle.scenarioDefinitions
 import org.pnfolder.pnlibrary.core.lifecycle.statsSnapshot
 import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.PluginDirectory
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo
 import org.pnfolder.pnlibrary.core.settings.SettingApply
 import org.pnfolder.pnlibrary.core.settings.SettingException
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
@@ -179,6 +181,8 @@ class LocalMenuData(
     override fun stats(): StatsSnapshot = library.statsSnapshot()
 
     override fun placeholders(): List<PlaceholderInfo> = library.placeholderInfos()
+
+    override fun scenarioDefinitions(): List<ScenarioDefinitionInfo> = library.scenarioDefinitions()
 
     override fun configs(): List<ConfigRow> = library.configurations.all().map { info ->
         val config = library.configurations.get(info.id)

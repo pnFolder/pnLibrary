@@ -66,7 +66,7 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
             links.dropLast(1).forEach { card.item(it.key + ": " + it.value) }
             card.lastItem(links.last().key + ": " + links.last().value)
         }
-        if (!allowed) card.section("Не получается?").lastItem("Напишите в поддержку: " + support(policy))
+        if (!allowed) card.section("Не получается?").lastItem("Напишите в поддержку: " + PnLibraryIdentity.SUPPORT_URL)
         card.blank()
             .status(action)
             .build()
@@ -93,14 +93,12 @@ internal class RemotePolicyNoticeRenderer(private val logging: PlatformLogging) 
         } else {
             card.lastItem("Пришлите этот лог автору плагина")
         }
-        card.section("Не получается?").lastItem("Напишите в поддержку: " + support(policy))
+        card.section("Не получается?").lastItem("Напишите в поддержку: " + PnLibraryIdentity.SUPPORT_URL)
         card.blank()
             .status("Плагин продолжает работу")
             .build()
             .send { line -> logging.console(owner, line) }
     }
-
-    private fun support(policy: RemotePolicySettings): String = policy.supportUrl ?: PnLibraryIdentity.SUPPORT_URL
 
     private fun RemotePolicyExplanation.toConsoleTree(): ConsoleTree {
         val tree = ConsoleTree.builder(text)

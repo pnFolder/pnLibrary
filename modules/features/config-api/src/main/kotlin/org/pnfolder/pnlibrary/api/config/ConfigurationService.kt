@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.config
 
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.nio.file.Path
 import java.util.function.Supplier
@@ -188,12 +187,6 @@ interface ConfigScope : AutoCloseable {
     fun require(path: String): ManagedConfig<*> =
         get(path) ?: error("Configuration $path is not registered in $plugin/$module; registered: ${list().joinToString { it.id.path }}")
 
-    /**
-     * Sets which plugins may add polymorphic types to the files of this module. Everybody may by default.
-     * The module's own plugin is always allowed.
-     */
-    fun extensions(policy: PluginAccess): ConfigScope
-
     /** Loads every registered file in registration order. */
     fun loadAll()
 
@@ -251,16 +244,6 @@ inline fun <reified T : Any> ConfigScope.yaml(
     validator: ConfigValueValidator<T>,
     noinline defaults: () -> T,
 ): ManagedConfig<T> = yaml(path, T::class.java, Supplier(defaults), options, validator)
-
-/**
- * Sets which plugins may add polymorphic types to the files of this module.
- *
- * ```kotlin
- * module.configs.extensions { allow("questitems"); deny("pnspy") }
- * ```
- */
-fun ConfigScope.extensions(block: PluginAccess.Builder.() -> Unit): ConfigScope =
-    extensions(PluginAccess.builder().owner().apply(block).build())
 
 /**
  * Starts publishing implementation [I] of polymorphic base type [B] while inferring both classes.

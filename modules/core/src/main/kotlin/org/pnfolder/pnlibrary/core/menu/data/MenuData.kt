@@ -7,6 +7,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
@@ -21,7 +22,7 @@ import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.time.Duration
@@ -158,6 +159,9 @@ interface MenuData {
     fun stats(): StatsSnapshot
 
     fun placeholders(): List<PlaceholderInfo>
+
+    /** Every named action, requirement and function with its owner and visibility. */
+    fun scenarioDefinitions(): List<ScenarioDefinitionInfo>
 
     /** The configuration files of this server; another server's files are managed there, so the default is none. */
     fun configs(): List<ConfigRow> = emptyList()

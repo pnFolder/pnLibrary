@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.pnfolder.pnlibrary.api.libraries.LibraryState
 import org.pnfolder.pnlibrary.api.libraries.LibraryUsage
 
 /**
@@ -45,8 +46,10 @@ interface PluginRegistry : AutoCloseable {
 
     /** Every library registered anywhere, and who registered it, so one used by many modules shows once per owner. */
     fun libraryUsage(): List<LibraryUsage> = all().flatMap { plugin ->
-        plugin.libraries.loaded.map { LibraryUsage(it, plugin.id, null) } +
-            plugin.all().flatMap { module -> module.libraries.loaded.map { LibraryUsage(it, plugin.id, module.id) } }
+        plugin.libraries.statuses.filter { it.state != LibraryState.SKIPPED }.map { LibraryUsage(it.library, plugin.id, null, it) } +
+            plugin.all().flatMap { module ->
+                module.libraries.statuses.filter { it.state != LibraryState.SKIPPED }.map { LibraryUsage(it.library, plugin.id, module.id, it) }
+            }
     }
 
     /** Closes all registrations in reverse ownership order. */

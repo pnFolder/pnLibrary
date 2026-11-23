@@ -33,7 +33,6 @@ enum class PolicyErrorAction {
  * @property checkEvery interval between policy refreshes, at least one minute
  * @property onDeny action applied after a denied result
  * @property onError what an unreachable, uncompilable or failing policy means
- * @property supportUrl where administrators get help when the plugin cannot run; `null` means the pnFolder Discord
  * @property startupTimeout how long the start of the plugin waits for the first check before treating it as failed
  * @property values immutable application-defined policy values
  */
@@ -43,7 +42,6 @@ data class RemotePolicySettings(
     val onDeny: DenyAction = DenyAction.DISABLE_PLUGIN,
     val values: Map<String, String> = emptyMap(),
     val onError: PolicyErrorAction = PolicyErrorAction.DENY,
-    val supportUrl: String? = null,
     val startupTimeout: Duration = DEFAULT_STARTUP_TIMEOUT,
 ) {
     /** Fluent Java-friendly builder for [RemotePolicySettings]. */
@@ -52,7 +50,6 @@ data class RemotePolicySettings(
         private var checkEvery: Duration = Duration.ofHours(6)
         private var onDeny: DenyAction = DenyAction.DISABLE_PLUGIN
         private var onError: PolicyErrorAction = PolicyErrorAction.DENY
-        private var supportUrl: String? = null
         private var startupTimeout: Duration = DEFAULT_STARTUP_TIMEOUT
         private val values = linkedMapOf<String, String>()
 
@@ -88,12 +85,6 @@ data class RemotePolicySettings(
         /** Sets what a policy that cannot be checked means; [PolicyErrorAction.DENY] by default. */
         fun onError(value: PolicyErrorAction): Builder = apply { onError = value }
 
-        /** Sets the support link shown when the plugin cannot run, such as a Discord invite; HTTPS only. */
-        fun support(url: String): Builder = apply {
-            require(URI.create(url).isHttps()) { "Support link must be an HTTPS URL" }
-            supportUrl = url
-        }
-
         /** Adds one custom value sent to the policy. */
         fun value(key: String, value: String): Builder = apply {
             val normalized = key.trim()
@@ -110,7 +101,6 @@ data class RemotePolicySettings(
             onDeny,
             Collections.unmodifiableMap(LinkedHashMap(values)),
             onError,
-            supportUrl,
             startupTimeout,
         )
     }

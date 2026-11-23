@@ -16,7 +16,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.config.ConfigType
 import org.pnfolder.pnlibrary.api.config.ConfigTypes
 import org.pnfolder.pnlibrary.api.config.UnknownTypePolicy
-import org.pnfolder.pnlibrary.api.config.extensions
 import org.pnfolder.pnlibrary.api.config.type
 import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.config.yamlAt
@@ -327,35 +326,6 @@ class ConfigCatalogTest {
             scope(service, "two").type<Award, GoldAward>().name("thing").priority(9).into("quests").register()
 
             assertTrue(awards.loadValue().awards.single() is GoldAward)
-        }
-    }
-
-    @Test
-    fun `a module can refuse additions from plugins and allow only some`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
-            val quests = scope(service, "quests")
-            quests.extensions { allow("questitems") }
-
-            scope(service, "questitems").type<Award, ItemAward>().name("item").into("quests").register()
-            val error = assertThrows(IllegalStateException::class.java) {
-                scope(service, "stranger").type<Award, GoldAward>().name("gold").into("quests/main").register()
-            }
-            assertTrue(error.message.orEmpty().contains("stranger"), error.message)
-        }
-    }
-
-    @Test
-    fun `a module that closes itself later hides words that were added before`() {
-        write("quests", "awards.yml", "awards:\n  - type: item\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
-            val quests = scope(service, "quests")
-            val awards = quests.yaml("awards.yml", skipping) { AwardsFile() }
-            scope(service, "questitems").type<Award, ItemAward>().name("item").into("quests").register()
-            assertEquals(1, awards.loadValue().awards.size)
-
-            quests.extensions { denyAll() }
-
-            assertTrue(awards.reloadValue().awards.isEmpty())
         }
     }
 

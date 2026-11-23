@@ -112,7 +112,20 @@ module.actions.defineRequirement("is-vip", Requirement { ctx -> Verdict.of(ctx.p
 - { type: require, when: { type: ref, name: is-vip } }
 ```
 
-`scope = DefinitionScope.LIBRARY` делает имя общим для всех плагинов (закрывайте handle при выключении плагина), `conflict = FAIL | KEEP | REPLACE` решает, что делать с занятым именем. Имя модуля перекрывает общее.
+`scope` решает, кому видно имя: `MODULE` (по умолчанию, только этому модулю), `PLUGIN` (всем модулям плагина), `LIBRARY` (всем). Определения снимаются, когда модуль закрывается. Если имя есть у нескольких, отвечает ближайший: свой модуль, свой плагин, остальные; такое совпадение попадает в лог модуля предупреждением. `conflict = FAIL | KEEP | REPLACE` решает, что делать, если то же имя уже определил этот же модуль.
+
+Владельца можно написать перед именем и `@`, в `type: call`, `type: ref` и в функциях выражений:
+
+```yaml
+- { type: call, name: give-kit }              # ближайший
+- { type: call, name: '~@give-kit' }          # только мой плагин
+- { type: call, name: '~~@give-kit' }         # только мой модуль
+- { type: call, name: '~~~@give-kit' }        # только библиотека
+- { type: call, name: 'shop/main@give-kit' }  # именно этот модуль
+- { type: call, name: 'shop@give-kit' }       # любой модуль плагина shop
+```
+
+В выражении: `~~@kills() >= 100`, `shop/main@kills()`. Значения запуска (`[item]`) владельца не имеют и пишутся без знака.
 
 ## Ловить ошибки по типу
 
@@ -142,3 +155,7 @@ module.actions.defineRequirement("is-vip", Requirement { ctx -> Verdict.of(ctx.p
   fail: [ { type: message, messages: ['&cОшибка'] } ]
 - { type: charge, currency: money, amount: 50, undo: false }   # только эта операция не откатится
 ```
+
+## Что определено
+
+`/pn actions [страница]` показывает все именованные действия, требования и функции (вид, имя, владелец, видимость), `/pn actions info <имя>` показывает, как каждое написать в конфиге или выражении (как есть, этот модуль, весь плагин, мой модуль, мой плагин). То же в меню `/pn gui`, раздел «Действия». Право `pnlibrary.actions`.

@@ -102,14 +102,8 @@ val coins = module.currencies.register("coins") { definition ->
 
 ## 4. Кто видит валюту
 
-По умолчанию валюту видит только её владелец. Чтобы открыть доступ:
-
-```kotlin
-currency.access(PluginAccess.shared())                    // всем плагинам pnLibrary
-currency.access { it.owner().allow("pnshop").allowMatching("pn*").deny("pnbeta") }
-```
-
-Запрет сильнее разрешения.
+Валюту видят все плагины pnLibrary: ограничений по плагинам нет. Если администратору нужно закрыть валюту, это решается
+правами и сценариями на сервере, а не флагом в коде плагина.
 
 ## 5. Команда `/pn money` (Bukkit)
 

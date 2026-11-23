@@ -112,6 +112,7 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
             "/pn tasks" to "pnlibrary.tasks",
             "/pn stats" to "pnlibrary.stats",
             "/pn placeholders" to "pnlibrary.placeholders",
+            "/pn actions" to "pnlibrary.actions",
             "/pn settings" to "pnlibrary.settings",
             "/pn servers" to ServersCommand.PERMISSION,
             "/pn groups" to GroupsCommand.PERMISSION,

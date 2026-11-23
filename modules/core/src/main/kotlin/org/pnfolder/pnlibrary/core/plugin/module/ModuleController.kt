@@ -18,6 +18,7 @@ internal class ModuleController(
     private val key: String,
     private val module: PluginModule?,
     private val preferences: ModulePreferences,
+    private val gate: () -> String? = { null },
     private val release: () -> Unit,
 ) : ModuleControl {
     private lateinit var context: ModuleContext
@@ -37,6 +38,7 @@ internal class ModuleController(
     /** First start at registration: stays off when an administrator turned the module off for good. */
     fun start() {
         if (module == null) return
+        if (blocked()) return
         if (!autoStart) state = ModuleState.DISABLED else runEnable()
     }
 
@@ -45,7 +47,15 @@ internal class ModuleController(
         if (module != null && state == ModuleState.ENABLED) runDisable()
     }
 
-    override fun enable(): CompletionStage<ModuleState> = change { if (state != ModuleState.ENABLED) runEnable() }
+    /** The Minecraft version check keeps the module off: it stays disabled and the reason is kept as its error. */
+    private fun blocked(): Boolean {
+        val reason = gate() ?: return false
+        lastError = IllegalStateException(reason)
+        state = ModuleState.DISABLED
+        return true
+    }
+
+    override fun enable(): CompletionStage<ModuleState> = change { if (!blocked() && state != ModuleState.ENABLED) runEnable() }
 
     override fun disable(): CompletionStage<ModuleState> = change {
         if (state == ModuleState.ENABLED) runDisable() else if (state == ModuleState.FAILED) {
@@ -56,7 +66,7 @@ internal class ModuleController(
 
     override fun restart(): CompletionStage<ModuleState> = change {
         if (state == ModuleState.ENABLED) runDisable()
-        runEnable()
+        if (!blocked()) runEnable()
     }
 
     override fun reload(): CompletionStage<ModuleState> = change {

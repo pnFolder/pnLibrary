@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.api.plugin
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
+import org.pnfolder.pnlibrary.api.compat.MinecraftSupportDeclaration
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
@@ -10,7 +11,7 @@ import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
-interface PluginRegistration : AutoCloseable {
+interface PluginRegistration : AutoCloseable, MinecraftSupportDeclaration {
     /** Native platform plugin owning this registration. */
     val owner: Any
     /** Identifier of the plugin, as in `quests/main:quests.yml`. */

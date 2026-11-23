@@ -51,7 +51,8 @@
 | `pnlibrary.admin` | всё управление pnLibrary |
 | `pnlibrary.events.view` | `/pn events` и сводку ошибок при входе |
 | `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
-| `pnlibrary.placeholders` | `/pn placeholders`: список и проверка плейсхолдеров |
+| `pnlibrary.placeholders` | `/pn placeholders`: список, `info` и проверка плейсхолдеров |
+| `pnlibrary.actions` | `/pn actions`: именованные действия, требования и функции плагинов |
 | `pnlibrary.debug` | `/pn debug` |
 | `pnlibrary.tasks` | `/pn tasks` |
 | `pnlibrary.events.bus` | `/pn bus` |
@@ -127,7 +128,7 @@ API состоит из интерфейсов, моделей и небольш
 - [Действия и требования](docs/actions.md)
 - [Каталог релизов](docs/releases.md)
 - [Ручная проверка перед выпуском](docs/verification.html)
-- [Плейсхолдеры](docs/placeholders.md), [пример](docs/placeholders-example.md)
+- [Плейсхолдеры](docs/placeholders.md)
 - [Хранилища](docs/storage.md)
 - [Задачи](docs/tasks.md)
 - [Диагностика](docs/diagnostics.md)

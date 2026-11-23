@@ -15,7 +15,6 @@ import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistration
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
@@ -88,7 +87,7 @@ class BukkitCurrencyCommandTest {
     }
 
     private object EmptyCurrencies : CurrencyProviderRegistry {
-        override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: PluginAccess): CurrencyRegistration =
+        override fun register(owner: PluginId, name: String, provider: CurrencyProvider): CurrencyRegistration =
             error("not used")
         override fun get(reference: String): Currency? = null
         override fun all(): List<Currency> = emptyList()

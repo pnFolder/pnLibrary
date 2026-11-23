@@ -133,6 +133,7 @@ class MenuDataServer(
             MenuCalls.MODULE_ACTION -> give(data.moduleAction(text("key").orEmpty(), text("action").orEmpty()))
             MenuCalls.STATS -> give(data.stats())
             MenuCalls.PLACEHOLDERS -> give(data.placeholders())
+            MenuCalls.SCENARIO_DEFINITIONS -> give(data.scenarioDefinitions())
             MenuCalls.RUN_TASK -> give(data.runTask(text("id").orEmpty()))
             MenuCalls.CANCEL_TASK -> give(data.cancelTask(text("id").orEmpty()))
             else -> return@with false

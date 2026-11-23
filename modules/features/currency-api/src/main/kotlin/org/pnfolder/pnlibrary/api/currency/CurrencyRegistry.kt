@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.currency
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.util.function.Consumer
@@ -36,10 +35,6 @@ interface CurrencyRegistration : Currency, AutoCloseable {
 
 /** Options shared by lightweight, managed, and direct provider registrations. */
 interface CurrencyRegistrationOptions {
-    /** Replaces the complete consumer access policy. */
-    fun access(access: PluginAccess): CurrencyRegistrationOptions
-    /** Builds and replaces the access policy through a Java-friendly callback. */
-    fun access(configure: Consumer<PluginAccess.Builder>): CurrencyRegistrationOptions
     /** Adds local aliases owned by the same plugin; conflicts fail during registration. */
     fun aliases(vararg aliases: String): CurrencyRegistrationOptions
 }
@@ -62,8 +57,6 @@ interface CurrencyDefinitionBuilder : CurrencyRegistrationOptions {
 interface CurrencyPlaceholderOptions {
     /** Enables or disables generation of library placeholders. */
     fun enabled(value: Boolean): CurrencyPlaceholderOptions
-    /** Sets which plugins may consume generated placeholders. */
-    fun access(access: PluginAccess): CurrencyPlaceholderOptions
     /** Enables or disables publication through the PlaceholderAPI adapter. */
     fun placeholderApi(enabled: Boolean): CurrencyPlaceholderOptions
     /** Enables PlaceholderAPI publication with explicit [namespace]. */

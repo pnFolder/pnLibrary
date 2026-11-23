@@ -82,6 +82,15 @@ class MiniMessageLiteTest {
     }
 
     @Test
+    fun `adaptive reads the section and ampersand hex form of Bukkit`() {
+        val components = components(MiniText(), ArrayList())
+        val expected = listOf(Run("go", 0xFC7D37, emptySet()))
+        listOf("&x&F&C&7&D&3&7go", "§x§F§C§7§D§3§7go", "&#FC7D37go").forEach { input ->
+            assertEquals(expected, runs(components.deserialize(input, ComponentSerializerType.ADAPTIVE)), input)
+        }
+    }
+
+    @Test
     fun `an unexpected failure is not swallowed`() {
         val boom = IllegalStateException("boom")
         val components = components(MiniText({ throw boom }), ArrayList())

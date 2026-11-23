@@ -12,6 +12,10 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary
  * @property place the same place counted from the server folder (`plugins/pnLibrary/libraries/...`), for people to read
  * @property size bytes of that jar, or -1 when unknown
  * @property trust [GIVEN] when the author gave a sum the jar is checked against, [NONE] when the jar is not checked
+ * @property state `LOADED`, `DISABLED` (an administrator switched it off), `FAILED` or `SKIPPED`
+ * @property autoLoad whether it is loaded with the server; saved across restarts
+ * @property error why it could not be loaded
+ * @property restartRequired switched off while in use: it goes away at the next restart
  * @property scope `PLUGIN`, `ISOLATED` or `LIBRARY`, see [org.pnfolder.pnlibrary.api.libraries.LibraryScope]
  */
 data class LibraryRow(
@@ -30,6 +34,10 @@ data class LibraryRow(
     val trust: String = NONE,
     val scope: String = "PLUGIN",
     val place: String? = null,
+    val state: String = "LOADED",
+    val autoLoad: Boolean = true,
+    val error: String? = null,
+    val restartRequired: Boolean = false,
 ) {
     /** The plugin that owns the library, also when a module registered it. */
     val plugin: String get() = owner.substringBefore(':')
@@ -86,6 +94,10 @@ data class LibraryRow(
                     trust = trust,
                     scope = item.scope.name,
                     place = file?.let { placeOf(it) },
+                    state = use.status?.state?.name ?: "LOADED",
+                    autoLoad = use.status?.autoLoad ?: true,
+                    error = use.status?.error,
+                    restartRequired = use.status?.restartRequired ?: false,
                     size = file?.let { java.io.File(it) }?.takeIf { it.isFile }?.length() ?: -1,
                 )
             }.sortedWith(compareBy({ it.owner }, { it.title }))

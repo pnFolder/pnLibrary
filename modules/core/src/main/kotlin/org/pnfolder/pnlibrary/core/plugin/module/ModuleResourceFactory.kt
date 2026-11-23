@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.core.downloads.dependencies.CompositeDownloadRegis
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
 import org.pnfolder.pnlibrary.core.plugin.module.InMemoryCooldowns
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
@@ -42,7 +42,7 @@ internal class ModuleResourceFactory(
     private val metrics: MetricsService,
     private val diagnostics: DiagnosticsService,
     private val updates: UpdateService,
-    private val placeholders: PlaceholderHub,
+    private val placeholders: PlaceholderEngine,
     private val currency: CurrencyRuntime,
     private val configurations: ConfigurationRuntime,
     private val directDownloads: DirectDownloads?,
@@ -74,7 +74,7 @@ internal class ModuleResourceFactory(
             taskScope = tasks.scope(owner, moduleKey)
             eventScope = events.scope(moduleKey, pluginId, moduleId)
             configScope = configurations.scope(owner, moduleKey, pluginId, moduleId)
-            placeholderScope = placeholders.scope(moduleKey, definition.placeholderApiEnabled, pluginId.value, moduleId.value)
+            placeholderScope = placeholders.scope(moduleDiagnosticsName(pluginId, moduleId), definition.placeholderApiEnabled)
             currencyScope = currency.scope(moduleKey, placeholderScope)
 
             serviceScope.register(CurrencyService::class.java, currencyScope)
@@ -98,8 +98,9 @@ internal class ModuleResourceFactory(
                 definition.metrics,
                 errorReporter,
             )
+            val diagnosticsName = moduleDiagnosticsName(pluginId, moduleId)
             diagnosticRegistration = definition.diagnosticContainer?.let { container ->
-                diagnostics.register(moduleKey.value, requireNotNull(definition.diagnosticsDirectory), container)
+                diagnostics.register(diagnosticsName, requireNotNull(definition.diagnosticsDirectory), container)
             }
             updateRegistration = definition.updateRequest?.let { request ->
                 updates.register(owner, requireNotNull(product), request, definition.dependencies)
@@ -123,6 +124,7 @@ internal class ModuleResourceFactory(
                 metrics = metricsController,
                 errors = errorReporter,
                 diagnostics = diagnosticRegistration,
+                diagnosticsName = diagnosticsName,
                 updates = updateRegistration,
                 downloads = downloadRegistration,
             )

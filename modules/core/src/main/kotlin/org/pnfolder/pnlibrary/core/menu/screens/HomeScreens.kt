@@ -11,6 +11,7 @@ import org.pnfolder.pnlibrary.core.menu.MenuSession
 import org.pnfolder.pnlibrary.core.menu.MenuViewer
 import org.pnfolder.pnlibrary.core.menu.Menus
 import org.pnfolder.pnlibrary.core.menu.data.PlanInfo
+import org.pnfolder.pnlibrary.core.menu.style.ACTIONS
 import org.pnfolder.pnlibrary.core.menu.style.BUS
 import org.pnfolder.pnlibrary.core.menu.style.CONFIGS
 import org.pnfolder.pnlibrary.core.menu.style.HOME_CLOSE
@@ -144,6 +145,11 @@ internal class HomeScreens(session: MenuSession, routes: MenuRoutes) : MenuScree
             23,
             section(Icons.TOOLS, "NAME_TAG", "Плейсхолдеры", "Что плагины публикуют для текста и PlaceholderAPI."),
             go { allowed(it, PLACEHOLDERS) { routes.placeholders(it, 0) } },
+        )
+        builder.button(
+            29,
+            section(Icons.TOOLS, "COMMAND_BLOCK", "Действия", "Именованные действия, требования и функции плагинов."),
+            go { allowed(it, ACTIONS) { routes.actions(it, 0) } },
         )
     }
 

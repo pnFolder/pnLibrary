@@ -22,6 +22,22 @@ interface ModuleLibraries {
     /** The libraries this module can use: its own and the plugin's. For a plugin it is the same as [loaded]. */
     val available: List<ModuleLibrary> get() = loaded
 
+    /** Every library registered here with where it stands, also the switched off and the failed ones; [loaded] lists only the loaded. */
+    val statuses: List<LibraryStatus>
+
+    /** Where [library] stands, or `null` when it was never registered here. */
+    fun status(library: ModuleLibrary): LibraryStatus?
+
+    /**
+     * Chooses whether [library] is loaded with the server, and saves the choice. Switching it on loads it now; switching
+     * it off keeps it from loading again, and a library already in use stays until the server restarts
+     * ([LibraryStatus.restartRequired]).
+     */
+    fun setAutoLoad(library: ModuleLibrary, enabled: Boolean): LibraryStatus
+
+    /** Tries to load a failed library again; a switched off or loaded one is left as it is. Never throws: the reason is in the status. */
+    fun retry(library: ModuleLibrary): LibraryStatus
+
     /** Downloads, verifies and loads [library] unless it is loaded already. Throws [IllegalStateException] with the reason when it fails. */
     fun load(library: ModuleLibrary)
 

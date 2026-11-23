@@ -116,6 +116,7 @@ internal class CachedComponents(
     private fun toMiniMessage(source: String): String {
         var value = source.replace('§', '&')
         value = OLD_GRADIENT.replace(value) { "<gradient:#${it.groupValues[1]}:#${it.groupValues[3]}>${it.groupValues[2]}</gradient>" }
+        value = X_HEX.replace(value) { match -> "<#${match.groupValues[1].filter { it != '&' }}>" }
         value = HEX.replace(value) { "<#${it.groupValues[1]}>" }
         return LEGACY.replace(value) { LEGACY_TAGS[it.groupValues[1].lowercase()] ?: it.value }
     }
@@ -126,6 +127,8 @@ internal class CachedComponents(
         private val GSON by lazy { GsonComponentSerializer.gson() }
         private val PLAIN by lazy { PlainTextComponentSerializer.plainText() }
         private val OLD_GRADIENT = Regex("<&?#([0-9a-fA-F]{6})>([^<]*)</&?#([0-9a-fA-F]{6})>")
+        /** Bukkit hex form `&x&f&f&0&0&0&0` (and its `§x§f…` twin): six single digits behind `x`. */
+        private val X_HEX = Regex("(?i)&x((?:&[0-9a-f]){6})")
         private val HEX = Regex("(?i)(?<!<)&?#([0-9a-f]{6})(?![^<]*>)")
         private val LEGACY = Regex("&([0-9a-fk-or])", RegexOption.IGNORE_CASE)
         private val LEGACY_TAGS = mapOf(

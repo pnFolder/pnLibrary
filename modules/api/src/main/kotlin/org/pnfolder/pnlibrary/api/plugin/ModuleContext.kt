@@ -88,7 +88,7 @@ interface ModuleContext : AutoCloseable {
     val configs: ConfigScope
     /** Portable configurable-action service. */
     val actions: ActionService
-    /** Module-local placeholder registry. */
+    /** The placeholders of this module: annotated classes in, text out. Everything registered is released with the module. */
     val placeholders: PlaceholderService
     /** Adventure component parsing and rendering service. */
     val components: ComponentService
@@ -104,6 +104,10 @@ interface ModuleContext : AutoCloseable {
     val updates: UpdateRegistration?
     /** Auxiliary download registration, or `null` when none was configured. */
     val downloads: DownloadRegistration?
+    /** How the server's Minecraft version stands against what this module (or its plugin) declared. */
+    val minecraft: org.pnfolder.pnlibrary.api.compat.MinecraftCompatibility
+        get() = org.pnfolder.pnlibrary.api.compat.MinecraftCompatibility.NOT_DECLARED
+
     /** The Maven libraries of this module; see `PluginModule.libraries()`. */
     val libraries: ModuleLibraries
     /** Switches this module on and off; the same operations as `/pn modules` and the menu. */

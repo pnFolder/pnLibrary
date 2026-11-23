@@ -39,9 +39,6 @@ private fun diagnosticSuggestions(library: PnLibrary, context: CommandContext): 
         library.plugins.all().flatMapTo(this) { plugin ->
             plugin.all().map { it.key.value }
         }
-        add("--full")
-        add("--config")
-        add("--logs")
         add("--local")
     }.distinct().filter { it.lowercase(Locale.ROOT).startsWith(prefix) }
 }
@@ -49,7 +46,7 @@ private fun diagnosticSuggestions(library: PnLibrary, context: CommandContext): 
 /** Renders diagnostics state once for every native platform, as notices in the shared chat style. */
 internal fun DiagnosticCommandEvent.render(kit: ChatKit, root: String = "/pn debug"): List<Component> = when (this) {
     DiagnosticCommandEvent.InvalidUsage ->
-        kit.notice(ChatNotice(ChatTone.WARNING, "Неизвестные аргументы.", "$root [all|плагин] [--full|--config|--logs] [--local]"))
+        kit.notice(ChatNotice(ChatTone.WARNING, "Неизвестные аргументы.", "$root [all|плагин] [--local]"))
     is DiagnosticCommandEvent.CoolingDown ->
         kit.notice(ChatNotice(ChatTone.WARNING, "Подождите $seconds с перед следующим отчётом."))
     is DiagnosticCommandEvent.Started ->

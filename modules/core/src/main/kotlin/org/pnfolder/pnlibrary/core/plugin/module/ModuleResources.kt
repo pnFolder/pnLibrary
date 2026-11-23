@@ -11,7 +11,6 @@ import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.metrics.MetricsController
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
@@ -32,15 +31,16 @@ internal class ModuleResources(
     val metrics: MetricsController,
     val errors: ErrorReporter,
     val diagnostics: DiagnosticRegistration?,
+    private val diagnosticsName: String,
     val updates: UpdateRegistration?,
     val downloads: DownloadRegistration?,
 ) {
-    fun close(diagnosticsService: DiagnosticsService, moduleKey: PluginId) {
+    fun close(diagnosticsService: DiagnosticsService) {
         ResourceCleanup.closeAll(
             { downloads?.close() },
             { updates?.close() },
             { diagnostics?.close() },
-            { diagnosticsService.clearPlugin(moduleKey.value) },
+            { diagnosticsService.clearPlugin(diagnosticsName) },
             { metrics.close() },
             { errors.close() },
             { currency.close() },

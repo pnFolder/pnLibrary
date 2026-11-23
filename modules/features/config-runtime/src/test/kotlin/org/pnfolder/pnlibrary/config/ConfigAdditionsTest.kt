@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.config.ConfigSerializationContext
 import org.pnfolder.pnlibrary.api.config.ConfigSerializer
 import org.pnfolder.pnlibrary.api.config.ConfigTypeConflict
-import org.pnfolder.pnlibrary.api.config.extensions
 import org.pnfolder.pnlibrary.api.config.serializer
 import org.pnfolder.pnlibrary.api.config.serializerFor
 import org.pnfolder.pnlibrary.api.config.type
@@ -208,23 +207,6 @@ class ConfigAdditionsTest {
             write("other", "places.yml", "spawn: high:hub,3\n")
             scope(service, "pnmaps").serializerFor(PlaceSerializer("high:")).priority(9).everywhere().register()
             assertEquals(Place("hub", 3), spawnOf(scope(service, "other")))
-        }
-    }
-
-    @Test
-    fun `a module that refuses additions keeps its files as they were`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
-            write("shop", "places.yml", "spawn: arena,7\n")
-            write("other", "places.yml", "spawn: arena,7\n")
-            val shop = scope(service, "shop")
-            shop.extensions { denyAll() }
-            val publisher = scope(service, "quests")
-
-            assertThrows(IllegalStateException::class.java) { publisher.serializerFor(PlaceSerializer()).into("shop").register() }
-            publisher.serializerFor(PlaceSerializer()).everywhere().register()
-
-            assertFalse(spawnOrNull(shop) == Place("arena", 7), "the refusing module is skipped by an addition for everybody")
-            assertEquals(Place("arena", 7), spawnOf(scope(service, "other")))
         }
     }
 

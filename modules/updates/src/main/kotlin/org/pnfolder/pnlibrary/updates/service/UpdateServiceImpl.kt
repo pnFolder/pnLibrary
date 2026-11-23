@@ -139,7 +139,7 @@ class UpdateServiceImpl(
             stagePlan = { snapshot -> orchestrator.stage(snapshot.id) },
             onClose = ::removeRegistration,
             effectiveAutomatic = {
-                overrides.automatic(product.id.value) ?: request.automaticDownload
+                overrides.automatic(product.id.value) ?: (request.automaticDownload && product.id.value != PnLibraryIdentity.PRODUCT_ID)
             },
             platform = identity.type,
             chosenJava = { overrides.javaBuild(product.id.value) },

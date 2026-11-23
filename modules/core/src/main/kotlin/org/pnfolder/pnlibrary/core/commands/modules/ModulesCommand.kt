@@ -24,6 +24,8 @@ import java.util.concurrent.CompletionStage
  * | `/pn modules` | every module with its state |
  * | `/pn modules plugins` | every plugin with its modules and the number of libraries |
  * | `/pn modules libs [<плагин>\|<плагин:модуль>]` | libraries with name, description, who registered them and version conflicts |
+ * | `/pn modules lib enable\|disable\|retry <плагин\|плагин:модуль> <group:artifact:version>` | switches one library: on and off (saved across restarts), or tries again after an error |
+ * | `/pn modules mc force <модуль> on\|off` | start the module although the server's Minecraft version is outside what it declared; saved |
  * | `/pn modules disk` | what every plugin takes on the disk: jar, settings, libraries, logs, data |
  * | `/pn modules view <модуль>` | one module: state, last error, whether it starts with the server |
  * | `/pn modules enable\|disable\|restart\|reload <модуль>` | switches the module now |
@@ -43,6 +45,35 @@ class ModulesCommand(private val library: PnLibrary) {
             argument("owner", ArgumentType.string()) {
                 suggests { LibraryRow.all(library).map { it.owner }.distinct() }
                 executes { libs(it, it.get<String>("owner")) }
+            }
+        }
+        literal("lib") {
+            for (action in listOf("enable", "disable", "retry")) {
+                literal(action) {
+                    argument("owner", ArgumentType.string()) {
+                        suggests { LibraryRow.all(library).map { it.owner }.distinct() }
+                        argument("library", ArgumentType.string()) {
+                            suggests { LibraryRow.all(library).map { it.coordinates }.distinct() }
+                            executes { changeLibrary(it, action, it.get<String>("owner"), it.get<String>("library")) }
+                        }
+                    }
+                }
+            }
+        }
+        literal("mc") {
+            literal("force") {
+                argument("module", ArgumentType.string()) {
+                    suggests { names() }
+                    for ((word, value) in listOf("on" to true, "off" to false)) {
+                        literal(word) {
+                            executes { context ->
+                                withModule(context, context.get<String>("module")) { kit, name, module ->
+                                    forceMinecraft(context, kit, name, module, value)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         literal("plugins") { executes { plugins(it) } }
@@ -123,6 +154,50 @@ class ModulesCommand(private val library: PnLibrary) {
         return library.description?.let { line.append(kit.text(": $it", ChatPalette.LABEL)) } ?: line
     }
 
+    /** The libraries of a plugin (`plugin`) or of one of its modules (`plugin:module`). */
+    private fun holderOf(owner: String): org.pnfolder.pnlibrary.api.libraries.ModuleLibraries? {
+        for (plugin in library.plugins.all()) {
+            if (plugin.id.value.equals(owner, true)) return plugin.libraries
+            for (module in plugin.all()) if ("${plugin.id.value}:${module.id.value}".equals(owner, true)) return module.libraries
+        }
+        return null
+    }
+
+    private fun forceMinecraft(context: CommandContext, kit: ChatKit, name: String, module: ModuleContext, on: Boolean) {
+        val target = module as? org.pnfolder.pnlibrary.core.plugin.module.MinecraftForcible
+        if (target == null || module.minecraft.declared == null) {
+            context.sender.send(kit.note("У $name не объявлены версии Minecraft или он не из этого сервера.", ChatPalette.WARN))
+            return
+        }
+        target.forceMinecraft(on)
+        val text = if (on) "запускать при любой версии Minecraft (на свой риск)" else "версия Minecraft снова проверяется"
+        context.sender.send(kit.text("$name: ", ChatPalette.TEXT).append(kit.text(text, ChatPalette.SOFT)))
+    }
+
+    private fun changeLibrary(context: CommandContext, action: String, owner: String, coordinates: String) {
+        val kit = kit(context)
+        val holder = holderOf(owner)
+        if (holder == null) { context.sender.send(kit.note("Нет плагина или модуля «$owner». Список: /pn modules libs", ChatPalette.DANGER)); return }
+        val found = holder.statuses.firstOrNull { it.library.coordinates.equals(coordinates, true) }?.library
+        if (found == null) {
+            context.sender.send(kit.note("У $owner нет библиотеки «$coordinates». Список: /pn modules libs $owner", ChatPalette.DANGER))
+            return
+        }
+        val status = when (action) {
+            "enable" -> holder.setAutoLoad(found, true)
+            "disable" -> holder.setAutoLoad(found, false)
+            else -> holder.retry(found)
+        }
+        val result = when {
+            status.restartRequired -> "выключена: она уже используется, пропадёт после перезапуска сервера" to ChatPalette.WARN
+            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.LOADED -> "загружена" to ChatPalette.OK
+            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.DISABLED -> "выключена, при запуске сервера не загружается" to ChatPalette.WARN
+            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.FAILED -> "ошибка: ${status.error}" to ChatPalette.DANGER
+            else -> "не нужна на этой платформе" to ChatPalette.FAINT
+        }
+        context.sender.send(kit.text("${found.title} ${found.version}: ", ChatPalette.TEXT).append(kit.text(result.first, result.second)))
+    }
+
     private fun libs(context: CommandContext, owner: String?) {
         val kit = kit(context)
         val rows = LibraryRow.all(library).filter { owner == null || it.belongsTo(owner) }
@@ -142,6 +217,12 @@ class ModulesCommand(private val library: PnLibrary) {
                     },
                 )
                 if (!row.required) line = line.append(kit.dot()).append(kit.text("необязательная", ChatPalette.FAINT))
+                line = when {
+                    row.state == "DISABLED" -> line.append(kit.dot()).append(kit.text("выключена", ChatPalette.WARN))
+                    row.state == "FAILED" -> line.append(kit.dot()).append(kit.text("ошибка: ${row.error}", ChatPalette.DANGER))
+                    row.restartRequired -> line.append(kit.dot()).append(kit.text("выключится после перезапуска", ChatPalette.WARN))
+                    else -> line
+                }
                 if (row.conflict) line = line.append(kit.dot()).append(kit.text("другая версия у другого плагина", ChatPalette.DANGER))
                 lines += line
                 row.description?.let { lines += kit.text("      $it", ChatPalette.LABEL) }
@@ -204,6 +285,13 @@ class ModulesCommand(private val library: PnLibrary) {
             lines += kit.hoverField("Библиотеки", kit.text("${own.size + shared.size}", ChatPalette.TEXT))
             own.forEach { lines += libraryLine(kit, it, false) }
             shared.forEach { lines += libraryLine(kit, it, true) }
+        }
+        module.minecraft.declared?.let { declared ->
+            val check = module.minecraft
+            val color = if (check.blocked) ChatPalette.DANGER else if (check.note != null) ChatPalette.WARN else ChatPalette.OK
+            lines += kit.hoverField("Minecraft", kit.text("$declared, сервер ${check.server ?: "неизвестно"}", color))
+            check.note?.let { lines += kit.text("    $it", ChatPalette.LABEL) }
+            if (check.forced) lines += kit.text("    администратор разрешил запуск на любой версии", ChatPalette.WARN)
         }
         control.lastError?.let { lines += kit.hoverField("Ошибка", kit.text(it.message ?: it.javaClass.simpleName, ChatPalette.DANGER)) }
         if (control.isControllable && kit.reader.interactive) {

@@ -42,7 +42,6 @@ class UpdateGraphResolverTest {
         .repository("owner", "example")
         .supportedApi(1, 1)
         .exactArtifact("example.jar")
-        .channel(UpdateChannel.DEV)
         .build()
 
     private fun registration(product: ProductDescriptor = ProductDescriptor.builder().version("1.0.0").pnLibraryApi(1, 1).build().bindTo("example")) =
@@ -111,6 +110,6 @@ class UpdateGraphResolverTest {
 
         assertEquals(UpdateChannel.DEV, resolver.channelFor(ProductId.of(PnLibraryIdentity.PRODUCT_ID), UpdateChannel.STABLE))
         assertEquals(UpdateChannel.STABLE, resolver.channelFor(ProductId.of("example"), UpdateChannel.STABLE))
-        assertEquals(UpdateChannel.DEV, resolver.channelFor(registration()))
+        assertEquals(UpdateChannel.DEV, resolver.channelFor(library()))
     }
 }

@@ -70,6 +70,7 @@ class MenuScreensSmokeTest {
             "disk" to { router.disk(viewer, 0) { } },
             "groups" to { router.groups(viewer, 0) },
             "placeholders" to { router.placeholders(viewer, 0) },
+            "actions" to { router.actions(viewer, 0) },
             "configs" to { router.configs(viewer, 0) },
             "missing" to { router.missingPlugins(viewer, 0) },
             "home" to { router.home(viewer) },

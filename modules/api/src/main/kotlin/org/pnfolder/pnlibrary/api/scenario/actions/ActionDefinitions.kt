@@ -1,6 +1,9 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
-/** What to do when a definition name is already taken, see [ActionService.define]. */
+/**
+ * What to do when the same module already defined that name, see [ActionService.define]. A name taken by another
+ * module is no conflict: both stay, the nearest answers and the library reports the clash.
+ */
 enum class DefinitionConflict {
     /** Refuse with an error; the default, so that a clash is never silent. */
     FAIL,
@@ -8,6 +11,6 @@ enum class DefinitionConflict {
     /** Keep the existing definition and define nothing; the returned handle does nothing. */
     KEEP,
 
-    /** Replace the existing definition of the same plugin or module; a definition of another owner is never replaced. */
+    /** Replace the existing definition of this module; a definition of another module is never touched. */
     REPLACE,
 }

@@ -10,6 +10,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.placeholders.Visibility
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -28,7 +29,6 @@ import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.ExpressionRequir
 import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.RefRequirement
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
-import org.pnfolder.pnlibrary.core.plugin.module.LayeredLookup
 import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions
 import java.util.UUID
 
@@ -40,8 +40,7 @@ class ExpressionTest {
         `when`(it.experience(true)).thenReturn(12.0)
         `when`(it.hasPermission(anyString())).thenAnswer { call -> call.getArgument<String>(0) == "shop.vip" }
     }
-    private val shared = ScenarioDefinitions()
-    private val own = ScenarioDefinitions()
+    private val definitions = ScenarioDefinitions()
     private val log = mutableListOf<String>()
 
     private fun context(vararg values: Pair<String, Any?>) = ActionContext(
@@ -51,7 +50,7 @@ class ExpressionTest {
         logger = mock(PnLogger::class.java),
         tasks = mock(TaskScope::class.java),
         values = mapOf(*values),
-        lookup = LayeredLookup(own, shared),
+        lookup = definitions.view("shop/main"),
     )
 
     private fun calc(text: String, ctx: ActionContext = context()) = Expression.parse(text).text(ctx)
@@ -99,7 +98,7 @@ class ExpressionTest {
 
     @Test
     fun `a plugin function joins the language`() {
-        own.defineFunction("kills", { _, _ -> 120.0 }, "shop", DefinitionConflict.FAIL)
+        definitions.defineFunction("kills", { _, _ -> 120.0 }, "shop/main", DefinitionConflict.FAIL)
 
         assertEquals("true", calc("kills() >= 100"))
     }
@@ -128,7 +127,7 @@ class ExpressionTest {
 
     @Test
     fun `a defined action is called with arguments that do not leak`() {
-        own.defineAction("greet", Action { c -> log += c.format("hello {who}"); ActionResult.Done }, "shop", DefinitionConflict.FAIL)
+        definitions.defineAction("greet", Action { c -> log += c.format("hello {who}"); ActionResult.Done }, "shop/main", DefinitionConflict.FAIL)
         val ctx = context()
 
         val result = ctx.execute(listOf(CallAction("greet", mapOf("who" to "{= 1 + 1}")), CallAction("greet", mapOf("who" to "Bob"))))
@@ -140,22 +139,59 @@ class ExpressionTest {
     }
 
     @Test
-    fun `a module name wins over a library one and conflicts follow the policy`() {
-        shared.defineRequirement("vip", Requirement { Verdict.Unmet("library") }, "lib", DefinitionConflict.FAIL)
-        own.defineRequirement("vip", Requirement { Verdict.Met }, "shop", DefinitionConflict.FAIL)
+    fun `the nearest name wins and a clash inside one module follows the policy`() {
+        val warnings = mutableListOf<String>()
+        definitions.defineRequirement("vip", Requirement { Verdict.Unmet("library") }, "lib/main", DefinitionConflict.FAIL)
+        definitions.defineRequirement("vip", Requirement { Verdict.Met }, "shop/main", DefinitionConflict.FAIL, Visibility.MODULE, warnings::add)
 
         assertTrue(RefRequirement("vip").test(context()).isMet)
+        assertTrue(warnings.single().contains("vip"))
         assertThrows(IllegalArgumentException::class.java) {
-            own.defineRequirement("vip", Requirement { Verdict.Met }, "shop", DefinitionConflict.FAIL)
+            definitions.defineRequirement("vip", Requirement { Verdict.Met }, "shop/main", DefinitionConflict.FAIL)
         }
-        own.defineRequirement("vip", Requirement { Verdict.Unmet("kept?") }, "shop", DefinitionConflict.KEEP)
+        definitions.defineRequirement("vip", Requirement { Verdict.Unmet("kept?") }, "shop/main", DefinitionConflict.KEEP)
         assertTrue(RefRequirement("vip").test(context()).isMet)
-        own.defineRequirement("vip", Requirement { Verdict.Unmet("replaced") }, "shop", DefinitionConflict.REPLACE)
+        definitions.defineRequirement("vip", Requirement { Verdict.Unmet("replaced") }, "shop/main", DefinitionConflict.REPLACE)
         assertEquals(Verdict.Unmet("replaced"), RefRequirement("vip").test(context()))
-        assertThrows(IllegalArgumentException::class.java) {
-            own.defineRequirement("vip", Requirement { Verdict.Met }, "other-plugin", DefinitionConflict.REPLACE)
-        }
         assertEquals(Verdict.Unmet("requirement 'zzz' is not defined"), RefRequirement("zzz").test(context()))
+    }
+
+    @Test
+    fun `an owner in front of a name picks who answers`() {
+        definitions.defineRequirement("vip", Requirement { Verdict.Unmet("lib") }, "lib/main", DefinitionConflict.FAIL)
+        definitions.defineRequirement("vip", Requirement { Verdict.Met }, "shop/main", DefinitionConflict.FAIL, Visibility.MODULE)
+        definitions.defineRequirement("vip", Requirement { Verdict.Unmet("sibling") }, "shop/other", DefinitionConflict.FAIL, Visibility.PLUGIN)
+
+        assertTrue(RefRequirement("vip").test(context()).isMet)
+        assertTrue(RefRequirement("~~@vip").test(context()).isMet)
+        assertEquals(Verdict.Unmet("sibling"), RefRequirement("shop/other@vip").test(context()))
+        assertEquals(Verdict.Unmet("lib"), RefRequirement("lib@vip").test(context()))
+        assertEquals(Verdict.Unmet("requirement 'bank@vip' is not defined"), RefRequirement("bank@vip").test(context()))
+    }
+
+    @Test
+    fun `module and plugin definitions are hidden from others and go away with the owner`() {
+        definitions.defineAction("secret", Action { ActionResult.Done }, "bank/main", DefinitionConflict.FAIL, Visibility.MODULE)
+        definitions.defineAction("team", Action { ActionResult.Done }, "bank/main", DefinitionConflict.FAIL, Visibility.PLUGIN)
+        definitions.defineAction("open", Action { ActionResult.Done }, "bank/main", DefinitionConflict.FAIL)
+        val view = definitions.view("shop/main")
+
+        assertEquals(null, view.action("secret"))
+        assertEquals(null, view.action("team"))
+        assertTrue(view.action("open") != null)
+        assertTrue(definitions.view("bank/other").action("team") != null)
+        definitions.removeOwner("bank/main")
+        assertEquals(null, view.action("open"))
+    }
+
+    @Test
+    fun `a function can be named with its owner inside an expression`() {
+        definitions.defineFunction("kills", { _, _ -> 120.0 }, "shop/main", DefinitionConflict.FAIL)
+        definitions.defineFunction("kills", { _, _ -> 5.0 }, "lib/main", DefinitionConflict.FAIL)
+
+        assertEquals("120", calc("~~@kills()"))
+        assertEquals("5", calc("lib/main@kills() + 0"))
+        assertEquals("5", calc("lib@kills()"))
     }
 
     @Test

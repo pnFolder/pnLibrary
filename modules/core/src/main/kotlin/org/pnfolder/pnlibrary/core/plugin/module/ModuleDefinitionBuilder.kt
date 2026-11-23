@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.plugin.module
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
+import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsBuilder
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadataBuilder
@@ -12,6 +13,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import java.nio.file.Path
+import java.util.function.BooleanSupplier
 import java.util.function.Consumer
 
 /**
@@ -36,6 +38,22 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     val dependencies = mutableListOf<PluginDependency>()
     var downloadsRequest: FileDownloads? = null
     var placeholderApiEnabled: Boolean = true
+    override val minecraftRule = org.pnfolder.pnlibrary.api.compat.MinecraftSupportRule()
+    val libraries = linkedMapOf<ModuleLibrary, BooleanSupplier>()
+    private val libraryDefaults = mutableListOf<Consumer<ModuleLibrary.Builder>>()
+
+    override fun library(library: ModuleLibrary): PluginBuilder = library(library, BooleanSupplier { true })
+
+    override fun library(library: ModuleLibrary, enabled: BooleanSupplier): PluginBuilder = apply { libraries[library] = enabled }
+
+    override fun libraryDefaults(configure: Consumer<ModuleLibrary.Builder>): PluginBuilder = apply { libraryDefaults += configure }
+
+    override fun library(group: String, artifact: String, version: String, configure: Consumer<ModuleLibrary.Builder>): PluginBuilder {
+        val builder = ModuleLibrary.builder(group, artifact, version)
+        libraryDefaults.forEach { it.accept(builder) }
+        configure.accept(builder)
+        return library(builder.build())
+    }
 
     override fun product(descriptor: ProductDescriptor): PluginBuilder = apply {
         require(productDescriptor == null) { "Component descriptor is already configured" }
@@ -94,8 +112,6 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
 
         updateRequest = PluginUpdateRequest.builder()
             .repository(source.repositoryOwner, source.repositoryName)
-            .channel(source.channel)
-            .automaticDownload(source.automaticDownload)
             .supportedApi(descriptor.supportedApi.minimum, descriptor.supportedApi.maximum)
             .also { target -> copyArtifactRules(source, target) }
             .also { target -> source.configurationBackup?.let { copyBackups(it, target) } }

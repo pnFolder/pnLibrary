@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 import org.pnfolder.pnlibrary.core.menu.data.MenuData
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow
@@ -17,7 +18,6 @@ import org.pnfolder.pnlibrary.core.menu.style.NEXT
 import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
 import org.pnfolder.pnlibrary.core.menu.style.PREVIOUS
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
 import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -68,7 +68,7 @@ class LibraryMenuTest {
         menu.items.getValue(slot).handler!!.handle(MenuClick(viewer, slot, ClickType.LEFT))
     }
 
-    private fun placeholders(count: Int) = (1..count).map { PlaceholderInfo("pnclans/war:p$it", "Integer", null, emptyList(), true) }
+    private fun placeholders(count: Int) = (1..count).map { PlaceholderInfo("clan.war.p$it", "", "pnclans/war", "Integer") }
 
     @Test
     fun `the home page opens with a close button and the way to every section`() {

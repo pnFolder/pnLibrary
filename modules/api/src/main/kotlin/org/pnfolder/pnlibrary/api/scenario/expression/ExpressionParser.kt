@@ -170,7 +170,7 @@ internal class Parser(private val text: String) {
             ch == '\'' || ch == '"' -> stringLiteral(ch)
             ch == '{' -> bracketed('}')
             ch == '%' -> bracketed('%')
-            ch.isLetter() || ch == '_' -> nameOrCall()
+            ch.isLetter() || ch == '_' || ch == '~' -> nameOrCall()
             else -> fail("Unexpected '$ch'")
         }
     }
@@ -204,9 +204,19 @@ internal class Parser(private val text: String) {
     }
 
     private fun nameOrCall(): Expression.Node {
-        val start = position
+        var start = position
+        var owner = ""
+        var probe = position
+        while (probe < text.length && (text[probe].isLetterOrDigit() || text[probe] in "_-/~")) probe++
+        if (probe > position && text.getOrNull(probe) == '@') {
+            owner = text.substring(position, probe) + "@"
+            position = probe + 1
+            start = position
+        } else if (text[position] == '~') {
+            fail("Unexpected '~'")
+        }
         while (position < text.length && (text[position].isLetterOrDigit() || text[position] == '_' || text[position] == '.')) position++
-        val name = text.substring(start, position)
+        val name = owner + text.substring(start, position)
         skipSpaces()
         if (position < text.length && text[position] == '(') {
             position++

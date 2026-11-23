@@ -1,11 +1,8 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess;
-
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
 import org.pnfolder.pnlibrary.api.remote.DenyAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
@@ -20,11 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ApiStyleJavaTest {
-    private static PlaceholderRegistration<String> registerPlaceholder(PlaceholderService service) {
-        return service.register("status", String.class, placeholder -> placeholder
-            .resolve(request -> "online")
-            .access(PluginAccess.ownerOnly())
-            .fallback("offline"));
+    private static AutoCloseable registerPlaceholder(PlaceholderService service) {
+        return service.value("status", viewer -> "online");
     }
 
     @Test
@@ -38,7 +32,6 @@ class ApiStyleJavaTest {
 
         PluginUpdateRequest updates = PluginUpdateRequest.builder()
             .repository("pnFolder", "pnLibrary")
-            .automaticDownload(false)
             .exactArtifact("pnLibrary.jar", 8, null)
             .build();
 

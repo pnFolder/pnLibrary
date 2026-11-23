@@ -8,7 +8,6 @@ import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
@@ -23,7 +22,6 @@ class BuilderArchitectureTest {
         val entryPoints = listOf(
             Triple(CommandDefinition::class.java, arrayOf(String::class.java), "command"),
             Triple(ConfigOptions::class.java, emptyArray(), "config options"),
-            Triple(PluginAccess::class.java, emptyArray(), "plugin access"),
             Triple(DiagnosticConfiguration::class.java, arrayOf(String::class.java), "diagnostic configuration"),
             Triple(DiagnosticContainer::class.java, arrayOf(String::class.java), "diagnostic container"),
             Triple(FileDownloads::class.java, emptyArray(), "file downloads"),

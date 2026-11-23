@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.core.menu.style.PAGE_SIZE
 import org.pnfolder.pnlibrary.core.menu.style.Row
 import org.pnfolder.pnlibrary.core.menu.style.Style
 import org.pnfolder.pnlibrary.core.menu.style.icon
+import org.pnfolder.pnlibrary.core.placeholders.usageVariants
 
 /** Menu screens for registered placeholders. */
 internal class PlaceholderScreens(session: MenuSession, routes: MenuRoutes) : MenuScreens(session, routes) {
@@ -16,12 +17,15 @@ internal class PlaceholderScreens(session: MenuSession, routes: MenuRoutes) : Me
         val rows = data.placeholders().map { info ->
             val parameters = buildList {
                 add("Тип" to info.type)
+                if (info.description.isNotEmpty()) add("Описание" to info.description)
+                add("Владелец" to info.owner)
+                add("Видимость" to info.visibility.name.lowercase())
                 info.format?.let { add("Формат" to it) }
                 if (info.published.isNotEmpty()) add("PlaceholderAPI" to info.published.joinToString { "%$it%" })
-                if (!info.enabled) add("Состояние" to "выключен")
+                usageVariants(info).forEach { add(it.label to it.text) }
             }
             Row(
-                icon(null, "NAME_TAG", "{${info.address}}", Style.lore(emptyList(), parameters), muted = !info.enabled),
+                icon(null, "NAME_TAG", "{${info.address}}", Style.lore(emptyList(), parameters)),
                 go { },
             )
         }

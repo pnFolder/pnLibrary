@@ -7,27 +7,34 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.plugin.PluginId
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.Visibility
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 /**
- * `/pn placeholders [page]` lists every placeholder with its type, default format and what is published to
- * PlaceholderAPI; `/pn placeholders test <address> [player uuid]` works one out by hand.
- * Requires `pnlibrary.placeholders`; the console always may.
+ * `/pn placeholders [page]` lists every placeholder with its type, default format and what is shown to
+ * PlaceholderAPI; `/pn placeholders formats` lists the formats; `/pn placeholders test <address> [player uuid]`
+ * works one out by hand. Requires `pnlibrary.placeholders`; the console always may.
  */
-fun placeholdersCommand(hub: PlaceholderHub): CommandDefinition = command("placeholders") {
+fun placeholdersCommand(engine: PlaceholderEngine): CommandDefinition = command("placeholders") {
     permission(PERMISSION)
     noPermissionMessage("Плейсхолдеры доступны администраторам. Нужно право $PERMISSION.")
     consoleBypassesPermission()
-    executes { list(hub, it, 1) }
-    argument("page", ArgumentType.integer()) { executes { list(hub, it, it.get<Int>("page")) } }
+    executes { list(engine, it, 1) }
+    argument("page", ArgumentType.integer()) { executes { list(engine, it, it.get<Int>("page")) } }
+    literal("info") {
+        argument("address", ArgumentType.string()) { executes { info(engine, it, it.get<String>("address")) } }
+    }
+    literal("formats") {
+        executes { it.sender.send(Component.text("Форматы: " + engine.formatNames().joinToString(", "), ChatPalette.TEXT)) }
+    }
     literal("test") {
         argument("address", ArgumentType.string()) {
-            executes { test(hub, it, it.get<String>("address"), null) }
-            argument("player", ArgumentType.string()) { executes { test(hub, it, it.get<String>("address"), it.get<String>("player")) } }
+            executes { test(engine, it, it.get<String>("address"), null) }
+            argument("player", ArgumentType.string()) { executes { test(engine, it, it.get<String>("address"), it.get<String>("player")) } }
         }
     }
 }
@@ -36,30 +43,75 @@ private const val PERMISSION = "pnlibrary.placeholders"
 private const val PAGE_SIZE = 12
 private const val TEST_TIMEOUT_SECONDS = 3L
 
-private fun list(hub: PlaceholderHub, context: CommandContext, requested: Int) {
-    val all = hub.describe()
+private fun list(engine: PlaceholderEngine, context: CommandContext, requested: Int) {
+    val all = engine.list()
     val pages = ((all.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
     val page = requested.coerceIn(1, pages)
     context.sender.send(Component.text("Плейсхолдеры: ${all.size}, страница $page/$pages", ChatPalette.ACCENT))
     all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { context.sender.send(row(it)) }
-    context.sender.send(Component.text("Проверить: /pn placeholders test <адрес> [uuid игрока]", ChatPalette.FAINT))
+    context.sender.send(
+        Component.text(
+            "Как писать: /pn placeholders info <адрес>; проверить: /pn placeholders test <адрес> [uuid]; форматы: /pn placeholders formats",
+            ChatPalette.FAINT,
+        ),
+    )
 }
 
 /** One line of the placeholder list. */
 fun row(info: PlaceholderInfo): Component {
-    val color = if (info.enabled) ChatPalette.TEXT else ChatPalette.FAINT
     val format = info.format?.let { " |$it" }.orEmpty()
     val outside = if (info.published.isEmpty()) "" else "  PlaceholderAPI: " + info.published.joinToString { "%$it%" }
-    return Component.text("{${info.address}}", color)
-        .append(Component.text("  ${info.type}$format$outside", ChatPalette.SOFT))
+    val scope = if (info.visibility == Visibility.ALL) "" else "  [${info.visibility.name.lowercase()}]"
+    val about = if (info.description.isEmpty()) "" else "  ${info.description}"
+    return Component.text("{${info.address}}", ChatPalette.TEXT)
+        .append(Component.text("  ${info.type}$format  ${info.owner}$scope$outside$about", ChatPalette.SOFT))
 }
 
-private fun test(hub: PlaceholderHub, context: CommandContext, address: String, player: String?) {
+/** One way to write an address: a short [label], the [text] to put into a message and what it means. */
+data class UsageVariant(val label: String, val text: String, val meaning: String)
+
+/**
+ * The ways [info] can be written, nearest first. Only the forms that can work for its visibility are listed:
+ * a placeholder of `MODULE` is reachable by its own module alone, one of `PLUGIN` by the modules of its plugin.
+ */
+fun usageVariants(info: PlaceholderInfo): List<UsageVariant> {
+    val address = info.address
+    val plugin = info.owner.substringBefore('/')
+    val shared = info.visibility != Visibility.MODULE
+    return buildList {
+        add(UsageVariant("Как есть", "{$address}", "ближайший: свой модуль, свой плагин, потом остальные"))
+        add(UsageVariant("Этот модуль", "{${info.owner}@$address}", "именно модуль ${info.owner}"))
+        if (shared) add(UsageVariant("Весь плагин", "{$plugin@$address}", "любой модуль плагина $plugin"))
+        add(UsageVariant("Мой модуль", "{~~@$address}", "только мой модуль: работает внутри ${info.owner}"))
+        if (shared) add(UsageVariant("Мой плагин", "{~@$address}", "только мой плагин: работает внутри любого модуля плагина $plugin"))
+        add(UsageVariant("С форматом", "{$address|${info.format ?: "имя"}}", "формат после чёрточки; список: /pn placeholders formats"))
+    }
+}
+
+private fun info(engine: PlaceholderEngine, context: CommandContext, written: String) {
+    val wanted = written.trim().removePrefix("{").removeSuffix("}").lowercase()
+    val found = engine.list().filter { it.address.lowercase() == wanted }
+    if (found.isEmpty()) {
+        context.sender.send(Component.text("{$wanted}: такого плейсхолдера нет. Список: /pn placeholders", ChatPalette.WARN))
+        return
+    }
+    found.forEach { entry ->
+        context.sender.send(row(entry))
+        usageVariants(entry).forEach { variant ->
+            context.sender.send(
+                Component.text("  ${variant.label}: ", ChatPalette.SOFT)
+                    .append(Component.text(variant.text, ChatPalette.TEXT))
+                    .append(Component.text("  ${variant.meaning}", ChatPalette.FAINT)),
+            )
+        }
+    }
+}
+
+private fun test(engine: PlaceholderEngine, context: CommandContext, address: String, player: String?) {
     val expression = address.removePrefix("{").removeSuffix("}")
     val playerId = player?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: (context.sender as? LibraryPlayer)?.uniqueId
-    val service = hub.scope(PluginId.of("pnlibrary"), true)
     val result = try {
-        service.resolve(expression, playerId).toCompletableFuture().get(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        engine.resolveAll(expression, ViewerInfo.of(playerId)).toCompletableFuture().get(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     } catch (_: TimeoutException) {
         context.sender.send(Component.text("{$expression}: нет ответа за $TEST_TIMEOUT_SECONDS с", ChatPalette.WARN))
         return

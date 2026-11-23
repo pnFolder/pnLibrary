@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
@@ -25,7 +26,7 @@ import org.pnfolder.pnlibrary.core.menu.style.PLACEHOLDERS
 import org.pnfolder.pnlibrary.core.menu.style.ROLLBACK
 import org.pnfolder.pnlibrary.core.menu.style.STATS
 import org.pnfolder.pnlibrary.core.menu.style.TASKS
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
 import org.pnfolder.pnlibrary.core.tasks.TaskControl
 import java.time.Duration
@@ -121,6 +122,8 @@ class RemoteMenuData(
     override fun stats(): StatsSnapshot = ask(MenuCalls.STATS)
 
     override fun placeholders(): List<PlaceholderInfo> = ask(MenuCalls.PLACEHOLDERS)
+
+    override fun scenarioDefinitions(): List<ScenarioDefinitionInfo> = ask(MenuCalls.SCENARIO_DEFINITIONS)
 
     override fun runTask(id: String): TaskControl = ask(MenuCalls.RUN_TASK, args("id" to id))
 

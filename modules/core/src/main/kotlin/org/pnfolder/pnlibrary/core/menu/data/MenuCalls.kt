@@ -25,6 +25,7 @@ object MenuCalls {
     const val TASKS = "tasks"
     const val STATS = "stats"
     const val PLACEHOLDERS = "placeholders"
+    const val SCENARIO_DEFINITIONS = "scenarioDefinitions"
     const val RUN_TASK = "runTask"
     const val CANCEL_TASK = "cancelTask"
     const val MODULES = "modules"
@@ -53,7 +54,7 @@ object MenuCalls {
         GROUPS,
         VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS, JOURNAL_GROUPS, JOURNAL_DETAIL,
         TASKS, MODULES, LIBRARIES, DISK, STATS,
-        PLACEHOLDERS, SETTINGS,
+        PLACEHOLDERS, SCENARIO_DEFINITIONS, SETTINGS,
         EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS, TRACES, EVENT_ABOUT, OWNER_NAMED,
     )
 }

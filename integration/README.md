@@ -28,7 +28,6 @@
    ```java
    library.getPlugins().register(this)
        .updates("Владелец", "РепозиторийПлагина", updater -> updater
-           .channel(UpdateChannel.STABLE)
            .artifact("(?i)^MyPlugin-[0-9].*\\.jar$", 8));
    ```
 

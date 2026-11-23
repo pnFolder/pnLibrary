@@ -81,6 +81,78 @@ class Shop : PluginModule {
 `context.libraries.load("группа:артефакт:версия")`. Не загрузилась обязательная библиотека: модуль в состоянии `FAILED`, причина
 в `/pn modules view`.
 
+### Библиотеки прямо в регистрации модуля
+
+Плагину, у которого один модуль и нет класса `PluginModule`, библиотеки удобнее объявить в билдере регистрации. Они
+скачиваются, проверяются и грузятся до старта модуля, а блок `libraries:` в `plugin.yml` не нужен.
+
+```kotlin
+registration.registerModule(MODULE_ID) { setup ->
+    setup.library("org.xerial:sqlite-jdbc:3.46.0.0")                              // по координатам
+    setup.library("com.charleskorn.kaml", "kaml-jvm", "0.67.0") { it.title("kaml") }   // с настройками
+    setup.libraries(ModuleLibrary.of("g:a:1"), ModuleLibrary.builder("g", "b", "2").optional().build())
+}
+```
+
+Общие настройки и условие:
+
+```kotlin
+registration.registerModule(MODULE_ID) { setup ->
+    // для всех библиотек ниже: своё зеркало вместо Maven Central; у каждой свои настройки идут после и главнее
+    setup.libraryDefaults { it.source { repository("https://mirror.example.org/maven/") }.mavenCentral(false) }
+    setup.library("com.charleskorn.kaml:kaml-jvm:0.67.0")
+    // грузится только если условие верно в момент старта модуля; иначе не качается и не показывается
+    setup.library(ModuleLibrary.of("org.xerial:sqlite-jdbc:3.46.0.0")) { settings.storageType == "SQLITE" }
+}
+```
+
+Обязательная библиотека, которая не загрузилась, останавливает `registerModule` исключением (плагин может закрыть
+регистрацию, как и при другой ошибке). Необязательная только пишет предупреждение. Одна и та же библиотека, объявленная
+дважды, грузится один раз. Транзитивные зависимости не подтягиваются: перечислите каждый jar.
+
+### На каких версиях Minecraft работает плагин или модуль
+
+Версии объявляются на плагин (`registration`) и на модуль (`setup` в `registerModule`) одними и теми же методами. Модуль, который
+ничего не объявил, берёт правила плагина. Версии можно дать константой `MinecraftVersion` или текстом (для релиза, у которого
+ещё нет константы).
+
+```kotlin
+registration.supportedMinecraft(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4)   // от и до, включительно
+registration.registerModule(MODULE_ID) { setup ->
+    setup.supportedMinecraft(MinecraftVersion.V1_20_1)                      // одна версия
+    setup.supportedMinecraftOnly("1.20.1", "1.20.4")                        // только эти
+    setup.supportedMinecraftFrom(MinecraftVersion.V1_20_5)                  // с этой и выше, в том числе будущие
+    setup.supportedMinecraftUpTo("1.21.4")                                  // до этой включительно
+    setup.onNewerMinecraft(NewerAction.ALLOW_WITH_WARNING)                  // ALLOW, ALLOW_WITH_WARNING, BLOCK
+    setup.onUnsupportedMinecraft(UnsupportedAction.DISABLE_MODULE)          // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
+}
+```
+
+Вызовы складываются: версия должна подойти хотя бы под один. Версии сравниваются числами, а не списком известных, поэтому релиз,
+о котором библиотека ещё не знает, не ломает `From`. Результат проверки (`MinecraftSupport`: `SUPPORTED`, `NEWER_THAN_DECLARED`,
+`OLDER_THAN_DECLARED`, `EXCLUDED`, `UNKNOWN`, `NOT_DECLARED`) виден в `ModuleContext.minecraft` и в `/pn modules view`.
+
+- Новее объявленного: по умолчанию запускается с предупреждением в логе (`NewerAction.ALLOW_WITH_WARNING`).
+- Старее или не из списка: модуль выключается с причиной (`DISABLE_MODULE`). Модуль без методов включения выключить нельзя,
+  поэтому `registerModule` бросает исключение, как и при `STOP_PLUGIN`. `WARN_ONLY` только предупреждает.
+- Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется.
+- На прокси (BungeeCord, Velocity) версия Minecraft неизвестна: результат `UNKNOWN`, ничто не блокируется.
+
+### Управление библиотекой: выключить, включить, повторить
+
+У каждой библиотеки есть состояние (`LibraryState`): `LOADED`, `DISABLED` (выключил администратор), `FAILED` (с причиной) и
+`SKIPPED` (чужая платформа). Выбор администратора «грузить или нет» сохраняется в `modules/preferences.json` и действует после перезапуска.
+
+| Что | Команда | Код |
+|---|---|---|
+| список с состояниями | `/pn modules libs [плагин]` | `libraries.statuses`, `libraries.status(lib)` |
+| выключить | `/pn modules lib disable <плагин\|плагин:модуль> <group:artifact:version>` | `libraries.setAutoLoad(lib, false)` |
+| включить (грузится сразу) | `/pn modules lib enable …` | `libraries.setAutoLoad(lib, true)` |
+| повторить после ошибки | `/pn modules lib retry …` | `libraries.retry(lib)` |
+
+Jar, который уже используется, Java выгрузить не умеет: библиотека остаётся до перезапуска (`restartRequired`). Выключенная
+библиотека при следующем запуске не скачивается, даже если она обязательная: решение администратора главнее.
+
 ### Библиотеки плагина, просмотр и удаление
 
 Библиотеку можно зарегистрировать на весь плагин: её увидят все его модули, и она скачается один раз.

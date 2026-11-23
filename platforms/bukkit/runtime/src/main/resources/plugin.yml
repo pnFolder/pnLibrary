@@ -36,6 +36,9 @@ permissions:
   pnlibrary.placeholders:
     description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
     default: op
+  pnlibrary.actions:
+    description: 'Смотреть именованные действия, требования и функции плагинов (/pn actions)'
+    default: op
   pnlibrary.stats:
     description: 'Смотреть сводную статистику библиотеки (/pn stats)'
     default: op

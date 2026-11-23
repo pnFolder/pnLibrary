@@ -6,8 +6,8 @@ import java.util.Locale
  * Parsed `/pn debug` command invocation.
  *
  * @property target  Plugin name or `"all"`.
- * @property configs Whether configuration files should be collected.
- * @property logs    Whether recent warning/error logs should be collected.
+ * @property configs Whether configuration files should be collected; always `true` for a command.
+ * @property logs    Whether recent logs and the observation journal should be collected; always `true` for a command.
  * @property local   Skip upload; save to local file only.
  */
 data class DebugRequest(
@@ -21,7 +21,8 @@ data class DebugRequest(
         private val VALID_TARGET = Regex("[A-Za-z0-9_.-]{1,80}")
 
         /**
-         * Parses command arguments into a [DebugRequest].
+         * Parses command arguments into a [DebugRequest]. The report always carries logs and configurations; the only
+         * flag is `--local`, which saves the file instead of uploading it.
          *
          * @param args     Raw argument array from the command handler.
          * @param prefixed If `true`, the first argument must be `"debug"` and is consumed.
@@ -38,7 +39,7 @@ data class DebugRequest(
             var target = "all"
             var targetChosen = false
             val flags = mutableSetOf<String>()
-            val knownFlags = setOf("--config", "--logs", "--local", "--full")
+            val knownFlags = setOf("--local")
             for (i in offset until args.size) {
                 val v = args[i]
                 if (v.startsWith("--")) {
@@ -52,9 +53,9 @@ data class DebugRequest(
             }
             return DebugRequest(
                 target  = target,
-                configs = "--config" in flags || "--full" in flags,
-                logs    = "--logs"   in flags || "--full" in flags,
-                local   = "--local"  in flags,
+                configs = true,
+                logs    = true,
+                local   = "--local" in flags,
             )
         }
     }

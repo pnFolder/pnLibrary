@@ -8,10 +8,15 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.pnfolder.pnlibrary.api.compat.MinecraftSupport
+import org.pnfolder.pnlibrary.api.compat.NewerAction
+import org.pnfolder.pnlibrary.api.compat.UnsupportedAction
+import org.pnfolder.pnlibrary.api.libraries.LibraryState
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
+import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest
 import java.nio.file.Path
 
@@ -130,6 +135,169 @@ class ModuleControlTest {
         assertNotNull(failed.control.lastError)
         assertEquals(ModuleState.ENABLED, started.control.state)
         assertTrue(optional.enabled)
+        registry.close()
+    }
+
+    @Test
+    fun `libraries declared in the registration builder are loaded before the module starts`() {
+        val fetched = mutableListOf<String>()
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
+
+        val context = registry.register(Any()).registerModule("shop") { setup ->
+            setup.library("org.xerial:sqlite-jdbc:3.46.0.0")
+            setup.library("org.xerial:sqlite-jdbc:3.46.0.0")
+            setup.library("com.example", "extra", "1") { it.optional().title("Extra") }
+        }
+
+        assertEquals(listOf("org.xerial:sqlite-jdbc:3.46.0.0", "com.example:extra:1"), fetched)
+        assertEquals(2, context.libraries.loaded.size)
+        registry.close()
+    }
+
+    @Test
+    fun `defaults apply to libraries declared by coordinates and a false condition skips the download`() {
+        val fetched = mutableListOf<ModuleLibrary>()
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library; null })
+
+        registry.register(Any()).registerModule("shop") { setup ->
+            setup.libraryDefaults { it.source { repository("https://mirror.example.org/maven/") }.mavenCentral(false).optional() }
+            setup.library("org.xerial:sqlite-jdbc:3.46.0.0")
+            setup.library(ModuleLibrary.of("com.example:skipped:1"), java.util.function.BooleanSupplier { false })
+        }
+
+        assertEquals(listOf("org.xerial:sqlite-jdbc:3.46.0.0"), fetched.map { it.coordinates })
+        assertFalse(fetched.single().mavenCentral)
+        assertFalse(fetched.single().required)
+        assertEquals("https://mirror.example.org/maven/", fetched.single().sources.single().url)
+        registry.close()
+    }
+
+    @Test
+    fun `an administrator can switch a library off and on and retry a failed one`() {
+        var offline = true
+        val fetched = mutableListOf<String>()
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library ->
+            if (offline && library.artifact == "flaky") error("offline")
+            fetched += library.coordinates
+            null
+        })
+        val plugin = registry.register(Any())
+        val context = plugin.registerModule("shop") { it.library(ModuleLibrary.builder("g", "flaky", "1").optional().build()); it.library("g:steady:1") }
+        val flaky = ModuleLibrary.builder("g", "flaky", "1").build()
+        val steady = ModuleLibrary.of("g:steady:1")
+
+        assertEquals(LibraryState.FAILED, context.libraries.status(flaky)!!.state)
+        assertEquals("offline", context.libraries.status(flaky)!!.error)
+        assertEquals(LibraryState.FAILED, context.libraries.retry(flaky).state)
+        offline = false
+        assertEquals(LibraryState.LOADED, context.libraries.retry(flaky).state)
+
+        val off = context.libraries.setAutoLoad(steady, false)
+        assertTrue(off.restartRequired)
+        assertFalse(off.autoLoad)
+        assertEquals(LibraryState.LOADED, off.state)
+        val on = context.libraries.setAutoLoad(steady, true)
+        assertFalse(on.restartRequired)
+        assertTrue(on.autoLoad)
+        assertEquals(listOf("g:steady:1", "g:flaky:1"), fetched)
+        registry.close()
+    }
+
+    @Test
+    fun `a library switched off is not loaded at the next registration`() {
+        val fetched = mutableListOf<String>()
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
+        val owner = Any()
+        registry.register(owner).registerModule("shop") { it.library("g:a:1") }.libraries.setAutoLoad(ModuleLibrary.of("g:a:1"), false)
+        fetched.clear()
+
+        val again = registry.register(Any()).registerModule("shop") { it.library("g:a:1") }
+
+        assertEquals(LibraryState.DISABLED, again.libraries.status(ModuleLibrary.of("g:a:1"))!!.state)
+        assertTrue(fetched.isEmpty())
+        registry.close()
+    }
+
+    private class Hooked : PluginModule {
+        var enabled = false
+        override fun onEnable(context: ModuleContext) {
+            enabled = true
+        }
+    }
+
+    @Test
+    fun `a module outside its Minecraft versions is switched off with the reason and an administrator can force it`() {
+        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.21.11")
+        val module = Hooked()
+
+        val context = registry.register(Any()).registerModule("shop", module) { it.supportedMinecraft(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4) }
+        // the version 1.21.11 is newer than 1.20.4: the default only warns
+        assertEquals(ModuleState.ENABLED, context.control.state)
+        assertEquals(MinecraftSupport.NEWER_THAN_DECLARED, context.minecraft.support)
+
+        val strict = registry.register(Any()).registerModule("strict", Hooked()) {
+            it.supportedMinecraftOnly("1.20.1")
+            it.onNewerMinecraft(NewerAction.BLOCK)
+        }
+        assertEquals(ModuleState.DISABLED, strict.control.state)
+        assertTrue(strict.minecraft.blocked)
+        assertNotNull(strict.control.lastError)
+
+        (strict as MinecraftForcible).forceMinecraft(true)
+        strict.control.enable()
+        assertEquals(ModuleState.ENABLED, strict.control.state)
+        registry.close()
+    }
+
+    @Test
+    fun `a module without hooks and a stopped plugin refuse to register outside the versions`() {
+        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.12.2")
+
+        assertThrows(IllegalStateException::class.java) {
+            registry.register(Any()).registerModule("plain") { it.supportedMinecraftFrom(MinecraftVersion.V1_16_5) }
+        }
+        assertThrows(IllegalStateException::class.java) {
+            registry.register(Any()).registerModule("stop", Hooked()) {
+                it.supportedMinecraftFrom("1.16.5")
+                it.onUnsupportedMinecraft(UnsupportedAction.STOP_PLUGIN)
+            }
+        }
+        val warned = registry.register(Any()).registerModule("soft", Hooked()) {
+            it.supportedMinecraftFrom("1.16.5")
+            it.onUnsupportedMinecraft(UnsupportedAction.WARN_ONLY)
+        }
+        assertEquals(ModuleState.ENABLED, warned.control.state)
+        registry.close()
+    }
+
+    @Test
+    fun `a module without its own versions uses the plugin's`() {
+        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.12.2")
+        val plugin = registry.register(Any())
+        plugin.supportedMinecraftFrom(MinecraftVersion.V1_16_5)
+
+        val inherited = plugin.registerModule("a", Hooked()) { }
+        val own = plugin.registerModule("b", Hooked()) { it.supportedMinecraft(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2) }
+
+        assertEquals(ModuleState.DISABLED, inherited.control.state)
+        assertEquals("1.16.5+", inherited.minecraft.declared)
+        assertEquals(ModuleState.ENABLED, own.control.state)
+        registry.close()
+    }
+
+    @Test
+    fun `a required library declared in the builder stops the registration and an optional one only warns`() {
+        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
+
+        val failure = assertThrows(IllegalStateException::class.java) {
+            registry.register(Any()).registerModule("needs") { it.library("com.example:missing:1") }
+        }
+        val started = registry.register(Any()).registerModule("wants") {
+            it.library(ModuleLibrary.builder("com.example", "missing", "1").optional().build())
+        }
+
+        assertNotNull(failure.message)
+        assertTrue(started.libraries.loaded.isEmpty())
         registry.close()
     }
 

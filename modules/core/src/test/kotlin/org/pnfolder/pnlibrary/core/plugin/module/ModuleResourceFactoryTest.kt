@@ -25,7 +25,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.services.ServiceScope
 import org.pnfolder.pnlibrary.core.tasks.TaskService
@@ -40,7 +40,7 @@ class ModuleResourceFactoryTest {
     private val events = mock(EventService::class.java)
     private val tasks = mock(TaskService::class.java)
     private val configurations = mock(ConfigurationRuntime::class.java)
-    private val placeholders = mock(PlaceholderHub::class.java)
+    private val placeholders = mock(PlaceholderEngine::class.java)
     private val currency = mock(CurrencyRuntime::class.java)
     private val logging = mock(LoggingService::class.java)
     private val diagnostics = mock(DiagnosticsService::class.java)
@@ -58,7 +58,7 @@ class ModuleResourceFactoryTest {
         `when`(events.scope(key, PluginId.of("native"), id)).thenReturn(eventScope)
         `when`(tasks.scope(owner, key)).thenReturn(taskScope)
         `when`(configurations.scope(owner, key, PluginId.of("native"), id)).thenReturn(configScope)
-        `when`(placeholders.scope(key, false, "native", id.value)).thenReturn(placeholderScope)
+        `when`(placeholders.scope(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean())).thenReturn(placeholderScope)
         `when`(currency.scope(key, placeholderScope)).thenReturn(currencyScope)
         `when`(currency.storages).thenReturn(storageFactory)
         `when`(logging.logger(owner, id.value)).thenReturn(logger)
@@ -94,14 +94,14 @@ class ModuleResourceFactoryTest {
         verify(serviceScope).register(CurrencyService::class.java, currencyScope)
         verify(serviceScope).register(CurrencyStorageFactory::class.java, storageFactory)
 
-        resources.close(diagnostics, key)
+        resources.close(diagnostics)
         verify(currencyScope).close()
         verify(placeholderScope).close()
         verify(configScope).close()
         verify(serviceScope).close()
         verify(eventScope).close()
         verify(taskScope).close()
-        verify(diagnostics).clearPlugin(key.value)
+        verify(diagnostics).clearPlugin("native/shop")
     }
 
     @Test

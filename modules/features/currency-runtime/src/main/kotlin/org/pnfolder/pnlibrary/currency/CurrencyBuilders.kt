@@ -14,9 +14,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationOptions
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorage
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderPublication
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.math.BigDecimal
 import java.time.Duration
@@ -26,17 +23,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.function.Consumer
 
-/** Common access and alias configuration shared by all currency builders. */
+/** Common alias configuration shared by all currency builders. */
 internal open class CurrencyOptions : CurrencyRegistrationOptions {
-    /** Visibility policy; owner-only until the plugin widens it. */
-    var access: PluginAccess = PluginAccess.ownerOnly()
     /** Extra names under which the same currency can be resolved. */
     val aliases = linkedSetOf<String>()
 
-    override fun access(access: PluginAccess) = apply { this.access = access }
-    override fun access(configure: Consumer<PluginAccess.Builder>) = apply {
-        access = PluginAccess.builder().also(configure::accept).build()
-    }
     override fun aliases(vararg aliases: String) = apply { this.aliases += aliases }
 }
 
@@ -95,17 +86,12 @@ internal class ManagedCurrencyDefinition(
         val normalizedName = normalizeCurrencyName(name)
         val prefix = "currency.$normalizedName"
 
-        fun register(key: String, resolver: (UUID?) -> CompletionStage<Any?>): AutoCloseable {
-            return placeholders.register(PlaceholderKey.of("$prefix.$key", Any::class.java)) { builder ->
-                builder.resolveAsync { request -> resolver(request.playerId) }
-                    .access(placeholderOptions.access)
-                if (placeholderOptions.placeholderApi) {
-                    builder.publish(
-                        PlaceholderPublication("placeholderapi", placeholderOptions.namespace, "${normalizedName}_$key"),
-                    )
-                }
-            }
-        }
+        fun register(key: String, resolver: (UUID?) -> CompletionStage<Any?>): AutoCloseable =
+            placeholders.value(
+                address = "$prefix.$key",
+                description = "Currency $normalizedName: $key",
+                papi = if (placeholderOptions.placeholderApi) placeholderOptions.namespace else null,
+            ) { viewer -> resolver(viewer.playerId) }
 
         fun ofPlayer(transform: (BigDecimal) -> Any?): (UUID?) -> CompletionStage<Any?> = { playerId ->
             playerId?.let { currency.balance(it).thenApply(transform) } ?: CompletableFuture.completedFuture(null)
@@ -123,15 +109,12 @@ internal class ManagedCurrencyDefinition(
 private class ManagedPlaceholderOptions(defaultNamespace: String) : CurrencyPlaceholderOptions {
     /** Whether placeholders are registered at all. */
     var enabled = true
-    /** Who may resolve the placeholders. */
-    var access: PluginAccess = PluginAccess.ownerOnly()
     /** Whether the placeholders are also published to PlaceholderAPI. */
     var placeholderApi = false
     /** PlaceholderAPI identifier prefix. */
     var namespace = defaultNamespace
 
     override fun enabled(value: Boolean) = apply { enabled = value }
-    override fun access(access: PluginAccess) = apply { this.access = access }
     override fun placeholderApi(enabled: Boolean) = apply { placeholderApi = enabled }
     override fun placeholderApi(namespace: String) = apply {
         require(namespace.isNotBlank()) { "PlaceholderAPI namespace must not be blank" }

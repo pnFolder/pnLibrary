@@ -408,7 +408,6 @@ public final class org/pnfolder/pnlibrary/api/config/ConfigRoot : java/lang/Enum
 
 public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigScope : java/lang/AutoCloseable {
 	public abstract fun close ()V
-	public abstract fun extensions (Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
 	public abstract fun get (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/config/ManagedConfig;
 	public abstract fun getModule ()Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
 	public abstract fun getPlugin ()Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
@@ -688,10 +687,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/config/ConfigurationS
 	public abstract fun scope (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
 	public abstract fun serializers ()Ljava/util/List;
 	public abstract fun types (Ljava/lang/Class;)Ljava/util/List;
-}
-
-public final class org/pnfolder/pnlibrary/api/config/ConfigurationServiceKt {
-	public static final fun extensions (Lorg/pnfolder/pnlibrary/api/config/ConfigScope;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/config/ConfigScope;
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/config/DatabaseField : java/lang/annotation/Annotation {

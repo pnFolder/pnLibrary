@@ -8,8 +8,7 @@ import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.downloads.settings.downloads
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
-import org.pnfolder.pnlibrary.core.placeholders.builtin.GlobalPlaceholderValueStore
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
@@ -45,12 +44,7 @@ internal class RuntimeFeatureSet(
         logging, paths, { settings.current().downloads() },
         saveAutomatic = { settings.set("downloads.automatic", it.toString()) },
     )
-    val placeholderValues = GlobalPlaceholderValueStore()
-    val placeholders: PlaceholderHub = PlaceholderHub(
-        platform.identity, placeholderValues,
-        issues = { problem -> logging.log(owner, LogLevel.WARNING, problem) },
-        failures = { problem, error -> logging.log(owner, LogLevel.ERROR, problem, error) },
-    )
+    val placeholders: PlaceholderEngine = PlaceholderEngine { problem -> logging.log(owner, LogLevel.WARNING, problem) }
     val currency: CurrencyRuntime = CurrencyFeature { message, error -> logging.log(owner, LogLevel.ERROR, message, error) }
     private val onExpansionFailure: (Expansion, Exception) -> Unit = { expansion, error ->
         logging.log(owner, LogLevel.WARNING, "Expansion '${expansion.id}' failed: ${error.message}", error)

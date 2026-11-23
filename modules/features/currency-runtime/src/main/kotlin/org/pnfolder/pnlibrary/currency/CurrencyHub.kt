@@ -21,7 +21,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransfers
 import org.pnfolder.pnlibrary.api.currency.CurrencyWithdrawals
 import org.pnfolder.pnlibrary.api.currency.ManagedCurrencyBuilder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.math.BigDecimal
@@ -47,8 +46,8 @@ internal class CurrencyHub(
     /** Creates the per-plugin view of this registry; call once per plugin that registers or resolves currencies. */
     fun scope(owner: PluginId, placeholders: PlaceholderService): CurrencyService = Scope(owner, placeholders)
 
-    override fun register(owner: PluginId, name: String, provider: CurrencyProvider, access: PluginAccess): CurrencyRegistration =
-        install(owner, name, provider, access, emptySet())
+    override fun register(owner: PluginId, name: String, provider: CurrencyProvider): CurrencyRegistration =
+        install(owner, name, provider, emptySet())
 
     override fun get(reference: String): Currency? {
         val separator = reference.indexOf(':')
@@ -79,13 +78,12 @@ internal class CurrencyHub(
         owner: PluginId,
         name: String,
         provider: CurrencyProvider,
-        access: PluginAccess,
         requestedAliases: Set<String>,
     ): Entry {
         check(!closed.get()) { "Currency registry is closed" }
         val key = CurrencyKey(owner, normalizeCurrencyName(name))
         val normalizedAliases = requestedAliases.map(::normalizeCurrencyName).toSet()
-        val entry = Entry(key, provider, access, normalizedAliases)
+        val entry = Entry(key, provider, normalizedAliases)
         synchronized(entries) {
             require(!entries.containsKey(key)) { "Currency $key is already registered" }
             normalizedAliases.forEach { alias ->
@@ -108,14 +106,14 @@ internal class CurrencyHub(
             checkOpen()
             val builder = CurrencyDefinition(name)
             configure.accept(builder)
-            return own(install(owner, name, builder.provider(), builder.access, builder.aliases))
+            return own(install(owner, name, builder.provider(), builder.aliases))
         }
 
         override fun managed(name: String, configure: Consumer<ManagedCurrencyBuilder>): CurrencyRegistration {
             checkOpen()
             val builder = ManagedCurrencyDefinition(owner, name)
             configure.accept(builder)
-            val registration = own(install(owner, name, builder.provider(), builder.access, builder.aliases))
+            val registration = own(install(owner, name, builder.provider(), builder.aliases))
             try {
                 builder.installPlaceholders(registration, placeholders).forEach(registration::attach)
             } catch (error: Throwable) {
@@ -129,20 +127,18 @@ internal class CurrencyHub(
             checkOpen()
             val options = CurrencyOptions()
             configure.accept(options)
-            return own(install(owner, name, provider, options.access, options.aliases))
+            return own(install(owner, name, provider, options.aliases))
         }
 
         override fun get(reference: String): Currency? {
             val requested = parseReference(owner, reference)
             val key = aliases[requested.owner to requested.name] ?: requested
-            return entries[key]?.takeIf {
-                it.state == CurrencyRegistrationState.ACTIVE && it.access.allows(it.key.owner, owner)
-            }
+            return entries[key]?.takeIf { it.state == CurrencyRegistrationState.ACTIVE }
         }
 
         override fun all(): List<Currency> = Collections.unmodifiableList(
             entries.values
-                .filter { it.state == CurrencyRegistrationState.ACTIVE && it.access.allows(it.key.owner, owner) }
+                .filter { it.state == CurrencyRegistrationState.ACTIVE }
                 .sortedBy { it.key.toString() },
         )
 
@@ -165,7 +161,6 @@ internal class CurrencyHub(
     private inner class Entry(
         override val key: CurrencyKey,
         private val provider: CurrencyProvider,
-        val access: PluginAccess,
         private val registeredAliases: Set<String>,
     ) : CurrencyRegistration {
         private val attachments = Collections.synchronizedList(mutableListOf<AutoCloseable>())

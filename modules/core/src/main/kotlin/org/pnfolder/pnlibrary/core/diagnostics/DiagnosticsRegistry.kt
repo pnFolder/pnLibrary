@@ -130,7 +130,7 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
         val result = linkedMapOf<String, Any?>()
         plugins.keys.sorted().forEach { name ->
             val st = plugins[name] ?: return@forEach
-            if (!all && name != sanitizer.key(selectedPlugin)) return@forEach
+            if (!all && !belongsTo(name, selectedPlugin)) return@forEach
 
             result[name] = linkedMapOf<String, Any?>(
                 "statuses"     to st.statuses.snapshot(),
@@ -139,6 +139,12 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
             )
         }
         return result
+    }
+
+    /** A plugin's own entry and its modules (`plugin/module`) belong to the plugin that was asked for. */
+    private fun belongsTo(name: String, selectedPlugin: String?): Boolean {
+        val key = sanitizer.key(selectedPlugin)
+        return name == key || name.startsWith("$key/")
     }
 
     /** Persistent-history view without invoking plugin contributors. */
@@ -156,8 +162,9 @@ internal class DiagnosticsRegistry(eventLimit: Int = DEFAULT_EVENT_LIMIT) : Diag
                 plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
             }
         }
-        val pluginKey = sanitizer.key(plugin)
-        return plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
+        return plugins.keys.sorted().filter { belongsTo(it, plugin) }.flatMap { pluginKey ->
+            plugins[pluginKey]?.contributors?.configurations(pluginKey).orEmpty()
+        }
     }
 
     /** Returns bounded incident history analytics without invoking contributors. */

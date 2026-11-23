@@ -46,7 +46,7 @@ class LibraryCommandGuideTest {
     fun `the guide names every command word of the control command`() {
         val words = LibraryCommandGuide.entries.map { it.usage.split(' ').getOrNull(1).orEmpty() }.toSet()
         listOf(
-            "status", "check", "gui", "updates", "update", "events", "bus", "tasks", "stats", "placeholders", "settings", "configs", "deps",
+            "status", "check", "gui", "updates", "update", "events", "bus", "tasks", "stats", "placeholders", "actions", "settings", "configs", "deps",
             "debug", "servers", "groups", "money", "support",
         )
             .forEach { assertTrue(it in words, it) }

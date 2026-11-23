@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskState
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer
 import org.pnfolder.pnlibrary.core.menu.data.EventAbout
+import org.pnfolder.pnlibrary.core.menu.screens.ActionScreens
 import org.pnfolder.pnlibrary.core.menu.screens.BusHistoryScreens
 import org.pnfolder.pnlibrary.core.menu.screens.BusScreens
 import org.pnfolder.pnlibrary.core.menu.screens.ConfigScreens
@@ -38,6 +39,7 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     private val groupScreens = GroupScreens(session, this)
     private val statsScreens = StatsScreens(session, this)
     private val placeholderScreens = PlaceholderScreens(session, this)
+    private val actionScreens = ActionScreens(session, this)
     private val busScreens = BusScreens(session, this)
     private val busHistoryScreens = BusHistoryScreens(session, this)
     private val configScreens = ConfigScreens(session, this)
@@ -73,6 +75,8 @@ internal class MenuRouter(private val session: MenuSession) : MenuRoutes {
     override fun ownerLine(name: String): String = taskScreens.ownerLine(name)
     override fun ownerParameters(owner: OwnerInfo?): List<Pair<String, String>> = taskScreens.ownerParameters(owner)
     override fun placeholders(player: MenuViewer, page: Int) = placeholderScreens.placeholders(player, page)
+
+    override fun actions(player: MenuViewer, page: Int) = actionScreens.actions(player, page)
     override fun plugins(player: MenuViewer, filter: Filter, page: Int) = updateScreens.plugins(player, filter, page)
     override fun setAutomatic(snapshot: UpdateSnapshot, enable: Boolean, player: MenuViewer): java.util.concurrent.CompletionStage<*> =
         updateScreens.setAutomatic(snapshot, enable, player)

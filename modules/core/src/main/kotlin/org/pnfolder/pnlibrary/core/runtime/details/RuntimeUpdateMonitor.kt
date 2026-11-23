@@ -30,7 +30,6 @@ internal object RuntimeUpdateMonitor {
             ProductDescriptor.library(currentVersion),
             PluginUpdateRequest.builder()
                 .repository(PnLibraryIdentity.REPOSITORY.substringBefore('/'), PnLibraryIdentity.REPOSITORY.substringAfter('/'))
-                .automaticDownload(false)
                 .artifact("(?i)^${PnLibraryIdentity.NAME}-[0-9].*-$artifactId-java[0-9]+\\.jar$", 8)
                 .build(),
         )

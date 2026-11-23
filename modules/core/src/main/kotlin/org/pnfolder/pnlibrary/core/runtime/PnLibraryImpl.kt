@@ -15,8 +15,7 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
-import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -48,7 +47,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.taskSnapshots
 import org.pnfolder.pnlibrary.core.logging.ModuleLogging
 import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
-import org.pnfolder.pnlibrary.core.placeholders.builtin.LibraryPlaceholders
+import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
 import org.pnfolder.pnlibrary.core.plugin.LibraryWords
 import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
@@ -65,6 +64,7 @@ import org.pnfolder.pnlibrary.core.runtime.platform.NativePlatform
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformServiceSet
+import org.pnfolder.pnlibrary.core.scenario.actionsCommand
 import org.pnfolder.pnlibrary.core.settings.LegacySettingsImport
 import org.pnfolder.pnlibrary.core.settings.LibraryInfoFiles
 import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
@@ -198,7 +198,6 @@ internal class PnLibraryImpl(
     override val platforms: PlatformProvider get() = platformProvider
     override val proxy: NetworkProxy? = platform.networkProxy
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
-    override val placeholderValues: PlaceholderValueStore get() = features.placeholderValues
 
     override val plugins: PluginRegistry = PluginRegistryImpl(
         ownership = platform.ownership,
@@ -251,8 +250,10 @@ internal class PnLibraryImpl(
         mountable[MountableCommands.EVENTS] = journalRuntime.command()
         mountable[MountableCommands.STATS] = stats.command()
         mountable[MountableCommands.PLACEHOLDERS] = placeholdersCommand(features.placeholders)
+        mountable[MountableCommands.ACTIONS] = actionsCommand { scenarioDefinitions() }
         mountable[MountableCommands.SETTINGS] = SettingsCommand(settings, settingPicker).definition()
-        LibraryPlaceholders(features.placeholders, startedAtMillis, { plugins.all().size }, stats::values).register()
+        features.placeholders.scope("pnlibrary/main")
+            .register(LibraryPlaceholders(platform.identity, startedAtMillis, { plugins.all().size }, stats::values))
         registerRuntimeCommand(libraryInfoCommand(this, platform.identity) {
             platform.ownership.ownerDetails(owner)["version"] ?: "неизвестна"
         })
@@ -324,7 +325,8 @@ internal class PnLibraryImpl(
 
     override fun statsSnapshot() = stats.snapshot()
 
-    override fun placeholderInfos() = features.placeholders.describe()
+    override fun placeholderInfos() = features.placeholders.list()
+    override fun scenarioDefinitions() = (plugins as PluginRegistryImpl).scenarioDefinitionInfos()
 
     /** The journal cannot record its own failure, so the console and the error tracker get it directly. */
     private fun reportJournalFailure(error: Throwable) {

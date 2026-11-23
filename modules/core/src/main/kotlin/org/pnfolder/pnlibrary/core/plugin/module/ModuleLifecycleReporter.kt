@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.logging.MessageBox
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.LifecycleRow
 import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
@@ -30,7 +30,7 @@ internal class ModuleLifecycleReporter(
             status(LifecycleRow.DIAGNOSTICS, "Diagnostics", if (resources.diagnostics == null) null else "enabled"),
             status(LifecycleRow.PLACEHOLDER_API, "PlaceholderAPI", ModuleRuntimeSummary.placeholderApi(
                 placeholderApiEnabled,
-                placeholders.get("placeholderapi")?.state?.name,
+                placeholders.get("placeholderapi")?.let { if (it.available) "available" else "unavailable" },
             )),
         ),
     )

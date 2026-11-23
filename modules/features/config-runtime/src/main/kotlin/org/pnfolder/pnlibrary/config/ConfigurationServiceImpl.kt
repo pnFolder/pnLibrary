@@ -17,7 +17,6 @@ import org.pnfolder.pnlibrary.api.config.ConfigValueValidator
 import org.pnfolder.pnlibrary.api.config.ManagedConfig
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml
@@ -123,10 +122,10 @@ class ConfigurationServiceImpl(
     }
 
     /** The additions that file [consumer] uses: those whose address covers it, its module accepts, and that win by priority. */
-    private fun visibleSerializers(consumer: ConfigId, policy: PluginAccess): List<SerializerRegistration> =
+    private fun visibleSerializers(consumer: ConfigId): List<SerializerRegistration> =
         synchronized(runtimeSerializers) {
             runtimeSerializers.filter {
-                it.isActive && it.target.matches(consumer) && policy.allows(consumer.plugin, it.owner)
+                it.isActive && it.target.matches(consumer)
             }.sortedByDescending { it.priority }
         }
 
@@ -137,10 +136,10 @@ class ConfigurationServiceImpl(
         platform.ownerDataFolder(owner) ?: Paths.get("plugins", platform.ownerDetails(owner)["id"] ?: owner.javaClass.simpleName)
 
     /** The words visible in file [consumer]: those whose address covers it and whose plugin its module accepts. */
-    private fun visibleTypes(consumer: ConfigId, policy: PluginAccess): List<RuntimeConfigType> =
+    private fun visibleTypes(consumer: ConfigId): List<RuntimeConfigType> =
         synchronized(runtimeTypes) {
             val covering = runtimeTypes.filter {
-                it.isActive && it.target.matches(consumer) && policy.allows(consumer.plugin, it.owner)
+                it.isActive && it.target.matches(consumer)
             }
             // The plugin that owns the file keeps its own words: an addition made for everybody cannot shadow them.
             covering.filter { added ->
@@ -174,9 +173,6 @@ class ConfigurationServiceImpl(
         private val serializers = BuiltInConfigSerializers.create()
         private val scopeClosed = AtomicBoolean(false)
 
-        @Volatile
-        var extensionPolicy: PluginAccess = PluginAccess.shared()
-            private set
         override val size: Int get() = synchronized(handles) { handles.size }
 
         override fun <T : Any> yaml(path: String, type: Class<T>, defaults: Supplier<T>): ManagedConfig<T> =
@@ -200,7 +196,7 @@ class ConfigurationServiceImpl(
                 type = type,
                 defaults = defaults,
                 serializers = { serializersFor(id) },
-                runtimeTypes = { visibleTypes(id, extensionPolicy) },
+                runtimeTypes = { visibleTypes(id) },
                 consumer = plugin.value,
                 options = effective,
                 warning = { message -> logger.warning(message) },
@@ -268,7 +264,7 @@ class ConfigurationServiceImpl(
         /** What file [id] reads with: the module's own serializers first, then the additions that cover it. */
         private fun serializersFor(id: ConfigId): Map<Class<*>, ConfigSerializer<*>> {
             val merged = synchronized(serializers) { LinkedHashMap(serializers) }
-            visibleSerializers(id, extensionPolicy).forEach { merged.putIfAbsent(it.type, it.serializer) }
+            visibleSerializers(id).forEach { merged.putIfAbsent(it.type, it.serializer) }
             return merged
         }
 
@@ -281,7 +277,6 @@ class ConfigurationServiceImpl(
             require(!foreign || (!type.isPrimitive && FORBIDDEN_PACKAGES.none { type.name.startsWith(it) })) {
                 "A serializer for ${type.name} cannot be added to other plugins' files: it would change how ordinary values are read"
             }
-            if (!where.isAll) checkAccepted(where)
             val registration = SerializerRegistration(key, plugin, type, serializer, priority, where)
             synchronized(runtimeSerializers) {
                 check(!scopeClosed.get()) { "Configuration scope is closed" }
@@ -293,11 +288,6 @@ class ConfigurationServiceImpl(
                 runtimeSerializers += registration
             }
             return registration
-        }
-
-        override fun extensions(policy: PluginAccess): ConfigScope = apply {
-            check(!scopeClosed.get()) { "Configuration scope is closed" }
-            extensionPolicy = policy
         }
 
         override fun list(): List<ConfigInfo> = snapshot().map { it.info }
@@ -330,7 +320,6 @@ class ConfigurationServiceImpl(
                     "Configuration type word '${taken.first { it in words }}' is declared by ${baseType.simpleName} itself and cannot be taken"
                 }
             }
-            if (!where.isAll) checkAccepted(where)
             val registration = TypeRegistration(
                 key, plugin, baseType, implementation, normalizedName,
                 normalizedAliases, priority, where,
@@ -362,18 +351,6 @@ class ConfigurationServiceImpl(
             }
             reloadWaiting(where)
             return registration
-        }
-
-        /** Refuses the addition when a module it would reach has closed itself to the registering plugin. */
-        private fun checkAccepted(where: ConfigAddress) {
-            val reached = synchronized(scopes) { scopes.values.flatMap { it.values } }.filter {
-                it.plugin == where.plugin && (where.module == null || where.module == it.module)
-            }
-            reached.forEach {
-                check(it.extensionPolicy.allows(it.plugin, plugin)) {
-                    "Module ${it.plugin}/${it.module} does not accept configuration types from plugin $plugin"
-                }
-            }
         }
 
         private fun normalizeTypeName(value: String): String = value.trim().lowercase(Locale.ROOT).also {

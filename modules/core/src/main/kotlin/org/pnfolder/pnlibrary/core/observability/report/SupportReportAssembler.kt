@@ -74,7 +74,8 @@ internal class SupportReportAssembler(
                 "platform" to identity.id,
                 "platformImplementation" to identity.implementationName,
                 "encrypted" to encrypted,
-                "diagnosticsMode" to "full",
+                "logs" to (request.logs && config.logs),
+                "configs" to (request.configs && config.configs),
                 "privacy" to config.privacy,
             ),
         )
@@ -87,7 +88,7 @@ internal class SupportReportAssembler(
 
     private fun addPluginDiagnostics(archive: SupportArchiveBuilder, target: String) {
         diagnostics.snapshot(target).forEach { (plugin, snapshot) ->
-            archive.json("plugins/${safePath(plugin)}/diagnostics.json", snapshot)
+            archive.json("plugins/${folderOf(plugin)}/diagnostics.json", snapshot)
         }
     }
 
@@ -133,7 +134,7 @@ internal class SupportReportAssembler(
         val used = mutableSetOf<String>()
         diagnostics.configurations(target).forEach { registered ->
             val root = registered.dataDirectory ?: dataFolder
-            val directory = "plugins/${safePath(registered.plugin)}/configuration/"
+            val directory = "plugins/${folderOf(registered.plugin)}/configuration/"
             if (encrypted) {
                 val file = configurations.readProtectedFile(registered.configuration, root)
                 val path = unique(directory, safeConfigurationPath(file.path), used)
@@ -161,6 +162,13 @@ internal class SupportReportAssembler(
         var number = 2
         while (!used.add((directory + candidate).lowercase())) candidate = path.substring(0, dot) + "-" + number++ + path.substring(dot)
         return candidate
+    }
+
+    /** `pnclans` stays `pnclans`; a module `pnclans/war` becomes `pnclans/modules/war`. */
+    private fun folderOf(name: String): String {
+        val plugin = name.substringBefore('/')
+        val module = name.substringAfter('/', "")
+        return if (module.isEmpty()) safePath(plugin) else "${safePath(plugin)}/modules/${safePath(module)}"
     }
 
     private fun safePath(value: String): String = value

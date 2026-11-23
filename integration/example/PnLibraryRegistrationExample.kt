@@ -12,7 +12,6 @@ import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider
-import org.pnfolder.pnlibrary.api.updates.catalog.UpdateChannel
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind
 import java.time.Duration
 import java.util.function.Supplier
@@ -64,8 +63,6 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
                 u.repository("pnFolder", "MyPlugin")
                     .branch("main")                       // или .tag("v1.0.0") / .commit("abc1234")
                     .catalogPath(".pnlibrary")            // папка с releases.json
-                    .channel(Supplier { UpdateChannel.STABLE })   // читается при каждой проверке, можно из конфига
-                    .automaticDownload(true)
                     .supportedApi(1, 1)                   // какой API умеет ЭТА сборка
                     .artifact("(?i)^MyPlugin-.*-java21\\.jar$", 21, 24)   // шаблон имени jar, Java от и до
                     .artifact("(?i)^MyPlugin-.*-java25\\.jar$", 25)
@@ -131,7 +128,6 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
                     .startupTimeout(Duration.ofSeconds(10))
                     .onDeny(DenyAction.DISABLE_PLUGIN)          // или DISABLE_MODULE
                     .onError(PolicyErrorAction.KEEP_RUNNING)    // DENY | DENY_UNTIL_CHECKED | KEEP_RUNNING
-                    .support("https://discord.gg/...")
                     .value("edition", "free")                   // значения, которые получит код политики
                     .build(),
             )

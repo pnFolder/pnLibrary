@@ -161,9 +161,19 @@ class MenuDataTest {
 
     @Test
     fun `the placeholders of a server travel through the link`() {
-        val info = org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo("pnclans/war:score", "Integer", "number", listOf("cl_war~score"), true)
+        val info = org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo(
+            "clan.war.score", "Score", "pnclans/war", "Integer", "number", listOf("pnclans_clan_war_score"),
+        )
         over("placeholders" to listOf(info)) { remote ->
             assertEquals(listOf(info), remote.placeholders())
+        }
+    }
+
+    @Test
+    fun `the named actions of a server travel through the link`() {
+        val info = org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo("action", "give-kit", "shop/main", "plugin")
+        over("scenarioDefinitions" to listOf(info)) { remote ->
+            assertEquals(listOf(info), remote.scenarioDefinitions())
         }
     }
 

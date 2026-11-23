@@ -11,8 +11,7 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService
 import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
-import org.pnfolder.pnlibrary.api.placeholders.cache.PlaceholderValueStore
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.services.ServiceManager
@@ -84,9 +83,6 @@ interface PnLibrary : Closeable {
      * Consumer plugins normally use their plugin context instead of registering adapters here.
      */
     val placeholderAdapters: PlaceholderAdapterRegistry
-
-    /** Global registered value store available through pnLibrary placeholders. */
-    val placeholderValues: PlaceholderValueStore
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

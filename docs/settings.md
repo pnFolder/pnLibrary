@@ -156,7 +156,8 @@
 | `/pn tasks` | `pnlibrary.tasks` | задачи плагинов, отмена |
 | `/pn deps` | `pnlibrary.deps` | недостающие плагины, установка по коду |
 | `/pn stats` | `pnlibrary.stats` | сводная статистика |
-| `/pn placeholders` | `pnlibrary.placeholders` | плейсхолдеры |
+| `/pn placeholders` | `pnlibrary.placeholders` | плейсхолдеры (`info <адрес>`: как писать) |
+| `/pn actions` | `pnlibrary.actions` | именованные действия, требования и функции |
 | `/pn debug` | `pnlibrary.debug` | зашифрованный отчёт для поддержки |
 | `/pn settings` | `pnlibrary.settings` | настройки библиотеки |
 | `/pn configs` | `pnlibrary.configs` | конфигурации плагинов; менять: `pnlibrary.configs.edit` |

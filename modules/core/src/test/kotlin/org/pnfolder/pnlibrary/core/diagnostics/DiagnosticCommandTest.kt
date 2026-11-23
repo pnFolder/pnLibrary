@@ -52,7 +52,7 @@ class DiagnosticCommandTest {
         ).toCompletableFuture().join()
 
         assertEquals(
-            listOf("all", "--full", "--config", "--logs", "--local"),
+            listOf("all", "--local"),
             suggestions,
         )
     }
@@ -68,7 +68,7 @@ class DiagnosticCommandTest {
         ).toCompletableFuture().join()
 
         assertEquals(
-            listOf("  ! Неизвестные аргументы.", "    /pn debug [all|плагин] [--full|--config|--logs] [--local]"),
+            listOf("  ! Неизвестные аргументы.", "    /pn debug [all|плагин] [--local]"),
             sender.messages.map(PlainTextComponentSerializer.plainText()::serialize),
         )
     }

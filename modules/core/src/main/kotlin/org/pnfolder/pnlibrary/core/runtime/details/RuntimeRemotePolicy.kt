@@ -24,7 +24,6 @@ internal object RuntimeRemotePolicy {
         return RemotePolicySettings.builder().source(policy.source).checkEvery(policy.checkEvery)
             .onDeny(policy.onDeny).onError(policy.onError).values(policy.values)
             .startupTimeout(policy.startupTimeout)
-            .apply { policy.supportUrl?.let { support(it) } }
             .build()
     }
 

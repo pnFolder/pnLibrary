@@ -50,7 +50,7 @@ import org.pnfolder.pnlibrary.core.commands.engine.CommandService
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
-import org.pnfolder.pnlibrary.core.placeholders.PlaceholderHub
+import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
 import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer
@@ -644,10 +644,13 @@ class PluginRegistryImplTest {
             expansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryExpansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryFetcher: LibraryFetcher = LibraryFetcher { _, _, _, _ -> null },
+            minecraftVersion: String? = null,
         ): PluginRegistryImpl =
             PluginRegistryImpl(
                 ownership = platform,
-                identity = platform,
+                identity = if (minecraftVersion == null) platform else object : org.pnfolder.pnlibrary.spi.platform.PlatformIdentity by platform {
+                    override val minecraftVersion: String? = minecraftVersion
+                },
                 remotePolicies = RemotePolicyMonitor(platform, platform, RemotePolicyNoticeRenderer(platform)),
                 events = events,
                 tasks = tasks,
@@ -656,7 +659,7 @@ class PluginRegistryImplTest {
                 metrics = metrics,
                 diagnostics = emptyProxy(DiagnosticsService::class.java),
                 updates = updates,
-                shared = SharedFeatures(PlaceholderHub(platform), CurrencyFeature(), expansions, libraryExpansions),
+                shared = SharedFeatures(PlaceholderEngine(), CurrencyFeature(), expansions, libraryExpansions),
                 configurations = ConfigurationServiceImpl(platform),
                 commands = commands,
                 directDownloads = directDownloads,

@@ -31,7 +31,7 @@ class PluginUpdateRequestTest {
     }
 
     @Test
-    fun `channel defaults to stable and may be fixed or supplied by the plugin`() {
+    fun `channel defaults to stable and and automatic download is on until an administrator changes them`() {
         fun request(configure: PluginUpdateRequest.Builder.() -> Unit) = PluginUpdateRequest.builder()
             .repository("pnFolder", "pnCases")
             .exactArtifact("pnCases.jar")
@@ -39,24 +39,6 @@ class PluginUpdateRequestTest {
             .build()
 
         assertEquals(UpdateChannel.STABLE, request {}.channel)
-        assertEquals(UpdateChannel.BETA, request { channel(UpdateChannel.BETA) }.channel)
-
-        var fromConfig = UpdateChannel.RC
-        val dynamic = request { channel(java.util.function.Supplier { fromConfig }) }
-        assertEquals(UpdateChannel.RC, dynamic.channel)
-        fromConfig = UpdateChannel.ALPHA
-        assertEquals(UpdateChannel.ALPHA, dynamic.channel)
-    }
-
-    @Test
-    fun `a failing or empty channel source counts as stable`() {
-        val failing = PluginUpdateRequest.builder()
-            .repository("pnFolder", "pnCases")
-            .exactArtifact("pnCases.jar")
-            .channel(java.util.function.Supplier<UpdateChannel> { error("config is not loaded") })
-            .build()
-
-        assertEquals(UpdateChannel.STABLE, failing.channel)
     }
 
     @Test

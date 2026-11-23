@@ -32,20 +32,17 @@ class RuntimeRemotePolicyTest {
     @TempDir lateinit var directory: Path
 
     @Test
-    fun `validation preserves every policy setting including optional support and error actions`() {
+    fun `validation preserves every policy setting including error actions`() {
         for (action in PolicyErrorAction.values()) {
-            for (support in listOf(null, "https://example.org/support")) {
-                val policy = RemotePolicySettings(
-                    source = directory.resolve("Policy.java").toUri().toString(),
-                    checkEvery = Duration.ofMinutes(15),
-                    onDeny = DenyAction.DISABLE_PLUGIN,
-                    values = mapOf("product" to "pnlibrary"),
-                    onError = action,
-                    supportUrl = support,
-                )
+            val policy = RemotePolicySettings(
+                source = directory.resolve("Policy.java").toUri().toString(),
+                checkEvery = Duration.ofMinutes(15),
+                onDeny = DenyAction.DISABLE_PLUGIN,
+                values = mapOf("product" to "pnlibrary"),
+                onError = action,
+            )
 
-                assertEquals(policy, RuntimeRemotePolicy.validated(policy), "action=$action, support=$support")
-            }
+            assertEquals(policy, RuntimeRemotePolicy.validated(policy), "action=$action")
         }
     }
 

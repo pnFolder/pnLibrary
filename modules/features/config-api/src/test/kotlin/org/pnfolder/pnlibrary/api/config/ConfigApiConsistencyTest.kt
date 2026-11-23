@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
-import org.pnfolder.pnlibrary.api.plugin.PluginId
 
 class ConfigApiConsistencyTest {
     @Test
@@ -26,30 +24,6 @@ class ConfigApiConsistencyTest {
             @Suppress("UNCHECKED_CAST")
             (items as MutableList<Any?>).clear()
         }
-    }
-
-    @Test
-    fun `extension policy exposes immutable snapshots and denials beat allows`() {
-        val policy = PluginAccess.builder().owner().allow("shop", "clans").deny("clans").build()
-
-        assertTrue(policy.allows(PluginId.of("owner"), PluginId.of("shop")))
-        assertTrue(!policy.allows(PluginId.of("owner"), PluginId.of("clans")))
-        assertTrue(policy.allows(PluginId.of("owner"), PluginId.of("owner")), "the host is always allowed")
-        assertTrue(!policy.allows(PluginId.of("owner"), PluginId.of("stranger")))
-        assertThrows(UnsupportedOperationException::class.java) {
-            @Suppress("UNCHECKED_CAST")
-            (policy.allowedPlugins as MutableSet<PluginId>).add(PluginId.of("other"))
-        }
-    }
-
-    @Test
-    fun `ready-made policies behave as named`() {
-        val host = PluginId.of("host")
-        val guest = PluginId.of("guest")
-        assertTrue(PluginAccess.shared().allows(host, guest))
-        assertTrue(!PluginAccess.ownerOnly().allows(host, guest))
-        assertTrue(PluginAccess.ownerOnly().allows(host, host))
-        assertTrue(PluginAccess.only("guest").allows(host, guest))
     }
 
     @Test

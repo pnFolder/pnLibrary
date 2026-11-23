@@ -15,12 +15,13 @@ internal object MenuPermissions {
     const val MODULES = "pnlibrary.modules"
     const val STATS = "pnlibrary.stats"
     const val PLACEHOLDERS = "pnlibrary.placeholders"
+    const val ACTIONS = "pnlibrary.actions"
     const val DEBUG = "pnlibrary.debug"
     const val CURRENCY_LIST = "pnlibrary.currency.list"
     const val LIBRARY_SETTINGS = "pnlibrary.settings"
 
     val ALL = listOf(
         ADMIN, SERVERS, UPDATES_VIEW, UPDATES_DOWNLOAD, UPDATES_ROLLBACK, UPDATES_SETTINGS, UPDATES_RESTART,
-        EVENTS_VIEW, EVENTS_BUS, TASKS, MODULES, STATS, PLACEHOLDERS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS,
+        EVENTS_VIEW, EVENTS_BUS, TASKS, MODULES, STATS, PLACEHOLDERS, ACTIONS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS,
     )
 }

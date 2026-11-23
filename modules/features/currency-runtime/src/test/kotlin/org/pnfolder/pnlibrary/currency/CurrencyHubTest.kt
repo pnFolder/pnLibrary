@@ -10,7 +10,6 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor
 import org.pnfolder.pnlibrary.api.currency.CurrencyProvider
 import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationState
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import java.lang.reflect.Proxy
 import java.math.BigDecimal
@@ -20,14 +19,14 @@ import java.util.function.Consumer
 
 class CurrencyHubTest {
     @Test
-    fun `local alias resolves while owner-only currency stays hidden from another plugin`() {
+    fun `local alias resolves for the owner and the currency is visible to another plugin`() {
         val hub = CurrencyHub()
         val owner = hub.scope(PluginId.of("owner"), placeholders())
         val consumer = hub.scope(PluginId.of("consumer"), placeholders())
         val registration = owner.register("coins", provider(), Consumer { it.aliases("money") })
 
         assertSame(registration, owner.get("money"))
-        assertNull(consumer.get("owner:coins"))
+        assertSame(registration, consumer.get("owner:coins"))
         hub.close()
     }
 
@@ -36,9 +35,7 @@ class CurrencyHubTest {
         val hub = CurrencyHub()
         val owner = hub.scope(PluginId.of("owner"), placeholders())
         val consumer = hub.scope(PluginId.of("consumer"), placeholders())
-        val registration = owner.register("coins", provider(), Consumer {
-            it.access(PluginAccess.shared())
-        })
+        val registration = owner.register("coins", provider(), Consumer { })
 
         assertSame(registration, consumer.get("owner:coins"))
         registration.disable()

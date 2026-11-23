@@ -11,12 +11,12 @@ import org.pnfolder.pnlibrary.api.version.ApiVersionRange
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi
 import java.nio.file.Path
 import java.util.Collections
-import java.util.function.Supplier
 
 /**
  * Validated GitHub release and artifact-selection policy for one plugin.
  *
- * Use [builder] to configure the repository (and, when its main branch is not `main`, the [catalog] branch), channel and, optionally, artifact rules. When
+ * Use [builder] to configure the repository (and, when its main branch is not `main`, the [catalog] branch) and, optionally, artifact rules.
+ * The release channel and automatic download are not set here: an administrator chooses them in pnLibrary (commands and menu). When
  * ranges overlap, [artifactFor] chooses the compatible artifact with the highest
  * [PluginUpdateArtifact.minimumJava], allowing newer runtimes to receive newer builds.
  *
@@ -26,7 +26,6 @@ import java.util.function.Supplier
  * ```kotlin
  * val request = PluginUpdateRequest.builder()
  *     .repository("example", "ExamplePlugin")
- *     .channel(UpdateChannel.STABLE)
  *     .build()
  * ```
  *
@@ -52,25 +51,13 @@ class PluginUpdateRequest private constructor(builder: Builder) {
     /** Repository, branch and folder of the release catalog; `main` and `.pnlibrary` unless the builder says otherwise. */
     val catalog: CatalogSource = CatalogSource(repositoryOwner, repositoryName, builder.branch, builder.catalogPath, builder.refType)
 
-    private val channelSource: Supplier<UpdateChannel> = builder.channelSource
-
     /**
-     * Highest prerelease maturity the plugin asks for by default.
-     *
-     * Read on every update check, so a plugin that supplies the channel from its own configuration
-     * (see [Builder.channel]) is followed without registering again. A channel chosen by an
-     * administrator through pnLibrary takes precedence over this value. A failing or `null` source
-     * counts as [UpdateChannel.STABLE].
+     * Release channel until an administrator picks another one in pnLibrary; [UpdateChannel.STABLE].
      */
-    val channel: UpdateChannel
-        get() = try {
-            channelSource.get() ?: UpdateChannel.STABLE
-        } catch (_: Exception) {
-            UpdateChannel.STABLE
-        }
+    val channel: UpdateChannel = UpdateChannel.STABLE
 
-    /** Whether a newly discovered compatible artifact should be downloaded. */
-    val automaticDownload: Boolean = builder.automaticDownload
+    /** Whether a newly found compatible release is downloaded until an administrator changes it in pnLibrary; `true`. */
+    val automaticDownload: Boolean = true
 
     /** Immutable artifact-selection rules in declaration order. */
     val artifacts: List<PluginUpdateArtifact> = Collections.unmodifiableList(ArrayList(builder.artifacts))
@@ -101,8 +88,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
         internal var branch = CatalogSource.DEFAULT_BRANCH
         internal var catalogPath = CatalogSource.DEFAULT_PATH
         internal var refType = CatalogSource.RefType.BRANCH
-        internal var channelSource: Supplier<UpdateChannel> = Supplier { UpdateChannel.STABLE }
-        internal var automaticDownload = true
         internal val artifacts = mutableListOf<PluginUpdateArtifact>()
         internal var supportedApi = ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION)
         internal var configurationBackup: UpdateConfigurationBackup? = null
@@ -175,18 +160,6 @@ class PluginUpdateRequest private constructor(builder: Builder) {
             CatalogSource("o", "r", path = clean)
             catalogPath = clean
         }
-
-        /** Sets the default release channel of the plugin. An administrator's choice in pnLibrary overrides it. */
-        fun channel(value: UpdateChannel): Builder = apply { channelSource = Supplier { value } }
-
-        /**
-         * Takes the default release channel from [source] on every update check, for example from the
-         * plugin's own configuration. An administrator's choice in pnLibrary overrides it.
-         */
-        fun channel(source: Supplier<UpdateChannel>): Builder = apply { channelSource = source }
-
-        /** Enables or disables automatic verified downloads. */
-        fun automaticDownload(enabled: Boolean): Builder = apply { automaticDownload = enabled }
 
         /** Sets the range of pnLibrary API versions the plugin build supports. */
         fun supportedApi(minimum: Int, maximum: Int): Builder = apply {

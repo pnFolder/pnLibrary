@@ -6,13 +6,14 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
-import org.pnfolder.pnlibrary.core.placeholders.entries.PlaceholderInfo
+import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo
 import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
 import org.pnfolder.pnlibrary.core.settings.SettingsStore
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot
@@ -25,8 +26,9 @@ object MountableCommands {
     const val STATS = "stats"
     const val PLACEHOLDERS = "placeholders"
     const val SETTINGS = "settings"
+    const val ACTIONS = "actions"
 
-    val ALL = listOf(EVENTS, DEBUG, STATS, PLACEHOLDERS, SETTINGS)
+    val ALL = listOf(EVENTS, DEBUG, STATS, PLACEHOLDERS, SETTINGS, ACTIONS)
 }
 
 internal interface RuntimeResources {
@@ -39,6 +41,7 @@ internal interface RuntimeResources {
     fun taskSnapshots(): List<TaskSnapshot>
     fun statsSnapshot(): StatsSnapshot
     fun placeholderInfos(): List<PlaceholderInfo>
+    fun scenarioDefinitions(): List<ScenarioDefinitionInfo>
     fun cancelTask(id: String): TaskControl
     fun runTaskNow(id: String): TaskControl
     fun dependencyDownloads(): DirectDownloads?
@@ -63,6 +66,7 @@ fun PnLibrary.runtimeTaskScope(): TaskScope = runtimeResources().runtimeTasks
 fun PnLibrary.journalJoinNotice(): List<Component> = runtimeResources().journalJoinNotice()
 fun PnLibrary.statsSnapshot(): StatsSnapshot = runtimeResources().statsSnapshot()
 fun PnLibrary.placeholderInfos(): List<PlaceholderInfo> = resources()?.placeholderInfos().orEmpty()
+fun PnLibrary.scenarioDefinitions(): List<ScenarioDefinitionInfo> = resources()?.scenarioDefinitions().orEmpty()
 fun PnLibrary.registerRuntimeCommand(command: CommandDefinition): CommandRegistration =
     runtimeResources().registerRuntimeCommand(command)
 fun PnLibrary.mountableCommand(name: String): CommandDefinition? = resources()?.mountableCommand(name)
