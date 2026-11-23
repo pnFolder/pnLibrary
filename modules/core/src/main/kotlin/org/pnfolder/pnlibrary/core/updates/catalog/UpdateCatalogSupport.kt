@@ -2,6 +2,9 @@ package org.pnfolder.pnlibrary.core.updates.catalog
 
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.sender.id
+import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.sender.name
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor
 
 /** The update actor that stands for this sender in the update history. */

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import org.pnfolder.pnlibrary.core.settings.SettingPickerHook
@@ -24,10 +25,7 @@ class SettingsCommandTest {
     private var console = true
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
-        override val id = "console"
-        override val name = "Console"
-        override val isConsole get() = console
-        override fun hasPermission(permission: String) = true
+        override fun pointers() = senderPointers("Console", if (console) null else java.util.UUID.randomUUID()) { true }
         override fun send(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }

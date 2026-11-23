@@ -1,16 +1,18 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.sender.hasPermission
+import org.pnfolder.pnlibrary.api.sender.name
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -36,7 +38,7 @@ class BukkitCommandAdapterTest {
         registrar.execute(sender, "hi", arrayOf("one", "two"))
         val suggestions = registrar.suggest(sender, "hi", arrayOf("wo")).toCompletableFuture().join()
         dispatcher.lastContext.sender.send(Component.text("done"))
-        dispatcher.lastContext.sender.actionBar(Component.text("status"))
+        dispatcher.lastContext.sender.sendActionBar(Component.text("status"))
 
         assertEquals("hi", dispatcher.executionContext.invokedAlias)
         assertEquals(listOf("one", "two"), dispatcher.executionContext.arguments)
@@ -45,7 +47,7 @@ class BukkitCommandAdapterTest {
         assertEquals(listOf(Component.text("done")), sent)
         assertEquals(listOf(Component.text("status")), actionBars)
         val bell = Sound.sound(Key.key("minecraft:block.note_block.bell"), Sound.Source.MASTER, 1f, 1f)
-        assertEquals(Delivery.Delivered, dispatcher.lastContext.sender.playSound(bell))
+        dispatcher.lastContext.sender.playSound(bell)
         assertEquals("Alice", dispatcher.executionContext.sender.name)
         assertEquals(true, dispatcher.executionContext.sender.hasPermission("example.use"))
     }
@@ -107,14 +109,11 @@ class BukkitCommandAdapterTest {
         sender: CommandSender,
         messages: MutableList<Component>,
         actionBars: MutableList<Component>,
-    ) = object : AudienceSender {
-        override val id get() = sender.name
-        override val name get() = sender.name
-        override val isConsole = false
-        override fun hasPermission(permission: String) = sender.hasPermission(permission)
+    ) = object : Audience {
+        override fun pointers() = senderPointers(sender.name, java.util.UUID.randomUUID(), sender::hasPermission)
         override fun sendMessage(text: Component) { messages += text }
-        override fun actionBar(text: Component) { actionBars += text }
-        override fun playSound(sound: Sound) = Delivery.Delivered
+        override fun sendActionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = Unit
     }
 
     private fun <T> proxy(type: Class<T>, handler: (MethodCall) -> Any?): T = type.cast(

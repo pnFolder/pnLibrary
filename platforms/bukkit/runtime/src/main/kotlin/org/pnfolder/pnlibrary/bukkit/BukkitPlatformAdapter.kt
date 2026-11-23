@@ -9,13 +9,13 @@ import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandAdapter
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerAdapter
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
@@ -23,7 +23,6 @@ import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.registerRuntimeCommand
 import org.pnfolder.pnlibrary.core.link.Link
-import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import org.pnfolder.pnlibrary.spi.platform.JulLogObserver
@@ -33,6 +32,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
 import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
+import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -47,7 +47,7 @@ import java.util.logging.Logger
  */
 internal class BukkitPlatformAdapter(
     val plugin: Plugin,
-    audienceService: BukkitAudienceService,
+    playerService: BukkitPlayerService,
     private val link: Link = Link.OFF,
     private val pnLogger: () -> PnLogger,
     private val logBuffer: PnLoggerBuffer,
@@ -98,10 +98,10 @@ internal class BukkitPlatformAdapter(
         BukkitMetricsFactory(pnLogger)
 
     override val commandAdapter: PlatformCommandAdapter =
-        BukkitCommandAdapter(audienceService, plugin, pnLogger, logBuffer)
+        BukkitCommandAdapter(playerService, plugin, pnLogger, logBuffer)
 
-    override val audienceAdapter: PlatformAudienceAdapter =
-        BukkitAudienceAdapter(audienceService)
+    override val playerAdapter: PlatformPlayerAdapter =
+        BukkitPlayerAdapter(playerService)
 
     override val taskAdapter: PlatformTaskAdapter =
         BukkitTaskAdapter(plugin)

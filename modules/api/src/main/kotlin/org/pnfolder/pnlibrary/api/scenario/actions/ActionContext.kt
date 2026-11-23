@@ -2,11 +2,11 @@
 
 package org.pnfolder.pnlibrary.api.scenario.actions
 
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
+import org.pnfolder.pnlibrary.api.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
@@ -52,7 +52,7 @@ import java.util.Collections
  */
 class ActionContext(
     override val player: LibraryPlayer,
-    val allPlayers: LibraryAudience,
+    val allPlayers: Audience,
     val components: ComponentService,
     override val logger: PnLogger,
     val tasks: TaskScope,
@@ -173,7 +173,7 @@ class ActionContext(
     fun values(): Map<String, Any?> = Collections.unmodifiableMap(LinkedHashMap(runtimeValues))
 
     /** The audience an action aimed at [target] sends to. */
-    fun target(target: ActionTarget): LibraryAudience = if (target == ActionTarget.PLAYER) player else allPlayers
+    fun target(target: ActionTarget): Audience = if (target == ActionTarget.PLAYER) player else allPlayers
 
     /** Fills in the placeholders of [text] (see [format]), then parses it with [type] or [serializerType]. */
     fun component(text: String, type: ComponentSerializerType? = null): Component =

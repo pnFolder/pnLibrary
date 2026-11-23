@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.audiences.AudienceService
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
@@ -17,6 +16,7 @@ import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
+import org.pnfolder.pnlibrary.api.player.PlayerService
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
@@ -165,15 +165,15 @@ internal class PnLibraryImpl(
     }
     private val platformServices = PlatformServiceSet(
         commandAdapter = platform.commandAdapter,
-        audienceAdapter = platform.audienceAdapter,
+        playerAdapter = platform.playerAdapter,
         taskAdapter = platform.taskAdapter,
         platformLogging = support.capture,
         taskHistoryCapacity = config.taskHistoryCapacity,
         taskHistoryFile = paths.taskHistory,
         errorLogger = support::recordRuntimeError,
         commandFeedback = standardCommandFeedback(config),
-        onAudienceFailure = { error ->
-            support.recordRuntimeError(owner, "[pnLibrary/audiences] A message could not be delivered to a player", error)
+        onPlayerFailure = { error ->
+            support.recordRuntimeError(owner, "[pnLibrary/players] A message could not be delivered to a player", error)
         },
     )
     private val tasks = platformServices.tasks
@@ -191,7 +191,7 @@ internal class PnLibraryImpl(
     override val configurations: ConfigurationService get() = features.configurations
     override val updates: UpdateService get() = features.updates
     override val runtimeTasks: TaskScope get() = tasks.scope(owner)
-    override val audiences: AudienceService get() = platformServices.audiences
+    override val players: PlayerService get() = platformServices.players
     override val services: ServiceManager get() = features.services
     override val expansions: ExpansionManager get() = features.expansions
     override val events: EventService get() = eventService
@@ -264,7 +264,7 @@ internal class PnLibraryImpl(
         RuntimeShutdownPlan(
             plugins = plugins,
             commands = commands,
-            audiences = platformServices.audiences,
+            players = platformServices.players,
             platforms = platformProvider,
             currency = features.currency,
             expansions = features.expansions,

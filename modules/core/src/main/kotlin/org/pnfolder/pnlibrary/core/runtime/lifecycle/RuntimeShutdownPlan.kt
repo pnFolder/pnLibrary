@@ -4,7 +4,7 @@ package org.pnfolder.pnlibrary.core.runtime.lifecycle
 internal class RuntimeShutdownPlan(
     private val plugins: AutoCloseable,
     private val commands: AutoCloseable,
-    private val audiences: AutoCloseable,
+    private val players: AutoCloseable,
     private val platforms: AutoCloseable,
     private val currency: AutoCloseable,
     private val expansions: AutoCloseable,
@@ -24,7 +24,7 @@ internal class RuntimeShutdownPlan(
     fun run() = RuntimeShutdown().apply {
         add { plugins.close() }
         add { commands.close() }
-        add { audiences.close() }
+        add { players.close() }
         add { platforms.close() }
         add { currency.close() }
         add { expansions.close() }

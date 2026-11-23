@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.platform
 
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
-import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter
@@ -14,6 +13,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness
 import org.pnfolder.pnlibrary.spi.platform.PlatformShutdown
+import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
@@ -28,7 +28,7 @@ internal data class PlatformRuntimeContext(
     val logging: PlatformLogging,
     val metricsFactory: PlatformMetricsFactory,
     val commandAdapter: PlatformCommandAdapter,
-    val audienceAdapter: PlatformAudienceAdapter,
+    val playerAdapter: PlatformPlayerAdapter,
     val taskAdapter: PlatformTaskAdapter,
     val dataFolder: Path,
     val binding: PlatformBinding,
@@ -53,7 +53,7 @@ internal fun PlatformAdapter.toRuntimeContext(): PlatformRuntimeContext = Platfo
     logging = this,
     metricsFactory = metricsFactory,
     commandAdapter = commandAdapter,
-    audienceAdapter = audienceAdapter,
+    playerAdapter = playerAdapter,
     taskAdapter = taskAdapter,
     dataFolder = dataFolder,
     binding = this,

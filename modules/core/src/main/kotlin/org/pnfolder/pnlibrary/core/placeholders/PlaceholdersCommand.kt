@@ -1,8 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
@@ -10,6 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
 import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.player.LibraryPlayer
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException

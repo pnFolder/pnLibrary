@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.modules
 
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary

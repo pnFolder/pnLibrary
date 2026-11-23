@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.updates.policy
 
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
 import java.util.Locale
 

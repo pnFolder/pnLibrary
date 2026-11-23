@@ -13,7 +13,7 @@ class RuntimeShutdownPlanTest {
         RuntimeShutdownPlan(
             plugins = step("plugins"),
             commands = step("commands"),
-            audiences = step("audiences"),
+            players = step("players"),
             platforms = step("platforms"),
             currency = step("currency"),
             expansions = step("expansions"),
@@ -33,7 +33,7 @@ class RuntimeShutdownPlanTest {
 
         assertEquals(
             listOf(
-                "plugins", "commands", "audiences", "platforms", "currency", "expansions", "libraryExpansions", "configurations",
+                "plugins", "commands", "players", "platforms", "currency", "expansions", "libraryExpansions", "configurations",
                 "metrics", "updates", "events", "services", "tasks", "support", "releaseProvider", "closePlatform", "onClose",
             ),
             calls,

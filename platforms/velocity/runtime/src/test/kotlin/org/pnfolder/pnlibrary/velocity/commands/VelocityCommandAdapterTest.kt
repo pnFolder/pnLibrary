@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.velocity.commands
 
 import com.velocitypowered.api.command.CommandSource
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -8,11 +9,12 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.sender.hasPermission
+import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -50,7 +52,7 @@ class VelocityCommandAdapterTest {
         assertTrue(dispatcher.execution.sender.isConsole)
         assertTrue(dispatcher.execution.sender.hasPermission("example.use"))
         dispatcher.execution.sender.send(Component.text("done"))
-        dispatcher.execution.sender.actionBar(Component.text("status"))
+        dispatcher.execution.sender.sendActionBar(Component.text("status"))
         assertEquals(listOf(Component.text("done")), sent)
         assertEquals(listOf(Component.text("status")), actionBars)
     }
@@ -128,13 +130,10 @@ class VelocityCommandAdapterTest {
         console: Boolean,
         messages: MutableList<Component>,
         actionBars: MutableList<Component>,
-    ) = object : AudienceSender {
-        override val id = source.toString()
-        override val name = source.toString()
-        override val isConsole = console
-        override fun hasPermission(permission: String) = source.hasPermission(permission)
+    ) = object : Audience {
+        override fun pointers() = senderPointers(source.toString(), if (console) null else java.util.UUID.randomUUID(), source::hasPermission)
         override fun sendMessage(text: Component) { messages += text }
-        override fun actionBar(text: Component) { actionBars += text }
-        override fun playSound(sound: Sound) = Delivery.Delivered
+        override fun sendActionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = Unit
     }
 }

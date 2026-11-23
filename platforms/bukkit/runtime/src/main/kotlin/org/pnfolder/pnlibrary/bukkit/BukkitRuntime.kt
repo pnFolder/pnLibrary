@@ -4,7 +4,6 @@ import org.bukkit.Server
 import org.bukkit.plugin.java.JavaPlugin
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.bukkit.api.BukkitPlatform
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.currency.error
 import org.pnfolder.pnlibrary.bukkit.entity.ArmorStandVisual
 import org.pnfolder.pnlibrary.bukkit.entity.VisualService
@@ -13,6 +12,7 @@ import org.pnfolder.pnlibrary.bukkit.inventory.BukkitMenus
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.item.BukkitItems
 import org.pnfolder.pnlibrary.bukkit.item.ItemService
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
@@ -27,7 +27,7 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
  */
 internal class BukkitRuntime(private val plugin: JavaPlugin) {
     private var host: PnLibraryRuntimeHost? = null
-    private var audiences: BukkitAudienceService? = null
+    private var audiences: BukkitPlayerService? = null
     private var menus: BukkitMenus? = null
     private var integrations: BukkitIntegrations? = null
     private var link: BukkitLinkReporter? = null
@@ -36,11 +36,11 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     fun start() {
         var startupLogger: PnLogger? = null
         val logBuffer = PnLoggerBuffer(plugin.logger) { startupLogger }
-        val audienceService = BukkitAudienceService(plugin, logBuffer)
-        audiences = audienceService
+        val playerService = BukkitPlayerService(plugin, logBuffer)
+        audiences = playerService
         val network = openLink(plugin)
         var metricsLogger: PnLogger? = null
-        val adapter = BukkitPlatformAdapter(plugin, audienceService, network, { metricsLogger!! }, logBuffer)
+        val adapter = BukkitPlatformAdapter(plugin, playerService, network, { metricsLogger!! }, logBuffer)
         try {
             val runtime = PnLibraryRuntimeHost.start(plugin, adapter)
             host = runtime
@@ -48,7 +48,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
             logBuffer.flush()
             metricsLogger = runtime.library.logging.logger(plugin, "Metrics")
             logger = startupLogger
-            installServices(runtime, adapter, audienceService)
+            installServices(runtime, adapter, playerService)
             val optional = BukkitIntegrations(plugin)
             integrations = optional
             plugin.server.pluginManager.registerEvents(optional, plugin)
@@ -79,12 +79,12 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
         runCatchingNonFatal(action).onFailure { logger?.error("Could not stop $part", it) }
     }
 
-    private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, audienceService: BukkitAudienceService) {
+    private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, playerService: BukkitPlayerService) {
         val menuService = BukkitMenus(plugin, runtime.library.runtimeTaskScope(), pnLogger = { runtime.library.logging.logger(plugin, "Menus") })
         runtime.registerService(ServerInfo::class.java, adapter.serverInfo)
         runtime.registerService(MenuService::class.java, menuService)
         runtime.registerPlatform(BukkitPlatform::class.java, BukkitPlatformServices(plugin.server, adapter.serverInfo, menuService))
-        runtime.registerService(BukkitAudienceService::class.java, audienceService)
+        runtime.registerService(BukkitPlayerService::class.java, playerService)
         menus = menuService
     }
 }

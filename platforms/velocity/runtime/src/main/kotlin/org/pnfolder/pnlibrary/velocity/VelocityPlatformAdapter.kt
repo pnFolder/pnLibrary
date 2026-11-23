@@ -16,8 +16,8 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
 import org.pnfolder.pnlibrary.velocity.diagnostics.VelocityDiagnosticDetailsCollector
 import org.pnfolder.pnlibrary.velocity.log.VelocityLogObserver
-import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
 import org.pnfolder.pnlibrary.velocity.network.VelocityNetworkProxy
+import org.pnfolder.pnlibrary.velocity.network.VelocityPlayerAdapter
 import org.pnfolder.pnlibrary.velocity.remote.VelocityRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import org.slf4j.LoggerFactory
@@ -69,11 +69,11 @@ internal class VelocityPlatformAdapter(
 
     override val networkProxy: VelocityNetworkProxy = VelocityNetworkProxy(proxy)
 
-    override val audienceAdapter: VelocityAudienceAdapter =
-        VelocityAudienceAdapter(proxy)
+    override val playerAdapter: VelocityPlayerAdapter =
+        VelocityPlayerAdapter(proxy)
 
     override val commandAdapter: PlatformCommandAdapter =
-        VelocityCommandAdapter(proxy, audienceAdapter)
+        VelocityCommandAdapter(proxy, playerAdapter)
 
     override val taskAdapter: PlatformTaskAdapter =
         VelocityTaskAdapter(proxy, plugin, ::warn)

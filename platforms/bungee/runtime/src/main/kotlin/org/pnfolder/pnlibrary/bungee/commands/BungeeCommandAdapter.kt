@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.bungee.commands
 
+import net.kyori.adventure.audience.Audience
 import net.md_5.bungee.api.plugin.Command
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
-import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter
+import org.pnfolder.pnlibrary.bungee.network.BungeePlayerAdapter
 import org.pnfolder.pnlibrary.core.commands.engine.PROXY_SUGGESTION_MILLIS
 import org.pnfolder.pnlibrary.core.commands.engine.suggestionsWithin
 import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
@@ -18,10 +18,10 @@ import net.md_5.bungee.api.CommandSender as NativeCommandSender
 
 internal class BungeeCommandAdapter(
     nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
-    private val audience: (NativeCommandSender) -> AudienceSender,
+    private val audience: (NativeCommandSender) -> Audience,
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
 
-    constructor(audiences: BungeeAudienceAdapter) : this(
+    constructor(audiences: BungeePlayerAdapter) : this(
         nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
         audience = { sender -> requireNotNull(audiences.sender(sender)) },
     )

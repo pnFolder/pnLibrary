@@ -5,9 +5,6 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
-import org.pnfolder.pnlibrary.api.chat.style.color
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import java.net.URI
 
@@ -63,9 +60,7 @@ open class ChatKit(val reader: ChatReader) {
      * for such readers instead.
      */
     fun button(label: String, command: String, hint: String, color: TextColor): Component =
-        if (!reader.interactive) Component.empty()
-        else bracketed(label.removePrefix("[").removeSuffix("]"), color).clickEvent(ClickEvent.runCommand(command))
-            .hoverEvent(tooltip(text(hint, ChatPalette.TEXT), blank(), text(command, ChatPalette.LABEL)))
+        runButton(label.removePrefix("[").removeSuffix("]"), command, hint, color)
 
     /** A clickable `[label]` that opens [link], or nothing when the reader cannot click or the link is not safe. */
     fun linkButton(label: String, link: String, hint: String, color: TextColor): Component =
@@ -74,7 +69,9 @@ open class ChatKit(val reader: ChatReader) {
             .hoverEvent(tooltip(text(hint, ChatPalette.TEXT), text(link.take(MAX_LINE), ChatPalette.LABEL)))
 
     /** A bracketed choice that runs [command] on click, in [color]. */
-    fun option(label: String, command: String, hint: String, color: TextColor): Component =
+    fun option(label: String, command: String, hint: String, color: TextColor): Component = runButton(label, command, hint, color)
+
+    private fun runButton(label: String, command: String, hint: String, color: TextColor): Component =
         if (!reader.interactive) Component.empty()
         else bracketed(label, color).clickEvent(ClickEvent.runCommand(command))
             .hoverEvent(tooltip(text(hint, ChatPalette.TEXT), blank(), text(command, ChatPalette.LABEL)))

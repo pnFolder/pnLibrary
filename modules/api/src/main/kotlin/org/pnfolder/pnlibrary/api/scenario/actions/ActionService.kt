@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
-import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import net.kyori.adventure.audience.Audience
+import org.pnfolder.pnlibrary.api.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
@@ -34,7 +34,7 @@ interface ActionService {
      */
     fun context(
         player: LibraryPlayer,
-        allPlayers: LibraryAudience = player,
+        allPlayers: Audience = player,
         values: Map<String, Any?> = emptyMap(),
         serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
     ): ActionContext
@@ -43,7 +43,7 @@ interface ActionService {
     fun execute(
         actions: List<Action>,
         player: LibraryPlayer,
-        allPlayers: LibraryAudience = player,
+        allPlayers: Audience = player,
         values: Map<String, Any?> = emptyMap(),
     ): ActionResult = context(player, allPlayers, values).execute(actions)
 

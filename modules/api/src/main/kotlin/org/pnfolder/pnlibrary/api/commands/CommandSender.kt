@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.api.commands
 
-import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
+import org.pnfolder.pnlibrary.api.sender.isConsole
 
 /**
- * Whoever ran a command: the console or a player. It is an [AudienceSender] with output suited to commands.
+ * Whoever ran a command: the console or a player. It is an Adventure [Audience]; its name, permissions and kind are
+ * read with `name`, `hasPermission` and `isConsole` from `org.pnfolder.pnlibrary.api.sender`.
  *
  * ```kotlin
  * command("ping") {
@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.audiences.Delivery
  * }
  * ```
  */
-interface CommandSender : AudienceSender {
+interface CommandSender : Audience {
     /**
      * Whether clickable and hoverable chat components reach this sender intact.
      *
@@ -27,11 +27,8 @@ interface CommandSender : AudienceSender {
     /** Sends one Adventure component to this sender. */
     fun send(message: Component)
 
-    override fun sendMessage(text: Component) = send(text)
+    override fun sendMessage(message: Component) = send(message)
 
     // Falls back to chat when the platform has no action bar for generic senders.
-    override fun actionBar(text: Component) = send(text)
-
-    // Generic command senders cannot play sounds.
-    override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
+    override fun sendActionBar(message: Component) = send(message)
 }

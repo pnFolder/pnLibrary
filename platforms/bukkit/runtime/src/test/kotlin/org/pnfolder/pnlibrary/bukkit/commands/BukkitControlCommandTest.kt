@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
@@ -111,10 +111,7 @@ class BukkitControlCommandTest {
         )
 
     private class TestSender : CommandSender {
-        override val id = "console"
-        override val name = "Console"
-        override val isConsole = true
-        override fun hasPermission(permission: String) = true
+        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Console") { permission -> true }
         override fun send(message: Component) = Unit
     }
 

@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.backup.*
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry
@@ -110,14 +111,14 @@ class ProxyUpdateCommandTest {
     }
 
     private class Sender(
-        override val id: String = "player",
-        console: Boolean = false,
+        val id: String = "player",
+        private val console: Boolean = false,
         private val allowed: Set<String>? = null,
     ) : CommandSender {
-        override val isConsole = console
-        override val name = id
         private val sent = mutableListOf<Component>()
-        override fun hasPermission(permission: String) = allowed?.contains(permission) ?: true
+        override fun pointers() = senderPointers(id, if (console) null else java.util.UUID.nameUUIDFromBytes(id.toByteArray())) {
+            allowed?.contains(it) ?: true
+        }
         override fun send(message: Component) { sent += message }
 
         /** The token in the confirmation button the sender was shown. */

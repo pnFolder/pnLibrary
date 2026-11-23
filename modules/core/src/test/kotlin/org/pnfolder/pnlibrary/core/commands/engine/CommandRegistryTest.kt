@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
@@ -21,6 +20,8 @@ import org.pnfolder.pnlibrary.api.commands.error.ensure
 import org.pnfolder.pnlibrary.api.commands.error.fail
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
+import org.pnfolder.pnlibrary.api.sender.id
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -370,7 +371,9 @@ class CommandRegistryTest {
         run(native, sender, "vip")
         run(native, sender, "staff")
 
-        assertEquals(listOf("node:example.vip", "command:sender:example.staff"), seen)
+        assertEquals(2, seen.size)
+        assertEquals("node:example.vip", seen.first())
+        assertTrue(seen.last().startsWith("command:") && seen.last().endsWith(":example.staff"))
         assertEquals(listOf("Свой ответ"), sender.messages.map(::textOf))
     }
 
@@ -544,11 +547,8 @@ class CommandRegistryTest {
     ) : CommandSender {
         val messages = mutableListOf<Component>()
         val sounds = mutableListOf<net.kyori.adventure.sound.Sound>()
-        override fun playSound(sound: net.kyori.adventure.sound.Sound): Delivery { sounds += sound; return Delivery.Delivered }
-        override val id: String = "sender"
-        override val name: String = "Sender"
-        override val isConsole: Boolean get() = console
-        override fun hasPermission(permission: String): Boolean = permission in permissions
+        override fun playSound(sound: net.kyori.adventure.sound.Sound) { sounds += sound }
+        override fun pointers() = senderPointers("sender", if (console) null else java.util.UUID.randomUUID()) { permission -> permission in permissions }
         override fun send(message: Component) { messages += message }
     }
 

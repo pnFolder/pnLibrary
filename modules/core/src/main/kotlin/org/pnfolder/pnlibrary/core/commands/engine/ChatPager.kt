@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.commands.engine
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 
 internal fun pageCount(total: Int, pageSize: Int): Int = ((total + pageSize - 1) / pageSize).coerceAtLeast(1)
 

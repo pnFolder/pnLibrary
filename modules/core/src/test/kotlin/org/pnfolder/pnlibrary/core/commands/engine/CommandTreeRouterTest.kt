@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 
 class CommandTreeRouterTest {
     @Test
@@ -209,10 +210,7 @@ class CommandTreeRouterTest {
     )
 
     private class TestSender(private val permissions: Set<String>) : CommandSender {
-        override val id = "sender"
-        override val name = "Sender"
-        override val isConsole = false
-        override fun hasPermission(permission: String) = permission in permissions
+        override fun pointers() = senderPointers("Sender", java.util.UUID.randomUUID()) { permission -> permission in permissions }
         override fun send(message: Component) = Unit
     }
 }

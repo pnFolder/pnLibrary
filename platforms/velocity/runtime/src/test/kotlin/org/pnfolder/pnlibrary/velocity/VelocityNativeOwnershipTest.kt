@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.velocity.commands.VelocityCommandAdapter
-import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityPlayerAdapter
 import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
@@ -28,7 +28,7 @@ class VelocityNativeOwnershipTest {
         val proxy = mock(ProxyServer::class.java, RETURNS_DEEP_STUBS)
         val owner = Any()
         whenever(proxy.pluginManager.fromInstance(owner)).thenReturn(Optional.of(mock()))
-        val adapter = VelocityCommandAdapter(proxy, VelocityAudienceAdapter(proxy))
+        val adapter = VelocityCommandAdapter(proxy, VelocityPlayerAdapter(proxy))
         val registration = adapter.register(owner, command("owned") { aliases("alias") }, dispatcher)
 
         val builder = proxy.commandManager.metaBuilder("owned").aliases("alias")
@@ -45,7 +45,7 @@ class VelocityNativeOwnershipTest {
         whenever(proxy.pluginManager.fromInstance(owner)).thenReturn(Optional.of(mock()))
         whenever(proxy.commandManager.hasCommand("taken")).thenReturn(true)
         assertThrows(IllegalArgumentException::class.java) {
-            VelocityCommandAdapter(proxy, VelocityAudienceAdapter(proxy))
+            VelocityCommandAdapter(proxy, VelocityPlayerAdapter(proxy))
                 .register(owner, command("owned") { aliases("taken") }, dispatcher)
         }
         org.mockito.kotlin.verify(proxy.commandManager, org.mockito.kotlin.never())
@@ -70,7 +70,7 @@ class VelocityNativeOwnershipTest {
         val owner = Any()
         whenever(proxy.pluginManager.fromInstance(owner)).thenReturn(Optional.empty())
         assertThrows(IllegalArgumentException::class.java) {
-            VelocityCommandAdapter(proxy, VelocityAudienceAdapter(proxy))
+            VelocityCommandAdapter(proxy, VelocityPlayerAdapter(proxy))
                 .register(owner, command("owned") {}, dispatcher)
         }
         assertThrows(IllegalArgumentException::class.java) {

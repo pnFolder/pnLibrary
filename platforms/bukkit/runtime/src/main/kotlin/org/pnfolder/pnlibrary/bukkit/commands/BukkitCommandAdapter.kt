@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
-import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandExecutor
@@ -9,15 +9,14 @@ import org.bukkit.command.PluginCommand
 import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.logging.PnLogger
+import org.pnfolder.pnlibrary.api.sender.isConsole
 import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerAdapter
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
 import org.pnfolder.pnlibrary.core.commands.engine.MAIN_THREAD_SUGGESTION_MILLIS
 import org.pnfolder.pnlibrary.core.commands.engine.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
@@ -29,13 +28,13 @@ import org.bukkit.command.CommandSender as NativeCommandSender
 
 internal class BukkitCommandAdapter internal constructor(
     private val nativeRegistrar: NativeCommandRegistrar<NativeCommandSender>,
-    private val audience: (NativeCommandSender) -> AudienceSender,
+    private val audience: (NativeCommandSender) -> Audience,
     private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    constructor(audiences: BukkitAudienceService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
+    constructor(audiences: BukkitPlayerService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
         nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar(), pnLogger, logBuffer),
-        { sender -> requireNotNull(BukkitAudienceAdapter(audiences).sender(sender)) },
+        { sender -> requireNotNull(BukkitPlayerAdapter(audiences).sender(sender)) },
         { audiences.nativeTransportAvailable },
     )
 
@@ -54,9 +53,9 @@ internal class BukkitCommandAdapter internal constructor(
 
 internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
-    private val audience: AudienceSender,
+    private val audience: Audience,
     private val transportAvailable: () -> Boolean = { true },
-) : CommandSender, AudienceSender by audience {
+) : CommandSender, Audience by audience {
 
     // Buttons need the Adventure transport; without it the sender receives plain text and can't click anything.
     override val supportsInteraction: Boolean
@@ -64,11 +63,16 @@ internal class BukkitCommandSender(
 
     override fun send(message: Component) = audience.sendMessage(message)
 
-    override fun sendMessage(text: Component) = audience.sendMessage(text)
+    override fun sendMessage(message: Component) = audience.sendMessage(message)
 
-    override fun actionBar(text: Component) = audience.actionBar(text)
+    override fun sendActionBar(message: Component) = audience.sendActionBar(message)
 
-    override fun playSound(sound: Sound): Delivery = audience.playSound(sound)
+    // Java default methods are not forwarded by `by`, so everything the sender must keep is forwarded by hand.
+    override fun pointers() = audience.pointers()
+
+    override fun playSound(sound: net.kyori.adventure.sound.Sound) = audience.playSound(sound)
+
+    override fun showTitle(title: net.kyori.adventure.title.Title) = audience.showTitle(title)
 }
 
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {

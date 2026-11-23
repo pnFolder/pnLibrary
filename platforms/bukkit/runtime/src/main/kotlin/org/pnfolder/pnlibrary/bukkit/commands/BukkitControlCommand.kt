@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
@@ -10,6 +10,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.sender.hasPermission
 import org.pnfolder.pnlibrary.bukkit.currency.CurrencyCommandExecutor
 import org.pnfolder.pnlibrary.bukkit.menu.PluginsMenu
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler

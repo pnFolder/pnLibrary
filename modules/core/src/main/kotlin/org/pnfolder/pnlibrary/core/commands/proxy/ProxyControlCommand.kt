@@ -4,13 +4,14 @@ import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand
@@ -63,10 +64,7 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
         if (words.isEmpty()) return emptyList()
         val printed = Collections.synchronizedList(mutableListOf<Component>())
         val sender = object : CommandSender {
-            override val id: String = viewerId.toString()
-            override val name: String = viewerName
-            override val isConsole: Boolean = false
-            override fun hasPermission(permission: String): Boolean = holds(permission)
+            override fun pointers() = senderPointers(viewerName, viewerId, holds)
             override fun send(message: Component) {
                 printed += message
             }

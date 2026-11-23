@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.currency
 
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -7,8 +8,6 @@ import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.Currency
@@ -73,17 +72,14 @@ class BukkitCurrencyCommandTest {
         return console.messages.map { LegacyComponentSerializer.legacySection().serialize(it).replace(Regex("§."), "") }
     }
 
-    private class ConsoleAudience(private val permitted: Boolean) : AudienceSender {
+    private class ConsoleAudience(private val permitted: Boolean) : Audience {
         val messages = mutableListOf<Component>()
-        override val id = "console"
-        override val name = "CONSOLE"
-        override val isConsole = true
-        override fun hasPermission(permission: String) = permitted
+        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("CONSOLE") { permission -> permitted }
         override fun sendMessage(text: Component) {
             messages += text
         }
-        override fun actionBar(text: Component) = sendMessage(text)
-        override fun playSound(sound: Sound) = Delivery.Unsupported
+        override fun sendActionBar(text: Component) = sendMessage(text)
+        override fun playSound(sound: Sound) = Unit
     }
 
     private object EmptyCurrencies : CurrencyProviderRegistry {

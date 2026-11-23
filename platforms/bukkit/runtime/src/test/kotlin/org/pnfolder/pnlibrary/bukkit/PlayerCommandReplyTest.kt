@@ -15,10 +15,10 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.UpdateService
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
-import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceService
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerAdapter
+import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
 import java.util.UUID
 import java.util.logging.Logger
 
@@ -34,7 +34,7 @@ class PlayerCommandReplyTest {
     fun `Paper command reply targets the actual player and preserves click events`() {
         val player = mock(Player::class.java, withSettings().extraInterfaces(Audience::class.java))
         val provider = mock(BukkitAudiences::class.java)
-        val service = BukkitAudienceService(plugin(), buffer(), provider)
+        val service = BukkitPlayerService(plugin(), buffer(), provider)
         val message = Component.text("[История]").clickEvent(ClickEvent.runCommand("/pn updates history"))
         try {
             service.player(player).sendMessage(message)
@@ -51,7 +51,7 @@ class PlayerCommandReplyTest {
         `when`(player.uniqueId).thenReturn(id)
         val provider = mock(BukkitAudiences::class.java)
         `when`(provider.player(id)).thenReturn(Audience.empty())
-        val service = BukkitAudienceService(plugin(), buffer(), provider)
+        val service = BukkitPlayerService(plugin(), buffer(), provider)
         try {
             service.player(player).sendMessage(Component.text("Каталог pnLibrary"))
             verify(player).sendMessage("Каталог pnLibrary")
@@ -62,8 +62,10 @@ class PlayerCommandReplyTest {
     fun `root updates list and available commands reply to the invoking player even for empty catalog`() {
         val plugin = plugin()
         val player = mock(Player::class.java, withSettings().extraInterfaces(Audience::class.java))
+        `when`(player.uniqueId).thenReturn(UUID.randomUUID())
+        `when`(player.name).thenReturn("Alice")
         val provider = mock(BukkitAudiences::class.java)
-        val service = BukkitAudienceService(plugin, buffer(), provider)
+        val service = BukkitPlayerService(plugin, buffer(), provider)
         val library = mock(PnLibrary::class.java)
         val updates = mock(UpdateService::class.java)
         `when`(library.updates).thenReturn(updates)
@@ -73,7 +75,7 @@ class PlayerCommandReplyTest {
         val definition = BukkitControlCommand(plugin, library, mock(CurrencyProviderRegistry::class.java)).definition()
         val root = definition.root
         val catalog = root.children.single { it.name == "updates" }
-        val sender = BukkitCommandSender(player, requireNotNull(BukkitAudienceAdapter(service).sender(player)))
+        val sender = BukkitCommandSender(player, requireNotNull(BukkitPlayerAdapter(service).sender(player)))
         val context = CommandContext(sender, emptyList(), "pnlibrary:pn", "")
         try {
             listOf(root, catalog, catalog.children.single { it.name == "list" }, catalog.children.single { it.name == "available" }).forEach { node ->

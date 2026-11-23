@@ -1,18 +1,3 @@
-public abstract interface class org/pnfolder/pnlibrary/spi/audiences/PlatformAudienceAdapter {
-	public abstract fun console ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
-	public abstract fun onlinePlayers ()Ljava/util/List;
-	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audiences/player/LibraryPlayer;
-	public abstract fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
-}
-
-public final class org/pnfolder/pnlibrary/spi/audiences/UnsupportedPlatformAudienceAdapter : org/pnfolder/pnlibrary/spi/audiences/PlatformAudienceAdapter {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/audiences/UnsupportedPlatformAudienceAdapter;
-	public fun console ()Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
-	public fun onlinePlayers ()Ljava/util/List;
-	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audiences/player/LibraryPlayer;
-	public fun sender (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/audiences/AudienceSender;
-}
-
 public abstract class org/pnfolder/pnlibrary/spi/commands/GenericPlatformCommandAdapter : org/pnfolder/pnlibrary/spi/commands/TrackingPlatformCommandAdapter {
 	public fun <init> ()V
 	protected abstract fun context (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/commands/CommandContext;
@@ -132,11 +117,11 @@ public final class org/pnfolder/pnlibrary/spi/platform/OwnLogScope {
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformAdapter : org/pnfolder/pnlibrary/spi/platform/PlatformBinding, org/pnfolder/pnlibrary/spi/platform/PlatformDiagnostics, org/pnfolder/pnlibrary/spi/platform/PlatformExecution, org/pnfolder/pnlibrary/spi/platform/PlatformIdentity, org/pnfolder/pnlibrary/spi/platform/PlatformLogObservation, org/pnfolder/pnlibrary/spi/platform/PlatformLogging, org/pnfolder/pnlibrary/spi/platform/PlatformOwnership, org/pnfolder/pnlibrary/spi/platform/PlatformReadiness, org/pnfolder/pnlibrary/spi/platform/PlatformShutdown {
-	public fun getAudienceAdapter ()Lorg/pnfolder/pnlibrary/spi/audiences/PlatformAudienceAdapter;
 	public fun getCommandAdapter ()Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandAdapter;
 	public abstract fun getDataFolder ()Ljava/nio/file/Path;
 	public fun getMetricsFactory ()Lorg/pnfolder/pnlibrary/spi/metrics/PlatformMetricsFactory;
 	public fun getNetworkProxy ()Lorg/pnfolder/pnlibrary/api/network/NetworkProxy;
+	public fun getPlayerAdapter ()Lorg/pnfolder/pnlibrary/spi/player/PlatformPlayerAdapter;
 	public fun getTaskAdapter ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 
@@ -322,6 +307,21 @@ public final class org/pnfolder/pnlibrary/spi/platform/StartupGate {
 public final class org/pnfolder/pnlibrary/spi/platform/UncaughtExceptionLogObserver {
 	public fun <init> (Ljava/lang/Object;)V
 	public final fun observe (Lkotlin/jvm/functions/Function4;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/spi/player/PlatformPlayerAdapter {
+	public abstract fun console ()Lnet/kyori/adventure/audience/Audience;
+	public abstract fun onlinePlayers ()Ljava/util/List;
+	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/player/LibraryPlayer;
+	public abstract fun sender (Ljava/lang/Object;)Lnet/kyori/adventure/audience/Audience;
+}
+
+public final class org/pnfolder/pnlibrary/spi/player/UnsupportedPlatformPlayerAdapter : org/pnfolder/pnlibrary/spi/player/PlatformPlayerAdapter {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/player/UnsupportedPlatformPlayerAdapter;
+	public fun console ()Lnet/kyori/adventure/audience/Audience;
+	public fun onlinePlayers ()Ljava/util/List;
+	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/player/LibraryPlayer;
+	public fun sender (Ljava/lang/Object;)Lnet/kyori/adventure/audience/Audience;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter : java/lang/AutoCloseable {

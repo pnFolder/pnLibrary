@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.bukkit.menu
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandReplies
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler

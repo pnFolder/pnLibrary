@@ -12,8 +12,8 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.bukkit.audience.JoinNoticeDelivery
 import org.pnfolder.pnlibrary.bukkit.currency.error
+import org.pnfolder.pnlibrary.bukkit.player.JoinNoticeDelivery
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateReminders
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.events.player.PlayerLifecyclePublisher
@@ -98,7 +98,7 @@ internal class BukkitLifecycleListener(
             player,
             build = { library?.journalJoinNotice().orEmpty() },
             send = { lines ->
-                val audience = library?.audiences?.player(player.uniqueId)
+                val audience = library?.players?.player(player.uniqueId)
                 if (audience != null) lines.forEach(audience::sendMessage)
             },
         )

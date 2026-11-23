@@ -9,6 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import org.pnfolder.pnlibrary.core.link.Link
@@ -43,10 +44,7 @@ class ProxyControlCommandTest {
     fun `pn alone tells a sender without the admin permission what it may use`() {
         val sent = mutableListOf<String>()
         val sender = object : CommandSender {
-            override val id = "player"
-            override val name = "Player"
-            override val isConsole = false
-            override fun hasPermission(permission: String) = permission == "pnlibrary.tasks"
+            override fun pointers() = senderPointers("Player", java.util.UUID.randomUUID()) { permission -> permission == "pnlibrary.tasks" }
             override fun send(message: Component) {
                 sent += message.toString()
             }

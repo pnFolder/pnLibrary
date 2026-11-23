@@ -3,22 +3,22 @@ package org.pnfolder.pnlibrary.velocity.commands
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.ProxyServer
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
+import net.kyori.adventure.audience.Audience
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
-import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityPlayerAdapter
 import java.util.concurrent.CompletionStage
 
 internal class VelocityCommandAdapter internal constructor(
     override val registrar: NativeCommandRegistrar<CommandSource>,
-    private val audience: (CommandSource) -> AudienceSender,
+    private val audience: (CommandSource) -> Audience,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
+    constructor(server: ProxyServer, audiences: VelocityPlayerAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->
             requireNotNull(audiences.sender(source)) {

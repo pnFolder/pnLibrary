@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands.tasks
 
 import net.kyori.adventure.text.format.TextColor
-import org.pnfolder.pnlibrary.api.chat.style.ChatPalette
+import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
 import org.pnfolder.pnlibrary.common.time.DisplayZone

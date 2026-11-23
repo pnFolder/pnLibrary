@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.spi.platform
 
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
-import org.pnfolder.pnlibrary.spi.audiences.PlatformAudienceAdapter
-import org.pnfolder.pnlibrary.spi.audiences.UnsupportedPlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.UnsupportedPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.NoopMetricsFactory
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
+import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
+import org.pnfolder.pnlibrary.spi.player.UnsupportedPlatformPlayerAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.UnsupportedPlatformTaskAdapter
 import java.nio.file.Path
@@ -30,7 +30,7 @@ interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecutio
     /** Native command registration; unsupported by default. */
     val commandAdapter: PlatformCommandAdapter get() = UnsupportedPlatformCommandAdapter
     /** Native message delivery; unsupported by default. */
-    val audienceAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
+    val playerAdapter: PlatformPlayerAdapter get() = UnsupportedPlatformPlayerAdapter
     /** Native task scheduling; unsupported by default. */
     val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
     /** Proxy layer; null on game-server platforms. */

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.network
 
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.player.LibraryPlayer
 import java.net.InetSocketAddress
 
 /**

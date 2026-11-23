@@ -2,11 +2,12 @@ package org.pnfolder.pnlibrary.api.scenario.actions.builtin
 
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.sound.Sound
-import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
+import net.kyori.adventure.title.Title
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.player.Delivery
+import org.pnfolder.pnlibrary.api.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.player.PlayerParticle
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -51,13 +52,13 @@ data class ActionBarAction(
     val target: ActionTarget = ActionTarget.PLAYER,
 ) : Action {
     override fun run(context: ActionContext): ActionResult {
-        context.target(target).actionBar(context.component(text, serializerType))
+        context.target(target).sendActionBar(context.component(text, serializerType))
         return ActionResult.Done
     }
 }
 
 /**
- * Shows a large title with a smaller subtitle. Proxies cannot show titles and write a warning instead.
+ * Shows a large title with a smaller subtitle. Platforms that cannot show titles show nothing.
  *
  * @property title main line
  * @property subtitle second line
@@ -80,14 +81,16 @@ data class TitleAction(
         require(!fadeIn.isNegative && !stay.isNegative && !fadeOut.isNegative) { "Title times must not be negative" }
     }
 
-    override fun run(context: ActionContext): ActionResult = context.warnUnless(
+    override fun run(context: ActionContext): ActionResult {
         context.target(target).showTitle(
-            context.component(title, serializerType),
-            context.component(subtitle, serializerType),
-            fadeIn, stay, fadeOut,
-        ),
-        "Title",
-    )
+            Title.title(
+                context.component(title, serializerType),
+                context.component(subtitle, serializerType),
+                Title.Times.times(fadeIn, stay, fadeOut),
+            ),
+        )
+        return ActionResult.Done
+    }
 }
 
 /**
@@ -106,8 +109,10 @@ data class SoundAction(
     val pitch: Float = 1f,
     val target: ActionTarget = ActionTarget.PLAYER,
 ) : Action {
-    override fun run(context: ActionContext): ActionResult =
-        context.warnUnless(context.target(target).playSound(Sound.sound(Key.key(key), source, volume, pitch)), "Sound $key")
+    override fun run(context: ActionContext): ActionResult {
+        context.target(target).playSound(Sound.sound(Key.key(key), source, volume, pitch))
+        return ActionResult.Done
+    }
 }
 
 /** Who runs the command of a [CommandAction]. */

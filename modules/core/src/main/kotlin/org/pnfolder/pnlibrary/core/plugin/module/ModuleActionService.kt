@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.audiences.LibraryAudience
-import org.pnfolder.pnlibrary.api.audiences.player.LibraryPlayer
+import net.kyori.adventure.audience.Audience
 import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.player.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
@@ -26,7 +26,7 @@ internal class ModuleActionService(
 
     override fun context(
         player: LibraryPlayer,
-        allPlayers: LibraryAudience,
+        allPlayers: Audience,
         values: Map<String, Any?>,
         serializerType: ComponentSerializerType,
     ) = ActionContext(

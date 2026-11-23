@@ -1,17 +1,16 @@
 package org.pnfolder.pnlibrary.bungee.network
 
-import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
-import org.pnfolder.pnlibrary.api.audiences.Delivery
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerCapability
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerEffect
-import org.pnfolder.pnlibrary.api.audiences.player.PlayerParticle
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer
 import org.pnfolder.pnlibrary.api.network.NetworkServer
+import org.pnfolder.pnlibrary.api.player.Delivery
+import org.pnfolder.pnlibrary.api.player.PlayerCapability
+import org.pnfolder.pnlibrary.api.player.PlayerEffect
+import org.pnfolder.pnlibrary.api.player.PlayerParticle
 import java.net.InetSocketAddress
 import java.util.UUID
 
@@ -34,13 +33,12 @@ internal class BungeeNetworkPlayer(
 
     override fun hasPermission(permission: String): Boolean = native.hasPermission(permission)
 
-    override fun sendMessage(text: Component) =
-        native.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(text)))
+    override fun sendMessage(message: Component) =
+        native.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(message)))
 
-    override fun actionBar(text: Component) =
-        native.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(text)))
+    override fun sendActionBar(message: Component) =
+        native.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(message)))
 
-    override fun playSound(sound: Sound): Delivery = Delivery.Unsupported
     override fun applyEffect(effect: PlayerEffect): Delivery = Delivery.Unsupported
     override fun spawnParticle(particle: PlayerParticle): Delivery = Delivery.Unsupported
 

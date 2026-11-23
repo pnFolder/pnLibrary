@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.scenario.requirements.builtin
 
-import org.pnfolder.pnlibrary.api.audiences.player.ItemQuery
 import org.pnfolder.pnlibrary.api.config.ConfigKey
+import org.pnfolder.pnlibrary.api.player.ItemQuery
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement

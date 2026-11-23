@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.engine
 
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
@@ -14,6 +14,8 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
 import org.pnfolder.pnlibrary.api.commands.error.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.logging.LogLevel
+import org.pnfolder.pnlibrary.api.sender.hasPermission
+import org.pnfolder.pnlibrary.api.sender.isConsole
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.plugin.Plugin
-import org.pnfolder.pnlibrary.api.chat.style.ChatTone
+import org.pnfolder.pnlibrary.api.chat.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.commands.CommandSender as Reply

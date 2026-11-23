@@ -1,16 +1,18 @@
 package org.pnfolder.pnlibrary.bungee.commands
 
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.md_5.bungee.api.CommandSender
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audiences.AudienceSender
-import org.pnfolder.pnlibrary.api.audiences.Delivery
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
+import org.pnfolder.pnlibrary.api.sender.hasPermission
+import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.sender.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
@@ -37,7 +39,7 @@ class BungeeCommandAdapterTest {
         registrar.execute(nativeSender, "hello", arrayOf("one"))
         val suggestions = registrar.suggest(nativeSender, "hello", arrayOf("w")).toCompletableFuture().join()
         dispatcher.execution.sender.send(Component.text("done"))
-        dispatcher.execution.sender.actionBar(Component.text("status"))
+        dispatcher.execution.sender.sendActionBar(Component.text("status"))
 
         assertEquals("hello", dispatcher.execution.invokedAlias)
         assertEquals(listOf("one"), dispatcher.execution.arguments)
@@ -105,14 +107,11 @@ class BungeeCommandAdapterTest {
         console: Boolean,
         messages: MutableList<Component>,
         actionBars: MutableList<Component>,
-    ) = object : AudienceSender {
-        override val id get() = sender.name
-        override val name get() = sender.name
-        override val isConsole = console
-        override fun hasPermission(permission: String) = sender.hasPermission(permission)
+    ) = object : Audience {
+        override fun pointers() = senderPointers(sender.name, if (console) null else java.util.UUID.randomUUID(), sender::hasPermission)
         override fun sendMessage(text: Component) { messages += text }
-        override fun actionBar(text: Component) { actionBars += text }
-        override fun playSound(sound: Sound) = Delivery.Unsupported
+        override fun sendActionBar(text: Component) { actionBars += text }
+        override fun playSound(sound: Sound) = Unit
     }
 
     private fun <T> proxy(

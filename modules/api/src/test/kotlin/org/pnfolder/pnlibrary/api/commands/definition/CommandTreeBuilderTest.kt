@@ -98,10 +98,7 @@ class CommandTreeBuilderTest {
     }
 
     private object TestSender : CommandSender {
-        override val id = "test"
-        override val name = "Test"
-        override val isConsole = false
-        override fun hasPermission(permission: String) = true
+        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Test", java.util.UUID.randomUUID()) { permission -> true }
         override fun send(message: Component) = Unit
     }
 }

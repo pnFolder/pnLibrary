@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.scenario.expression
 
-import org.pnfolder.pnlibrary.api.audiences.player.ItemQuery
+import org.pnfolder.pnlibrary.api.player.ItemQuery
 import org.pnfolder.pnlibrary.api.scenario.requirements.RequirementContext
 import java.util.concurrent.ThreadLocalRandom
 
