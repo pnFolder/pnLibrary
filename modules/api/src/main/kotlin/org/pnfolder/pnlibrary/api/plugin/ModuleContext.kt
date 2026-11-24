@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.pnfolder.pnlibrary.api.services.ServiceManager
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
@@ -23,7 +24,6 @@ import org.pnfolder.pnlibrary.api.plugin.lifecycle.PluginLifecycle
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMessages
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
-import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.text.ComponentService
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration

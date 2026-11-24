@@ -2,11 +2,11 @@ package org.pnfolder.pnlibrary.api.commands
 
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.isConsole
 
 /**
  * Whoever ran a command: the console or a player. It is an Adventure [Audience]; its name, permissions and kind are
- * read with `name`, `hasPermission` and `isConsole` from `org.pnfolder.pnlibrary.api.sender`.
+ * read with `name`, `hasPermission` and `isConsole` from `org.pnfolder.pnlibrary.api.audience`.
  *
  * ```kotlin
  * command("ping") {

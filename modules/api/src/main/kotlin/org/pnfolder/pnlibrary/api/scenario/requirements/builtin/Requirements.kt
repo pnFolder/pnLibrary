@@ -1,7 +1,12 @@
 package org.pnfolder.pnlibrary.api.scenario.requirements.builtin
 
+import org.pnfolder.pnlibrary.api.audience.feature
 import org.pnfolder.pnlibrary.api.config.ConfigKey
-import org.pnfolder.pnlibrary.api.player.ItemQuery
+import org.pnfolder.pnlibrary.api.audience.PlayerPosition
+import org.pnfolder.pnlibrary.api.audience.PlayerInventory
+import org.pnfolder.pnlibrary.api.audience.PlayerExperience
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.ItemQuery
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
@@ -154,7 +159,7 @@ data class ItemRequirement(
 
     override fun test(context: RequirementContext): Verdict {
         if (material.isBlank()) return Verdict.Unmet("no item is configured")
-        val have = context.player.countItems(ItemQuery(material, name, nameContains, loreContains, ignoreCase)) ?: 0
+        val have = context.player.feature<PlayerInventory>()?.countItems(ItemQuery(material, name, nameContains, loreContains, ignoreCase)) ?: 0
         return Verdict.of(have >= amount, "need $amount $material, have $have")
     }
 }
@@ -169,7 +174,7 @@ data class ExperienceRequirement(val amount: Int = 0, val level: Boolean = false
     init { require(amount >= 0) { "Required experience must not be negative" } }
 
     override fun test(context: RequirementContext): Verdict {
-        val have = context.player.experience(level) ?: return Verdict.Unmet("experience is not available here")
+        val have = context.player.feature<PlayerExperience>()?.experience(level) ?: return Verdict.Unmet("experience is not available here")
         return Verdict.of(have >= amount, "need $amount ${if (level) "levels" else "experience"}")
     }
 }
@@ -201,7 +206,7 @@ data class NearRequirement(val location: String = "world,0,0,0", val distance: D
     }
 
     override fun test(context: RequirementContext): Verdict {
-        val current = context.player.distanceTo(world, x, y, z) ?: return Verdict.Unmet("distance is not available here")
+        val current = context.player.feature<PlayerPosition>()?.distanceTo(world, x, y, z) ?: return Verdict.Unmet("distance is not available here")
         return Verdict.of(current <= distance, "too far from $location")
     }
 }

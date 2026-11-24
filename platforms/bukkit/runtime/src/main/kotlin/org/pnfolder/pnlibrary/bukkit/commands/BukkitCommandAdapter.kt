@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.audience.ForwardingAudience
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandExecutor
@@ -13,10 +14,10 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
-import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerAdapter
-import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAdventureTransport
 import org.pnfolder.pnlibrary.core.commands.engine.MAIN_THREAD_SUGGESTION_MILLIS
 import org.pnfolder.pnlibrary.core.commands.engine.suggestionsWithin
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
@@ -32,9 +33,9 @@ internal class BukkitCommandAdapter internal constructor(
     private val interactive: () -> Boolean = { true },
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar
-    constructor(audiences: BukkitPlayerService, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
+    constructor(audiences: BukkitAdventureTransport, plugin: Plugin, pnLogger: () -> PnLogger, logBuffer: PnLoggerBuffer) : this(
         nativeRegistrar = PaperCommandSupport.choose(plugin, DefaultBukkitNativeCommandRegistrar(), pnLogger, logBuffer),
-        { sender -> requireNotNull(BukkitPlayerAdapter(audiences).sender(sender)) },
+        { sender -> requireNotNull(BukkitAudienceAdapter(audiences).of(sender)) },
         { audiences.nativeTransportAvailable },
     )
 
@@ -55,7 +56,8 @@ internal class BukkitCommandSender(
     internal val native: NativeCommandSender,
     private val audience: Audience,
     private val transportAvailable: () -> Boolean = { true },
-) : CommandSender, Audience by audience {
+) : CommandSender, ForwardingAudience.Single {
+    override fun audience(): Audience = audience
 
     // Buttons need the Adventure transport; without it the sender receives plain text and can't click anything.
     override val supportsInteraction: Boolean
@@ -66,13 +68,6 @@ internal class BukkitCommandSender(
     override fun sendMessage(message: Component) = audience.sendMessage(message)
 
     override fun sendActionBar(message: Component) = audience.sendActionBar(message)
-
-    // Java default methods are not forwarded by `by`, so everything the sender must keep is forwarded by hand.
-    override fun pointers() = audience.pointers()
-
-    override fun playSound(sound: net.kyori.adventure.sound.Sound) = audience.playSound(sound)
-
-    override fun showTitle(title: net.kyori.adventure.title.Title) = audience.showTitle(title)
 }
 
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {

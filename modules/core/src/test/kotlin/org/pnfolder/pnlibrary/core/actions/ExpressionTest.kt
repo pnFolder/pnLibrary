@@ -1,6 +1,9 @@
 package org.pnfolder.pnlibrary.core.actions
 
+import org.pnfolder.pnlibrary.api.audience.PlayerExperience
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.name
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,7 +13,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.Visibility
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -34,11 +37,8 @@ import java.util.UUID
 
 /** The calculator, named definitions, calls and typed error handlers. */
 class ExpressionTest {
-    private val player = mock(LibraryPlayer::class.java).also {
-        `when`(it.uniqueId).thenReturn(UUID.randomUUID())
-        `when`(it.name).thenReturn("Alice")
-        `when`(it.experience(true)).thenReturn(12.0)
-        `when`(it.hasPermission(anyString())).thenAnswer { call -> call.getArgument<String>(0) == "shop.vip" }
+    private val player = mockPlayer(permission = { it == "shop.vip" }, extra = PlayerExperience::class.java).also {
+        `when`((it as PlayerExperience).experience(true)).thenReturn(12.0)
     }
     private val definitions = ScenarioDefinitions()
     private val log = mutableListOf<String>()

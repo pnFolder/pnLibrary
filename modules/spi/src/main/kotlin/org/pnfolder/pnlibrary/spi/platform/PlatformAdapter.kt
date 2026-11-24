@@ -5,8 +5,8 @@ import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.UnsupportedPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.metrics.NoopMetricsFactory
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory
-import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
-import org.pnfolder.pnlibrary.spi.player.UnsupportedPlatformPlayerAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.spi.audience.UnsupportedPlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import org.pnfolder.pnlibrary.spi.tasks.UnsupportedPlatformTaskAdapter
 import java.nio.file.Path
@@ -30,7 +30,7 @@ interface PlatformAdapter : PlatformShutdown, PlatformIdentity, PlatformExecutio
     /** Native command registration; unsupported by default. */
     val commandAdapter: PlatformCommandAdapter get() = UnsupportedPlatformCommandAdapter
     /** Native message delivery; unsupported by default. */
-    val playerAdapter: PlatformPlayerAdapter get() = UnsupportedPlatformPlayerAdapter
+    val playerAdapter: PlatformAudienceAdapter get() = UnsupportedPlatformAudienceAdapter
     /** Native task scheduling; unsupported by default. */
     val taskAdapter: PlatformTaskAdapter get() = UnsupportedPlatformTaskAdapter
     /** Proxy layer; null on game-server platforms. */

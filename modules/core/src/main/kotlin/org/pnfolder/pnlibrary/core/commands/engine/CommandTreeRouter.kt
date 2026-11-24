@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.api.commands.error.IncompleteCommand
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.commands.error.PlayerOnly
 import org.pnfolder.pnlibrary.api.commands.error.UnknownArgument
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.CompletionStage

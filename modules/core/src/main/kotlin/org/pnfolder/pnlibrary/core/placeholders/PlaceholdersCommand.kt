@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
 import org.pnfolder.pnlibrary.api.placeholders.Visibility
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException

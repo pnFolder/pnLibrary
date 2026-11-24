@@ -22,7 +22,7 @@ class GroupsCommandTest {
     private val definition by lazy { GroupsCommand(link) { emptyList() }.definition() }
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Console") { permission -> true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
         override fun send(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }

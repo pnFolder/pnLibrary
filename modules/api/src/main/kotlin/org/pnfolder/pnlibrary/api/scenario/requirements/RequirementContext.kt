@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.scenario.requirements
 
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 
 /**

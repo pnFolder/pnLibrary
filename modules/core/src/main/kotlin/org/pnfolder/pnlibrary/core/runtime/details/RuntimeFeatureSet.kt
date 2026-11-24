@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.runtime.details
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
+import org.pnfolder.pnlibrary.config.YamlConfigurations
 import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
 import org.pnfolder.pnlibrary.core.downloads.settings.downloads
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.currency.CurrencyRuntime
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths
 import org.pnfolder.pnlibrary.updates.policy.UpdateTiming
-import org.pnfolder.pnlibrary.updates.service.UpdateServiceImpl
+import org.pnfolder.pnlibrary.updates.service.PluginUpdates
 
 /** Creates the feature services of the library runtime (
     services,
@@ -33,8 +33,8 @@ internal class RuntimeFeatureSet(
     settings: SettingsStore,
 ) {
     val services = ServiceRegistry()
-    val configurations: ConfigurationServiceImpl = ConfigurationServiceImpl(platform.ownership, logging)
-    val updates = UpdateServiceImpl(
+    val configurations: YamlConfigurations = YamlConfigurations(platform.ownership, logging)
+    val updates = PluginUpdates(
         logging, platform.ownership, platform.ownership, platform.identity, platform.readiness, paths,
         ConsoleStyle.THEME,
         settings.current().let { UpdateTiming(it.updateCheckInterval, it.updateConnectTimeout, it.updateReadTimeout) },

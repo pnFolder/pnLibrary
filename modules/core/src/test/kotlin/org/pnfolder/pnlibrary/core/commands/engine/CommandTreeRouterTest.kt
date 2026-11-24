@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.sender.senderPointers
+import org.pnfolder.pnlibrary.api.audience.senderPointers
 
 class CommandTreeRouterTest {
     @Test

@@ -59,7 +59,7 @@ class EditableFile {
 class ConfigEditingTest {
     @TempDir lateinit var server: Path
 
-    private fun open(service: ConfigurationServiceImpl): ManagedConfig<EditableFile> {
+    private fun open(service: YamlConfigurations): ManagedConfig<EditableFile> {
         val folder = server.resolve("plugins/quests").also { Files.createDirectories(it) }
         val scope: ConfigScope = service.scope(FakeConfigOwner(folder.toFile()), PluginId.of("quests-main"), PluginId.of("quests"), ModuleId.of("main"))
         return scope.yaml<EditableFile>("settings.yml") { EditableFile() }.also { it.load() }
@@ -67,7 +67,7 @@ class ConfigEditingTest {
 
     @Test
     fun `only marked fields are offered and secrets never`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
 
             val paths = config.settings.map { it.path }.toSet()
@@ -86,7 +86,7 @@ class ConfigEditingTest {
 
     @Test
     fun `an edit changes the value in memory and in the file`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
 
             val result = config.edit("greeting", "Здравствуй")
@@ -106,7 +106,7 @@ class ConfigEditingTest {
 
     @Test
     fun `a wrong value is refused and nothing changes`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
             val before = Files.readString(server.resolve("plugins/quests/settings.yml"))
 
@@ -126,7 +126,7 @@ class ConfigEditingTest {
 
     @Test
     fun `listeners hear about reads, edits and settings that need a reload`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
             val changes = mutableListOf<ConfigChange>()
             val requests = mutableListOf<ReloadRequest>()
@@ -153,7 +153,7 @@ class ConfigEditingTest {
 
     @Test
     fun `a pending reload is cleared by reading the file again and a failing listener does not stop others`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
             val heard = mutableListOf<ReloadRequest>()
             val subscription = config.onReloadRequired(Consumer { error("broken listener") }, Consumer { heard += it })

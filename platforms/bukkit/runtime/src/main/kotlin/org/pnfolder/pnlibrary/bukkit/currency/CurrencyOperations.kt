@@ -21,7 +21,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionType
-import org.pnfolder.pnlibrary.api.sender.name
+import org.pnfolder.pnlibrary.api.audience.name
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.text.RussianText

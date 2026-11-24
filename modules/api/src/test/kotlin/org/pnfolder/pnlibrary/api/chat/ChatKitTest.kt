@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
 
 class ChatKitTest {
     private val player = ChatKit(ChatReader.PLAYER)

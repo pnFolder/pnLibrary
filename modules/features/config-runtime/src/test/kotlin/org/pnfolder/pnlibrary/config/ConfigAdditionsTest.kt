@@ -42,7 +42,7 @@ class ConfigAdditionsTest {
 
     private val plugins: Path get() = server.resolve("plugins")
 
-    private fun scope(service: ConfigurationServiceImpl, plugin: String, module: String = "main"): ConfigScope {
+    private fun scope(service: YamlConfigurations, plugin: String, module: String = "main"): ConfigScope {
         val folder = plugins.resolve(plugin).also { Files.createDirectories(it) }
         return service.scope(FakeConfigOwner(folder.toFile()), PluginId.of("$plugin-$module"), PluginId.of(plugin), ModuleId.of(module))
     }
@@ -79,7 +79,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a written file shows whether the serializer reaches it and a registration can be switched`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val scope = scope(service, "shop")
             val first = scope.yaml<PlaceFile>("a.yml") { PlaceFile() }.also { it.load() }
             val second = scope.yaml<PlaceFile>("b.yml") { PlaceFile() }.also { it.load() }
@@ -117,7 +117,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `into takes a plugin, a scope or a catalog entry as they are`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: arena,7\n")
             write("other", "places.yml", "spawn: hub,3\n")
             write("third", "places.yml", "spawn: end,9\n")
@@ -139,7 +139,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `without an address a serializer works only in its own module`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: arena,7\n")
             scope(service, "quests").serializerFor(PlaceSerializer()).register()
 
@@ -150,7 +150,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a serializer added to a plugin works in its files`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: arena,7\n")
             val shop = scope(service, "shop")
             val other = scope(service, "other")
@@ -164,7 +164,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a serializer added to everything works in every plugin`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: arena,7\n")
             write("other", "places.yml", "spawn: hub,3\n")
             scope(service, "quests").serializerFor(PlaceSerializer()).everywhere().register()
@@ -177,7 +177,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a serializer can be limited to a module or one file`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "one.yml", "spawn: a,1\n")
             write("shop", "two.yml", "spawn: b,2\n")
             write("shop", "three.yml", "spawn: c,3\n")
@@ -197,7 +197,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `the module's own serializer is not replaced and the higher priority wins among additions`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: own:arena,7\n")
             val shop = scope(service, "shop").serializer(PlaceSerializer("own:"))
             scope(service, "quests").serializerFor(PlaceSerializer("low:")).priority(1).everywhere().register()
@@ -212,7 +212,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `ordinary types cannot be taken over for other plugins`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val publisher = scope(service, "quests")
             val text = object : ConfigSerializer<String> {
                 override fun serialize(value: String, context: ConfigSerializationContext): Any = value.reversed()
@@ -228,7 +228,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `closing the registration or the publisher takes the serializer back`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("shop", "places.yml", "spawn: arena,7\n")
             val publisher = scope(service, "quests")
             val registration = publisher.serializerFor(PlaceSerializer()).into("shop").register()
@@ -247,7 +247,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a word added for everything works in every plugin but never replaces a word of the file's plugin`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("quests", "awards.yml", "awards:\n  - type: item\n    material: GOLD\n")
             write("shop", "awards.yml", "awards:\n  - type: item\n    material: GOLD\n")
             val quests = scope(service, "quests")
@@ -274,7 +274,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `a taken word fails by default, is kept on request and is replaced on request`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("quests", "awards.yml", item())
             val quests = scope(service, "quests")
             val library = scope(service, "lib")
@@ -295,7 +295,7 @@ class ConfigAdditionsTest {
 
     @Test
     fun `one word can be published for several places and withdrawn together`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             write("quests", "awards.yml", item())
             write("shop", "awards.yml", item())
             write("farm", "awards.yml", item())

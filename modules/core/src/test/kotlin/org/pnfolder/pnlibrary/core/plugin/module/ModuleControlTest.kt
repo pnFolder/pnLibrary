@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
 import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
-import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest
+import org.pnfolder.pnlibrary.core.plugin.LoadedPluginsTest
 import java.nio.file.Path
 
 class ModuleControlTest {
@@ -35,7 +35,7 @@ class ModuleControlTest {
         }
     }
 
-    private fun registry() = PluginRegistryImplTest.registry()
+    private fun registry() = LoadedPluginsTest.registry()
 
     @Test
     fun `a module starts at registration and can be disabled, enabled and restarted`() {
@@ -125,7 +125,7 @@ class ModuleControlTest {
     fun `a required library that cannot be loaded fails the module and an optional one does not`() {
         val required = WithLibrary(ModuleLibrary.of("com.example:missing:1"))
         val optional = WithLibrary(ModuleLibrary.builder("com.example", "missing", "1").optional().build())
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
 
         val failed = registry.register(Any()).registerModule("needs", required)
         val started = registry.register(Any()).registerModule("wants", optional)
@@ -141,7 +141,7 @@ class ModuleControlTest {
     @Test
     fun `libraries declared in the registration builder are loaded before the module starts`() {
         val fetched = mutableListOf<String>()
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
 
         val context = registry.register(Any()).registerModule("shop") { setup ->
             setup.library("org.xerial:sqlite-jdbc:3.46.0.0")
@@ -157,7 +157,7 @@ class ModuleControlTest {
     @Test
     fun `defaults apply to libraries declared by coordinates and a false condition skips the download`() {
         val fetched = mutableListOf<ModuleLibrary>()
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library; null })
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library; null })
 
         registry.register(Any()).registerModule("shop") { setup ->
             setup.libraryDefaults { it.source { repository("https://mirror.example.org/maven/") }.mavenCentral(false).optional() }
@@ -176,7 +176,7 @@ class ModuleControlTest {
     fun `an administrator can switch a library off and on and retry a failed one`() {
         var offline = true
         val fetched = mutableListOf<String>()
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library ->
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library ->
             if (offline && library.artifact == "flaky") error("offline")
             fetched += library.coordinates
             null
@@ -206,7 +206,7 @@ class ModuleControlTest {
     @Test
     fun `a library switched off is not loaded at the next registration`() {
         val fetched = mutableListOf<String>()
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, library -> fetched += library.coordinates; null })
         val owner = Any()
         registry.register(owner).registerModule("shop") { it.library("g:a:1") }.libraries.setAutoLoad(ModuleLibrary.of("g:a:1"), false)
         fetched.clear()
@@ -227,7 +227,7 @@ class ModuleControlTest {
 
     @Test
     fun `a module outside its Minecraft versions is switched off with the reason and an administrator can force it`() {
-        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.21.11")
+        val registry = LoadedPluginsTest.registry(minecraftVersion = "1.21.11")
         val module = Hooked()
 
         val context = registry.register(Any()).registerModule("shop", module) { it.supportedMinecraft(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4) }
@@ -251,7 +251,7 @@ class ModuleControlTest {
 
     @Test
     fun `a module without hooks and a stopped plugin refuse to register outside the versions`() {
-        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.12.2")
+        val registry = LoadedPluginsTest.registry(minecraftVersion = "1.12.2")
 
         assertThrows(IllegalStateException::class.java) {
             registry.register(Any()).registerModule("plain") { it.supportedMinecraftFrom(MinecraftVersion.V1_16_5) }
@@ -272,7 +272,7 @@ class ModuleControlTest {
 
     @Test
     fun `a module without its own versions uses the plugin's`() {
-        val registry = PluginRegistryImplTest.registry(minecraftVersion = "1.12.2")
+        val registry = LoadedPluginsTest.registry(minecraftVersion = "1.12.2")
         val plugin = registry.register(Any())
         plugin.supportedMinecraftFrom(MinecraftVersion.V1_16_5)
 
@@ -287,7 +287,7 @@ class ModuleControlTest {
 
     @Test
     fun `a required library declared in the builder stops the registration and an optional one only warns`() {
-        val registry = PluginRegistryImplTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
+        val registry = LoadedPluginsTest.registry(libraryFetcher = LibraryFetcher { _, _, _, _ -> error("offline") })
 
         val failure = assertThrows(IllegalStateException::class.java) {
             registry.register(Any()).registerModule("needs") { it.library("com.example:missing:1") }

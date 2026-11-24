@@ -25,7 +25,7 @@ class DepsCommandTest {
     private val library = mock(PnLibrary::class.java, withSettings().extraInterfaces(RuntimeResources::class.java))
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Console") { permission -> true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
         override fun send(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }

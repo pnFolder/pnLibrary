@@ -3,10 +3,11 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
 import net.kyori.adventure.audience.Audience
+import org.pnfolder.pnlibrary.api.audience.name
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction

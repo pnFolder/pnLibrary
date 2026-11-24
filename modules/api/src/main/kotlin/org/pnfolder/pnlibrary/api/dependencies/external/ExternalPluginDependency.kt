@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.api.dependencies.external
 import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
-import org.pnfolder.pnlibrary.api.internal.requireHttpsUri
+import org.pnfolder.pnlibrary.api.downloads.requireHttpsUri
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.net.URI

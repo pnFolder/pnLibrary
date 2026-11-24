@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
-import org.pnfolder.pnlibrary.bukkit.player.BukkitTitle
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView
 import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults
@@ -62,7 +62,7 @@ internal class UpdateReminders(
 
     private fun send(active: PnLibrary, player: Player, withTitle: Boolean) {
         if (!player.isOnline) return
-        val audience = active.players.player(player.uniqueId) ?: return
+        val audience = active.audiences.player(player.uniqueId) ?: return
         val snapshots = active.updates.products.all().map { it.snapshot }
         val notice = UpdateCatalogView.announcement(snapshots, BukkitControlCommand.ROUTES, PnLibraryIdentity.SUPPORT_URL)
         if (notice.isEmpty()) return

@@ -40,7 +40,7 @@ class RichFile {
 class ConfigEditingKindsTest {
     @TempDir lateinit var server: Path
 
-    private fun open(service: ConfigurationServiceImpl): ManagedConfig<RichFile> {
+    private fun open(service: YamlConfigurations): ManagedConfig<RichFile> {
         val folder = server.resolve("plugins/quests").also { Files.createDirectories(it) }
         val scope: ConfigScope = service.scope(FakeConfigOwner(folder.toFile()), PluginId.of("quests-main"), PluginId.of("quests"), ModuleId.of("main"))
         return scope.yaml<RichFile>("rich.yml") { RichFile() }.also { it.load() }
@@ -48,7 +48,7 @@ class ConfigEditingKindsTest {
 
     @Test
     fun `a time is typed with units and kept in the unit of the field`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
 
             config.edit("delay", "1h30m")
@@ -64,7 +64,7 @@ class ConfigEditingKindsTest {
 
     @Test
     fun `the step, the unit and the hints reach the menu`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val settings = open(service).settings.associateBy { it.path }
 
             assertEquals(TimeUnit.SECONDS, settings.getValue("delay").duration)
@@ -77,7 +77,7 @@ class ConfigEditingKindsTest {
 
     @Test
     fun `a strict list of values makes a text a choice that refuses anything else`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = open(service)
             val mode = config.settings.single { it.path == "mode" }
 

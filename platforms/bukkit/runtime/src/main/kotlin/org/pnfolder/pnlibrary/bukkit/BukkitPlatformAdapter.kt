@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities
 import org.pnfolder.pnlibrary.bukkit.integration.BukkitMetricsFactory
-import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerAdapter
-import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAdventureTransport
 import org.pnfolder.pnlibrary.bukkit.remote.BukkitRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.bukkit.tasks.BukkitTaskAdapter
@@ -32,7 +32,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins
 import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot
 import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot
 import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver
-import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -47,7 +47,7 @@ import java.util.logging.Logger
  */
 internal class BukkitPlatformAdapter(
     val plugin: Plugin,
-    playerService: BukkitPlayerService,
+    playerService: BukkitAdventureTransport,
     private val link: Link = Link.OFF,
     private val pnLogger: () -> PnLogger,
     private val logBuffer: PnLoggerBuffer,
@@ -100,8 +100,8 @@ internal class BukkitPlatformAdapter(
     override val commandAdapter: PlatformCommandAdapter =
         BukkitCommandAdapter(playerService, plugin, pnLogger, logBuffer)
 
-    override val playerAdapter: PlatformPlayerAdapter =
-        BukkitPlayerAdapter(playerService)
+    override val playerAdapter: PlatformAudienceAdapter =
+        BukkitAudienceAdapter(playerService)
 
     override val taskAdapter: PlatformTaskAdapter =
         BukkitTaskAdapter(plugin)

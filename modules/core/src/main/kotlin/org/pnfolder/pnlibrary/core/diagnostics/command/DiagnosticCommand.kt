@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.sender.id
+import org.pnfolder.pnlibrary.api.audience.id
 import java.util.Locale
 
 /** Builds pnLibrary's diagnostics command without depending on a native command API. */

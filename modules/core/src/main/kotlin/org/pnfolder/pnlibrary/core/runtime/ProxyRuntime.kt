@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.runtime
 
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
+import org.pnfolder.pnlibrary.api.audience.hasPermission
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.link.LinkReceiver
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec

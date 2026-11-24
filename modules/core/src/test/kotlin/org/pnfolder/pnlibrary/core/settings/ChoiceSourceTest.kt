@@ -109,17 +109,17 @@ class ChoiceSourceTest {
         val all = zones.all
 
         assertEquals(all, zones.cycle)
-        assertEquals(all[1], zones.step(all[0], false))
-        assertEquals(all.last(), zones.step(all[0], true))
-        assertEquals(all.first(), zones.step(all.last(), false))
+        assertEquals(all[1], zones.next(all[0]))
+        assertEquals(all.last(), zones.previous(all[0]))
+        assertEquals(all.first(), zones.next(all.last()))
     }
 
     @Test
     fun `a zone outside the cycle comes first in the rolling list and steps to the ends`() {
         assertEquals(listOf("US/Pacific") + zones.cycle, zones.rolling("US/Pacific"))
         assertEquals(zones.cycle, zones.rolling("Europe/Moscow"))
-        assertEquals(zones.cycle.first(), zones.step("US/Pacific", false))
-        assertEquals(zones.cycle.last(), zones.step("US/Pacific", true))
+        assertEquals(zones.cycle.first(), zones.next("US/Pacific"))
+        assertEquals(zones.cycle.last(), zones.previous("US/Pacific"))
     }
 
     @Test
@@ -127,7 +127,7 @@ class ChoiceSourceTest {
         val source = ChoiceSource("letters", listOf("a", "b", "c"))
 
         assertEquals(listOf("a", "b", "c"), source.cycle)
-        assertEquals("a", source.step("c", false))
-        assertEquals("c", source.step("a", true))
+        assertEquals("a", source.next("c"))
+        assertEquals("c", source.previous("a"))
     }
 }

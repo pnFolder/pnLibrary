@@ -42,10 +42,10 @@ class PlaceholderReplyRulesTest {
         )
         // The examples register their own types in `setupPlaceholders`; here any reading will do.
         @Suppress("UNCHECKED_CAST")
-        val clan = Class.forName("org.pnfolder.pnlibrary.api.placeholders.examples.Clan") as Class<Any>
+        val clan = Class.forName("org.pnfolder.pnlibrary.core.placeholders.examples.Clan") as Class<Any>
         ArgumentAdapters.register(clan, ArgumentAdapter("clan") { null })
         holders.forEach { name ->
-            val type = Class.forName("org.pnfolder.pnlibrary.api.placeholders.examples.$name")
+            val type = Class.forName("org.pnfolder.pnlibrary.core.placeholders.examples.$name")
             val constructor = type.declaredConstructors.first { it.parameterCount == 0 }.apply { isAccessible = true }
             Scanner().scan(listOf(constructor.newInstance()))
         }

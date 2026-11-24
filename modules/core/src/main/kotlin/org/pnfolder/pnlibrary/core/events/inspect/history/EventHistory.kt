@@ -130,30 +130,33 @@ class EventHistory(
                 .map { EventHour(hour, it.key, it.value.calls.sum(), it.value.denied.sum()) }
         }
 
-    /** Writes days and hours to `event-history.csv` or `event-history.json` beside the history file; `null` if not possible. */
-    fun export(json: Boolean): Path? {
+    /** Writes days and hours to `event-history.csv` beside the history file; `null` if not possible. */
+    fun exportCsv(): Path? = export("event-history.csv") { days, hours ->
+        fun cell(value: String) = if (value.any { it == ',' || it == '"' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
+        buildString {
+            append("period,time,event,calls,denied").append(NL)
+            days.forEach { append("day,${it.date},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
+            hours.forEach { append("hour,${it.hour},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
+        }
+    }
+
+    /** Writes days and hours to `event-history.json` beside the history file; `null` if not possible. */
+    fun exportJson(): Path? = export("event-history.json") { days, hours ->
+        fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        buildString {
+            append("{\"days\":[")
+            append(days.joinToString(",") { """{"date":"${it.date}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
+            append("],\"hours\":[")
+            append(hours.joinToString(",") { """{"hour":"${it.hour}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
+            append("]}").append(NL)
+        }
+    }
+
+    private fun export(name: String, render: (List<EventDay>, List<EventHour>) -> String): Path? {
         val source = file ?: return null
         if (retentionDays <= 0) return null
-        val days = entries()
-        val hours = hourly()
-        val text = if (json) {
-            fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-            buildString {
-                append("{\"days\":[")
-                append(days.joinToString(",") { """{"date":"${it.date}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
-                append("],\"hours\":[")
-                append(hours.joinToString(",") { """{"hour":"${it.hour}","event":${quote(it.eventType)},"calls":${it.calls},"denied":${it.denied}}""" })
-                append("]}").append(NL)
-            }
-        } else {
-            fun cell(value: String) = if (value.any { it == ',' || it == '"' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
-            buildString {
-                append("period,time,event,calls,denied").append(NL)
-                days.forEach { append("day,${it.date},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
-                hours.forEach { append("hour,${it.hour},${cell(it.eventType)},${it.calls},${it.denied}").append(NL) }
-            }
-        }
-        val target = source.resolveSibling(if (json) "event-history.json" else "event-history.csv")
+        val target = source.resolveSibling(name)
+        val text = render(entries(), hourly())
         return runCatchingNonFatal { AtomicFiles.write(target, text.toByteArray(Charsets.UTF_8)); target }.getOrNull()
     }
 

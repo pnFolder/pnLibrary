@@ -7,10 +7,7 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer
 import org.pnfolder.pnlibrary.api.network.NetworkServer
-import org.pnfolder.pnlibrary.api.player.Delivery
-import org.pnfolder.pnlibrary.api.player.PlayerCapability
-import org.pnfolder.pnlibrary.api.player.PlayerEffect
-import org.pnfolder.pnlibrary.api.player.PlayerParticle
+import org.pnfolder.pnlibrary.api.audience.playerPointers
 import java.net.InetSocketAddress
 import java.util.UUID
 
@@ -19,19 +16,19 @@ internal class BungeeNetworkPlayer(
     internal val native: ProxiedPlayer,
 ) : NetworkPlayer {
 
-    override val capabilities: Set<PlayerCapability> = setOf(
-        PlayerCapability.MESSAGE,
-        PlayerCapability.ACTION_BAR,
-    )
-
     override val uniqueId: UUID get() = native.uniqueId
-    override val name: String get() = native.name
     override val address: InetSocketAddress? get() = native.address
     override val ping: Long get() = native.ping.toLong()
     override val currentServer: NetworkServer?
         get() = native.server?.info?.let(::BungeeNetworkServer)
 
-    override fun hasPermission(permission: String): Boolean = native.hasPermission(permission)
+    override fun pointers() = playerPointers(
+        name = { native.name },
+        uniqueId = native.uniqueId,
+        displayName = { LEGACY.deserialize(native.displayName) },
+        locale = { native.locale },
+        permission = native::hasPermission,
+    )
 
     override fun sendMessage(message: Component) =
         native.sendMessage(*TextComponent.fromLegacyText(LEGACY.serialize(message)))
@@ -39,8 +36,6 @@ internal class BungeeNetworkPlayer(
     override fun sendActionBar(message: Component) =
         native.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(message)))
 
-    override fun applyEffect(effect: PlayerEffect): Delivery = Delivery.Unsupported
-    override fun spawnParticle(particle: PlayerParticle): Delivery = Delivery.Unsupported
 
     override fun disconnect(reason: String) = native.disconnect(TextComponent(reason))
 

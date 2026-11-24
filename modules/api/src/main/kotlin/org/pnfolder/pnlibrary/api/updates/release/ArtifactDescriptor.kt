@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.release
 
-import org.pnfolder.pnlibrary.api.internal.isHttps
+import org.pnfolder.pnlibrary.api.downloads.isHttps
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.javaInRange
 import org.pnfolder.pnlibrary.api.updates.requirePositiveSize

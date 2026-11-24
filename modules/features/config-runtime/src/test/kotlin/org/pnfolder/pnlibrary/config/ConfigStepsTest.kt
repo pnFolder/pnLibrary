@@ -46,7 +46,7 @@ class ConfigStepsTest {
     @TempDir lateinit var directory: Path
 
     private fun open(steps: ConfigSteps<*>): ManagedConfig<StepSettings> {
-        val service = ConfigurationServiceImpl(FakeOwnerPlatform)
+        val service = YamlConfigurations(FakeOwnerPlatform)
         val scope = service.scope(FakeConfigOwner(directory.toFile()), PluginId.of("steps"))
         val options = ConfigOptions.builder().migrations(steps).build()
         return scope.yaml("settings.yml", options) { StepSettings() }

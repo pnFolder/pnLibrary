@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.name
-import org.pnfolder.pnlibrary.api.sender.senderPointers
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.name
+import org.pnfolder.pnlibrary.api.audience.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration

@@ -109,7 +109,7 @@ class EventDispatcher(
         override fun history(eventType: String?): List<EventDay> = history?.entries(eventType).orEmpty()
         override fun hourly(eventType: String?): List<EventHour> = history?.hourly(eventType).orEmpty()
         override fun asyncQueued(): Int = worker.queued()
-        override fun exportHistory(json: Boolean): java.nio.file.Path? = history?.export(json)
+        override fun exportHistory(json: Boolean): java.nio.file.Path? = if (json) history?.exportJson() else history?.exportCsv()
         override val historyDays: Int get() = history?.retention ?: 0
         override fun enableTracing(eventType: Class<out Event>, capacity: Int) = tracer.enable(eventType, capacity)
         override fun disableTracing(eventType: Class<out Event>) = tracer.disable(eventType)

@@ -16,12 +16,12 @@ import java.util.UUID
 object PlayerLifecyclePublisher {
     /** Announces that [uniqueId] joined. */
     fun joined(library: PnLibrary, uniqueId: UUID, name: String) {
-        publish(library) { PlayerJoinedEvent(uniqueId, name, library.players.player(uniqueId)) }
+        publish(library) { PlayerJoinedEvent(uniqueId, name, library.audiences.player(uniqueId)) }
     }
 
     /** Announces that [uniqueId] left. */
     fun left(library: PnLibrary, uniqueId: UUID, name: String) {
-        publish(library) { PlayerLeftEvent(uniqueId, name, library.players.player(uniqueId)) }
+        publish(library) { PlayerLeftEvent(uniqueId, name, library.audiences.player(uniqueId)) }
     }
 
     private inline fun publish(library: PnLibrary, create: () -> org.pnfolder.pnlibrary.api.events.Event) {

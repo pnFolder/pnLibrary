@@ -41,7 +41,7 @@ class ConfigCatalogTest {
     private val plugins: Path get() = server.resolve("plugins")
 
     private fun scope(
-        service: ConfigurationServiceImpl, plugin: String, module: String = "main",
+        service: YamlConfigurations, plugin: String, module: String = "main",
     ): ConfigScope {
         val folder = plugins.resolve(plugin).also { Files.createDirectories(it) }
         return service.scope(FakeConfigOwner(folder.toFile()), PluginId.of("$plugin-$module"), PluginId.of(plugin), ModuleId.of(module))
@@ -59,7 +59,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `registered files are listed under plugin, module and path`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val main = scope(service, "quests")
             val extra = scope(service, "quests", "extra")
             scope(service, "shop").yaml<AwardsFile>("prices.yml") { AwardsFile() }
@@ -86,7 +86,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a scope lists only its own files and require names the registered ones`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val main = scope(service, "quests")
             scope(service, "quests", "extra").yaml<AwardsFile>("other.yml") { AwardsFile() }
             main.yaml<AwardsFile>("awards.yml") { AwardsFile() }
@@ -102,7 +102,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `info describes a file without values and follows its life`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = scope(service, "quests").yaml<AwardsFile>("awards.yml") { AwardsFile() }
 
             val before = requireNotNull(config.info)
@@ -122,7 +122,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `closing a scope removes its files from the catalog`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val scope = scope(service, "quests")
             scope.yaml<AwardsFile>("awards.yml") { AwardsFile() }
             assertEquals(1, service.all().size)
@@ -136,7 +136,7 @@ class ConfigCatalogTest {
     @Test
     fun `a plugin teaches another plugin's file a new word, and the file reads it`() {
         write("quests", "awards.yml", "awards:\n  - type: money\n    amount: 7\n  - type: item\n    material: DIAMOND\n    count: 3\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml<AwardsFile>("awards.yml") { AwardsFile() }
             scope(service, "questitems").type<Award, ItemAward>().name("item").into("quests/main:awards.yml").register()
 
@@ -147,7 +147,7 @@ class ConfigCatalogTest {
     @Test
     fun `without the word the file fails by default and names the element`() {
         write("quests", "awards.yml", "awards:\n  - type: item\n    material: DIAMOND\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml<AwardsFile>("awards.yml") { AwardsFile() }
 
             val error = assertThrows(IllegalArgumentException::class.java) { awards.load() }
@@ -159,7 +159,7 @@ class ConfigCatalogTest {
     fun `skipping keeps the element in the file and reads it again when the word appears`() {
         val text = "awards:\n  - type: money\n    amount: 7\n  - type: item\n    material: DIAMOND\n    count: 3\n"
         write("quests", "awards.yml", text)
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml("awards.yml", skipping) { AwardsFile() }
 
             assertEquals(listOf<Award>(MoneyAward(7)), awards.load().value.awards)
@@ -184,7 +184,7 @@ class ConfigCatalogTest {
         val text = "awards:\n  - type: item\n"
         write("quests", "a.yml", text)
         write("quests", "b.yml", text)
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val main = scope(service, "quests")
             val extra = scope(service, "quests", "extra")
             val inMain = main.yaml("a.yml", skipping) { AwardsFile() }
@@ -201,7 +201,7 @@ class ConfigCatalogTest {
         val text = "awards:\n  - type: item\n"
         write("quests", "a.yml", text)
         write("quests", "b.yml", text)
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             scope(service, "questitems").type<Award, ItemAward>().name("item").into("quests").register()
             val inMain = scope(service, "quests").yaml<AwardsFile>("a.yml") { AwardsFile() }
             val inExtra = scope(service, "quests", "extra").yaml<AwardsFile>("b.yml") { AwardsFile() }
@@ -214,7 +214,7 @@ class ConfigCatalogTest {
     @Test
     fun `a word can be aimed at a registered file object`() {
         write("quests", "awards.yml", "awards:\n  - type: stack\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml<AwardsFile>("awards.yml") { AwardsFile() }
             scope(service, "questitems").type<Award, ItemAward>().name("item").alias("stack").into(awards).register()
 
@@ -225,7 +225,7 @@ class ConfigCatalogTest {
     @Test
     fun `a word stops working after the plugin that added it is closed`() {
         write("quests", "awards.yml", "awards:\n  - type: item\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml("awards.yml", skipping) { AwardsFile() }
             val items = scope(service, "questitems")
             items.type<Award, ItemAward>().name("item").into("quests/main:awards.yml").register()
@@ -241,7 +241,7 @@ class ConfigCatalogTest {
     fun `a file only sees words that cover it`() {
         write("quests", "awards.yml", "awards:\n  - type: item\n")
         write("shop", "awards.yml", "awards:\n  - type: item\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             scope(service, "questitems").type<Award, ItemAward>().name("item").into("quests").register()
             val shop = scope(service, "shop").yaml("awards.yml", skipping) { AwardsFile() }
 
@@ -252,7 +252,7 @@ class ConfigCatalogTest {
     @Test
     fun `without into a word works in the module that registers it`() {
         write("quests", "awards.yml", "awards:\n  - type: item\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val main = scope(service, "quests")
             main.type<Award, ItemAward>().name("item").register()
 
@@ -262,7 +262,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `types lists the words of a base type and who added them`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             scope(service, "questitems").type<Award, ItemAward>().name("item").alias("stack").priority(4).into("quests").register()
 
             val words = service.types(Award::class.java)
@@ -279,7 +279,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a word that the base type declares cannot be taken`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val error = assertThrows(IllegalArgumentException::class.java) {
                 scope(service, "evil").type<Award, ItemAward>().name("money").into("quests").register()
             }
@@ -292,7 +292,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a word that the file's own plugin published cannot be taken by another plugin`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             scope(service, "quests").type<Award, GoldAward>().name("gold").register()
 
             assertThrows(IllegalArgumentException::class.java) {
@@ -305,7 +305,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `one plugin cannot publish the same word twice for overlapping files`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val items = scope(service, "questitems")
             items.type<Award, ItemAward>().name("item").into("quests").register()
 
@@ -320,7 +320,7 @@ class ConfigCatalogTest {
     @Test
     fun `two plugins may add one word and a priority decides`() {
         write("quests", "awards.yml", "awards:\n  - type: thing\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml<AwardsFile>("awards.yml") { AwardsFile() }
             scope(service, "one").type<Award, ItemAward>().name("thing").priority(1).into("quests").register()
             scope(service, "two").type<Award, GoldAward>().name("thing").priority(9).into("quests").register()
@@ -335,7 +335,7 @@ class ConfigCatalogTest {
     fun `read-only reads a file as it is and never writes it`() {
         val text = "awards:\n  - type: money\n    amount: 9\n# keep me\n"
         write("quests", "awards.yml", text)
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val options = ConfigOptions.builder().readOnly().build()
             val awards = scope(service, "quests").yaml("awards.yml", options) { AwardsFile() }
 
@@ -348,7 +348,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `read-only does not create a missing file`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val awards = scope(service, "quests").yaml("awards.yml", ConfigOptions.builder().readOnly().build()) { AwardsFile() }
 
             assertThrows(IllegalStateException::class.java) { awards.load() }
@@ -359,7 +359,7 @@ class ConfigCatalogTest {
     @Test
     fun `two plugins may read one file but only one may write it`() {
         write("shop", "prices.yml", "awards: []\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val readOnly = ConfigOptions.builder().readOnly().root(ConfigRoot.PLUGINS).build()
             val writing = ConfigOptions.builder().root(ConfigRoot.PLUGINS).build()
             scope(service, "quests").yaml("shop/prices.yml", readOnly) { AwardsFile() }
@@ -375,7 +375,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `the same file cannot be registered twice by one module`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val quests = scope(service, "quests")
             quests.yaml<AwardsFile>("awards.yml") { AwardsFile() }
 
@@ -385,7 +385,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a file in the plugins folder gets the root in its identifier and is never created`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = scope(service, "quests").yaml(
                 "essentials/config.yml", ConfigOptions.builder().root(ConfigRoot.PLUGINS).build(),
             ) { AwardsFile() }
@@ -401,7 +401,7 @@ class ConfigCatalogTest {
     @Test
     fun `a file in the plugins folder is read and backed up before a rewrite`() {
         write("essentials", "config.yml", "awards:\n  - type: money\n    amount: 3\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = scope(service, "quests").yaml(
                 "essentials/config.yml", ConfigOptions.builder().root(ConfigRoot.PLUGINS).backups(false).build(),
             ) { AwardsFile() }
@@ -415,7 +415,7 @@ class ConfigCatalogTest {
     @Test
     fun `a file in the server root is found next to the plugins folder`() {
         Files.writeString(server.resolve("bukkit.yml"), "awards: []\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val config = scope(service, "quests").yaml(
                 "bukkit.yml", ConfigOptions.builder().root(ConfigRoot.SERVER).readOnly().build(),
             ) { AwardsFile() }
@@ -427,7 +427,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a path cannot leave its root`() {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val quests = scope(service, "quests")
             assertThrows(IllegalArgumentException::class.java) { quests.yaml<AwardsFile>("../shop/prices.yml") { AwardsFile() } }
             assertThrows(IllegalArgumentException::class.java) { quests.yaml<AwardsFile>("/etc/x.yml") { AwardsFile() } }
@@ -441,7 +441,7 @@ class ConfigCatalogTest {
     @Test
     fun `files of other plugins are not announced to diagnostics`() {
         write("essentials", "config.yml", "awards: []\n")
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val announced = mutableListOf<String>()
             service.fileListener = { file -> announced += file.path; null }
             val quests = scope(service, "quests")
@@ -457,7 +457,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `a plugin opens a file at any absolute path and the file is created and listed`(@TempDir elsewhere: Path) {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val file = elsewhere.resolve("deep/folder/awards.yml")
             val config = scope(service, "quests").yamlAt<AwardsFile>(file) { AwardsFile() }
 
@@ -473,7 +473,7 @@ class ConfigCatalogTest {
 
     @Test
     fun `an external path must be absolute and a second writer of the same file is refused`(@TempDir elsewhere: Path) {
-        ConfigurationServiceImpl(FakeOwnerPlatform).use { service ->
+        YamlConfigurations(FakeOwnerPlatform).use { service ->
             val quests = scope(service, "quests")
             assertThrows(IllegalArgumentException::class.java) {
                 quests.yaml("relative.yml", ConfigOptions.builder().root(ConfigRoot.EXTERNAL).build()) { AwardsFile() }

@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
 import org.pnfolder.pnlibrary.api.commands.error.CommandFailure
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.common.lang.Failures
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter

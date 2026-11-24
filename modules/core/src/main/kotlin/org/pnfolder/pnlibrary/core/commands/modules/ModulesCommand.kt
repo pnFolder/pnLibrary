@@ -35,16 +35,17 @@ import java.util.concurrent.CompletionStage
  * always may use it. A module its plugin registered without hooks is listed but cannot be switched.
  */
 class ModulesCommand(private val library: PnLibrary) {
+    private val libraries = LibraryPages(library)
     fun definition(): CommandDefinition = command("modules") {
         permission(PERMISSION)
         noPermissionMessage("Модули плагинов доступны администраторам. Нужно право $PERMISSION.")
         consoleBypassesPermission()
         executes { list(it) }
         literal("libs") {
-            executes { libs(it, null) }
+            executes { libraries.libs(it, null) }
             argument("owner", ArgumentType.string()) {
                 suggests { LibraryRow.all(library).map { it.owner }.distinct() }
-                executes { libs(it, it.get<String>("owner")) }
+                executes { libraries.libs(it, it.get<String>("owner")) }
             }
         }
         literal("lib") {
@@ -54,7 +55,7 @@ class ModulesCommand(private val library: PnLibrary) {
                         suggests { LibraryRow.all(library).map { it.owner }.distinct() }
                         argument("library", ArgumentType.string()) {
                             suggests { LibraryRow.all(library).map { it.coordinates }.distinct() }
-                            executes { changeLibrary(it, action, it.get<String>("owner"), it.get<String>("library")) }
+                            executes { libraries.changeLibrary(it, action, it.get<String>("owner"), it.get<String>("library")) }
                         }
                     }
                 }
@@ -154,15 +155,6 @@ class ModulesCommand(private val library: PnLibrary) {
         return library.description?.let { line.append(kit.text(": $it", ChatPalette.LABEL)) } ?: line
     }
 
-    /** The libraries of a plugin (`plugin`) or of one of its modules (`plugin:module`). */
-    private fun holderOf(owner: String): org.pnfolder.pnlibrary.api.libraries.ModuleLibraries? {
-        for (plugin in library.plugins.all()) {
-            if (plugin.id.value.equals(owner, true)) return plugin.libraries
-            for (module in plugin.all()) if ("${plugin.id.value}:${module.id.value}".equals(owner, true)) return module.libraries
-        }
-        return null
-    }
-
     private fun forceMinecraft(context: CommandContext, kit: ChatKit, name: String, module: ModuleContext, on: Boolean) {
         val target = module as? org.pnfolder.pnlibrary.core.plugin.module.MinecraftForcible
         if (target == null || module.minecraft.declared == null) {
@@ -172,64 +164,6 @@ class ModulesCommand(private val library: PnLibrary) {
         target.forceMinecraft(on)
         val text = if (on) "запускать при любой версии Minecraft (на свой риск)" else "версия Minecraft снова проверяется"
         context.sender.send(kit.text("$name: ", ChatPalette.TEXT).append(kit.text(text, ChatPalette.SOFT)))
-    }
-
-    private fun changeLibrary(context: CommandContext, action: String, owner: String, coordinates: String) {
-        val kit = kit(context)
-        val holder = holderOf(owner)
-        if (holder == null) { context.sender.send(kit.note("Нет плагина или модуля «$owner». Список: /pn modules libs", ChatPalette.DANGER)); return }
-        val found = holder.statuses.firstOrNull { it.library.coordinates.equals(coordinates, true) }?.library
-        if (found == null) {
-            context.sender.send(kit.note("У $owner нет библиотеки «$coordinates». Список: /pn modules libs $owner", ChatPalette.DANGER))
-            return
-        }
-        val status = when (action) {
-            "enable" -> holder.setAutoLoad(found, true)
-            "disable" -> holder.setAutoLoad(found, false)
-            else -> holder.retry(found)
-        }
-        val result = when {
-            status.restartRequired -> "выключена: она уже используется, пропадёт после перезапуска сервера" to ChatPalette.WARN
-            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.LOADED -> "загружена" to ChatPalette.OK
-            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.DISABLED -> "выключена, при запуске сервера не загружается" to ChatPalette.WARN
-            status.state == org.pnfolder.pnlibrary.api.libraries.LibraryState.FAILED -> "ошибка: ${status.error}" to ChatPalette.DANGER
-            else -> "не нужна на этой платформе" to ChatPalette.FAINT
-        }
-        context.sender.send(kit.text("${found.title} ${found.version}: ", ChatPalette.TEXT).append(kit.text(result.first, result.second)))
-    }
-
-    private fun libs(context: CommandContext, owner: String?) {
-        val kit = kit(context)
-        val rows = LibraryRow.all(library).filter { owner == null || it.belongsTo(owner) }
-        val lines = mutableListOf(kit.blank(), kit.header("Библиотеки", kit.text("${rows.size}", ChatPalette.LABEL)))
-        if (rows.isEmpty()) lines += kit.note(if (owner == null) "Плагины не подключили библиотек." else "У $owner нет библиотек.", ChatPalette.FAINT)
-        rows.groupBy { it.owner }.forEach { (who, own) ->
-            lines += kit.text(" $who", ChatPalette.ACCENT)
-            own.forEach { row ->
-                var line = kit.text("    ${row.title}", ChatPalette.TEXT).append(kit.text(" ${row.version}", ChatPalette.SOFT))
-                        .append(kit.dot())
-                        .append(kit.text(when (row.scope) { "ISOLATED" -> "отдельно"; "LIBRARY" -> "в pnLibrary"; else -> "в плагине" }, ChatPalette.FAINT))
-                if (row.size >= 0) line = line.append(kit.dot()).append(kit.text(DiskUsage.format(row.size), ChatPalette.SOFT))
-                line = line.append(kit.dot()).append(
-                    when (row.trust) {
-                        LibraryRow.GIVEN -> kit.text("сумма задана", ChatPalette.OK)
-                        else -> kit.text("jar не проверяется", ChatPalette.WARN)
-                    },
-                )
-                if (!row.required) line = line.append(kit.dot()).append(kit.text("необязательная", ChatPalette.FAINT))
-                line = when {
-                    row.state == "DISABLED" -> line.append(kit.dot()).append(kit.text("выключена", ChatPalette.WARN))
-                    row.state == "FAILED" -> line.append(kit.dot()).append(kit.text("ошибка: ${row.error}", ChatPalette.DANGER))
-                    row.restartRequired -> line.append(kit.dot()).append(kit.text("выключится после перезапуска", ChatPalette.WARN))
-                    else -> line
-                }
-                if (row.conflict) line = line.append(kit.dot()).append(kit.text("другая версия у другого плагина", ChatPalette.DANGER))
-                lines += line
-                row.description?.let { lines += kit.text("      $it", ChatPalette.LABEL) }
-                row.place?.let { lines += kit.text("      лежит: $it", ChatPalette.FAINT) }
-            }
-        }
-        lines.forEach(context.sender::send)
     }
 
     private fun disk(context: CommandContext) {

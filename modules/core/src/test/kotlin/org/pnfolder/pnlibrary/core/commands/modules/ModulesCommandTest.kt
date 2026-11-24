@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
-import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest
+import org.pnfolder.pnlibrary.core.plugin.LoadedPluginsTest
 
 class ModulesCommandTest {
     private class Switchable : PluginModule {
@@ -23,11 +23,11 @@ class ModulesCommandTest {
         override fun onDisable(context: ModuleContext) {}
     }
 
-    private val registry = PluginRegistryImplTest.registry()
+    private val registry = LoadedPluginsTest.registry()
     private val library = mock(PnLibrary::class.java).also { `when`(it.plugins).thenReturn(registry) }
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Console") { permission -> true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
         override fun send(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }

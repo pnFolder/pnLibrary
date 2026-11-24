@@ -1,6 +1,8 @@
 package org.pnfolder.pnlibrary.core.actions
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.name
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -12,7 +14,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRejectReason
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
 import org.pnfolder.pnlibrary.api.currency.CurrencyService
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -37,17 +39,15 @@ import java.util.concurrent.CompletableFuture
 /** Scenarios: order, quiet stops, failures with undo, money and requirements. */
 class ScenarioTest {
     private val id = UUID.randomUUID()
-    private val player = mock(LibraryPlayer::class.java).also {
-        `when`(it.uniqueId).thenReturn(id)
-        `when`(it.name).thenReturn("Alice")
-    }
+    private var permissions: Set<String> = emptySet()
+    private val player = mockPlayer(id = id) { it in permissions }
     private val money = mock(Currency::class.java).also {
         `when`(it.format(BigDecimal(100))).thenReturn("100 coins")
     }
     private val log = mutableListOf<String>()
 
     private fun context(permissions: Set<String> = emptySet()): ActionContext {
-        `when`(player.hasPermission(anyString())).thenAnswer { it.getArgument<String>(0) in permissions }
+        this.permissions = permissions
         val currencies = mock(CurrencyService::class.java)
         `when`(currencies.get("money")).thenReturn(money)
         return ActionContext(

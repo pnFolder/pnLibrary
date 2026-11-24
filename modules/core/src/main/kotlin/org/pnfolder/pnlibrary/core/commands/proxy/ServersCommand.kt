@@ -10,8 +10,8 @@ import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.name
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.name
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.common.text.RussianText
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskLabels

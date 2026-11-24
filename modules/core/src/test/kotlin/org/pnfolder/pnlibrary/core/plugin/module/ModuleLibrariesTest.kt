@@ -14,7 +14,7 @@ class ModuleLibrariesTest {
     fun `a library is fetched once and its isolated loader is kept`() {
         val holder = URLClassLoader(emptyArray())
         var fetched = 0
-        val libraries = ModuleLibrariesImpl(null) { fetched++; holder }
+        val libraries = ModuleLibraryLoader(null) { fetched++; holder }
 
         libraries.load(hikari)
         libraries.load(hikari)
@@ -27,7 +27,7 @@ class ModuleLibrariesTest {
     @Test
     fun `a shared library adds no loader and a failure is not remembered as loaded`() {
         val shared = ModuleLibrary.builder("g", "a", "1").scope(org.pnfolder.pnlibrary.api.libraries.LibraryScope.LIBRARY).build()
-        val libraries = ModuleLibrariesImpl(null) { if (it == hikari) error("offline") else null }
+        val libraries = ModuleLibraryLoader(null) { if (it == hikari) error("offline") else null }
 
         libraries.load(shared)
         assertThrows(IllegalStateException::class.java) { libraries.load(hikari) }
@@ -37,8 +37,8 @@ class ModuleLibrariesTest {
     @Test
     fun `a module sees the libraries of its plugin and does not fetch them twice`() {
         var fetched = 0
-        val plugin = ModuleLibrariesImpl(null) { fetched++; null }
-        val module = ModuleLibrariesImpl(plugin) { fetched++; null }
+        val plugin = ModuleLibraryLoader(null) { fetched++; null }
+        val module = ModuleLibraryLoader(plugin) { fetched++; null }
         val own = ModuleLibrary.of("g:own:1")
 
         plugin.load(hikari)
@@ -54,7 +54,7 @@ class ModuleLibrariesTest {
 
     @Test
     fun `remove takes a library off the list and tells whether it was there`() {
-        val libraries = ModuleLibrariesImpl(null) { null }
+        val libraries = ModuleLibraryLoader(null) { null }
         libraries.load(hikari)
 
         assertEquals(true, libraries.remove(hikari))
@@ -64,8 +64,8 @@ class ModuleLibrariesTest {
 
     @Test
     fun `a class is searched in the module loader first and then in the plugin loader`() {
-        val plugin = ModuleLibrariesImpl(null) { null }
-        val module = ModuleLibrariesImpl(plugin) { null }
+        val plugin = ModuleLibraryLoader(null) { null }
+        val module = ModuleLibraryLoader(plugin) { null }
 
         assertSame(String::class.java, module.loadClass("java.lang.String"))
         assertThrows(ClassNotFoundException::class.java) { module.loadClass("no.such.Library") }

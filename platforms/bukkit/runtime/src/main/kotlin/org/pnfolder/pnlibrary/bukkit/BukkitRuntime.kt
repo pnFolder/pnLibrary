@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.bukkit.inventory.BukkitMenus
 import org.pnfolder.pnlibrary.bukkit.inventory.MenuService
 import org.pnfolder.pnlibrary.bukkit.item.BukkitItems
 import org.pnfolder.pnlibrary.bukkit.item.ItemService
-import org.pnfolder.pnlibrary.bukkit.player.BukkitPlayerService
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitAdventureTransport
 import org.pnfolder.pnlibrary.bukkit.server.ServerInfo
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.lifecycle.runtimeTaskScope
@@ -27,7 +27,7 @@ import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost
  */
 internal class BukkitRuntime(private val plugin: JavaPlugin) {
     private var host: PnLibraryRuntimeHost? = null
-    private var audiences: BukkitPlayerService? = null
+    private var audiences: BukkitAdventureTransport? = null
     private var menus: BukkitMenus? = null
     private var integrations: BukkitIntegrations? = null
     private var link: BukkitLinkReporter? = null
@@ -36,7 +36,7 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
     fun start() {
         var startupLogger: PnLogger? = null
         val logBuffer = PnLoggerBuffer(plugin.logger) { startupLogger }
-        val playerService = BukkitPlayerService(plugin, logBuffer)
+        val playerService = BukkitAdventureTransport(plugin, logBuffer)
         audiences = playerService
         val network = openLink(plugin)
         var metricsLogger: PnLogger? = null
@@ -79,12 +79,12 @@ internal class BukkitRuntime(private val plugin: JavaPlugin) {
         runCatchingNonFatal(action).onFailure { logger?.error("Could not stop $part", it) }
     }
 
-    private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, playerService: BukkitPlayerService) {
+    private fun installServices(runtime: PnLibraryRuntimeHost, adapter: BukkitPlatformAdapter, playerService: BukkitAdventureTransport) {
         val menuService = BukkitMenus(plugin, runtime.library.runtimeTaskScope(), pnLogger = { runtime.library.logging.logger(plugin, "Menus") })
         runtime.registerService(ServerInfo::class.java, adapter.serverInfo)
         runtime.registerService(MenuService::class.java, menuService)
         runtime.registerPlatform(BukkitPlatform::class.java, BukkitPlatformServices(plugin.server, adapter.serverInfo, menuService))
-        runtime.registerService(BukkitPlayerService::class.java, playerService)
+        runtime.registerService(BukkitAdventureTransport::class.java, playerService)
         menus = menuService
     }
 }

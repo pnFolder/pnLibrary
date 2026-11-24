@@ -21,7 +21,7 @@ import org.pnfolder.pnlibrary.api.config.yaml
 import org.pnfolder.pnlibrary.api.plugin.ModuleId
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.config.ConfigurationServiceImpl
+import org.pnfolder.pnlibrary.config.YamlConfigurations
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
@@ -54,12 +54,12 @@ class ConfigsCommandTest {
         override fun ownerDataFolder(owner: Any): Path? = (owner as? Owner)?.folder
         override fun ownerLogger(owner: Any): Logger? = Logger.getLogger("configs-command-test")
     }
-    private val service = ConfigurationServiceImpl(platform)
+    private val service = YamlConfigurations(platform)
     private val library = mock(PnLibrary::class.java).also { `when`(it.configurations).thenReturn(service) }
     private val definition = ConfigsCommand(library).definition()
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Console") { permission -> true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
         override fun send(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }

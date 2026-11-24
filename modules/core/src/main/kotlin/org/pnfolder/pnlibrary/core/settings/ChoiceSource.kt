@@ -48,17 +48,16 @@ internal class ChoiceSource(
      */
     fun rolling(current: String): List<String> = if (current in cycle) cycle else listOf(current) + cycle
 
-    /**
-     * The value after [current] (or before it, when [backwards]) in the [cycle], wrapping around. A [current] outside
-     * the cycle moves to the first value, or to the last one when [backwards].
-     */
-    fun step(current: String, backwards: Boolean): String {
+    /** The value after [current] in the [cycle], wrapping around; a [current] outside the cycle moves to the first value. */
+    fun next(current: String): String {
         val at = cycle.indexOf(current)
-        return when {
-            at >= 0 -> cycle[Math.floorMod(at + if (backwards) -1 else 1, cycle.size)]
-            backwards -> cycle.last()
-            else -> cycle.first()
-        }
+        return if (at >= 0) cycle[Math.floorMod(at + 1, cycle.size)] else cycle.first()
+    }
+
+    /** The value before [current] in the [cycle], wrapping around; a [current] outside the cycle moves to the last value. */
+    fun previous(current: String): String {
+        val at = cycle.indexOf(current)
+        return if (at >= 0) cycle[Math.floorMod(at - 1, cycle.size)] else cycle.last()
     }
 
     /** The lore lines of [value] as they are at the moment [at]. */

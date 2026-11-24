@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.bungee.commands.BungeeCommandAdapter
 import org.pnfolder.pnlibrary.bungee.diagnostics.BungeeDiagnosticDetailsCollector
 import org.pnfolder.pnlibrary.bungee.metrics.BungeeMetricsFactory
 import org.pnfolder.pnlibrary.bungee.network.BungeeNetworkProxy
-import org.pnfolder.pnlibrary.bungee.network.BungeePlayerAdapter
+import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter
 import org.pnfolder.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory
 import org.pnfolder.pnlibrary.bungee.tasks.BungeeTaskAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
@@ -60,8 +60,8 @@ internal class BungeePlatformAdapter(
 
     override val networkProxy: BungeeNetworkProxy by lazy { BungeeNetworkProxy(plugin.proxy) }
 
-    override val playerAdapter: BungeePlayerAdapter =
-        BungeePlayerAdapter(plugin)
+    override val playerAdapter: BungeeAudienceAdapter =
+        BungeeAudienceAdapter(plugin)
 
     override val commandAdapter: PlatformCommandAdapter =
         BungeeCommandAdapter(playerAdapter)

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.bukkit.commands
 
 import org.bukkit.entity.Player
-import org.pnfolder.pnlibrary.bukkit.player.BukkitTitle
+import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved

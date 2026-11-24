@@ -12,8 +12,8 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandSender
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler
 

@@ -1,6 +1,11 @@
 package org.pnfolder.pnlibrary.api.scenario.expression
 
-import org.pnfolder.pnlibrary.api.player.ItemQuery
+import org.pnfolder.pnlibrary.api.audience.feature
+import org.pnfolder.pnlibrary.api.audience.ItemQuery
+import org.pnfolder.pnlibrary.api.audience.PlayerPosition
+import org.pnfolder.pnlibrary.api.audience.PlayerInventory
+import org.pnfolder.pnlibrary.api.audience.PlayerExperience
+import org.pnfolder.pnlibrary.api.audience.hasPermission
 import org.pnfolder.pnlibrary.api.scenario.requirements.RequirementContext
 import java.util.concurrent.ThreadLocalRandom
 
@@ -128,11 +133,11 @@ class Expression private constructor(
             define("has", function = ExpressionFunction { c, a -> c.value(format(a[0])) != null }.arity(1..1, "has"))
             define("if", function = ExpressionFunction { _, a -> if (truthy(a[0])) a[1] else a[2] }.arity(3..3, "if"))
             define("permission", "perm", function = ExpressionFunction { c, a -> c.player.hasPermission(format(a[0])) }.arity(1..1, "permission"))
-            define("level", function = ExpressionFunction { c, _ -> c.player.experience(true) ?: 0.0 })
-            define("exp", function = ExpressionFunction { c, _ -> c.player.experience(false) ?: 0.0 })
-            define("items", function = ExpressionFunction { c, a -> (c.player.countItems(ItemQuery(format(a[0]))) ?: 0).toDouble() }.arity(1..1, "items"))
+            define("level", function = ExpressionFunction { c, _ -> c.player.feature<PlayerExperience>()?.experience(true) ?: 0.0 })
+            define("exp", function = ExpressionFunction { c, _ -> c.player.feature<PlayerExperience>()?.experience(false) ?: 0.0 })
+            define("items", function = ExpressionFunction { c, a -> (c.player.feature<PlayerInventory>()?.countItems(ItemQuery(format(a[0]))) ?: 0).toDouble() }.arity(1..1, "items"))
             define("distance", function = ExpressionFunction { c, a ->
-                c.player.distanceTo(format(a[0]), required(a[1]), required(a[2]), required(a[3])) ?: Double.POSITIVE_INFINITY
+                c.player.feature<PlayerPosition>()?.distanceTo(format(a[0]), required(a[1]), required(a[2]), required(a[3])) ?: Double.POSITIVE_INFINITY
             }.arity(4..4, "distance"))
         }
     }

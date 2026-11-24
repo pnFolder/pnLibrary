@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.sender.senderPointers
+import org.pnfolder.pnlibrary.api.audience.senderPointers
 import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand

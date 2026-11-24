@@ -9,7 +9,7 @@ class LibrarySourcesTest {
     @Test
     fun `a library for another platform is skipped without an error`() {
         var fetched = 0
-        val libraries = ModuleLibrariesImpl(null, PlatformType.VELOCITY) { fetched++; null }
+        val libraries = ModuleLibraryLoader(null, PlatformType.VELOCITY) { fetched++; null }
         libraries.load(ModuleLibrary.builder("g", "a", "1").platforms(PlatformType.BUKKIT).build())
         libraries.load(ModuleLibrary.builder("g", "b", "1").platforms(PlatformType.VELOCITY, PlatformType.BUNGEECORD).build())
 

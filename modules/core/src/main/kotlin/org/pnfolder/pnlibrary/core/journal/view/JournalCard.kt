@@ -5,7 +5,7 @@ import net.kyori.adventure.text.event.ClickEvent
 import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.common.time.DisplayZone
 import org.pnfolder.pnlibrary.core.journal.JournalRecord
 import org.pnfolder.pnlibrary.core.journal.store.JournalStore

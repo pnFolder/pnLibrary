@@ -2,7 +2,7 @@
 
 Плейсхолдер — значение, которое плагин отдаёт текстам, меню, сценариям и PlaceholderAPI. Значения описываются **классом с аннотациями**, а не строками регистрации.
 
-Код лежит в `api/placeholders`, движок в `core/placeholders`. Примеры кода (компилируются вместе с тестами): `modules/api/src/test/kotlin/org/pnfolder/pnlibrary/api/placeholders/examples/`.
+Код лежит в `api/placeholders`, движок в `core/placeholders`. Примеры кода (компилируются вместе с тестами): `modules/core/src/test/kotlin/org/pnfolder/pnlibrary/core/placeholders/examples/`.
 
 ## Адрес
 
@@ -90,7 +90,7 @@ module.placeholders.render("Клан {clan.tag}, монет {amount|group}", pla
 
 ## Свой разбор аргумента
 
-`ArgumentConverter<T>` превращает текст аргумента в объект: `read(input)` (синхронно) или `readLater(input)` (когда ответ приходит позже, например из базы). Указывается на параметре: `@Argument(converter = ClanByName::class) clan: ArgumentValue<Clan>`, а для типа целиком: `placeholders.converter(Clan::class.java, ClanByName())`. В `ArgumentInput` лежат `text`, `viewer`, `route`, `name`, `position`, `previous` (аргументы слева); `input.fail("причина")` говорит, почему текст не подошёл: причина попадёт в `ArgumentValue.error`. `suggest(input)` отдаёт подходящие слова для подсказок. Примеры: `modules/api/.../placeholders/examples/Example8Converters.kt`.
+`ArgumentConverter<T>` превращает текст аргумента в объект: `read(input)` (синхронно) или `readLater(input)` (когда ответ приходит позже, например из базы). Указывается на параметре: `@Argument(converter = ClanByName::class) clan: ArgumentValue<Clan>`, а для типа целиком: `placeholders.converter(Clan::class.java, ClanByName())`. В `ArgumentInput` лежат `text`, `viewer`, `route`, `name`, `position`, `previous` (аргументы слева); `input.fail("причина")` говорит, почему текст не подошёл: причина попадёт в `ArgumentValue.error`. `suggest(input)` отдаёт подходящие слова для подсказок. Примеры: `modules/core/src/test/.../placeholders/examples/Example8Converters.kt`.
 
 ## Асинхронные значения и ветки
 

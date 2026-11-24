@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
 import net.kyori.adventure.audience.Audience
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType

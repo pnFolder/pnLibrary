@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.api.downloads
 
-import org.pnfolder.pnlibrary.api.internal.requireHttpsUri
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.net.URI
 import java.util.Locale

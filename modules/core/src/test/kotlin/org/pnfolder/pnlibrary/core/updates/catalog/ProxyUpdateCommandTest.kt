@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
-import org.pnfolder.pnlibrary.api.sender.senderPointers
+import org.pnfolder.pnlibrary.api.audience.senderPointers
 import org.pnfolder.pnlibrary.api.updates.*
 import org.pnfolder.pnlibrary.api.updates.backup.*
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry

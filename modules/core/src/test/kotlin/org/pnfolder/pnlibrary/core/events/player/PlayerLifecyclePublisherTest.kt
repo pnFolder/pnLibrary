@@ -9,8 +9,8 @@ import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.events.player.PlayerJoinedEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLeftEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLifecycleEvent
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
-import org.pnfolder.pnlibrary.api.player.PlayerService
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.Audiences
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
@@ -21,11 +21,11 @@ class PlayerLifecyclePublisherTest {
     private val id = UUID.randomUUID()
 
     private fun library(events: EventDispatcher, player: LibraryPlayer?): PnLibrary {
-        val audiences = mock(PlayerService::class.java)
+        val audiences = mock(Audiences::class.java)
         `when`(audiences.player(id)).thenReturn(player)
         val library = mock(PnLibrary::class.java)
         `when`(library.events).thenReturn(events)
-        `when`(library.players).thenReturn(audiences)
+        `when`(library.audiences).thenReturn(audiences)
         return library
     }
 

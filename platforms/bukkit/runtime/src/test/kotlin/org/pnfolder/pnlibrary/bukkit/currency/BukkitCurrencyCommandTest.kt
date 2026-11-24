@@ -74,7 +74,7 @@ class BukkitCurrencyCommandTest {
 
     private class ConsoleAudience(private val permitted: Boolean) : Audience {
         val messages = mutableListOf<Component>()
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("CONSOLE") { permission -> permitted }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("CONSOLE") { permission -> permitted }
         override fun sendMessage(text: Component) {
             messages += text
         }

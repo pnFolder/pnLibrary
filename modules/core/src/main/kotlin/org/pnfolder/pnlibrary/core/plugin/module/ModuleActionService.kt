@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import net.kyori.adventure.audience.Audience
 import org.pnfolder.pnlibrary.api.placeholders.Visibility
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionService

@@ -20,8 +20,8 @@ import org.pnfolder.pnlibrary.api.commands.error.ensure
 import org.pnfolder.pnlibrary.api.commands.error.fail
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.api.sender.id
-import org.pnfolder.pnlibrary.api.sender.senderPointers
+import org.pnfolder.pnlibrary.api.audience.id
+import org.pnfolder.pnlibrary.api.audience.senderPointers
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration

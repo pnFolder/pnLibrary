@@ -29,7 +29,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.player.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.error.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
@@ -126,7 +126,7 @@ class ShopExamplePlugin : JavaPlugin() {
 
                 // A name nobody answers to becomes PlayerNotFound, which the module answers above.
                 val onlinePlayer = ArgumentType.player { name ->
-                    Bukkit.getPlayerExact(name)?.let { library.players.player(it.uniqueId) }
+                    Bukkit.getPlayerExact(name)?.let { library.audiences.player(it.uniqueId) }
                 }
                 argument("player", onlinePlayer) {
                     argument("coins", ArgumentType.integer(1, 1000)) {

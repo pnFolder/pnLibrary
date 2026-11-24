@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
 import org.pnfolder.pnlibrary.spi.commands.GenericPlatformCommandAdapter
 import org.pnfolder.pnlibrary.spi.commands.NativeCommandRegistrar
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration
-import org.pnfolder.pnlibrary.velocity.network.VelocityPlayerAdapter
+import org.pnfolder.pnlibrary.velocity.network.VelocityAudienceAdapter
 import java.util.concurrent.CompletionStage
 
 internal class VelocityCommandAdapter internal constructor(
@@ -18,10 +18,10 @@ internal class VelocityCommandAdapter internal constructor(
     private val audience: (CommandSource) -> Audience,
 ) : GenericPlatformCommandAdapter<CommandSource>() {
 
-    constructor(server: ProxyServer, audiences: VelocityPlayerAdapter) : this(
+    constructor(server: ProxyServer, audiences: VelocityAudienceAdapter) : this(
         registrar = DefaultVelocityNativeCommandRegistrar(server),
         audience = { source ->
-            requireNotNull(audiences.sender(source)) {
+            requireNotNull(audiences.of(source)) {
                 "Unsupported Velocity command source: ${source::class.java.name}"
             }
         },

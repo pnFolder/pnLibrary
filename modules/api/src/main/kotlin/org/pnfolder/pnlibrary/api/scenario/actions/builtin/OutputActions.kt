@@ -1,13 +1,16 @@
 package org.pnfolder.pnlibrary.api.scenario.actions.builtin
 
+import org.pnfolder.pnlibrary.api.audience.feature
 import net.kyori.adventure.key.Key
+import org.pnfolder.pnlibrary.api.audience.PlayerEffects
+import org.pnfolder.pnlibrary.api.audience.PlayerCommands
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.title.Title
 import org.pnfolder.pnlibrary.api.config.ConfigKey
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.player.Delivery
-import org.pnfolder.pnlibrary.api.player.PlayerEffect
-import org.pnfolder.pnlibrary.api.player.PlayerParticle
+import org.pnfolder.pnlibrary.api.audience.Delivery
+import org.pnfolder.pnlibrary.api.audience.PlayerEffect
+import org.pnfolder.pnlibrary.api.audience.PlayerParticle
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionResult
@@ -17,7 +20,11 @@ import java.time.Duration
 
 /** Writes a warning and carries on when the platform could not deliver; output never fails a scenario. */
 private fun ActionContext.warnUnless(delivery: Delivery, what: String): ActionResult {
-    if (!delivery.isDelivered) logger.warning("$what is not supported by the current platform")
+    when (delivery.status) {
+        Delivery.Status.DELIVERED -> Unit
+        Delivery.Status.UNSUPPORTED -> logger.warning("$what is not supported by the current platform")
+        else -> logger.warning("$what failed: ${delivery.failure?.message ?: delivery.status}")
+    }
     return ActionResult.Done
 }
 
@@ -139,7 +146,7 @@ data class CommandAction(
     override fun run(context: ActionContext): ActionResult {
         val line = context.format(command).trim().removePrefix("/")
         if (line.isEmpty()) return ActionResult.Done
-        return if (context.player.runCommand(line, runner == CommandRunner.CONSOLE).isDelivered) {
+        return if (context.player.feature<PlayerCommands>()?.runCommand(line, runner == CommandRunner.CONSOLE)?.isDelivered == true) {
             ActionResult.Done
         } else {
             ActionResult.Failed("command.refused", "The platform did not accept the command '$line'")
@@ -190,7 +197,7 @@ data class EffectAction(
     val icon: Boolean = true,
 ) : Action {
     override fun run(context: ActionContext): ActionResult = context.warnUnless(
-        context.player.applyEffect(PlayerEffect(key, duration, amplifier, ambient, particles, icon)),
+        context.player.feature<PlayerEffects>()?.applyEffect(PlayerEffect(key, duration, amplifier, ambient, particles, icon)) ?: Delivery.unsupported(),
         "Effect $key",
     )
 }
@@ -214,7 +221,7 @@ data class ParticleAction(
     val speed: Double = 0.0,
 ) : Action {
     override fun run(context: ActionContext): ActionResult = context.warnUnless(
-        context.player.spawnParticle(PlayerParticle(key, count, offsetX, offsetY, offsetZ, speed)),
+        context.player.feature<PlayerEffects>()?.spawnParticle(PlayerParticle(key, count, offsetX, offsetY, offsetZ, speed)) ?: Delivery.unsupported(),
         "Particle $key",
     )
 }

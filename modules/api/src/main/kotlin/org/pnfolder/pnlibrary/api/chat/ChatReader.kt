@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.chat
 
 import org.pnfolder.pnlibrary.api.commands.CommandSender
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.isConsole
 
 /**
  * Who reads a message and what their client can do.

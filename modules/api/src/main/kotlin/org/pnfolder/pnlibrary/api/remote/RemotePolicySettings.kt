@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.remote
 
-import org.pnfolder.pnlibrary.api.internal.isHttps
+import org.pnfolder.pnlibrary.api.downloads.isHttps
 import java.net.URI
 import java.time.Duration
 import java.util.Collections

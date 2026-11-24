@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands.proxy
 
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.audience.ForwardingAudience
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -18,20 +19,14 @@ fun proxyCommandContext(audience: Audience, alias: String, arguments: Array<Stri
 private class ProxyCommandSender(
     private val audience: Audience,
     private val proxyControl: Boolean,
-) : CommandSender, Audience by audience {
+) : CommandSender, ForwardingAudience.Single {
+    override fun audience(): Audience = audience
+
     override fun send(message: Component) = audience.sendMessage(shown(message))
 
-    // Explicit overrides preserve native delivery instead of CommandSender's fallback defaults.
     override fun sendMessage(message: Component) = audience.sendMessage(shown(message))
 
     override fun sendActionBar(message: Component) = audience.sendActionBar(message)
-
-    // Java default methods are not forwarded by `by`, so everything the sender must keep is forwarded by hand.
-    override fun pointers() = audience.pointers()
-
-    override fun playSound(sound: net.kyori.adventure.sound.Sound) = audience.playSound(sound)
-
-    override fun showTitle(title: net.kyori.adventure.title.Title) = audience.showTitle(title)
 
     private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
 }

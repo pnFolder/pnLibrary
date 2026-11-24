@@ -115,7 +115,7 @@ internal class BukkitMenuAdapter(
     private fun revoke(player: Player, session: MenuSession) {
         session.close()
         val notice = ChatNotice(ChatTone.FAILURE, "Меню закрыто: не хватает права.", MENU_ACCESS.first())
-        library.players.player(player.uniqueId)?.let { audience -> ChatKit(ChatReader.PLAYER).notice(notice).forEach(audience::sendMessage) }
+        library.audiences.player(player.uniqueId)?.let { audience -> ChatKit(ChatReader.PLAYER).notice(notice).forEach(audience::sendMessage) }
     }
 
     private fun kind(click: org.bukkit.event.inventory.ClickType): ClickType = ClickType.values().firstOrNull { it.name == click.name } ?: ClickType.OTHER
@@ -136,7 +136,7 @@ internal class BukkitMenuAdapter(
         override fun open(menu: Menu) = onPlayerThread { open(player, menu) }
         override fun close() = onPlayerThread { player.closeInventory() }
         override fun send(lines: List<Component>) {
-            library.players.player(player.uniqueId)?.let { audience -> lines.forEach(audience::sendMessage) }
+            library.audiences.player(player.uniqueId)?.let { audience -> lines.forEach(audience::sendMessage) }
         }
 
         override fun runCommand(command: String) = onPlayerThread {

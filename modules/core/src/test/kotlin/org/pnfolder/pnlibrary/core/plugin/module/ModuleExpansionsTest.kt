@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.ModuleBinding
 import org.pnfolder.pnlibrary.core.expansions.ModuleBoundExpansion
-import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.registerModule
-import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImplTest.Companion.registry
+import org.pnfolder.pnlibrary.core.plugin.LoadedPluginsTest.Companion.registerModule
+import org.pnfolder.pnlibrary.core.plugin.LoadedPluginsTest.Companion.registry
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ModuleExpansionsTest {

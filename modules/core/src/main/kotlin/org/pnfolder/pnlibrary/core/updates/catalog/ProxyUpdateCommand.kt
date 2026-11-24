@@ -8,9 +8,9 @@ import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
-import org.pnfolder.pnlibrary.api.sender.hasPermission
-import org.pnfolder.pnlibrary.api.sender.id
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.hasPermission
+import org.pnfolder.pnlibrary.api.audience.id
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState
@@ -60,8 +60,8 @@ class ProxyUpdateCommand(private val library: PnLibrary) {
             literal("rollback") {
                 permission(ROLLBACK)
                 argument("transaction", ArgumentType.string()) {
-                    executes { rollbackSaved(it, false) }
-                    literal("configs") { executes { rollbackSaved(it, true) } }
+                    executes { rollbackSaved(it, restoreConfigurations = false) }
+                    literal("configs") { executes { rollbackSaved(it, restoreConfigurations = true) } }
                 }
             }
         }

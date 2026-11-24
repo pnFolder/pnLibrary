@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.runtime
 
+import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
@@ -11,8 +12,7 @@ import org.pnfolder.pnlibrary.api.metrics.MetricsService
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.platform.PlatformProvider
-import org.pnfolder.pnlibrary.api.player.PlayerService
+import org.pnfolder.pnlibrary.api.audience.Audiences
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import org.pnfolder.pnlibrary.api.updates.UpdateService
@@ -57,7 +57,7 @@ interface PnLibrary : Closeable {
     val updates: UpdateService
 
     /** Cross-platform players, the console, native senders and groups of them. */
-    val players: PlayerService
+    val audiences: Audiences
 
     /** Typed process-wide services with plugin-owned registrations. */
     val services: ServiceManager

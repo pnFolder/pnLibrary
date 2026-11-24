@@ -136,7 +136,8 @@ internal class LibrarySettingsScreens(session: MenuSession, routes: MenuRoutes) 
         val source = ChoiceSource.named(row.choiceSource) ?: return type(player, row)
         when (how) {
             ClickType.SHIFT_LEFT, ClickType.SHIFT_RIGHT -> pick(player, row, source, "", page)
-            else -> change(player, row, source.step(row.current, how == ClickType.RIGHT), page)
+            ClickType.RIGHT -> change(player, row, source.previous(row.current), page)
+            else -> change(player, row, source.next(row.current), page)
         }
     }
 

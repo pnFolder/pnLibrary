@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.sender.name
+import org.pnfolder.pnlibrary.api.audience.name
 import org.pnfolder.pnlibrary.core.link.Link
 import org.pnfolder.pnlibrary.core.link.ServerGroups
 import org.pnfolder.pnlibrary.core.link.remote.RemoteAction

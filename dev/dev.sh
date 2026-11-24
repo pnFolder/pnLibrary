@@ -2,7 +2,7 @@
 # Рабочее окружение pnFolder для Linux (Ubuntu): то же, что dev.ps1 на Windows.
 # Правим библиотеку и сразу видим, что ломается в плагинах. Релизов нет.
 #
-#   ./dev.sh                       меню
+#   ./dev.sh                       меню (menu.py; простое по номерам: DEV_SIMPLE=1 ./dev.sh)
 #   ./dev.sh status                ветки и несохранённые правки всех репозиториев
 #   ./dev.sh lib-check             тесты, spotless и проверка публичного API библиотеки
 #   ./dev.sh lib-publish           собрать библиотеку из рабочей папки в локальный Maven (0.1.0-dev.local)
@@ -22,7 +22,8 @@ PLUGINS=(pnClans pnMarket pnCases pnChat pnSouls pnRtp pnTrades pnBans pnSeller 
 
 # Java 21 нужна всем плагинам: pnMarket не собирается на более новой.
 if [ -z "${JAVA_HOME:-}" ] || ! "$JAVA_HOME/bin/java" -version 2>&1 | grep -q '"21'; then
-  for candidate in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/temurin-21-jdk-amd64 /usr/lib/jvm/java-21-openjdk /usr/lib/jvm/*21*; do
+  for candidate in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/temurin-21-jdk-amd64 /usr/lib/jvm/java-21-openjdk /usr/lib/jvm/*21* \
+                   "$HOME"/.jdks/*21* "$HOME"/.sdkman/candidates/java/21* /opt/*21*; do
     if [ -x "$candidate/bin/java" ]; then export JAVA_HOME="$candidate"; break; fi
   done
 fi
@@ -121,7 +122,7 @@ cmd_unguard() {
   done < <(repos)
 }
 
-cmd_menu() {
+cmd_menu_simple() {
   local choice
   while true; do
     echo
@@ -151,10 +152,20 @@ cmd_menu() {
   done
 }
 
+cmd_menu() {
+  # Красивое меню (menu.py: рамки, стрелки, фоновые сборки с процентами) нужно терминалу с цветами и Python 3.
+  # Иначе откроется простое меню по номерам. Принудительно простое: DEV_SIMPLE=1 ./dev.sh
+  if [ -z "${DEV_SIMPLE:-}" ] && [ -t 0 ] && [ -t 1 ] && command -v python3 >/dev/null 2>&1 && [ -f "$HERE/menu.py" ]; then
+    exec python3 "$HERE/menu.py"
+  fi
+  cmd_menu_simple
+}
+
 command="${1:-menu}"
 if [ $# -gt 0 ]; then shift; fi
 case "$command" in
   menu) cmd_menu ;;
+  menu-simple) cmd_menu_simple ;;
   status) cmd_status ;;
   lib-check) cmd_lib_check ;;
   lib-publish) cmd_lib_publish ;;

@@ -6,7 +6,7 @@ import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.api.plugin.TabExecutor
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
-import org.pnfolder.pnlibrary.bungee.network.BungeePlayerAdapter
+import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter
 import org.pnfolder.pnlibrary.core.commands.engine.PROXY_SUGGESTION_MILLIS
 import org.pnfolder.pnlibrary.core.commands.engine.suggestionsWithin
 import org.pnfolder.pnlibrary.core.commands.proxy.proxyCommandContext
@@ -21,9 +21,9 @@ internal class BungeeCommandAdapter(
     private val audience: (NativeCommandSender) -> Audience,
 ) : GenericPlatformCommandAdapter<NativeCommandSender>() {
 
-    constructor(audiences: BungeePlayerAdapter) : this(
+    constructor(audiences: BungeeAudienceAdapter) : this(
         nativeRegistrar = DefaultBungeeNativeCommandRegistrar(),
-        audience = { sender -> requireNotNull(audiences.sender(sender)) },
+        audience = { sender -> requireNotNull(audiences.of(sender)) },
     )
 
     override val registrar: NativeCommandRegistrar<NativeCommandSender> = nativeRegistrar

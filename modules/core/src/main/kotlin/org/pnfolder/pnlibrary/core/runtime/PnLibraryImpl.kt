@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.api.metrics.PluginMetrics
 import org.pnfolder.pnlibrary.api.network.NetworkProxy
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
-import org.pnfolder.pnlibrary.api.player.PlayerService
+import org.pnfolder.pnlibrary.api.audience.Audiences
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistry
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig
@@ -50,7 +50,7 @@ import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
 import org.pnfolder.pnlibrary.core.plugin.LibraryWords
-import org.pnfolder.pnlibrary.core.plugin.PluginRegistryImpl
+import org.pnfolder.pnlibrary.core.plugin.LoadedPlugins
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
 import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences
 import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor
@@ -191,7 +191,7 @@ internal class PnLibraryImpl(
     override val configurations: ConfigurationService get() = features.configurations
     override val updates: UpdateService get() = features.updates
     override val runtimeTasks: TaskScope get() = tasks.scope(owner)
-    override val players: PlayerService get() = platformServices.players
+    override val audiences: Audiences get() = platformServices.audiences
     override val services: ServiceManager get() = features.services
     override val expansions: ExpansionManager get() = features.expansions
     override val events: EventService get() = eventService
@@ -199,7 +199,7 @@ internal class PnLibraryImpl(
     override val proxy: NetworkProxy? = platform.networkProxy
     override val placeholderAdapters: PlaceholderAdapterRegistry get() = features.placeholders
 
-    override val plugins: PluginRegistry = PluginRegistryImpl(
+    override val plugins: PluginRegistry = LoadedPlugins(
         ownership = platform.ownership,
         identity = platform.identity,
         remotePolicies = RemotePolicyMonitor(platform.ownership, platform.execution, RemotePolicyNoticeRenderer(support.capture)),
@@ -264,7 +264,7 @@ internal class PnLibraryImpl(
         RuntimeShutdownPlan(
             plugins = plugins,
             commands = commands,
-            players = platformServices.players,
+            players = platformServices.audiences,
             platforms = platformProvider,
             currency = features.currency,
             expansions = features.expansions,
@@ -326,7 +326,7 @@ internal class PnLibraryImpl(
     override fun statsSnapshot() = stats.snapshot()
 
     override fun placeholderInfos() = features.placeholders.list()
-    override fun scenarioDefinitions() = (plugins as PluginRegistryImpl).scenarioDefinitionInfos()
+    override fun scenarioDefinitions() = (plugins as LoadedPlugins).scenarioDefinitionInfos()
 
     /** The journal cannot record its own failure, so the console and the error tracker get it directly. */
     private fun reportJournalFailure(error: Throwable) {

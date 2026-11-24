@@ -98,7 +98,7 @@ class CommandTreeBuilderTest {
     }
 
     private object TestSender : CommandSender {
-        override fun pointers() = org.pnfolder.pnlibrary.api.sender.senderPointers("Test", java.util.UUID.randomUUID()) { permission -> true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Test", java.util.UUID.randomUUID()) { permission -> true }
         override fun send(message: Component) = Unit
     }
 }

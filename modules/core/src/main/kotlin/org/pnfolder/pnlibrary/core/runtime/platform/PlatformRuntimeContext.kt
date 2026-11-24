@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformLogging
 import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership
 import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness
 import org.pnfolder.pnlibrary.spi.platform.PlatformShutdown
-import org.pnfolder.pnlibrary.spi.player.PlatformPlayerAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter
 import java.nio.file.Path
 
@@ -28,7 +28,7 @@ internal data class PlatformRuntimeContext(
     val logging: PlatformLogging,
     val metricsFactory: PlatformMetricsFactory,
     val commandAdapter: PlatformCommandAdapter,
-    val playerAdapter: PlatformPlayerAdapter,
+    val playerAdapter: PlatformAudienceAdapter,
     val taskAdapter: PlatformTaskAdapter,
     val dataFolder: Path,
     val binding: PlatformBinding,

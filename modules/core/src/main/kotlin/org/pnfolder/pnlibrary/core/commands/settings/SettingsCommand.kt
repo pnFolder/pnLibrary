@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.sender.isConsole
+import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.core.commands.engine.chatPager
 import org.pnfolder.pnlibrary.core.commands.engine.pageCount
 import org.pnfolder.pnlibrary.core.settings.SettingApply

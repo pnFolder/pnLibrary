@@ -64,13 +64,13 @@ class EventHistoryTest {
         val file = dir.resolve("history.tsv")
         EventHistory(file, 30).use { history ->
             history.record("a.Buy", denied = true)
-            val csv = Files.readString(history.export(json = false)!!)
+            val csv = Files.readString(history.exportCsv()!!)
             assertTrue(csv.startsWith("period,time,event,calls,denied"), csv)
             assertTrue(csv.contains("day,") && csv.contains("hour,") && csv.contains(",a.Buy,1,1"), csv)
-            val json = Files.readString(history.export(json = true)!!)
+            val json = Files.readString(history.exportJson()!!)
             assertTrue(json.contains("\"event\":\"a.Buy\"") && json.contains("\"hours\":["), json)
         }
-        assertTrue(EventHistory(null, 30).export(json = false) == null)
+        assertTrue(EventHistory(null, 30).exportCsv() == null)
     }
 
     @Test
