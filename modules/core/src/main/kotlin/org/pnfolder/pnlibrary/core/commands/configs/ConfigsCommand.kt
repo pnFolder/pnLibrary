@@ -88,7 +88,7 @@ class ConfigsCommand(private val library: PnLibrary) {
     }
 
     private fun say(context: CommandContext, text: String, color: net.kyori.adventure.text.format.TextColor = ChatPalette.TEXT) =
-        context.sender.send(Component.text(text, color))
+        context.sender.sendMessage(Component.text(text, color))
 
     private fun list(context: CommandContext, requested: Int) {
         val all = library.configurations.all()

@@ -119,7 +119,7 @@ class ProxyUpdateCommandTest {
         override fun pointers() = senderPointers(id, if (console) null else java.util.UUID.nameUUIDFromBytes(id.toByteArray())) {
             allowed?.contains(it) ?: true
         }
-        override fun send(message: Component) { sent += message }
+        override fun sendMessage(message: Component) { sent += message }
 
         /** The token in the confirmation button the sender was shown. */
         fun token(): String = Regex("update confirm ([A-Za-z0-9_-]+)").find(sent.joinToString { it.toString() })!!.groupValues[1]

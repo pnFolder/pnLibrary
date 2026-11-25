@@ -1,12 +1,12 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch
 
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
+import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.nio.file.Files

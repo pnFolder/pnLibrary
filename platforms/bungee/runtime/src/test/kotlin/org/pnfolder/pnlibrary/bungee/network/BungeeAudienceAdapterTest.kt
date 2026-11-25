@@ -15,9 +15,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import org.pnfolder.pnlibrary.api.audience.PlayerEffects
-import org.pnfolder.pnlibrary.api.audience.PlayerInventory
-import org.pnfolder.pnlibrary.api.audience.feature
 import org.pnfolder.pnlibrary.api.audience.isConsole
 import org.pnfolder.pnlibrary.api.audience.isPlayer
 import org.pnfolder.pnlibrary.api.audience.name
@@ -95,8 +92,8 @@ class BungeePlayerAdapterTest {
     @Test
     fun `a player can read messages and the action bar but nothing a backend must render`() {
         val library = BungeeNetworkPlayer.of(player("Alex"))
-        assertNull(library.feature<PlayerEffects>())
-        assertNull(library.feature<PlayerInventory>())
+        assertNull(library.position())
+        assertNull(library.experienceLevel())
         library.playSound(mock(Sound::class.java))
     }
 }

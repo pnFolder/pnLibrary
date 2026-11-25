@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -59,7 +60,7 @@ internal class ModuleDependencyValidator(
             .forEach { dependency ->
                 val installedVersion = installedPlugins[dependency.plugin.lowercase()]
                 val automaticDownloadPossible = downloadsAvailable() &&
-                    dependency.automaticDownload &&
+                    dependency.downloadPolicy != DownloadPolicy.MANUAL &&
                     dependency.artifact != null
 
                 if (installedVersion == null) {

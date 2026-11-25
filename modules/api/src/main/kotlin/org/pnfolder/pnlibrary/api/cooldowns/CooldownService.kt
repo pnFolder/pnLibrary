@@ -1,7 +1,9 @@
 package org.pnfolder.pnlibrary.api.cooldowns
 
+import org.jetbrains.annotations.ApiStatus
 import java.time.Duration
 import java.util.UUID
+import java.util.function.Consumer
 
 /**
  * Plugin-scoped, thread-safe cooldown storage based on monotonic elapsed time.
@@ -11,6 +13,7 @@ import java.util.UUID
  * or create cooldowns fail after [close], while cleanup operations remain idempotent. Expired entries are dropped
  * as the service is used, so a subject that is never asked again does not stay in memory.
  */
+@ApiStatus.NonExtendable
 interface CooldownService : AutoCloseable {
 
     /** Atomically creates a cooldown unless an unexpired entry already exists. */
@@ -39,6 +42,15 @@ interface CooldownService : AutoCloseable {
 
     /** The active cooldowns of [subject] by action with the time left, longest first; expired ones are not listed. */
     fun active(subject: UUID): Map<String, Duration>
+
+    /**
+     * A named cooldown of fixed [duration] for [action]. A player holding [bypassPermission] is never held back; the
+     * console never is either.
+     */
+    fun cooldown(action: String, duration: Duration, bypassPermission: String? = null): Cooldown
+
+    /** A named cooldown with everything [Cooldown.Builder] offers: tiers, your own reactions, one shared timer. */
+    fun cooldown(action: String, configure: Consumer<Cooldown.Builder>): Cooldown
 
     /** Number of active entries after opportunistic expiry cleanup. */
     val size: Int

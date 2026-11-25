@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.libraries.LibraryState
-import org.pnfolder.pnlibrary.api.libraries.LibraryStatus
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryState
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryStatus
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.platform.PlatformType

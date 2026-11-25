@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.downloads
 
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import java.nio.file.Path
 import java.util.Collections
 import java.util.function.Consumer
@@ -30,6 +31,10 @@ class FileDownloads private constructor(builder: Builder) {
             require(files.none { it.key.equals(file.key, true) }) { "Duplicate file download: ${file.key}" }
             files += file
         }
+
+        /** Declares a file under [id] that is downloaded from [url] to [relativePath] in the data folder, with everything else as usual. */
+        fun file(id: String, url: String, relativePath: String): Builder =
+            file(id) { it.url(url).destination(DownloadDestination.DATA_FOLDER, relativePath) }
 
         /** Validates this declaration and creates an immutable download unit. */
         fun build(): FileDownloads {

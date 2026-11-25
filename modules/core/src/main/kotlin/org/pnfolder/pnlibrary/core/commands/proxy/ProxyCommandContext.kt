@@ -22,11 +22,7 @@ private class ProxyCommandSender(
 ) : CommandSender, ForwardingAudience.Single {
     override fun audience(): Audience = audience
 
-    override fun send(message: Component) = audience.sendMessage(shown(message))
-
     override fun sendMessage(message: Component) = audience.sendMessage(shown(message))
-
-    override fun sendActionBar(message: Component) = audience.sendActionBar(message)
 
     private fun shown(message: Component) = if (proxyControl) ProxyCommandNames.rewrite(message) else message
 }

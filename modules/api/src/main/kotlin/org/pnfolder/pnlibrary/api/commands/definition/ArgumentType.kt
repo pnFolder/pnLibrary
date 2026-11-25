@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.api.commands.definition
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.InvalidArgument
 import org.pnfolder.pnlibrary.api.commands.error.PlayerNotFound
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import java.math.BigDecimal
 import java.util.Locale
 
@@ -112,8 +112,8 @@ fun interface ArgumentType<T : Any> {
          * online" unless a handler says otherwise.
          */
         @JvmStatic
-        fun player(lookup: (String) -> LibraryPlayer?): ArgumentType<LibraryPlayer> = object : ArgumentType<LibraryPlayer> {
-            override fun parse(value: String): LibraryPlayer? = lookup(value)
+        fun player(lookup: (String) -> OnlinePlayer?): ArgumentType<OnlinePlayer> = object : ArgumentType<OnlinePlayer> {
+            override fun parse(value: String): OnlinePlayer? = lookup(value)
             override fun error(usage: String, argument: String, value: String): CommandError = PlayerNotFound(usage, argument, value)
         }
 

@@ -1,7 +1,8 @@
 package org.pnfolder.pnlibrary.api.plugin
 
-import org.pnfolder.pnlibrary.api.libraries.LibraryState
-import org.pnfolder.pnlibrary.api.libraries.LibraryUsage
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryState
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryUsage
 
 /**
  * Registry of native platform plugins using one pnLibrary runtime.
@@ -10,6 +11,7 @@ import org.pnfolder.pnlibrary.api.libraries.LibraryUsage
  * [all] returns a detached immutable snapshot. Closing the registry closes plugins and their
  * modules in reverse ownership order.
  */
+@ApiStatus.NonExtendable
 interface PluginRegistry : AutoCloseable {
 
     /** Registers [owner] or returns its existing registration. */
@@ -25,15 +27,9 @@ interface PluginRegistry : AutoCloseable {
     /** Returns the registration of the plugin with identifier [id], or `null` when no such plugin is registered. */
     fun getById(id: PluginId): PluginRegistration? = all().firstOrNull { it.id == id }
 
-    /** Normalizes [id] and returns the matching registration, or `null`. */
-    fun getById(id: String): PluginRegistration? = getById(PluginId.of(id))
-
     /** Returns the registration of the plugin with identifier [id], or fails naming the registered plugins. */
     fun requireById(id: PluginId): PluginRegistration =
         getById(id) ?: error("Plugin $id is not registered in pnLibrary; registered: ${all().joinToString { it.id.value }}")
-
-    /** Normalizes [id] and returns the matching registration, or fails naming the registered plugins. */
-    fun requireById(id: String): PluginRegistration = requireById(PluginId.of(id))
 
     /** Closes and removes [owner]'s registration when present. */
     fun unregister(owner: Any)

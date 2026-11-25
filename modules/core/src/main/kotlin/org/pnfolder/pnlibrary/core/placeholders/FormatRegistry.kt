@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -42,6 +42,8 @@ internal class FormatRegistry(private val onConflict: (String) -> Unit = {}) {
         ?.filter { it.input.isInstance(value) && ownerFits(written, it.owner, consumer) }
         ?.mapNotNull { format -> (if (format.owner.isEmpty()) BUILT_IN else nearness(format.owner, Visibility.ALL, consumer))?.let { it to format } }
         ?.minByOrNull { it.first }?.second
+
+    fun all(): List<FormatDef> = byName.values.flatten()
 
     fun names(): List<String> = byName.filterValues { it.isNotEmpty() }.keys.sorted()
 

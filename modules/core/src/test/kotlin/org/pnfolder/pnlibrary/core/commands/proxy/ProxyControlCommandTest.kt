@@ -45,7 +45,7 @@ class ProxyControlCommandTest {
         val sent = mutableListOf<String>()
         val sender = object : CommandSender {
             override fun pointers() = senderPointers("Player", java.util.UUID.randomUUID()) { permission -> permission == "pnlibrary.tasks" }
-            override fun send(message: Component) {
+            override fun sendMessage(message: Component) {
                 sent += message.toString()
             }
         }

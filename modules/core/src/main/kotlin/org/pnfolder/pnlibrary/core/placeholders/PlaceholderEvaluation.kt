@@ -1,10 +1,10 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentInput
-import org.pnfolder.pnlibrary.api.placeholders.RouteInfo
-import org.pnfolder.pnlibrary.api.placeholders.RouteKind
-import org.pnfolder.pnlibrary.api.placeholders.RoutePart
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteInfo
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteKind
+import org.pnfolder.pnlibrary.api.placeholders.route.RoutePart
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 

@@ -110,7 +110,7 @@ internal class BusEventPages(private val library: PnLibrary) {
         val type = bus.eventType(name)
         val info = bus.events().firstOrNull { it.eventType == name }
         if (info == null) {
-            context.sender.send(kit.text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         val listeners = type?.let { bus.listeners(it) }.orEmpty()
@@ -155,7 +155,7 @@ internal class BusEventPages(private val library: PnLibrary) {
         val name = bus.resolve(typed)
         val type = bus.eventType(name)
         if (type == null) {
-            context.sender.send(busKit(context).text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.sendMessage(busKit(context).text("Такого события нет: $name. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         change(type)

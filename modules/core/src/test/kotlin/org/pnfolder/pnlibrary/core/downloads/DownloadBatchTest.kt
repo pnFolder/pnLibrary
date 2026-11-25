@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
+import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import java.util.concurrent.CompletionException
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -31,6 +31,35 @@ class DownloadBatchTest {
         assertEquals(2, queue.size)
         queue[1].run()
         assertEquals(DownloadState.STAGED, second.get(1, TimeUnit.SECONDS).single().state)
+        registration.close()
+    }
+
+    @Test
+    fun `whenFinished hears the result of a download however it started`() {
+        val queue = mutableListOf<Runnable>()
+        val registration = registration(executor = Executor { queue += it })
+        val heard = mutableListOf<DownloadState>()
+        registration.whenFinished { snapshots -> heard += snapshots.map { it.state } }
+
+        registration.downloadNow()
+        queue[0].run()
+
+        assertEquals(listOf(DownloadState.STAGED), heard)
+        registration.close()
+    }
+
+    @Test
+    fun `a listener that throws does not stop the others`() {
+        val queue = mutableListOf<Runnable>()
+        val registration = registration(executor = Executor { queue += it })
+        var second = 0
+        registration.whenFinished { error("listener broke") }
+        registration.whenFinished { second++ }
+
+        registration.downloadNow()
+        queue[0].run()
+
+        assertEquals(1, second)
         registration.close()
     }
 

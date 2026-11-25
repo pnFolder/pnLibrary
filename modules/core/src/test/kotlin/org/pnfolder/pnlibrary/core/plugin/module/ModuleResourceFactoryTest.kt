@@ -74,7 +74,7 @@ class ModuleResourceFactoryTest {
             placeholders = placeholders,
             currency = currency,
             configurations = configurations,
-            directDownloads = null,
+            downloadService = null,
             componentCache = ComponentCache(),
         )
     }

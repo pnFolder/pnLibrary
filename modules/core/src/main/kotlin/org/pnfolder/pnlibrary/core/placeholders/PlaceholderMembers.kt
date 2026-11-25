@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.Hide
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
-import org.pnfolder.pnlibrary.api.placeholders.Reply
-import org.pnfolder.pnlibrary.api.placeholders.UseFormat
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Hide
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
+import org.pnfolder.pnlibrary.api.placeholders.annotation.UseFormat
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier

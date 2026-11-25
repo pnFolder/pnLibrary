@@ -1,43 +1,35 @@
 package org.pnfolder.pnlibrary.api.audience
 
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.audience.ForwardingAudience
 import java.util.UUID
 
 /**
- * Finds the audiences of the active platform: the console, players, and live groups of them. Every group is asked
- * again on each operation, and one receiver that fails does not stop the others.
+ * Everyone the library can reach on this server: the console and every online player. It is an Adventure [Audience]
+ * itself, so a message sent to it goes to all of them, and Adventure's own `filterAudience` narrows it. Each receiver is
+ * asked again on every operation, and one that fails does not stop the others.
  *
  * ```kotlin
  * val audiences = library.audiences
+ * audiences.sendMessage(Component.text("The console and every player read this"))
  * audiences.console().sendMessage(Component.text("Started"))
  * audiences.player(uuid)?.sendMessage(Component.text("Hello"))
  * audiences.players().forEach { it.sendActionBar(Component.text("Restart in 5 minutes")) }
- * audiences.withPermission("shop.admin").sendMessage(Component.text("Shop reloaded"))
- * audiences.filter { it.name.startsWith("A") }.sendMessage(Component.text("Hi"))
- * audiences.server().sendMessage(Component.text("The console and every player read this"))
+ * audiences.filterAudience { it.hasPermission("shop.admin") }.sendMessage(Component.text("Shop reloaded"))
  * ```
  */
-interface Audiences {
-    /** Returns the server console. */
-    fun console(): Audience
+interface Audiences : ForwardingAudience {
+    /** The server console. */
+    fun console(): Console
 
-    /** Returns a dynamic audience of the console and every online player, like the server itself in Adventure. */
-    fun server(): Audience
+    /** A snapshot of all players currently online. */
+    fun players(): List<OnlinePlayer>
 
-    /** Returns a snapshot of all players currently online. */
-    fun players(): List<LibraryPlayer>
+    /** The online player with [uniqueId], or `null` when absent. */
+    fun player(uniqueId: UUID): OnlinePlayer?
 
-    /** Returns the online player with [uniqueId], or `null` when absent. */
-    fun player(uniqueId: UUID): LibraryPlayer?
-
-    /** Returns the online player named [name], ignoring case, or `null` when absent. */
-    fun player(name: String): LibraryPlayer? = players().firstOrNull { it.name.equals(name, ignoreCase = true) }
-
-    /** Returns a dynamic audience of the online players accepted by [predicate]. */
-    fun filter(predicate: (LibraryPlayer) -> Boolean): Audience
-
-    /** Returns a dynamic audience of the online players who hold [permission]. */
-    fun withPermission(permission: String): Audience = filter { it.hasPermission(permission) }
+    /** The online player named [name], ignoring case, or `null` when absent. */
+    fun player(name: String): OnlinePlayer? = players().firstOrNull { it.name.equals(name, ignoreCase = true) }
 
     /** Adapts a platform-native sender object (such as a Bukkit `CommandSender`), or `null` when unsupported. */
     fun of(native: Any): Audience?

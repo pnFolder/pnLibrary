@@ -1,6 +1,9 @@
 package org.pnfolder.pnlibrary.api.logging
 
+import org.jetbrains.annotations.ApiStatus
+
 /** Creates plugin-bound loggers and console message boxes. */
+@ApiStatus.NonExtendable
 interface LoggingService {
 
     /** Returns the logger called [name] that belongs to the plugin [owner]. */

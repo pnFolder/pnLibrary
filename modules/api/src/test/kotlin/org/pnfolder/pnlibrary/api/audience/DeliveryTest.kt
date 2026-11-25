@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.audience
 
+import org.pnfolder.pnlibrary.api.audience.delivery.DeliveryStatus
+import org.pnfolder.pnlibrary.api.audience.delivery.Outcome
+import org.pnfolder.pnlibrary.api.audience.delivery.Delivery
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,12 +22,12 @@ class DeliveryTest {
         val no = Delivery.unsupported()
         val bad = Delivery.failed(cause)
 
-        assertEquals(Delivery.Status.DELIVERED, Delivery.combine(listOf(ok, ok)).status)
-        assertEquals(Delivery.Status.PARTIAL, Delivery.combine(listOf(ok, no)).status)
-        assertEquals(Delivery.Status.PARTIAL, Delivery.combine(listOf(bad, ok)).status)
-        assertEquals(Delivery.Status.FAILED, Delivery.combine(listOf(no, bad)).status)
-        assertEquals(Delivery.Status.UNSUPPORTED, Delivery.combine(listOf(no, no)).status)
-        assertEquals(Delivery.Status.UNSUPPORTED, Delivery.combine(emptyList()).status)
+        assertEquals(DeliveryStatus.DELIVERED, Delivery.combine(listOf(ok, ok)).status)
+        assertEquals(DeliveryStatus.PARTIAL, Delivery.combine(listOf(ok, no)).status)
+        assertEquals(DeliveryStatus.PARTIAL, Delivery.combine(listOf(bad, ok)).status)
+        assertEquals(DeliveryStatus.FAILED, Delivery.combine(listOf(no, bad)).status)
+        assertEquals(DeliveryStatus.UNSUPPORTED, Delivery.combine(listOf(no, no)).status)
+        assertEquals(DeliveryStatus.UNSUPPORTED, Delivery.combine(emptyList()).status)
     }
 
     @Test
@@ -62,7 +65,7 @@ class DeliveryTest {
         val ok = receiver("ok", seen)
         val broken = receiver("broken", seen, IllegalStateException("lost"))
 
-        assertEquals(Delivery.Status.DELIVERED, ok.deliver { it.sendMessage(Component.text("hi")) }.status)
+        assertEquals(DeliveryStatus.DELIVERED, ok.deliver { it.sendMessage(Component.text("hi")) }.status)
         assertEquals("lost", broken.deliver { it.sendMessage(Component.text("hi")) }.failure?.message)
     }
 
@@ -73,9 +76,9 @@ class DeliveryTest {
 
         val sent = group.deliver { it.sendMessage(Component.text("hi")) }
 
-        assertEquals(Delivery.Status.PARTIAL, sent.status)
+        assertEquals(DeliveryStatus.PARTIAL, sent.status)
         assertEquals(listOf("first", "broken", "last"), seen)
-        assertEquals(listOf(Delivery.Outcome.DELIVERED, Delivery.Outcome.FAILED, Delivery.Outcome.DELIVERED), sent.receipts.map { it.outcome })
+        assertEquals(listOf(Outcome.DELIVERED, Outcome.FAILED, Outcome.DELIVERED), sent.receipts.map { it.outcome })
         assertEquals(listOf("first", "broken", "last"), sent.receipts.map { it.receiver })
     }
 
@@ -83,7 +86,7 @@ class DeliveryTest {
     fun `a group with nobody in it is unsupported and fatal errors are not caught`() {
         val nobody = Audience.audience(emptyList<Audience>())
 
-        assertEquals(Delivery.Status.UNSUPPORTED, nobody.deliver { it.sendMessage(Component.text("hi")) }.status)
+        assertEquals(DeliveryStatus.UNSUPPORTED, nobody.deliver { it.sendMessage(Component.text("hi")) }.status)
         assertThrows(OutOfMemoryError::class.java) { receiver("dying", mutableListOf(), OutOfMemoryError()).deliver { it.sendMessage(Component.text("hi")) } }
     }
 

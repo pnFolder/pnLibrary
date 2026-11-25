@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.services
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.registry.Registry
+
 /**
  * Registry of typed services shared by pnLibrary consumers.
  *
@@ -18,6 +21,7 @@ package org.pnfolder.pnlibrary.api.services
  * val alternatives = context.services.all(ChatFormatter::class.java)
  * ```
  */
+@ApiStatus.NonExtendable
 interface ServiceManager {
     /**
      * Registers [service] as a provider of [type].
@@ -49,4 +53,7 @@ interface ServiceManager {
 
     /** Returns an immutable snapshot of active providers ordered by priority and registration time. */
     fun <T : Any> all(type: Class<T>): List<T>
+
+    /** Every registered service, best first, found by the name of its type; each entry names the plugin that provides it. */
+    fun registry(): Registry<Any>
 }

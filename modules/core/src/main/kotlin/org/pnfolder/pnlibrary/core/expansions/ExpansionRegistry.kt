@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.expansions
 
+import org.pnfolder.pnlibrary.api.registry.RegistryEntry
+import org.pnfolder.pnlibrary.core.registry.ListRegistry
+import org.pnfolder.pnlibrary.api.registry.Registry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.expansions.ExpansionManager
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
@@ -30,6 +33,10 @@ internal class ExpansionRegistry(
 
     override fun all(): List<Expansion> = synchronized(lock) { expansions.values.toList() }
 
+    override fun registry(): Registry<Expansion> = ListRegistry("expansions") {
+        all().map { RegistryEntry(it.id, it, LIBRARY) }
+    }
+
     override fun close() {
         val registered = synchronized(lock) {
             closed = true
@@ -44,5 +51,9 @@ internal class ExpansionRegistry(
         } catch (error: Exception) {
             onFailure(expansion, error)
         }
+    }
+
+    private companion object {
+        const val LIBRARY = "pnLibrary"
     }
 }

@@ -184,7 +184,7 @@ class UpdateCatalogCommands(
 
     private fun snapshotOf(context: CommandContext, requested: String): UpdateSnapshot? {
         val registration = library.updates.products.get(requested)
-        if (registration == null) context.sender.send(error("Плагин $requested не зарегистрирован в pnLibrary."))
+        if (registration == null) context.sender.sendMessage(error("Плагин $requested не зарегистрирован в pnLibrary."))
         return registration?.snapshot
     }
 
@@ -196,7 +196,7 @@ class UpdateCatalogCommands(
         CompletableFuture.allOf(entries, total).whenComplete { _, failure ->
             deliver(Runnable {
                 if (failure != null) {
-                    context.sender.send(error(historyFailure(failure, product)))
+                    context.sender.sendMessage(error(historyFailure(failure, product)))
                 } else {
                     render(context, entries.join(), total.join(), page, product)
                 }
@@ -218,14 +218,14 @@ class UpdateCatalogCommands(
     private fun requestedPage(context: CommandContext): Int? {
         val page = if (context.contains("page")) context.get<Int>("page") else 1
         if (page >= 1) return page
-        context.sender.send(error("Номер страницы должен быть положительным."))
+        context.sender.sendMessage(error("Номер страницы должен быть положительным."))
         return null
     }
 
     private fun ready(context: CommandContext): Boolean {
         if (!guard(context)) return false
         if (!library.isClosed) return true
-        context.sender.send(error("pnLibrary не готова. Дождитесь полного запуска сервера."))
+        context.sender.sendMessage(error("pnLibrary не готова. Дождитесь полного запуска сервера."))
         return false
     }
 

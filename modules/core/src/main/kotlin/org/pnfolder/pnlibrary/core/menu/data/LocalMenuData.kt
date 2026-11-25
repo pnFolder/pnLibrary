@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
@@ -231,7 +231,7 @@ class LocalMenuData(
         if (enabled) bus.enableTracing(type) else bus.disableTracing(type)
     }
 
-    override fun exportEventHistory(json: Boolean): String? = bus.exportHistory(json)?.toString()
+    override fun exportEventHistory(json: Boolean): String? = (if (json) bus.exportHistoryJson() else bus.exportHistoryCsv())?.toString()
 
     override fun eventAbout(eventType: String): EventAbout? {
         val type = bus.eventType(eventType) ?: return null

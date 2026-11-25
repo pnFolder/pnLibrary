@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.placeholders.examples
 
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PublishedAnswers
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.reply.PublishedAnswers
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import java.util.UUID
 

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
@@ -30,6 +31,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration
 import org.pnfolder.pnlibrary.localization.MinecraftLocalization
 
 /** Owns the isolated pnLibrary capabilities of one logical plugin module. */
+@ApiStatus.NonExtendable
 interface ModuleContext : AutoCloseable {
     /** Registers a command released when this module closes. */
     fun registerCommand(command: CommandDefinition): CommandRegistration
@@ -45,7 +47,7 @@ interface ModuleContext : AutoCloseable {
     /** Answers errors of class [type] for every command of this module with the plain [message]. */
     fun <E : CommandError> onCommandError(type: Class<E>, message: String) {
         val text = message.trim()
-        onCommandError(type, CommandErrorHandler<E> { context, error -> context.sender.send(Component.text(error.format(text))) })
+        onCommandError(type, CommandErrorHandler<E> { context, error -> context.sender.sendMessage(Component.text(error.format(text))) })
     }
 
     /** Builds a command whose lifecycle belongs to this module. */

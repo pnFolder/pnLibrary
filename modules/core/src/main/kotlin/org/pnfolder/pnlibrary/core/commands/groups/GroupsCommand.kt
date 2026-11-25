@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands.groups
 
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -16,7 +17,7 @@ class DependencyDownloadRequestFactoryTest {
     fun `creates a safe request only for missing automatic dependencies`() {
         val dependency = ExternalPluginDependency.builder("Unsafe Plugin!", "1.2.0")
             .url("https://example.org/plugin.jar")
-            .automaticDownload(true)
+            .downloadPolicy(DownloadPolicy.AUTOMATIC)
             .build()
         val plan = DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.21.4" }.create(listOf(dependency), emptyMap())
 
@@ -30,7 +31,7 @@ class DependencyDownloadRequestFactoryTest {
     fun `does not request an already compatible dependency`() {
         val dependency = ExternalPluginDependency.builder("Vault", "1.7.3")
             .url("https://example.org/Vault.jar")
-            .automaticDownload(true)
+            .downloadPolicy(DownloadPolicy.AUTOMATIC)
             .build()
 
         assertNull(DependencyDownloadRequestFactory(directory.resolve("update"), PlatformType.BUKKIT) { "1.21.4" }.create(

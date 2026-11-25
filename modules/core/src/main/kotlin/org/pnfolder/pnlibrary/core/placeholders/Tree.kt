@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentInput
-import org.pnfolder.pnlibrary.api.placeholders.RouteInfo
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import java.util.concurrent.CompletionStage
 
 /** One part of the path of a placeholder: a fixed word, or a slot the address fills in. */
@@ -50,12 +50,12 @@ internal class Formatted(val value: Any, val format: String)
 /** A consumer that sees every placeholder, hidden ones too: for the `test` command of an operator. */
 internal const val EVERYTHING = "*"
 
-internal fun nearness(owner: String, visibility: org.pnfolder.pnlibrary.api.placeholders.Visibility, consumer: String?): Int? = when {
+internal fun nearness(owner: String, visibility: org.pnfolder.pnlibrary.api.registry.Visibility, consumer: String?): Int? = when {
     consumer == EVERYTHING -> 2
     consumer != null && owner == consumer -> 0
-    visibility == org.pnfolder.pnlibrary.api.placeholders.Visibility.MODULE -> null
+    visibility == org.pnfolder.pnlibrary.api.registry.Visibility.MODULE -> null
     consumer != null && owner.substringBefore('/') == consumer.substringBefore('/') -> 1
-    visibility == org.pnfolder.pnlibrary.api.placeholders.Visibility.PLUGIN -> null
+    visibility == org.pnfolder.pnlibrary.api.registry.Visibility.PLUGIN -> null
     else -> 2
 }
 

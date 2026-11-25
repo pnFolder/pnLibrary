@@ -2,10 +2,10 @@ package org.pnfolder.pnlibrary.core.placeholders
 
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.CompletableFuture

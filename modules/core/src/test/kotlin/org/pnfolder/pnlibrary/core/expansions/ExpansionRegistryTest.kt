@@ -93,4 +93,24 @@ class ExpansionRegistryTest {
         assertEquals(List(3) { ExpansionState.CLOSED }, listOf(first, second, third).map { it.state })
         assertThrows<IllegalStateException> { manager.register(Probe("d")) }
     }
+
+    @Test
+    fun `the registry lists expansions by id and owner`() {
+        manager.register(Probe("localization"))
+
+        val entry = manager.registry().entries().single()
+
+        assertEquals("localization", entry.key)
+        assertEquals("pnLibrary", entry.owner)
+        assertNotNull(manager.registry()["localization"])
+    }
+
+    @Test
+    fun `require finds a registered expansion and names the registered ones when it is missing`() {
+        manager.register(Probe("localization"))
+
+        assertNotNull(manager.require("localization"))
+        val error = assertThrows<IllegalStateException> { manager.require("missing") }
+        assertEquals("Expansion 'missing' is not registered; registered: localization", error.message)
+    }
 }

@@ -108,12 +108,12 @@ internal class BusListenerPages(private val library: PnLibrary) {
         return totals
     }
 
-    fun exportCsv(context: CommandContext) = export(context, bus.exportHistory(false))
+    fun exportCsv(context: CommandContext) = export(context, bus.exportHistoryCsv())
 
-    fun exportJson(context: CommandContext) = export(context, bus.exportHistory(true))
+    fun exportJson(context: CommandContext) = export(context, bus.exportHistoryJson())
 
     private fun export(context: CommandContext, file: Path?) {
-        context.sender.send(
+        context.sender.sendMessage(
             if (file == null) Component.text("Выгрузка недоступна: история выключена или файл не записать.", ChatPalette.DANGER)
             else Component.text("Счётчики записаны в $file", ChatPalette.OK),
         )

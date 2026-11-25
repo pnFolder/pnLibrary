@@ -1,11 +1,14 @@
 package org.pnfolder.pnlibrary.api.audience
 
+import net.kyori.adventure.key.Key
+import org.pnfolder.pnlibrary.api.audience.delivery.Delivery
+import org.pnfolder.pnlibrary.api.world.ItemMatcher
+import org.pnfolder.pnlibrary.api.world.StatusEffect
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -23,13 +26,14 @@ class PlayerContractsTest {
     }
 
     @Test
-    fun `a player offers only the features it implements`() {
-        val plain = TestPlayer(UUID.randomUUID())
-        val withInventory = InventoryPlayer(UUID.randomUUID())
+    fun `a player that cannot do something says so instead of pretending`() {
+        val player = TestPlayer(UUID.randomUUID())
 
-        assertNull(plain.feature<PlayerInventory>())
-        assertSame(withInventory, withInventory.feature<PlayerInventory>())
-        assertNull(withInventory.feature<PlayerEffects>())
+        assertEquals(Delivery.unsupported(), player.addEffect(StatusEffect(Key.key("speed"))))
+        assertEquals(Delivery.unsupported(), player.runCommand("home"))
+        assertNull(player.countItems(ItemMatcher(Key.key("diamond"))))
+        assertNull(player.experienceLevel())
+        assertNull(player.position())
     }
 
     @Test
@@ -51,11 +55,7 @@ class PlayerContractsTest {
         assertEquals(null, anonymous.locale)
     }
 
-    private class InventoryPlayer(uniqueId: UUID) : TestPlayer(uniqueId), PlayerInventory {
-        override fun countItems(query: ItemQuery) = 3
-    }
-
-    private open class TestPlayer(override val uniqueId: UUID) : LibraryPlayer {
+    private open class TestPlayer(override val uniqueId: UUID) : OnlinePlayer {
         override fun pointers() = senderPointers("Alice", uniqueId) { it == "example.use" }
         override fun sendMessage(text: Component) = Unit
         override fun sendActionBar(text: Component) = Unit

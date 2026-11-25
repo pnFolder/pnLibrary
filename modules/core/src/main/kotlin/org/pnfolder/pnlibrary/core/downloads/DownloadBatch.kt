@@ -1,19 +1,22 @@
 package org.pnfolder.pnlibrary.core.downloads
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot
 import org.pnfolder.pnlibrary.api.downloads.DownloadState
 import org.pnfolder.pnlibrary.api.downloads.FileDownload
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.common.lang.runCatchingNonFatal
-import org.pnfolder.pnlibrary.core.downloads.settings.DownloadConfiguration
+import org.pnfolder.pnlibrary.core.downloads.DownloadConfiguration
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 
 /** Tracks the files of one download request and runs at most one download of them at a time. */
 internal class DownloadBatch(
@@ -32,6 +35,7 @@ internal class DownloadBatch(
     private val closed = AtomicBoolean(false)
     private val activeDownload = AtomicReference<CompletableFuture<List<DownloadSnapshot>>?>()
     private val currentSnapshots = AtomicReference(declaredSnapshots())
+    private val finishListeners = CopyOnWriteArrayList<Consumer<List<DownloadSnapshot>>>()
 
     override val isClosed: Boolean
         get() = closed.get()
@@ -43,7 +47,7 @@ internal class DownloadBatch(
         start(request.files, automaticPolicy = false)
 
     fun startAutomatic() {
-        val automaticFiles = request.files.filter(FileDownload::automatic)
+        val automaticFiles = request.files.filter { it.policy != DownloadPolicy.MANUAL }
         if (automaticFiles.isNotEmpty()) start(automaticFiles, automaticPolicy = true)
     }
 
@@ -92,7 +96,7 @@ internal class DownloadBatch(
 
     private fun selectFiles(declarations: List<FileDownload>, automaticPolicy: Boolean): List<FileDownload> =
         if (automaticPolicy && !automaticAllowed()) {
-            declarations.filter(FileDownload::forceAutomaticDownload)
+            declarations.filter { it.policy == DownloadPolicy.FORCED }
         } else {
             declarations
         }
@@ -110,6 +114,7 @@ internal class DownloadBatch(
             snapshots()
         }
         promise.complete(result)
+        notifyFinished(result)
         runCatchingNonFatal { blocked(reason) }
         return promise
     }
@@ -143,6 +148,7 @@ internal class DownloadBatch(
         }
         promise.complete(result)
         if (closed.get() || managerIsClosed()) return
+        notifyFinished(result)
         outcome.onSuccess {
             if (declarations.containsDependencies()) runCatchingNonFatal { dependenciesStaged(declarations) }
         }.onFailure { error -> ResourceCleanup.suppressInto(error, { failed(declarations, error) }) }
@@ -152,6 +158,14 @@ internal class DownloadBatch(
         currentSnapshots.set(request.files.map { file ->
             DownloadSnapshot(file.key, if (file in activeFiles) state else DownloadState.DECLARED)
         })
+    }
+
+    override fun whenFinished(handler: Consumer<List<DownloadSnapshot>>) {
+        finishListeners += handler
+    }
+
+    private fun notifyFinished(result: List<DownloadSnapshot>) {
+        finishListeners.forEach { listener -> runCatchingNonFatal { listener.accept(result) } }
     }
 
     override fun close() {

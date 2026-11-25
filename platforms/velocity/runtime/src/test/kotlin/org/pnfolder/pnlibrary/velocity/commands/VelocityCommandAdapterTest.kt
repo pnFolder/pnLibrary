@@ -51,7 +51,7 @@ class VelocityCommandAdapterTest {
         assertEquals("w", dispatcher.suggestion.currentInput)
         assertTrue(dispatcher.execution.sender.isConsole)
         assertTrue(dispatcher.execution.sender.hasPermission("example.use"))
-        dispatcher.execution.sender.send(Component.text("done"))
+        dispatcher.execution.sender.sendMessage(Component.text("done"))
         dispatcher.execution.sender.sendActionBar(Component.text("status"))
         assertEquals(listOf(Component.text("done")), sent)
         assertEquals(listOf(Component.text("status")), actionBars)

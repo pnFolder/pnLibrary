@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.placeholders.examples
 
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
-import org.pnfolder.pnlibrary.api.placeholders.Reply
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 
 // Example 10: owners, visibility and placeholders inside placeholders.

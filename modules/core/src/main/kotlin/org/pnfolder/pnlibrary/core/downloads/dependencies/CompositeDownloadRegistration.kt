@@ -4,6 +4,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import java.util.concurrent.CompletionStage
+import java.util.function.Consumer
 
 /** Presents two download registrations, such as declared files and dependencies, as one. */
 internal class CompositeDownloadRegistration private constructor(
@@ -19,6 +20,11 @@ internal class CompositeDownloadRegistration private constructor(
         first.downloadNow().thenCombine(second.downloadNow()) { firstResult, secondResult ->
             firstResult + secondResult
         }
+
+    override fun whenFinished(handler: Consumer<List<DownloadSnapshot>>) {
+        first.whenFinished(handler)
+        second.whenFinished(handler)
+    }
 
     override fun close() {
         ResourceCleanup.closeAll({ first.close() }, { second.close() })

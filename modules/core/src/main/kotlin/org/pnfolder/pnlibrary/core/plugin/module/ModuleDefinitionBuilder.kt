@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
@@ -38,7 +39,17 @@ internal class ModuleDefinitionBuilder : PluginBuilder {
     val dependencies = mutableListOf<PluginDependency>()
     var downloadsRequest: FileDownloads? = null
     var placeholderApiEnabled: Boolean = true
-    override val minecraftRule = org.pnfolder.pnlibrary.api.compat.MinecraftSupportRule()
+    val minecraftRule = MinecraftSupportRule()
+
+    override fun supportedMinecraft(versions: MinecraftVersions) = minecraftRule.add(versions)
+
+    override fun onUnsupportedMinecraft(action: org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction) {
+        minecraftRule.unsupportedAction = action
+    }
+
+    override fun onNewerMinecraft(action: org.pnfolder.pnlibrary.api.compat.declaration.NewerAction) {
+        minecraftRule.newerAction = action
+    }
     val libraries = linkedMapOf<ModuleLibrary, BooleanSupplier>()
     private val libraryDefaults = mutableListOf<Consumer<ModuleLibrary.Builder>>()
 

@@ -34,7 +34,7 @@ class EventBusCommandTest {
         val sent = mutableListOf<Component>()
         val sender = object : CommandSender {
             override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
-            override fun send(message: Component) { sent += message }
+            override fun sendMessage(message: Component) { sent += message }
         }
         val route = CommandTreeRouter().route(definition, CommandContext(sender, args.toList(), "bus", args.joinToString(" ")))
             as CommandRoute.Executable

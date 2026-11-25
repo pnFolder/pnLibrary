@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.scenario.requirements
 
 import org.pnfolder.pnlibrary.api.logging.PnLogger
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 
 /**
@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
  */
 interface RequirementContext {
     /** The player being judged. */
-    val player: LibraryPlayer
+    val player: OnlinePlayer
 
     /** Logger for requirements that cannot be evaluated. */
     val logger: PnLogger

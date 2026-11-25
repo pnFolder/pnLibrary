@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.downloads.dependencies
 
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.logging.LogLevel

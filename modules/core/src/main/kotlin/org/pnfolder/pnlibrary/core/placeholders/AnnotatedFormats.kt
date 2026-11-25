@@ -1,13 +1,13 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.Argument
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentConverter
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentInput
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentValue
-import org.pnfolder.pnlibrary.api.placeholders.Format
-import org.pnfolder.pnlibrary.api.placeholders.RouteInfo
-import org.pnfolder.pnlibrary.api.placeholders.Viewer
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Argument
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentConverter
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentValue
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Format
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteInfo
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Viewer
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import java.lang.reflect.InvocationTargetException
 
 /** Turns the methods marked with `@Format` into formats. */

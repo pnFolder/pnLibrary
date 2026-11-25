@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.pnfolder.pnlibrary.api.dependencies.DependencyBuilder
-import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -16,7 +16,7 @@ class DependencyBuilderTest {
         val dependency = DependencyBuilder().apply {
             plugin("Vault", "1.7.3") {
                 it.url("https://example.org/Vault.jar")
-                    .automaticDownload(true)
+                    .downloadPolicy(DownloadPolicy.AUTOMATIC)
             }
         }.build().single() as ExternalPluginDependency
 

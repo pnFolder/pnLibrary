@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -9,9 +10,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pnfolder.pnlibrary.api.compat.MinecraftSupport
-import org.pnfolder.pnlibrary.api.compat.NewerAction
-import org.pnfolder.pnlibrary.api.compat.UnsupportedAction
-import org.pnfolder.pnlibrary.api.libraries.LibraryState
+import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction
+import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryState
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleState
@@ -230,13 +231,13 @@ class ModuleControlTest {
         val registry = LoadedPluginsTest.registry(minecraftVersion = "1.21.11")
         val module = Hooked()
 
-        val context = registry.register(Any()).registerModule("shop", module) { it.supportedMinecraft(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4) }
+        val context = registry.register(Any()).registerModule("shop", module) { it.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4)) }
         // the version 1.21.11 is newer than 1.20.4: the default only warns
         assertEquals(ModuleState.ENABLED, context.control.state)
         assertEquals(MinecraftSupport.NEWER_THAN_DECLARED, context.minecraft.support)
 
         val strict = registry.register(Any()).registerModule("strict", Hooked()) {
-            it.supportedMinecraftOnly("1.20.1")
+            it.supportedMinecraft(MinecraftVersions.only("1.20.1"))
             it.onNewerMinecraft(NewerAction.BLOCK)
         }
         assertEquals(ModuleState.DISABLED, strict.control.state)
@@ -254,16 +255,16 @@ class ModuleControlTest {
         val registry = LoadedPluginsTest.registry(minecraftVersion = "1.12.2")
 
         assertThrows(IllegalStateException::class.java) {
-            registry.register(Any()).registerModule("plain") { it.supportedMinecraftFrom(MinecraftVersion.V1_16_5) }
+            registry.register(Any()).registerModule("plain") { it.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_16_5)) }
         }
         assertThrows(IllegalStateException::class.java) {
             registry.register(Any()).registerModule("stop", Hooked()) {
-                it.supportedMinecraftFrom("1.16.5")
+                it.supportedMinecraft(MinecraftVersions.from("1.16.5"))
                 it.onUnsupportedMinecraft(UnsupportedAction.STOP_PLUGIN)
             }
         }
         val warned = registry.register(Any()).registerModule("soft", Hooked()) {
-            it.supportedMinecraftFrom("1.16.5")
+            it.supportedMinecraft(MinecraftVersions.from("1.16.5"))
             it.onUnsupportedMinecraft(UnsupportedAction.WARN_ONLY)
         }
         assertEquals(ModuleState.ENABLED, warned.control.state)
@@ -274,10 +275,10 @@ class ModuleControlTest {
     fun `a module without its own versions uses the plugin's`() {
         val registry = LoadedPluginsTest.registry(minecraftVersion = "1.12.2")
         val plugin = registry.register(Any())
-        plugin.supportedMinecraftFrom(MinecraftVersion.V1_16_5)
+        plugin.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_16_5))
 
         val inherited = plugin.registerModule("a", Hooked()) { }
-        val own = plugin.registerModule("b", Hooked()) { it.supportedMinecraft(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2) }
+        val own = plugin.registerModule("b", Hooked()) { it.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2)) }
 
         assertEquals(ModuleState.DISABLED, inherited.control.state)
         assertEquals("1.16.5+", inherited.minecraft.declared)

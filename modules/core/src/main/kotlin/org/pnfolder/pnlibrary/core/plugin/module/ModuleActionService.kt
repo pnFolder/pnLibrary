@@ -1,8 +1,9 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
 import net.kyori.adventure.audience.Audience
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.registry.Registry
+import org.pnfolder.pnlibrary.api.registry.Visibility
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionContext
 import org.pnfolder.pnlibrary.api.scenario.actions.ActionService
@@ -12,6 +13,7 @@ import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
+import org.pnfolder.pnlibrary.core.registry.ListRegistry
 
 /**
  * Action service of one module: every context gets the module's text, logger, tasks, placeholders and services,
@@ -25,7 +27,7 @@ internal class ModuleActionService(
     private val lookup = shared.view(owner)
 
     override fun context(
-        player: LibraryPlayer,
+        player: OnlinePlayer,
         allPlayers: Audience,
         values: Map<String, Any?>,
         serializerType: ComponentSerializerType,
@@ -41,6 +43,12 @@ internal class ModuleActionService(
         lookup = lookup,
         placeholders = resources.placeholders,
     )
+
+    override fun actions(): Registry<Action> = ListRegistry("actions") { shared.actionEntries(owner) }
+
+    override fun requirements(): Registry<Requirement> = ListRegistry("requirements") { shared.requirementEntries(owner) }
+
+    override fun functions(): Registry<ExpressionFunction> = ListRegistry("functions") { shared.functionEntries(owner) }
 
     private fun visibility(scope: DefinitionScope) = when (scope) {
         DefinitionScope.MODULE -> Visibility.MODULE

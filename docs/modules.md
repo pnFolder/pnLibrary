@@ -112,23 +112,23 @@ registration.registerModule(MODULE_ID) { setup ->
 
 ### На каких версиях Minecraft работает плагин или модуль
 
-Версии объявляются на плагин (`registration`) и на модуль (`setup` в `registerModule`) одними и теми же методами. Модуль, который
-ничего не объявил, берёт правила плагина. Версии можно дать константой `MinecraftVersion` или текстом (для релиза, у которого
+Версии объявляются на плагин (`registration`) и на модуль (`setup` в `registerModule`) одним методом `supportedMinecraft(MinecraftVersions)`. Модуль,
+который ничего не объявил, берёт правила плагина. Версию можно дать константой `MinecraftVersion` или текстом (для релиза, у которого
 ещё нет константы).
 
 ```kotlin
-registration.supportedMinecraft(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4)   // от и до, включительно
+registration.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4))   // от и до, включительно
 registration.registerModule(MODULE_ID) { setup ->
-    setup.supportedMinecraft(MinecraftVersion.V1_20_1)                      // одна версия
-    setup.supportedMinecraftOnly("1.20.1", "1.20.4")                        // только эти
-    setup.supportedMinecraftFrom(MinecraftVersion.V1_20_5)                  // с этой и выше, в том числе будущие
-    setup.supportedMinecraftUpTo("1.21.4")                                  // до этой включительно
+    setup.supportedMinecraft(MinecraftVersions.only("1.20.1", "1.20.4"))     // только эти
+    setup.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_20_5) + MinecraftVersions.only("1.8.8"))  // с этой и выше, плюс 1.8.8
+    setup.supportedMinecraft(MinecraftVersions.upTo("1.21.4"))              // до этой включительно
+    setup.supportedMinecraft(MinecraftVersions.LEGACY)                      // 1.12.2 и старше; ещё готовые: MODERN (1.13 и новее), ANY (любая)
     setup.onNewerMinecraft(NewerAction.ALLOW_WITH_WARNING)                  // ALLOW, ALLOW_WITH_WARNING, BLOCK
     setup.onUnsupportedMinecraft(UnsupportedAction.DISABLE_MODULE)          // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
 }
 ```
 
-Вызовы складываются: версия должна подойти хотя бы под один. Версии сравниваются числами, а не списком известных, поэтому релиз,
+Вызовы складываются: версия должна подойти хотя бы под один. Те же версии можно спросить в коде: `MinecraftVersions.from("1.16.5").accepts("1.21.4")` даёт `true`, `description` пишет `1.16.5+`, `check(...)` возвращает результат проверки. Версии сравниваются числами, а не списком известных, поэтому релиз,
 о котором библиотека ещё не знает, не ломает `From`. Результат проверки (`MinecraftSupport`: `SUPPORTED`, `NEWER_THAN_DECLARED`,
 `OLDER_THAN_DECLARED`, `EXCLUDED`, `UNKNOWN`, `NOT_DECLARED`) виден в `ModuleContext.minecraft` и в `/pn modules view`.
 

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
 import java.util.UUID
 
@@ -21,13 +21,13 @@ class PlatformAudiencesTest {
         val adapter = RecordingAdapter(console, mutableListOf(player))
         val service = PlatformAudiences(adapter)
 
-        assertSame(console, service.console())
+        assertSame(adapter.console(), service.console())
         assertSame(player, service.player(player.uniqueId))
         assertSame(player, service.of("native"))
         service.close()
         assertNull(service.player(player.uniqueId))
         assertNull(service.of("native"))
-        assertEquals(emptyList<LibraryPlayer>(), service.players())
+        assertEquals(emptyList<OnlinePlayer>(), service.players())
     }
 
     @Test
@@ -45,9 +45,9 @@ class PlatformAudiencesTest {
         val first = Player(UUID.randomUUID(), "first", calls)
         val broken = Player(UUID.randomUUID(), "broken", calls, failMessages = true)
         val last = Player(UUID.randomUUID(), "last", calls)
-        val members = mutableListOf<LibraryPlayer>(first, broken, first, last)
+        val members = mutableListOf<OnlinePlayer>(first, broken, first, last)
         val service = PlatformAudiences(RecordingAdapter(Sender("console"), members))
-        val composite = service.filter { true }
+        val composite = service
 
         composite.sendMessage(Component.text("hello"))
         composite.playSound(Sound.sound(
@@ -58,7 +58,7 @@ class PlatformAudiencesTest {
         assertEquals(listOf("first:message", "broken:message", "last:message", "first:sound", "broken:sound", "last:sound"), calls)
 
         members += Player(UUID.randomUUID(), "NowOnline", calls)
-        service.filter { true }.sendActionBar(Component.text("bar"))
+        service.sendActionBar(Component.text("bar"))
         assertEquals("NowOnline:bar", calls.last())
     }
 
@@ -66,12 +66,12 @@ class PlatformAudiencesTest {
     fun `a receiver that throws is reported once and the others still get the message`() {
         val calls = mutableListOf<String>()
         val failures = mutableListOf<Throwable>()
-        val members = mutableListOf<LibraryPlayer>(
+        val members = mutableListOf<OnlinePlayer>(
             Player(UUID.randomUUID(), "broken", calls, failMessages = true),
             Player(UUID.randomUUID(), "last", calls),
         )
         val service = PlatformAudiences(RecordingAdapter(Sender("console"), members)) { failures += it }
-        val composite = service.filter { true }
+        val composite = service
 
         repeat(2) { composite.sendMessage(Component.text("hello")) }
 
@@ -80,13 +80,13 @@ class PlatformAudiencesTest {
     }
 
     @Test
-    fun `filter and server audiences follow who is online`() {
+    fun `the audiences follow who is online and can be filtered`() {
         val calls = mutableListOf<String>()
-        val members = mutableListOf<LibraryPlayer>(Player(UUID.randomUUID(), "Alice", calls), Player(UUID.randomUUID(), "Bob", calls))
+        val members = mutableListOf<OnlinePlayer>(Player(UUID.randomUUID(), "Alice", calls), Player(UUID.randomUUID(), "Bob", calls))
         val service = PlatformAudiences(RecordingAdapter(Sender("console", calls = calls), members))
 
-        service.filter { it.name == "Bob" }.sendActionBar(Component.text("bar"))
-        service.server().sendActionBar(Component.text("bar"))
+        service.filterAudience { it.name == "Bob" }.sendActionBar(Component.text("bar"))
+        service.sendActionBar(Component.text("bar"))
 
         assertEquals(listOf("Bob:bar", "console:bar", "Alice:bar", "Bob:bar"), calls)
     }
@@ -96,7 +96,7 @@ class PlatformAudiencesTest {
         private val calls: MutableList<String> = mutableListOf(),
         private val failMessages: Boolean = false,
     ) : Audience {
-        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers(name, (this as? LibraryPlayer)?.uniqueId) { true }
+        override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers(name, (this as? OnlinePlayer)?.uniqueId) { true }
         override fun sendMessage(text: Component) {
             calls += "$name:message"
             if (failMessages) error("delivery")
@@ -114,14 +114,16 @@ class PlatformAudiencesTest {
         name: String,
         calls: MutableList<String> = mutableListOf(),
         failMessages: Boolean = false,
-    ) : Sender(name, calls = calls, failMessages = failMessages), LibraryPlayer {
+    ) : Sender(name, calls = calls, failMessages = failMessages), OnlinePlayer {
         override fun pointers() = super<Sender>.pointers()
     }
 
     private class RecordingAdapter(
-        private val console: Audience,
-        private val players: MutableList<LibraryPlayer>,
+        console: Audience,
+        private val players: MutableList<OnlinePlayer>,
     ) : PlatformAudienceAdapter {
+        private val console = org.pnfolder.pnlibrary.spi.audience.PlatformConsole(console)
+
         override fun console() = console
         override fun player(uniqueId: UUID) = players.firstOrNull { it.uniqueId == uniqueId }
         override fun of(native: Any) = players.firstOrNull()

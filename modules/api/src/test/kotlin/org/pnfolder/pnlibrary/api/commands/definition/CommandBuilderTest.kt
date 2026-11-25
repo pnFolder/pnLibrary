@@ -75,6 +75,6 @@ class CommandBuilderTest {
 
     private class TestSender : CommandSender {
         override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("sender", java.util.UUID.randomUUID()) { permission -> true }
-        override fun send(message: Component) = Unit
+        override fun sendMessage(message: Component) = Unit
     }
 }

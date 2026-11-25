@@ -1,15 +1,15 @@
 package org.pnfolder.pnlibrary.core.placeholders.examples
 
-import org.pnfolder.pnlibrary.api.placeholders.Argument
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentValue
-import org.pnfolder.pnlibrary.api.placeholders.Group
-import org.pnfolder.pnlibrary.api.placeholders.Invalid
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
-import org.pnfolder.pnlibrary.api.placeholders.PlayerRef
-import org.pnfolder.pnlibrary.api.placeholders.Reply
-import org.pnfolder.pnlibrary.api.placeholders.Viewer
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Argument
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentValue
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Group
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Invalid
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.info.PlayerRef
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Viewer
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import java.time.Duration
 
 // Example 2: arguments.

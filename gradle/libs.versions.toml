@@ -11,7 +11,7 @@ spigot18                = "1.8.8-R0.1-SNAPSHOT"
 paper                   = "1.21.4-R0.1-SNAPSHOT"
 bungeecord              = "1.21-R0.4"
 velocity                = "3.3.0-SNAPSHOT"
-adventure               = "4.17.0"
+adventure               = "4.21.0"
 adventure-platform      = "4.4.1"
 placeholderapi          = "2.12.3"
 faststats               = "0.29.0"
@@ -29,6 +29,7 @@ ecj-legacy                = { module = "org.eclipse.jdt:ecj",                   
 mariadb-jdbc              = { module = "org.mariadb.jdbc:mariadb-java-client",                  version.ref = "mariadb-jdbc"           }
 mongodb-driver-sync       = { module = "org.mongodb:mongodb-driver-sync",                       version.ref = "mongodb-driver"         }
 postgresql-jdbc           = { module = "org.postgresql:postgresql",                             version.ref = "postgresql-jdbc"        }
+jetbrains-annotations    = { module = "org.jetbrains:annotations",                              version = "24.1.0"                     }
 kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable",       version.ref = "kotlin"                 }
 gson                      = { module = "com.google.code.gson:gson",                              version.ref = "gson"                   }

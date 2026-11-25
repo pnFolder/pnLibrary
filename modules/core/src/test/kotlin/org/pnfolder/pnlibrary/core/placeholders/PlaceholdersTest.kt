@@ -5,28 +5,28 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.Argument
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentAdapters
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentConverter
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentInput
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentValue
-import org.pnfolder.pnlibrary.api.placeholders.Format
-import org.pnfolder.pnlibrary.api.placeholders.Group
-import org.pnfolder.pnlibrary.api.placeholders.Hide
-import org.pnfolder.pnlibrary.api.placeholders.Invalid
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Argument
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentAdapters
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentConverter
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentValue
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Format
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Group
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Hide
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Invalid
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
-import org.pnfolder.pnlibrary.api.placeholders.PlayerRef
-import org.pnfolder.pnlibrary.api.placeholders.PublishedAnswers
-import org.pnfolder.pnlibrary.api.placeholders.Reply
-import org.pnfolder.pnlibrary.api.placeholders.Route
-import org.pnfolder.pnlibrary.api.placeholders.RouteInfo
-import org.pnfolder.pnlibrary.api.placeholders.RouteKind
-import org.pnfolder.pnlibrary.api.placeholders.UseFormat
-import org.pnfolder.pnlibrary.api.placeholders.Viewer
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.info.PlayerRef
+import org.pnfolder.pnlibrary.api.placeholders.reply.PublishedAnswers
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Route
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteInfo
+import org.pnfolder.pnlibrary.api.placeholders.route.RouteKind
+import org.pnfolder.pnlibrary.api.placeholders.annotation.UseFormat
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Viewer
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -116,6 +116,14 @@ class PlaceholderServiceTest {
 
     private fun read(address: String, viewer: ViewerInfo = ViewerInfo.none()): Any? =
         engine.resolve(address, viewer).toCompletableFuture().get()
+
+    @Test
+    fun `the format registry lists built-in formats of the library and the formats of a module with their owner`() {
+        val formats = module().formatRegistry().entries()
+
+        org.junit.jupiter.api.Assertions.assertEquals("pnLibrary", formats.first { it.key == "round" }.owner)
+        org.junit.jupiter.api.Assertions.assertTrue(formats.any { it.owner == "pnclans/war" })
+    }
 
     @Test
     fun `plain values, branches and properties are placeholders`() {

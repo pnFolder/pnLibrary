@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.network
 
+import net.kyori.adventure.audience.ForwardingAudience
+import net.kyori.adventure.text.Component
+import java.time.Duration
 import java.net.InetSocketAddress
 
 /**
@@ -7,14 +10,14 @@ import java.net.InetSocketAddress
  *
  * ```kotlin
  * val lobby = library.proxy?.server("lobby")
- * lobby?.broadcast("Restart in 5 minutes")
+ * lobby?.sendMessage(Component.text("Restart in 5 minutes"))   // everyone on this server
  * lobby?.send("myplugin:sync", payload)
  * ```
  *
  * Properties the platform does not expose have neutral defaults: [motd] is `null` and [isRestricted] is `false`
  * on Velocity.
  */
-interface NetworkServer {
+interface NetworkServer : ForwardingAudience {
     /** Name of the server as registered in the proxy configuration. */
     val name: String
 
@@ -24,11 +27,11 @@ interface NetworkServer {
     /** Number of players currently on this server. */
     val onlinePlayers: Int
 
-    /** Last measured round-trip time to this server in milliseconds; `null` until the first measurement. */
-    val ping: Long?
+    /** Average latency of the players on this server; `null` while nobody is on it. */
+    val ping: Duration?
 
     /** Server MOTD; `null` on platforms that do not expose it. */
-    val motd: String? get() = null
+    val motd: Component? get() = null
 
     /** Whether the server rejects players without explicit permission; `false` on platforms without that setting. */
     val isRestricted: Boolean get() = false
@@ -38,7 +41,4 @@ interface NetworkServer {
 
     /** Whether [player] may connect to this server; `true` on platforms without an access list. */
     fun canAccess(player: NetworkPlayer): Boolean = true
-
-    /** Sends a text message to every player currently on this server. */
-    fun broadcast(message: String)
 }

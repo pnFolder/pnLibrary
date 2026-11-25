@@ -3,10 +3,10 @@ package org.pnfolder.pnlibrary.core.placeholders
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentAdapter
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentAdapters
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentAdapter
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentAdapters
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
 
 @Placeholders("plain")
 class PlainValues {

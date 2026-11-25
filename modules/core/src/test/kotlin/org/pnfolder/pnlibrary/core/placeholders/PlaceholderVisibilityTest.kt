@@ -4,14 +4,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentConverter
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentInput
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentConverter
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
-import org.pnfolder.pnlibrary.api.placeholders.Reply
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
 
 class PlaceholderVisibilityTest {
     private val problems = mutableListOf<String>()

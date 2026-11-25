@@ -38,7 +38,7 @@ class BungeeCommandAdapterTest {
 
         registrar.execute(nativeSender, "hello", arrayOf("one"))
         val suggestions = registrar.suggest(nativeSender, "hello", arrayOf("w")).toCompletableFuture().join()
-        dispatcher.execution.sender.send(Component.text("done"))
+        dispatcher.execution.sender.sendMessage(Component.text("done"))
         dispatcher.execution.sender.sendActionBar(Component.text("status"))
 
         assertEquals("hello", dispatcher.execution.invokedAlias)

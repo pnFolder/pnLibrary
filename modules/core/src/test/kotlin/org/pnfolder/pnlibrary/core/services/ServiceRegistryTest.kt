@@ -71,4 +71,16 @@ class ServiceRegistryTest {
     }
 
     private data class Greeting(override val value: String) : GreetingService
+
+    @Test
+    fun `the registry lists a service by its type name with its owner`() {
+        ServiceRegistry().use { services ->
+            services.register(CharSequence::class.java, "hello")
+
+            val entry = services.registry().entries().single()
+
+            org.junit.jupiter.api.Assertions.assertEquals("java.lang.CharSequence", entry.key)
+            org.junit.jupiter.api.Assertions.assertEquals("pnLibrary", entry.owner)
+        }
+    }
 }

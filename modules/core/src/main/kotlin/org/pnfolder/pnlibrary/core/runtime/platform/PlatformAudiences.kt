@@ -1,12 +1,13 @@
 package org.pnfolder.pnlibrary.core.runtime.platform
 
 import net.kyori.adventure.audience.Audience
-import net.kyori.adventure.audience.ForwardingAudience
 import org.pnfolder.pnlibrary.api.audience.Audiences
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.Console
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.audience.senderPointers
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformConsole
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.UUID
@@ -20,23 +21,19 @@ internal class PlatformAudiences(
     private val closed = AtomicBoolean(false)
     private val failureThrottle = FailureThrottle()
 
-    override fun console(): Audience = if (closed.get()) CLOSED_CONSOLE else adapter.console()
-    override fun player(uniqueId: UUID): LibraryPlayer? = if (closed.get()) null else adapter.player(uniqueId)
+    override fun console(): Console = if (closed.get()) CLOSED_CONSOLE else adapter.console()
+    override fun player(uniqueId: UUID): OnlinePlayer? = if (closed.get()) null else adapter.player(uniqueId)
     override fun of(native: Any): Audience? = if (closed.get()) null else adapter.of(native)
-    override fun players(): List<LibraryPlayer> = if (closed.get()) emptyList() else adapter.players().toList()
-    override fun filter(predicate: (LibraryPlayer) -> Boolean): Audience = group { players().filter(predicate) }
-    override fun server(): Audience = group { listOf(console()) + players() }
+    override fun players(): List<OnlinePlayer> = if (closed.get()) emptyList() else adapter.players().toList()
     override fun close() = closed.set(true)
 
-    private fun group(receivers: () -> Iterable<Audience>): Audience = object : ForwardingAudience {
-        override fun audiences(): Iterable<Audience> =
-            receivers().distinctByIdentity().map { FailureIsolatedAudience(it, failureThrottle, onDeliveryFailure) }
-    }
+    override fun audiences(): Iterable<Audience> =
+        (listOf(console()) + players()).distinctByIdentity().map { FailureIsolatedAudience(it, failureThrottle, onDeliveryFailure) }
 
     private companion object {
-        val CLOSED_CONSOLE = object : Audience {
+        val CLOSED_CONSOLE = PlatformConsole(object : Audience {
             override fun pointers() = senderPointers("Console") { false }
-        }
+        })
 
         fun Iterable<Audience>.distinctByIdentity(): List<Audience> {
             val seen = Collections.newSetFromMap(IdentityHashMap<Audience, Boolean>())

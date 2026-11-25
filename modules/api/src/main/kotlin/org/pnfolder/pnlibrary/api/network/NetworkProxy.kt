@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.network
 
+import net.kyori.adventure.audience.ForwardingAudience
+import net.kyori.adventure.text.Component
 import java.util.UUID
 
 /**
@@ -8,11 +10,11 @@ import java.util.UUID
  *
  * ```kotlin
  * val proxy = library.proxy ?: return
- * proxy.broadcast("Welcome to ${proxy.name}")
+ * proxy.sendMessage(Component.text("Welcome to ${proxy.name}"))   // every player on the proxy
  * proxy.server("lobby")?.onlinePlayers
  * ```
  */
-interface NetworkProxy {
+interface NetworkProxy : ForwardingAudience {
     /** Proxy software name, such as `Velocity`. */
     val name: String
 
@@ -43,9 +45,6 @@ interface NetworkProxy {
     /** Stops receiving plugin messages on [channel]. */
     fun unregisterChannel(channel: String)
 
-    /** Sends a text message to every player connected to this proxy. */
-    fun broadcast(message: String)
-
     /** Shuts the proxy down, kicking players with [reason] when given. */
-    fun stop(reason: String? = null)
+    fun stop(reason: Component? = null)
 }

@@ -2,11 +2,11 @@
 // Всё необязательное можно удалить: достаточно registerModule("main") { }.
 package example
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticContainer
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext
 import org.pnfolder.pnlibrary.api.remote.DenyAction
 import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction
@@ -54,7 +54,7 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
                         .verifyPluginId(true)
                         .verifyVersion(true)
                         .downloadPolicy(DownloadPolicy.MANUAL)
-                    // Или скачивать самим: .artifact("https://.../Vault.jar", 123456L, "sha256...").automaticDownload(true)
+                    // Или скачивать самим: .artifact("https://.../Vault.jar", 123456L, "sha256...").downloadPolicy(DownloadPolicy.AUTOMATIC)
                 }
             }
 
@@ -76,8 +76,8 @@ class PnLibraryRegistrationExample(private val plugin: JavaPlugin) : AutoCloseab
             setup.downloads(plugin.dataFolder.toPath()) { d ->
                 d.file("geoip") { f ->
                     f.url("https://example.com/geoip.mmdb")
-                        .required(false)
-                        .automaticDownload(true)
+                        .optional()                                         // без файла плагин всё равно работает
+                        .policy(DownloadPolicy.AUTOMATIC)                  // MANUAL | AUTOMATIC | FORCED
                         .integrity(1_000_000L, "sha256...")
                         .destination(DownloadDestination.DATA_FOLDER, "geoip.mmdb")   // или CACHE
                         .java(8)

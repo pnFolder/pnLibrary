@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot

@@ -10,7 +10,7 @@
 - Аудитории (пакет `api.audience`, как в Adventure и `spi.audience`; ломает API: `CommandSender` теперь `Audience`):
   - Вместо `LibraryAudience` и `AudienceSender` обычный Adventure `Audience`. Имя, `displayName`, `locale`, права и вид отправителя (`isPlayer`, `isConsole`, `id`) читаются расширениями из указателей Adventure. Платформы строят указатели сами (`senderPointers`, для игроков `playerPointers`), поэтому проверка прав работает на любой версии Minecraft, а не только там, где сервер сам отдаёт `PermissionChecker`.
   - `Audiences` (`PnLibrary.audiences`): `console()`, `server()`, `players()`, `player(uuid | name)`, `filter { }`, `withPermission()`, `of(native)`. Рассылка по группе не прерывается из-за одного получателя, это работает для всех методов Adventure (заголовки, боссбар, звук, книга).
-  - `LibraryPlayer` только `uniqueId` и указатели. Остальное отдельными интерфейсами: `PlayerEffects`, `PlayerCommands`, `PlayerInventory`, `PlayerExperience`, `PlayerPosition`; получать `player.feature<PlayerInventory>()` (`null`, если платформа не умеет). `PlayerCapability` убран. Bukkit умеет всё, Velocity и Bungee только чат.
+  - `OnlinePlayer` только `uniqueId` и указатели. Остальное методами с умолчанием «не умею» (`addEffect`, `spawnParticle`, `runCommand`, `countItems`, `experienceLevel`, `position`), как у Adventure; Bukkit переопределяет, прокси нет. Значения без игрока в `api.world`: `StatusEffect`, `Particle`, `Position`, `ItemMatcher`.
   - `Delivery` переписан в один класс-отчёт: `status` (`DELIVERED`, `PARTIAL`, `UNSUPPORTED`, `FAILED`), `receipts` (ответ каждого получателя: имя, исход, причина сбоя), `delivered`, `failures`, `failure`, `orThrow()`. Фабрики `Delivery.delivered()`, `unsupported()`, `failed(cause)`, `of(accepted)`, `combine(...)`, `to(audience) { }`. Вместо прежних `Delivered`/`Unsupported`/`Failed`. `Audience.deliver { it.sendMessage(...) }` работает для любой аудитории Adventure: одного получателя или группы (каждый получает операцию, даже если другой упал; пустая группа это `UNSUPPORTED`; частичный успех теперь `PARTIAL`, а не потерян).
   - Звук и заголовок больше не возвращают `Delivery`; он остался у эффектов, частиц и команд. `LibraryAudience.dynamic` заменён функцией `dynamicAudience`.
 - Чат: подпапка `api.chat.style` убрана. `ChatPalette` лежит в `api.chat`, `ChatTone`, `ChatNotice` и `ConfirmChoice` собраны в один файл `ChatMessages.kt`. Меняется только путь импорта: `api.chat.style.ChatPalette` стал `api.chat.ChatPalette`, то же для `ChatTone` и `color`. В `ChatKit` кнопки команд (`button`, `option`) используют один общий код.
@@ -271,7 +271,7 @@
 
 - `playSound`, `showTitle`, `applyEffect`, `spawnParticle` и `runCommand` возвращают `Delivery` вместо `Boolean`:
   `Delivered`, `Unsupported` или `Failed(причина)`. Проверка успеха — `delivery.isDelivered`. Нужно поправить свои реализации
-  `LibraryPlayer` и `LibraryAudience`.
+  `OnlinePlayer` и `LibraryAudience`.
 - У билдеров `PlaceholderAccess`, `RemotePolicyContext`, `ConfigOptions`, `ConfigTypeAccess`, `CurrencyAccess` и
   `CurrencyDescriptor` конструктор стал `internal`: создавайте их через `builder()`. Тест архитектуры следит, чтобы публичных
   конструкторов у билдеров больше не появлялось.
@@ -394,7 +394,7 @@
   `ActionService.context(..., checks = ...)`. `check(context)` — только ответ, `test(context)` — ответ и действия.
 
 **Пакеты**
-- `LibraryPlayer`, `LibraryAudience`, `PlayerEffect`, `PlayerParticle`, `ItemQuery` → `api.audiences`.
+- `OnlinePlayer`, `LibraryAudience`, `PlayerEffect`, `PlayerParticle`, `ItemQuery` → `api.audiences`.
 - `DependencyBuilder`, `PluginDependency`, `DownloadPolicy`, `VersionConstraint`, `ExternalPluginDependency`,
   `ExternalArtifact`, `ManagedProductDependency` → `api.dependencies`.
 - `MetricsBuilder`, `MetricsController` → `api.metrics`; `RemotePolicySettings`, `DenyAction`,

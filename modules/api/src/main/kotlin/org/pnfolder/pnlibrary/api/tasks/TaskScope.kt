@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.tasks
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId
 import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
@@ -23,6 +24,7 @@ import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec
  * tasks.close()
  * ```
  */
+@ApiStatus.NonExtendable
 interface TaskScope : AutoCloseable {
     /** Object whose lifecycle owns every task in this scope. */
     val owner: Any

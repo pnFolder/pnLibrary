@@ -4,10 +4,10 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.ChatColor
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.currency.Currency
 import org.pnfolder.pnlibrary.api.currency.CurrencyCommandSettings
 import org.pnfolder.pnlibrary.api.currency.CurrencyResult
@@ -36,7 +36,7 @@ internal fun configured(
     var body = template
     values.forEach { (key, value) -> body = body.replace("{$key}", value) }
     val message = LEGACY.deserialize(ChatColor.translateAlternateColorCodes('&', prefix + body))
-    sender.send(Component.empty().append(kit(sender).mark(tone)).append(message))
+    sender.sendMessage(Component.empty().append(kit(sender).mark(tone)).append(message))
 }
 
 internal fun notify(sender: BukkitCommandSender, tone: ChatTone, text: String, detail: String? = null): Boolean {

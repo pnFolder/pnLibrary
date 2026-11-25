@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.downloads.DirectDownloadSource
+import org.pnfolder.pnlibrary.api.downloads.source.DirectDownloadSource
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 import java.net.URI

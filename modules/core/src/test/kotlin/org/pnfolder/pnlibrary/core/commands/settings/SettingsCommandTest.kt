@@ -26,7 +26,7 @@ class SettingsCommandTest {
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
         override fun pointers() = senderPointers("Console", if (console) null else java.util.UUID.randomUUID()) { true }
-        override fun send(message: Component) {
+        override fun sendMessage(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }
     }

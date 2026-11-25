@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 
@@ -12,10 +13,6 @@ interface PluginDependency {
     val versions: VersionConstraint
     /** Policy governing whether pnLibrary may download this dependency. */
     val downloadPolicy: DownloadPolicy get() = DownloadPolicy.MANUAL
-    /** Whether ordinary automatic download is permitted. */
-    val automaticDownload: Boolean get() = downloadPolicy != DownloadPolicy.MANUAL
-    /** Whether automatic download is mandatory. */
-    val forceAutomaticDownload: Boolean get() = downloadPolicy == DownloadPolicy.FORCED
     /** Managed pnLibrary component, when this is a library component dependency. */
     val managed: ManagedProductDependency? get() = null
 

@@ -45,7 +45,7 @@ class DepsCommand(private val library: PnLibrary) {
     private fun kit(context: CommandContext) = ChatKit(ChatReader.of(context.sender))
 
     private fun say(context: CommandContext, text: String, color: TextColor = ChatPalette.TEXT) =
-        context.sender.send(kit(context).text(text, color))
+        context.sender.sendMessage(kit(context).text(text, color))
 
     private fun status(context: CommandContext) {
         val downloads = library.dependencyDownloads() ?: return say(context, "Загрузки зависимостей здесь недоступны.", ChatPalette.DANGER)

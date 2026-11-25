@@ -86,7 +86,7 @@ internal class BusHistoryPages(private val library: PnLibrary) {
         val kit = busKit(context)
         val date = runCatching { java.time.LocalDate.parse(typed) }.getOrNull()
         if (date == null) {
-            context.sender.send(kit.text("Дата должна быть вида 2026-10-27. Список дней: $ROOT history", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("Дата должна быть вида 2026-10-27. Список дней: $ROOT history", ChatPalette.DANGER))
             return
         }
         val entries = bus.history().filter { it.date == date }.sortedByDescending { it.calls }

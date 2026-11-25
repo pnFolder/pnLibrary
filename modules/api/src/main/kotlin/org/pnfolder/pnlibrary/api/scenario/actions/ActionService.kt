@@ -1,7 +1,9 @@
 package org.pnfolder.pnlibrary.api.scenario.actions
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.registry.Registry
 import net.kyori.adventure.audience.Audience
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
 import org.pnfolder.pnlibrary.api.scenario.requirements.Requirement
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
@@ -23,6 +25,7 @@ import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType
  * val result = module.actions.execute(config.onBuy, player, values = mapOf("item" to "diamond"))
  * ```
  */
+@ApiStatus.NonExtendable
 interface ActionService {
     /**
      * Creates a fresh context for one run.
@@ -33,7 +36,7 @@ interface ActionService {
      * @param serializerType default format of printed text
      */
     fun context(
-        player: LibraryPlayer,
+        player: OnlinePlayer,
         allPlayers: Audience = player,
         values: Map<String, Any?> = emptyMap(),
         serializerType: ComponentSerializerType = ComponentSerializerType.ADAPTIVE,
@@ -42,7 +45,7 @@ interface ActionService {
     /** Creates a context and runs [actions] as one scenario; see [ActionContext.execute]. */
     fun execute(
         actions: List<Action>,
-        player: LibraryPlayer,
+        player: OnlinePlayer,
         allPlayers: Audience = player,
         values: Map<String, Any?> = emptyMap(),
     ): ActionResult = context(player, allPlayers, values).execute(actions)
@@ -77,4 +80,13 @@ interface ActionService {
         scope: DefinitionScope = DefinitionScope.MODULE,
         conflict: DefinitionConflict = DefinitionConflict.FAIL,
     ): AutoCloseable
+
+    /** Every named action this module can see, with owner and visibility; see [define]. */
+    fun actions(): Registry<Action>
+
+    /** Every named requirement this module can see; see [defineRequirement]. */
+    fun requirements(): Registry<Requirement>
+
+    /** Every named expression function this module can see; see [defineFunction]. */
+    fun functions(): Registry<ExpressionFunction>
 }

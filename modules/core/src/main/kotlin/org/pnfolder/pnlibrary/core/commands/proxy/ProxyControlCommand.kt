@@ -2,9 +2,9 @@ package org.pnfolder.pnlibrary.core.commands.proxy
 
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.chat.ChatKit
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatReader
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.CommandSender
@@ -65,7 +65,7 @@ class ProxyControlCommand(private val library: PnLibrary, private val link: Link
         val printed = Collections.synchronizedList(mutableListOf<Component>())
         val sender = object : CommandSender {
             override fun pointers() = senderPointers(viewerName, viewerId, holds)
-            override fun send(message: Component) {
+            override fun sendMessage(message: Component) {
                 printed += message
             }
         }

@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.velocity.network
 
+import java.time.Duration
+import net.kyori.adventure.audience.ForwardingAudience
+import net.kyori.adventure.audience.Audience
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import com.velocitypowered.api.proxy.server.RegisteredServer
@@ -12,7 +15,9 @@ import java.net.InetSocketAddress
 import java.util.UUID
 
 /** [NetworkProxy] backed by a Velocity [ProxyServer]. */
-internal class VelocityNetworkProxy(private val server: ProxyServer) : NetworkProxy {
+internal class VelocityNetworkProxy(private val server: ProxyServer) : NetworkProxy, ForwardingAudience.Single {
+    override fun audience(): Audience = server
+
 
     override val name: String get() = server.version.name
     override val version: String get() = server.version.version
@@ -36,11 +41,8 @@ internal class VelocityNetworkProxy(private val server: ProxyServer) : NetworkPr
     override fun unregisterChannel(channel: String) =
         server.channelRegistrar.unregister(MinecraftChannelIdentifier.from(channel))
 
-    override fun broadcast(message: String) =
-        server.allPlayers.forEach { it.sendMessage(Component.text(message)) }
-
-    override fun stop(reason: String?) =
-        if (reason != null) server.shutdown(Component.text(reason)) else server.shutdown()
+    override fun stop(reason: Component?) =
+        if (reason != null) server.shutdown(reason) else server.shutdown()
 
     /** Resolves the pnLibrary [OwnerInfo] for a Velocity plugin instance. Not part of [NetworkProxy]. */
     fun describePlugin(instance: Any?): OwnerInfo? =
@@ -50,21 +52,21 @@ internal class VelocityNetworkProxy(private val server: ProxyServer) : NetworkPr
 }
 
 /** [NetworkServer] backed by a Velocity [RegisteredServer]. */
-internal class VelocityNetworkServer(private val rs: RegisteredServer) : NetworkServer {
+internal class VelocityNetworkServer(private val rs: RegisteredServer) : NetworkServer, ForwardingAudience.Single {
+    override fun audience(): Audience = rs
+
 
     override val name: String get() = rs.serverInfo.name
     override val address: InetSocketAddress get() = rs.serverInfo.address
     override val onlinePlayers: Int get() = rs.playersConnected.size
 
-    override val ping: Long? get() = rs.playersConnected
+    override val ping: Duration? get() = rs.playersConnected
         .map { it.ping }
         .takeIf { it.isNotEmpty() }
         ?.average()
-        ?.toLong()
+        ?.let { Duration.ofMillis(it.toLong()) }
 
     override fun send(channel: String, bytes: ByteArray): Boolean =
         rs.sendPluginMessage(MinecraftChannelIdentifier.from(channel), bytes)
 
-    // RegisteredServer implements Audience — broadcasts to all players on this server.
-    override fun broadcast(message: String) = rs.sendMessage(Component.text(message))
 }

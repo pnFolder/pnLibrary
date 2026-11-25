@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction

@@ -6,11 +6,11 @@ import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.tasks.TaskScope
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.journal.JournalDetail
 import org.pnfolder.pnlibrary.core.journal.JournalGroup
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo
@@ -27,8 +27,11 @@ object MountableCommands {
     const val PLACEHOLDERS = "placeholders"
     const val SETTINGS = "settings"
     const val ACTIONS = "actions"
+    const val REGISTRY = "registry"
+    const val COOLDOWNS = "cooldowns"
+    const val DOWNLOADS = "downloads"
 
-    val ALL = listOf(EVENTS, DEBUG, STATS, PLACEHOLDERS, SETTINGS, ACTIONS)
+    val ALL = listOf(EVENTS, DEBUG, STATS, PLACEHOLDERS, SETTINGS, ACTIONS, REGISTRY, COOLDOWNS, DOWNLOADS)
 }
 
 internal interface RuntimeResources {
@@ -44,13 +47,13 @@ internal interface RuntimeResources {
     fun scenarioDefinitions(): List<ScenarioDefinitionInfo>
     fun cancelTask(id: String): TaskControl
     fun runTaskNow(id: String): TaskControl
-    fun dependencyDownloads(): DirectDownloads?
+    fun dependencyDownloads(): DownloadService?
     fun librarySettings(): SettingsStore?
     val settingPicker: SettingPickerHook
     fun journalDetail(id: String): JournalDetail?
 }
 
-internal fun PnLibrary.dependencyDownloads(): DirectDownloads? = resources()?.dependencyDownloads()
+internal fun PnLibrary.dependencyDownloads(): DownloadService? = resources()?.dependencyDownloads()
 fun PnLibrary.settingPicker(): SettingPickerHook? = resources()?.settingPicker
 internal fun PnLibrary.librarySettings(): SettingsStore? = resources()?.librarySettings()
 fun PnLibrary.taskSnapshots(): List<TaskSnapshot> = resources()?.taskSnapshots().orEmpty()

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.dependencies.external
 
-import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
 import org.pnfolder.pnlibrary.api.updates.product.ProductId

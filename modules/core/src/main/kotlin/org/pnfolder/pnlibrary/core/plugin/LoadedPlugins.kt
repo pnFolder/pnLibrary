@@ -1,11 +1,14 @@
 package org.pnfolder.pnlibrary.core.plugin
 
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 import org.pnfolder.pnlibrary.api.compat.MinecraftCompatibility
-import org.pnfolder.pnlibrary.api.compat.MinecraftSupportRule
+import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction
+import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction
+import org.pnfolder.pnlibrary.core.plugin.module.MinecraftSupportRule
 import org.pnfolder.pnlibrary.api.config.ConfigScope
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration
@@ -42,7 +45,7 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher
@@ -98,7 +101,7 @@ internal class LoadedPlugins(
     private val shared: SharedFeatures,
     private val configurations: ConfigurationRuntime,
     private val commands: CommandService? = null,
-    private val directDownloads: DirectDownloads? = null,
+    private val downloadService: DownloadService? = null,
     libraryVersion: String? = null,
     private val modulePreferences: ModulePreferences = ModulePreferences(),
     private val libraryFetcher: LibraryFetcher = LibraryFetcher.THROUGH_LIBBY,
@@ -119,10 +122,10 @@ internal class LoadedPlugins(
     private val metadataFactory = ModuleMetadataFactory(ownership, identity)
     private val resourceFactory = ModuleResourceFactory(
         events, tasks, services, logging, metrics, diagnostics, updates,
-        shared.placeholders, shared.currency, configurations, directDownloads, sharedComponentCache,
+        shared.placeholders, shared.currency, configurations, downloadService, sharedComponentCache,
     )
     private val dependencyValidator = ModuleDependencyValidator(ownership) {
-        directDownloads != null
+        downloadService != null
     }
     override fun register(owner: Any): PluginRegistration = synchronized(plugins) {
         check(!closed.get()) { "PluginRegistry is closed" }
@@ -155,7 +158,7 @@ internal class LoadedPlugins(
         }
         ResourceCleanup.closeAll(
             *current.map { plugin -> ({ plugin.closeInternal() }) }.toTypedArray(),
-            { directDownloads?.close() },
+            { downloadService?.close() },
         )
     }
 
@@ -193,7 +196,17 @@ internal class LoadedPlugins(
     ) : PluginRegistration {
         override val id: PluginId get() = nativeId
         private val moduleContexts = linkedMapOf<ModuleId, Context>()
-        override val minecraftRule = MinecraftSupportRule()
+        val minecraftRule = MinecraftSupportRule()
+
+        override fun supportedMinecraft(versions: MinecraftVersions) = minecraftRule.add(versions)
+
+        override fun onUnsupportedMinecraft(action: UnsupportedAction) {
+            minecraftRule.unsupportedAction = action
+        }
+
+        override fun onNewerMinecraft(action: NewerAction) {
+            minecraftRule.newerAction = action
+        }
         override val libraries: ModuleLibraries = ModuleLibraryLoader.through(
             "p-${nativeId.value}-$registrationId", LoadedPlugins::class.java.classLoader, owner, null, libraryFetcher, identity.type,
             modulePreferences, nativeId.value,

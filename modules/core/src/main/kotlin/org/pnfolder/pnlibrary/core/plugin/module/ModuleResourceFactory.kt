@@ -21,11 +21,11 @@ import org.pnfolder.pnlibrary.api.updates.UpdateService
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.config.ConfigurationRuntime
 import org.pnfolder.pnlibrary.core.downloads.dependencies.CompositeDownloadRegistration
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup
 import org.pnfolder.pnlibrary.core.metrics.ErrorPipeline
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
-import org.pnfolder.pnlibrary.core.plugin.module.InMemoryCooldowns
+import org.pnfolder.pnlibrary.core.cooldowns.InMemoryCooldowns
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry
 import org.pnfolder.pnlibrary.core.tasks.TaskService
 import org.pnfolder.pnlibrary.core.text.CachedComponents
@@ -45,7 +45,7 @@ internal class ModuleResourceFactory(
     private val placeholders: PlaceholderEngine,
     private val currency: CurrencyRuntime,
     private val configurations: ConfigurationRuntime,
-    private val directDownloads: DirectDownloads?,
+    private val downloadService: DownloadService?,
     private val componentCache: ComponentCache,
 ) {
     private val miniText = MiniText()
@@ -107,8 +107,8 @@ internal class ModuleResourceFactory(
             }
 
             // Retain the first registration immediately so a later failure can roll it back.
-            downloadRegistration = directDownloads?.registerDependencies(owner, definition.dependencies)
-            val fileDownloads = definition.downloadsRequest?.let { directDownloads?.register(owner, it) }
+            downloadRegistration = downloadService?.registerDependencies(owner, definition.dependencies)
+            val fileDownloads = definition.downloadsRequest?.let { downloadService?.register(owner, it) }
             downloadRegistration = CompositeDownloadRegistration.combine(downloadRegistration, fileDownloads)
 
             return ModuleResources(

@@ -5,8 +5,8 @@ import org.bukkit.plugin.Plugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandSender
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind
 import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
@@ -112,7 +112,7 @@ class BukkitControlCommandTest {
 
     private class TestSender : CommandSender {
         override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
-        override fun send(message: Component) = Unit
+        override fun sendMessage(message: Component) = Unit
     }
 
     private fun <T> proxy(type: Class<T>): T = type.cast(

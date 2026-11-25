@@ -29,9 +29,9 @@ private const val PAGE_SIZE = 12
 private fun list(all: List<ScenarioDefinitionInfo>, context: CommandContext, requested: Int) {
     val pages = ((all.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
     val page = requested.coerceIn(1, pages)
-    context.sender.send(Component.text("Действия, требования и функции: ${all.size}, страница $page/$pages", ChatPalette.ACCENT))
-    all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { context.sender.send(definitionRow(it)) }
-    context.sender.send(Component.text("Как писать: /pn actions info <имя>", ChatPalette.FAINT))
+    context.sender.sendMessage(Component.text("Действия, требования и функции: ${all.size}, страница $page/$pages", ChatPalette.ACCENT))
+    all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { context.sender.sendMessage(definitionRow(it)) }
+    context.sender.sendMessage(Component.text("Как писать: /pn actions info <имя>", ChatPalette.FAINT))
 }
 
 /** One line of the list: the name, what it is, who owns it and who may use it. */
@@ -72,13 +72,13 @@ private fun info(all: List<ScenarioDefinitionInfo>, context: CommandContext, wri
     val wanted = written.trim().lowercase().removeSuffix("()")
     val found = all.filter { it.name == wanted }
     if (found.isEmpty()) {
-        context.sender.send(Component.text("$wanted: такого действия, требования или функции нет. Список: /pn actions", ChatPalette.WARN))
+        context.sender.sendMessage(Component.text("$wanted: такого действия, требования или функции нет. Список: /pn actions", ChatPalette.WARN))
         return
     }
     found.forEach { entry ->
-        context.sender.send(definitionRow(entry))
+        context.sender.sendMessage(definitionRow(entry))
         definitionUsage(entry).forEach { variant ->
-            context.sender.send(
+            context.sender.sendMessage(
                 Component.text("  ${variant.label}: ", ChatPalette.SOFT)
                     .append(Component.text(variant.text, ChatPalette.TEXT))
                     .append(Component.text("  ${variant.meaning}", ChatPalette.FAINT)),

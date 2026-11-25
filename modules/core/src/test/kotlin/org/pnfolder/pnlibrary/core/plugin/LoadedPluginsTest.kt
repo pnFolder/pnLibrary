@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.api.dependencies.Dependencies
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.events.Event
@@ -47,7 +47,7 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest
 import org.pnfolder.pnlibrary.config.YamlConfigurations
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.events.EventDispatcher
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
@@ -71,7 +71,7 @@ class LoadedPluginsTest {
     @Test
     fun `failed file registration rolls back previously registered dependency downloads`() {
         val owner = Any()
-        val downloads = mock(DirectDownloads::class.java)
+        val downloads = mock(DownloadService::class.java)
         val dependencyRegistration = mock(DownloadRegistration::class.java)
         val failure = IllegalStateException("file registration failed")
         val request = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
@@ -80,7 +80,7 @@ class LoadedPluginsTest {
             }.build()
         `when`(downloads.registerDependencies(owner, emptyList())).thenReturn(dependencyRegistration)
         `when`(downloads.register(owner, request)).thenThrow(failure)
-        val registry = registry(directDownloads = downloads)
+        val registry = registry(downloadService = downloads)
         val thrown = assertThrows(IllegalStateException::class.java) {
             registry.register(owner).registerModule("example") { it.downloads(request) }
         }
@@ -94,10 +94,10 @@ class LoadedPluginsTest {
         val firstOwner = Any()
         val secondOwner = Any()
         val commands = mock(CommandService::class.java)
-        val downloads = mock(DirectDownloads::class.java)
+        val downloads = mock(DownloadService::class.java)
         val failure = IllegalStateException("plugin cleanup failed")
         doThrow(failure).`when`(commands).unregisterOwner(firstOwner)
-        val registry = registry(commands = commands, directDownloads = downloads)
+        val registry = registry(commands = commands, downloadService = downloads)
         registry.register(firstOwner)
         registry.register(secondOwner)
         assertSame(failure, assertThrows(IllegalStateException::class.java) { registry.close() })
@@ -640,7 +640,7 @@ class LoadedPluginsTest {
             commands: CommandService? = null,
             libraryVersion: String? = null,
             updates: UpdateService = emptyProxy(UpdateService::class.java),
-            directDownloads: DirectDownloads? = null,
+            downloadService: DownloadService? = null,
             expansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryExpansions: ExpansionRegistry = ExpansionRegistry { _, _ -> },
             libraryFetcher: LibraryFetcher = LibraryFetcher { _, _, _, _ -> null },
@@ -662,7 +662,7 @@ class LoadedPluginsTest {
                 shared = SharedFeatures(PlaceholderEngine(), CurrencyFeature(), expansions, libraryExpansions),
                 configurations = YamlConfigurations(platform),
                 commands = commands,
-                directDownloads = directDownloads,
+                downloadService = downloadService,
                 libraryVersion = libraryVersion,
                 libraryFetcher = libraryFetcher,
             )

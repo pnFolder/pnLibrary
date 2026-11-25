@@ -1,9 +1,10 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.jetbrains.annotations.ApiStatus
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
-import org.pnfolder.pnlibrary.api.compat.MinecraftSupportDeclaration
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftSupportDeclaration
 import org.pnfolder.pnlibrary.api.config.ConfigInfo
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary
@@ -11,6 +12,7 @@ import org.pnfolder.pnlibrary.api.plugin.control.PluginModule
 import java.util.function.Consumer
 
 /** Registration of one native platform plugin and all logical modules it owns. */
+@ApiStatus.NonExtendable
 interface PluginRegistration : AutoCloseable, MinecraftSupportDeclaration {
     /** Native platform plugin owning this registration. */
     val owner: Any
@@ -29,7 +31,7 @@ interface PluginRegistration : AutoCloseable, MinecraftSupportDeclaration {
     /** Answers errors of class [type] for every command of this plugin, in all of its modules, with the plain [message]. */
     fun <E : CommandError> onCommandError(type: Class<E>, message: String) {
         val text = message.trim()
-        onCommandError(type, CommandErrorHandler<E> { context, error -> context.sender.send(Component.text(error.format(text))) })
+        onCommandError(type, CommandErrorHandler<E> { context, error -> context.sender.sendMessage(Component.text(error.format(text))) })
     }
 
     /**

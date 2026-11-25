@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.tasks
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
@@ -10,6 +11,7 @@ import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus
  * Cancellation is idempotent. It prevents a pending invocation from starting, but does not
  * interrupt an invocation that is already running. Closing the handle is equivalent to [cancel].
  */
+@ApiStatus.NonExtendable
 interface TaskHandle : AutoCloseable {
     /** Stable identifier of the associated task. */
     val id: TaskId

@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.audience.name
 import net.kyori.adventure.text.Component
 import org.pnfolder.pnlibrary.api.logging.PnLogger
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.scenario.expression.Expression
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException
 import org.pnfolder.pnlibrary.api.scenario.expression.ExpressionFunction
@@ -52,7 +52,7 @@ import java.util.Collections
  * @property placeholders placeholder service, or `null` when the runtime has none
  */
 class ActionContext(
-    override val player: LibraryPlayer,
+    override val player: OnlinePlayer,
     val allPlayers: Audience,
     val components: ComponentService,
     override val logger: PnLogger,

@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.audience.isConsole
  *
  * ```kotlin
  * command("ping") {
- *     execute { ctx -> ctx.sender.send(Component.text("pong")) }
+ *     execute { ctx -> ctx.sender.sendMessage(Component.text("pong")) }
  * }
  * ```
  */
@@ -25,10 +25,6 @@ interface CommandSender : Audience {
         get() = !isConsole
 
     /** Sends one Adventure component to this sender. */
-    fun send(message: Component)
-
-    override fun sendMessage(message: Component) = send(message)
-
-    // Falls back to chat when the platform has no action bar for generic senders.
-    override fun sendActionBar(message: Component) = send(message)
+    @Deprecated("Same as sendMessage, which every Adventure audience has.", ReplaceWith("sendMessage(message)"))
+    fun send(message: Component) = sendMessage(message)
 }

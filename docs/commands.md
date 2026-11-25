@@ -29,7 +29,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.error.BadUsage
 import org.pnfolder.pnlibrary.api.commands.CommandContext
@@ -74,13 +74,13 @@ class ShopExamplePlugin : JavaPlugin() {
         // 2. PLUGIN level: how every command of this plugin, in every module, answers a sender without permission.
         //    In the lambda `this` is the command context, so `sender` is right there.
         registration.onCommandError<NoPermission> {
-            sender.send(Component.text("[Магазин] У вас нет доступа к этой команде.", NamedTextColor.RED))
+            sender.sendMessage(Component.text("[Магазин] У вас нет доступа к этой команде.", NamedTextColor.RED))
         }
 
         // 3. MODULE level: answers for all commands of this module. A text may use the error's placeholders.
         module.onCommandError<PlayerNotFound>("Игрока {value} нет на сервере.")
         module.onCommandError<NoMoney> { error ->
-            sender.send(Component.text("Не хватает монет: нужно ${error.price}.", NamedTextColor.GOLD))
+            sender.sendMessage(Component.text("Не хватает монет: нужно ${error.price}.", NamedTextColor.GOLD))
         }
 
         // 4. The command itself. No plugin.yml entry is needed.
@@ -96,9 +96,9 @@ class ShopExamplePlugin : JavaPlugin() {
             // A handler for a base class also answers its subclasses: BadUsage covers a wrong argument, an
             // unknown word and an unfinished command; the more specific InvalidArgument is answered first.
             onError<InvalidArgument>("«{value}» не подходит для «{argument}». Попробуйте: {usage}")
-            onError<BadUsage> { error -> sender.send(Component.text("Магазин: ${error.usage}", NamedTextColor.YELLOW)) }
+            onError<BadUsage> { error -> sender.sendMessage(Component.text("Магазин: ${error.usage}", NamedTextColor.YELLOW)) }
 
-            executes { it.sender.send(Component.text("Команды: /shop buy <товар> [кол-во], /shop give <игрок> <монеты>")) }
+            executes { it.sender.sendMessage(Component.text("Команды: /shop buy <товар> [кол-во], /shop give <игрок> <монеты>")) }
 
             literal("buy") {
                 playerOnly() // the console gets the library's "only in game" answer on its own
@@ -120,7 +120,7 @@ class ShopExamplePlugin : JavaPlugin() {
 
                 // SUBCOMMAND level: the most specific one. Text, sound, anything.
                 onError<NoPermission> {
-                    sender.send(Component.text("Выдавать монеты могут только администраторы.", NamedTextColor.RED))
+                    sender.sendMessage(Component.text("Выдавать монеты могут только администраторы.", NamedTextColor.RED))
                     sender.playSound(Sound.sound(Key.key("entity.villager.no"), Sound.Source.MASTER, 1f, 1f))
                 }
 
@@ -131,10 +131,10 @@ class ShopExamplePlugin : JavaPlugin() {
                 argument("player", onlinePlayer) {
                     argument("coins", ArgumentType.integer(1, 1000)) {
                         executes { context ->
-                            val target = context.get<LibraryPlayer>("player")
+                            val target = context.get<OnlinePlayer>("player")
                             val coins = context.get<Int>("coins")
                             balances.merge(target.uniqueId, coins, Int::plus)
-                            context.sender.send(Component.text("${target.name} получил $coins монет."))
+                            context.sender.sendMessage(Component.text("${target.name} получил $coins монет."))
                         }
                     }
                 }
@@ -142,7 +142,7 @@ class ShopExamplePlugin : JavaPlugin() {
 
             literal("reload") {
                 consoleOnly() // a player gets the library's "console only" answer
-                executes { it.sender.send(Component.text("Настройки магазина перезагружены.")) }
+                executes { it.sender.sendMessage(Component.text("Настройки магазина перезагружены.")) }
             }
         }
     }
@@ -166,7 +166,7 @@ class ShopExamplePlugin : JavaPlugin() {
         context.ensure(balance >= price) { NoMoney(price) }
 
         balances[buyer] = balance - price
-        context.sender.send(Component.text("Куплено за $price. Осталось: ${balance - price}."))
+        context.sender.sendMessage(Component.text("Куплено за $price. Осталось: ${balance - price}."))
     }
 
     override fun onDisable() {
@@ -247,7 +247,7 @@ executes { context ->
 
 ```kotlin
 onError<NoPermission> { error ->
-    sender.send(Component.text("Нужно право ${error.permission}"))
+    sender.sendMessage(Component.text("Нужно право ${error.permission}"))
     sender.playSound(Sound.sound(Key.key("entity.villager.no"), Sound.Source.MASTER, 1f, 1f))
 }
 onError<InvalidArgument>("«{value}» не подходит для «{argument}». {usage}")   // текстом
@@ -257,7 +257,7 @@ onError<InvalidArgument>("«{value}» не подходит для «{argument}�
 
 ```java
 builder.onError(NoPermission.class, (context, error) -> context.getSender().send(Component.text("Нет права")));
-throw new CommandFailure(new NoMoney(50));
+throw new CommandException(new NoMoney(50));
 ```
 
 В тексте можно использовать `{имя}` из полей ошибки: `{permission}`, `{usage}`, `{argument}`, `{value}`, `{seconds}` и свои из

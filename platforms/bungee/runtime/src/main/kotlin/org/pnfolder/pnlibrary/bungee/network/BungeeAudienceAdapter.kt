@@ -9,7 +9,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.plugin.Plugin
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer
 import org.pnfolder.pnlibrary.api.audience.senderPointers
+import org.pnfolder.pnlibrary.api.audience.Console
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformConsole
 import java.util.UUID
 
 @Suppress("DEPRECATION")
@@ -17,7 +19,7 @@ internal class BungeeAudienceAdapter(
     private val plugin: Plugin,
 ) : PlatformAudienceAdapter {
 
-    override fun console(): Audience = wrap(plugin.proxy.console)
+    override fun console(): Console = PlatformConsole(wrap(plugin.proxy.console))
 
     override fun player(uniqueId: UUID): NetworkPlayer? =
         plugin.proxy.getPlayer(uniqueId)?.let(BungeeNetworkPlayer::of)

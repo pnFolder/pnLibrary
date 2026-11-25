@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.observability
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.observability.observation.Observation
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationQuery
 import org.pnfolder.pnlibrary.api.observability.observation.ObservationRequest
@@ -15,6 +16,7 @@ import org.pnfolder.pnlibrary.api.observability.report.ObservabilityReportReques
  * Calls are safe from platform threads. Closing the service releases its
  * persistence resources and rejects subsequent write operations.
  */
+@ApiStatus.NonExtendable
 interface ObservabilityService : AutoCloseable {
     /** Records one immutable request and persists any declared attachments. */
     fun record(request: ObservationRequest): Observation

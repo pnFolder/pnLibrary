@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.services
 
+import org.pnfolder.pnlibrary.core.registry.ListRegistry
+import org.pnfolder.pnlibrary.api.registry.RegistryEntry
+import org.pnfolder.pnlibrary.api.registry.Registry
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.services.ServiceManager
 import java.util.Collections
@@ -59,6 +62,13 @@ internal class ServiceRegistry : ServiceManager, AutoCloseable {
     override fun <T : Any> all(type: Class<T>): List<T> =
         Collections.unmodifiableList(registrations(type).map { it.service })
 
+    override fun registry(): Registry<Any> = ListRegistry("services") {
+        val current = synchronized(lock) { providers.values.flatten() }
+        current.filterNot { it.isClosed }
+            .sortedWith(compareBy({ it.type.name }, { -it.priority }, { it.order }))
+            .map { RegistryEntry(it.type.name, it.service, it.owner?.toString() ?: "pnLibrary") }
+    }
+
     private fun unregisterAll(owner: PluginId) {
         val registrations = synchronized(lock) { registrationsByOwner[owner]?.toList().orEmpty() }
         registrations.forEach { it.close() }
@@ -87,6 +97,9 @@ internal class ServiceRegistry : ServiceManager, AutoCloseable {
         override fun <T : Any> get(type: Class<T>): T? = this@ServiceRegistry.get(type)
 
         override fun <T : Any> all(type: Class<T>): List<T> = this@ServiceRegistry.all(type)
+
+        override fun registry(): Registry<Any> = this@ServiceRegistry.registry()
+
         override fun close() {
             if (ownerClosed.compareAndSet(false, true)) unregisterAll(owner)
         }

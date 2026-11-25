@@ -37,6 +37,9 @@
 | `/pn money` | управление валютами плагинов |
 | `/pn stats` | почасовая статистика ошибок, задач и событий |
 | `/pn placeholders [test <адрес>]` | список и проверка плейсхолдеров |
+| `/pn registry [вид] [страница]` | всё зарегистрированное: плейсхолдеры, форматы, действия, сервисы, расширения; `find <текст>` ищет по всем |
+| `/pn cooldowns <игрок> [clear]` | что держит игрока в каждом плагине; `clear` сбрасывает |
+| `/pn downloads [now]` | файлы, которые плагины попросили скачать, и их состояние; `now` запускает |
 | `/pn bus`, `/pn tasks` | шина событий, задачи плагинов |
 | `/pn servers`, `/pn support` | серверы сети, обращение в поддержку |
 | `/pn debug [all\|плагин]` | отчёт для поддержки |
@@ -53,6 +56,9 @@
 | `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
 | `pnlibrary.placeholders` | `/pn placeholders`: список, `info` и проверка плейсхолдеров |
 | `pnlibrary.actions` | `/pn actions`: именованные действия, требования и функции плагинов |
+| `pnlibrary.registry` | `/pn registry`: просмотр реестров с владельцем и видимостью |
+| `pnlibrary.cooldowns` | `/pn cooldowns`: просмотр и сброс кулдаунов игрока |
+| `pnlibrary.downloads` | `/pn downloads`: просмотр и запуск загрузок |
 | `pnlibrary.debug` | `/pn debug` |
 | `pnlibrary.tasks` | `/pn tasks` |
 | `pnlibrary.events.bus` | `/pn bus` |

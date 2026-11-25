@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.dependencies.external
 
-import org.pnfolder.pnlibrary.api.downloads.isHttps
+import org.pnfolder.pnlibrary.api.downloads.source.isHttps
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.updates.requireSha256
 import java.net.URI

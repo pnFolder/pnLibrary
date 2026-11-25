@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.Viewer
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Viewer
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Duration

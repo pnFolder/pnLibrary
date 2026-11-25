@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.api.dependencies.external
 
-import org.pnfolder.pnlibrary.api.dependencies.DownloadPolicy
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.VersionConstraint
-import org.pnfolder.pnlibrary.api.downloads.requireHttpsUri
+import org.pnfolder.pnlibrary.api.downloads.source.requireHttpsUri
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
 import java.net.URI
@@ -121,21 +121,11 @@ class ExternalPluginDependency private constructor(builder: Builder) : PluginDep
         /** Sets how a missing or outdated plugin is downloaded. */
         fun downloadPolicy(value: DownloadPolicy): Builder = apply { downloadPolicy = value }
 
-        /** Selects automatic or manual download policy. */
-        fun automaticDownload(value: Boolean): Builder = apply {
-            downloadPolicy = if (value) DownloadPolicy.AUTOMATIC else DownloadPolicy.MANUAL
-        }
         /** Enables or disables staged plugin-ID verification. */
         fun verifyPluginId(value: Boolean): Builder = apply { verifyPluginId = value }
 
         /** Enables or disables staged plugin-version verification. */
         fun verifyVersion(value: Boolean): Builder = apply { verifyVersion = value }
-
-        /** Enables or disables mandatory automatic installation. */
-        fun forceAutomaticDownload(value: Boolean): Builder = apply {
-            if (value) downloadPolicy = DownloadPolicy.FORCED
-            else if (downloadPolicy == DownloadPolicy.FORCED) downloadPolicy = null
-        }
 
         internal fun versions() = VersionConstraint(minimumVersion, maximumInclusive, maximumExclusive)
 

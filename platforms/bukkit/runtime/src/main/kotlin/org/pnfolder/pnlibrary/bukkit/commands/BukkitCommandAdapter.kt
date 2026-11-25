@@ -62,12 +62,6 @@ internal class BukkitCommandSender(
     // Buttons need the Adventure transport; without it the sender receives plain text and can't click anything.
     override val supportsInteraction: Boolean
         get() = !isConsole && transportAvailable()
-
-    override fun send(message: Component) = audience.sendMessage(message)
-
-    override fun sendMessage(message: Component) = audience.sendMessage(message)
-
-    override fun sendActionBar(message: Component) = audience.sendActionBar(message)
 }
 
 private class DefaultBukkitNativeCommandRegistrar : NativeCommandRegistrar<NativeCommandSender> {

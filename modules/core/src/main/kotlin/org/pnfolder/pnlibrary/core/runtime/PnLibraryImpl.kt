@@ -49,6 +49,10 @@ import org.pnfolder.pnlibrary.core.metrics.session.MetricsSessions
 import org.pnfolder.pnlibrary.core.observability.SupportRuntime
 import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders
 import org.pnfolder.pnlibrary.core.placeholders.placeholdersCommand
+import org.pnfolder.pnlibrary.core.commands.cooldowns.cooldownsCommand
+import org.pnfolder.pnlibrary.core.commands.downloads.downloadsCommand
+import org.pnfolder.pnlibrary.core.commands.registry.libraryRegistries
+import org.pnfolder.pnlibrary.core.commands.registry.registryCommand
 import org.pnfolder.pnlibrary.core.plugin.LibraryWords
 import org.pnfolder.pnlibrary.core.plugin.LoadedPlugins
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures
@@ -214,7 +218,7 @@ internal class PnLibraryImpl(
         updates = features.updates,
         shared = SharedFeatures(features.placeholders, features.currency, features.expansions, features.libraryExpansions),
         commands = commands,
-        directDownloads = features.downloads,
+        downloadService = features.downloads,
         modulePreferences = ModulePreferences(dataFolder.resolve("modules").resolve("preferences.json")),
     )
     private val runtimeDiagnostics: RuntimeDiagnosticsAssembler = RuntimeDiagnosticsAssembler(
@@ -251,6 +255,11 @@ internal class PnLibraryImpl(
         mountable[MountableCommands.STATS] = stats.command()
         mountable[MountableCommands.PLACEHOLDERS] = placeholdersCommand(features.placeholders)
         mountable[MountableCommands.ACTIONS] = actionsCommand { scenarioDefinitions() }
+        mountable[MountableCommands.REGISTRY] = registryCommand(
+            libraryRegistries(features.placeholders, features.services, features.expansions, ::scenarioDefinitions),
+        )
+        mountable[MountableCommands.COOLDOWNS] = cooldownsCommand({ plugins }, { audiences })
+        mountable[MountableCommands.DOWNLOADS] = downloadsCommand { plugins }
         mountable[MountableCommands.SETTINGS] = SettingsCommand(settings, settingPicker).definition()
         features.placeholders.scope("pnlibrary/main")
             .register(LibraryPlaceholders(platform.identity, startedAtMillis, { plugins.all().size }, stats::values))

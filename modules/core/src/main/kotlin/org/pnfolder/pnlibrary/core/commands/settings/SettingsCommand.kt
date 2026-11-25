@@ -106,7 +106,7 @@ internal class SettingsCommand(private val settings: SettingsStore, private val 
     }
 
     private fun say(context: CommandContext, text: String, color: TextColor = ChatPalette.TEXT) =
-        context.sender.send(Component.text(text, color))
+        context.sender.sendMessage(Component.text(text, color))
 
     private fun list(context: CommandContext, requested: Int) {
         val all = settings.values()
@@ -117,7 +117,7 @@ internal class SettingsCommand(private val settings: SettingsStore, private val 
             val mark = if (entry.changed) "  (по умолчанию ${entry.spec.display(entry.spec.default)})" else ""
             say(context, "${entry.spec.key} = ${entry.spec.display(entry.current)}$mark", if (entry.changed) ChatPalette.OK else ChatPalette.TEXT)
         }
-        if (pages > 1) context.sender.send(chatPager(ChatKit(ChatReader.of(context.sender)), "$ROOT list", page, pages))
+        if (pages > 1) context.sender.sendMessage(chatPager(ChatKit(ChatReader.of(context.sender)), "$ROOT list", page, pages))
         say(context, "Подробнее: $ROOT get <ключ>. Изменить: $ROOT set <ключ> <значение>.", ChatPalette.FAINT)
     }
 

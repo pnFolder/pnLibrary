@@ -114,7 +114,7 @@ class ModulesCommand(private val library: PnLibrary) {
         val found = all.firstOrNull { it.first.equals(typed, true) }
             ?: all.singleOrNull { it.second.id.value.equals(typed, true) }
         if (found == null) {
-            context.sender.send(kit.text("Такого модуля нет или имя неоднозначно: $typed. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("Такого модуля нет или имя неоднозначно: $typed. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         action(kit, found.first, found.second)
@@ -158,12 +158,12 @@ class ModulesCommand(private val library: PnLibrary) {
     private fun forceMinecraft(context: CommandContext, kit: ChatKit, name: String, module: ModuleContext, on: Boolean) {
         val target = module as? org.pnfolder.pnlibrary.core.plugin.module.MinecraftForcible
         if (target == null || module.minecraft.declared == null) {
-            context.sender.send(kit.note("У $name не объявлены версии Minecraft или он не из этого сервера.", ChatPalette.WARN))
+            context.sender.sendMessage(kit.note("У $name не объявлены версии Minecraft или он не из этого сервера.", ChatPalette.WARN))
             return
         }
         target.forceMinecraft(on)
         val text = if (on) "запускать при любой версии Minecraft (на свой риск)" else "версия Minecraft снова проверяется"
-        context.sender.send(kit.text("$name: ", ChatPalette.TEXT).append(kit.text(text, ChatPalette.SOFT)))
+        context.sender.sendMessage(kit.text("$name: ", ChatPalette.TEXT).append(kit.text(text, ChatPalette.SOFT)))
     }
 
     private fun disk(context: CommandContext) {
@@ -244,12 +244,12 @@ class ModulesCommand(private val library: PnLibrary) {
     private fun change(context: CommandContext, typed: String, action: Action) = withModule(context, typed) { kit, name, module ->
         val control = module.control
         if (!control.isControllable) {
-            context.sender.send(kit.text("У модуля ${name} нет методов включения и выключения.", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("У модуля ${name} нет методов включения и выключения.", ChatPalette.DANGER))
             return@withModule
         }
         action.run(control).whenComplete { _, _ ->
             val failed = control.lastError
-            context.sender.send(
+            context.sender.sendMessage(
                 if (failed != null) {
                     kit.text("Модуль ${name}: ошибка, ${failed.message ?: failed.javaClass.simpleName}", ChatPalette.DANGER)
                 } else {
@@ -261,12 +261,12 @@ class ModulesCommand(private val library: PnLibrary) {
 
     private fun auto(context: CommandContext, kit: ChatKit, name: String, module: ModuleContext, enabled: Boolean) {
         if (!module.control.isControllable) {
-            context.sender.send(kit.text("У модуля ${name} нет методов включения и выключения.", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("У модуля ${name} нет методов включения и выключения.", ChatPalette.DANGER))
             return
         }
         module.control.setAutoStart(enabled)
         val text = if (enabled) "будет включаться вместе с сервером" else "не будет включаться вместе с сервером"
-        context.sender.send(kit.text("Модуль ${name} $text.", ChatPalette.OK))
+        context.sender.sendMessage(kit.text("Модуль ${name} $text.", ChatPalette.OK))
     }
 
     private enum class Action(

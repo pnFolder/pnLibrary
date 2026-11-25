@@ -37,7 +37,7 @@ class BukkitCommandAdapterTest {
 
         registrar.execute(sender, "hi", arrayOf("one", "two"))
         val suggestions = registrar.suggest(sender, "hi", arrayOf("wo")).toCompletableFuture().join()
-        dispatcher.lastContext.sender.send(Component.text("done"))
+        dispatcher.lastContext.sender.sendMessage(Component.text("done"))
         dispatcher.lastContext.sender.sendActionBar(Component.text("status"))
 
         assertEquals("hi", dispatcher.executionContext.invokedAlias)

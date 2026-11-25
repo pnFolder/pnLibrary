@@ -1,34 +1,17 @@
 package org.pnfolder.pnlibrary.api.placeholders
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Argument
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Format
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.FormatInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentConverter
+import org.pnfolder.pnlibrary.api.registry.Registry
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import java.util.UUID
 import java.util.concurrent.CompletionStage
-
-/**
- * One placeholder as an administrator sees it in lists.
- *
- * @property address the address with its arguments, such as `clan.war.{arg1}.score`
- * @property description the text of `@Placeholder("...")`, or an empty string
- * @property owner the plugin and module that registered it, as `plugin/module`
- * @property type the type of the value
- * @property format the format applied when the address names none, or `null`
- * @property published the names under which PlaceholderAPI shows it, such as `pnclans_clan_level`
- * @property visibility who may use it
- */
-data class PlaceholderInfo(
-    val address: String,
-    val description: String,
-    val owner: String,
-    val type: String,
-    val format: String? = null,
-    val published: List<String> = emptyList(),
-    val visibility: Visibility = Visibility.ALL,
-)
-
-/** The value of one placeholder registered without a class; see [PlaceholderService.value]. */
-fun interface PlaceholderValue {
-    /** The value for [viewer], or `null` when there is none. */
-    fun get(viewer: ViewerInfo): Any?
-}
 
 /**
  * The placeholders of one module: annotated classes in, text out. Everything registered here is released when the
@@ -37,6 +20,7 @@ fun interface PlaceholderValue {
  * An address is `{group.branch.argument.field|format|format}`. Calls may come from any thread; answers finish on
  * the thread the method that gave the value chose.
  */
+@ApiStatus.NonExtendable
 interface PlaceholderService : AutoCloseable {
     /**
      * Registers the classes marked with [Placeholders]. With [papi] set, they are also shown to PlaceholderAPI as
@@ -104,6 +88,12 @@ interface PlaceholderService : AutoCloseable {
 
     /** Every placeholder of the whole library, for lists and menus. */
     fun list(): List<PlaceholderInfo>
+
+    /** The same placeholders as [list], as a [Registry]: found by address, with owner and visibility. */
+    fun registry(): Registry<PlaceholderInfo>
+
+    /** Every format that `{value|name}` can use, with the module that brought it. */
+    fun formatRegistry(): Registry<FormatInfo>
 
     /** The outside placeholder systems (PlaceholderAPI) the library talks to. */
     fun adapters(): PlaceholderAdapterRegistry

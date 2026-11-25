@@ -144,6 +144,6 @@ class DiagnosticCommandTest {
     private class TestSender : CommandSender {
         val messages = mutableListOf<Component>()
         override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
-        override fun send(message: Component) { messages += message }
+        override fun sendMessage(message: Component) { messages += message }
     }
 }

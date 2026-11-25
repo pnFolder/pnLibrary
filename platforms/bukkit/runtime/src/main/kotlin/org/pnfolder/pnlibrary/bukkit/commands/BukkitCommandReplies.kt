@@ -3,9 +3,9 @@ package org.pnfolder.pnlibrary.bukkit.commands
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
-import org.pnfolder.pnlibrary.api.chat.ChatTone
-import org.pnfolder.pnlibrary.api.chat.ConfirmChoice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.audience.isConsole

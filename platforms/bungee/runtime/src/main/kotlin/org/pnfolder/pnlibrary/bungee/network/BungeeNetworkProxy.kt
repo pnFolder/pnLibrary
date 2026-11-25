@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.bungee.network
 
+import net.kyori.adventure.audience.ForwardingAudience
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.audience.Audience
 import net.md_5.bungee.api.ProxyServer
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Plugin
@@ -10,7 +14,9 @@ import org.pnfolder.pnlibrary.core.menu.OwnerInfo
 import java.util.UUID
 
 @Suppress("DEPRECATION")
-internal class BungeeNetworkProxy(private val proxy: ProxyServer) : NetworkProxy {
+internal class BungeeNetworkProxy(private val proxy: ProxyServer) : NetworkProxy, ForwardingAudience {
+    override fun audiences(): Iterable<Audience> = proxy.players.map(::BungeeNetworkPlayer)
+
 
     override val name: String get() = proxy.name
     override val version: String get() = proxy.version
@@ -32,11 +38,14 @@ internal class BungeeNetworkProxy(private val proxy: ProxyServer) : NetworkProxy
     override fun registerChannel(channel: String) = proxy.registerChannel(channel)
     override fun unregisterChannel(channel: String) = proxy.unregisterChannel(channel)
 
-    override fun broadcast(message: String) = proxy.broadcast(TextComponent(message))
-    override fun stop(reason: String?) =
-        if (reason != null) proxy.stop(reason) else proxy.stop()
+    override fun stop(reason: Component?) =
+        if (reason != null) proxy.stop(LEGACY.serialize(reason)) else proxy.stop()
 
     fun describePlugin(instance: Any?): OwnerInfo? =
         (instance as? Plugin)?.description
             ?.let { OwnerInfo(it.name, it.version, listOfNotNull(it.author)) }
+
+    private companion object {
+        val LEGACY = LegacyComponentSerializer.legacySection()
+    }
 }

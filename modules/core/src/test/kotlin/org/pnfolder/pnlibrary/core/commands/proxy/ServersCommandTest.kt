@@ -25,7 +25,7 @@ class ServersCommandTest {
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
         override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
-        override fun send(message: Component) {
+        override fun sendMessage(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }
     }

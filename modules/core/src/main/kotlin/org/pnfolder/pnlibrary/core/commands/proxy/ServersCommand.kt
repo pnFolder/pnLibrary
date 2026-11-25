@@ -86,9 +86,9 @@ class ServersCommand(private val link: Link, private val servers: () -> List<Net
         val target = servers().firstOrNull { it.name.equals(name, ignoreCase = true) }?.name ?: name
         val sender = context.sender
         val error = link.control.send(target, action, product, sender.name) { result ->
-            sender.send(kit.text("$target: ${result.text}", if (result.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
+            sender.sendMessage(kit.text("$target: ${result.text}", if (result.ok) ChatPalette.ACCENT else ChatPalette.DANGER))
         }
-        sender.send(kit.text(error ?: "Запрос отправлен на $target…", if (error == null) ChatPalette.LABEL else ChatPalette.DANGER))
+        sender.sendMessage(kit.text(error ?: "Запрос отправлен на $target…", if (error == null) ChatPalette.LABEL else ChatPalette.DANGER))
     }
 
     private fun list(context: CommandContext) {
@@ -132,7 +132,7 @@ class ServersCommand(private val link: Link, private val servers: () -> List<Net
         val kit = kit(context)
         val server = servers().firstOrNull { it.name.equals(name, ignoreCase = true) }
         if (server == null) {
-            context.sender.send(kit.text("Сервер $name не присылал отчёт. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("Сервер $name не присылал отчёт. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         val report = server.report

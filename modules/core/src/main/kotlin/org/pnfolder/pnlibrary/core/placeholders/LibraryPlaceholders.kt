@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.Placeholder
-import org.pnfolder.pnlibrary.api.placeholders.Placeholders
-import org.pnfolder.pnlibrary.api.placeholders.Reply
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholder
+import org.pnfolder.pnlibrary.api.placeholders.annotation.Placeholders
+import org.pnfolder.pnlibrary.api.placeholders.reply.Reply
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity
 

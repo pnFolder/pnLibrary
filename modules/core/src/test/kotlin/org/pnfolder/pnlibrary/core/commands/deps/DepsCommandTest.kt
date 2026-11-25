@@ -16,17 +16,17 @@ import org.pnfolder.pnlibrary.core.commands.engine.CommandRoute
 import org.pnfolder.pnlibrary.core.commands.engine.CommandTreeRouter
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingDependency
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingGroup
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources
 import java.net.URI
 
 class DepsCommandTest {
-    private val downloads = mock(DirectDownloads::class.java)
+    private val downloads = mock(DownloadService::class.java)
     private val library = mock(PnLibrary::class.java, withSettings().extraInterfaces(RuntimeResources::class.java))
     private val sent = mutableListOf<String>()
     private val sender = object : CommandSender {
         override fun pointers() = org.pnfolder.pnlibrary.api.audience.senderPointers("Console") { permission -> true }
-        override fun send(message: Component) {
+        override fun sendMessage(message: Component) {
             sent += PlainTextComponentSerializer.plainText().serialize(message)
         }
     }

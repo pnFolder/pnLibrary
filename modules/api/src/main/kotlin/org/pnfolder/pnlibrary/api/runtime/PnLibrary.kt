@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.api.runtime
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.runtime.group.RuntimeInfo
+import org.pnfolder.pnlibrary.api.runtime.group.Registrations
+import org.pnfolder.pnlibrary.api.runtime.group.Monitoring
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider
 import org.pnfolder.pnlibrary.api.config.ConfigurationService
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest
@@ -25,6 +29,7 @@ import java.io.Closeable
  * depend on `core` implementation classes, so the internals can evolve without
  * breaking installed plugins.
  */
+@ApiStatus.NonExtendable
 interface PnLibrary : Closeable {
     /** Version of the installed runtime. */
     val version: String
@@ -83,6 +88,37 @@ interface PnLibrary : Closeable {
      * Consumer plugins normally use their plugin context instead of registering adapters here.
      */
     val placeholderAdapters: PlaceholderAdapterRegistry
+
+    /** Logs, metrics, diagnostics and reports in one place. */
+    val observe: Monitoring
+        get() = object : Monitoring {
+            override val logging get() = this@PnLibrary.logging
+            override val metrics get() = this@PnLibrary.metrics
+            override val diagnostics get() = this@PnLibrary.diagnostics
+            override val observability get() = this@PnLibrary.observability
+            override fun report(request: DebugRequest) = createDiagnosticReport(request)
+        }
+
+    /** Plugins, services, expansions and placeholder bridges in one place. */
+    val registry: Registrations
+        get() = object : Registrations {
+            override val plugins get() = this@PnLibrary.plugins
+            override val services get() = this@PnLibrary.services
+            override val expansions get() = this@PnLibrary.expansions
+            override val placeholderAdapters get() = this@PnLibrary.placeholderAdapters
+        }
+
+    /** Version, settings, platform and proxy in one place. */
+    val runtime: RuntimeInfo
+        get() = object : RuntimeInfo {
+            override val version get() = this@PnLibrary.version
+            override fun isAtLeastVersion(minimumVersion: String) = this@PnLibrary.isAtLeastVersion(minimumVersion)
+            override val owner get() = this@PnLibrary.owner
+            override val configuration get() = this@PnLibrary.configuration
+            override val platforms get() = this@PnLibrary.platforms
+            override val proxy get() = this@PnLibrary.proxy
+            override val isClosed get() = this@PnLibrary.isClosed
+        }
 
     /** Builds a diagnostic report from an already validated request. */
     fun createDiagnosticReport(request: DebugRequest): DiagnosticReport

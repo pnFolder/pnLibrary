@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.chat.ChatKit
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
 import org.pnfolder.pnlibrary.api.chat.ChatReader
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import org.pnfolder.pnlibrary.api.libraries.LibraryState
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryState
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 
@@ -24,10 +24,10 @@ internal class LibraryPages(private val library: PnLibrary) {
     fun changeLibrary(context: CommandContext, action: String, owner: String, coordinates: String) {
         val kit = kit(context)
         val holder = holderOf(owner)
-        if (holder == null) { context.sender.send(kit.note("Нет плагина или модуля «$owner». Список: /pn modules libs", ChatPalette.DANGER)); return }
+        if (holder == null) { context.sender.sendMessage(kit.note("Нет плагина или модуля «$owner». Список: /pn modules libs", ChatPalette.DANGER)); return }
         val found = holder.statuses.firstOrNull { it.library.coordinates.equals(coordinates, true) }?.library
         if (found == null) {
-            context.sender.send(kit.note("У $owner нет библиотеки «$coordinates». Список: /pn modules libs $owner", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.note("У $owner нет библиотеки «$coordinates». Список: /pn modules libs $owner", ChatPalette.DANGER))
             return
         }
         val status = when (action) {
@@ -42,7 +42,7 @@ internal class LibraryPages(private val library: PnLibrary) {
             status.state == LibraryState.FAILED -> "ошибка: ${status.error}" to ChatPalette.DANGER
             else -> "не нужна на этой платформе" to ChatPalette.FAINT
         }
-        context.sender.send(kit.text("${found.title} ${found.version}: ", ChatPalette.TEXT).append(kit.text(result.first, result.second)))
+        context.sender.sendMessage(kit.text("${found.title} ${found.version}: ", ChatPalette.TEXT).append(kit.text(result.first, result.second)))
     }
 
     fun libs(context: CommandContext, owner: String?) {

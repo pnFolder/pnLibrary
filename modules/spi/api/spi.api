@@ -1,15 +1,20 @@
 public abstract interface class org/pnfolder/pnlibrary/spi/audience/PlatformAudienceAdapter {
-	public abstract fun console ()Lnet/kyori/adventure/audience/Audience;
+	public abstract fun console ()Lorg/pnfolder/pnlibrary/api/audience/Console;
 	public abstract fun of (Ljava/lang/Object;)Lnet/kyori/adventure/audience/Audience;
-	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audience/LibraryPlayer;
+	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audience/OnlinePlayer;
 	public abstract fun players ()Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/spi/audience/PlatformConsole : net/kyori/adventure/audience/ForwardingAudience$Single, org/pnfolder/pnlibrary/api/audience/Console {
+	public fun <init> (Lnet/kyori/adventure/audience/Audience;)V
+	public fun audience ()Lnet/kyori/adventure/audience/Audience;
 }
 
 public final class org/pnfolder/pnlibrary/spi/audience/UnsupportedPlatformAudienceAdapter : org/pnfolder/pnlibrary/spi/audience/PlatformAudienceAdapter {
 	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/audience/UnsupportedPlatformAudienceAdapter;
-	public fun console ()Lnet/kyori/adventure/audience/Audience;
+	public fun console ()Lorg/pnfolder/pnlibrary/api/audience/Console;
 	public fun of (Ljava/lang/Object;)Lnet/kyori/adventure/audience/Audience;
-	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audience/LibraryPlayer;
+	public fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audience/OnlinePlayer;
 	public fun players ()Ljava/util/List;
 }
 

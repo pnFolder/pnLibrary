@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.libraries
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.libraries.state.LibraryStatus
+
 /**
  * The libraries of one module, or of a whole plugin (`PluginRegistration.libraries`).
  *
@@ -8,6 +11,7 @@ package org.pnfolder.pnlibrary.api.libraries
  * for one later with [load]. The library that fails to load stops the module (state `FAILED`) unless it was declared
  * optional.
  */
+@ApiStatus.NonExtendable
 interface ModuleLibraries {
     /**
      * Class loader of the [LibraryScope.ISOLATED] libraries registered here; its classes are not visible to the plugin's own code, so load

@@ -1,11 +1,15 @@
 package org.pnfolder.pnlibrary.core.placeholders
 
-import org.pnfolder.pnlibrary.api.placeholders.ArgumentConverter
+import org.pnfolder.pnlibrary.api.placeholders.info.FormatInfo
+import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentConverter
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderValue
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Registry
+import org.pnfolder.pnlibrary.api.registry.Visibility
+import org.pnfolder.pnlibrary.core.registry.ListRegistry
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -60,6 +64,10 @@ internal class ModuleScope(
     override fun contains(address: String) = engine.containsFor(address, owner)
 
     override fun list() = engine.list()
+
+    override fun registry(): Registry<PlaceholderInfo> = ListRegistry("placeholders") { list().map { it.asEntry() } }
+
+    override fun formatRegistry(): Registry<FormatInfo> = ListRegistry("formats") { engine.formats.all().sortedBy { it.name }.map { it.asEntry() } }
 
     override fun adapters(): PlaceholderAdapterRegistry = engine
 

@@ -5,7 +5,7 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler
 
 /**
- * Kotlin form of [ModuleContext.onCommandError]: `context.onCommandError<NoMoney> { error -> sender.send(...) }`.
+ * Kotlin form of [ModuleContext.onCommandError]: `context.onCommandError<NoMoney> { error -> sender.sendMessage(...) }`.
  * Inside the lambda `this` is the [CommandContext], so `sender` is right there.
  */
 inline fun <reified E : CommandError> ModuleContext.onCommandError(noinline handler: CommandContext.(E) -> Unit) =

@@ -16,7 +16,7 @@
 ## 1. Своё событие
 
 ```kotlin
-class ShopPurchaseEvent(val buyer: LibraryPlayer, val price: Int) : ResultedEvent<ResultedEvent.ComponentResult>() {
+class ShopPurchaseEvent(val buyer: OnlinePlayer, val price: Int) : ResultedEvent<ResultedEvent.ComponentResult>() {
     override var result: ResultedEvent.ComponentResult = ResultedEvent.ComponentResult.allowed()
 }
 ```
@@ -80,7 +80,7 @@ if (!event.callEvent()) {
 
 Библиотека сама публикует `PlayerJoinedEvent` и `PlayerLeftEvent` (пакет `org.pnfolder.pnlibrary.api.events.player`) на
 всех платформах. Это объявления: запретить вход или выход слушатель не может. В событии есть `uniqueId`, `name` и
-`player` (`LibraryPlayer`, либо `null`, если платформа игрока уже не знает).
+`player` (`OnlinePlayer`, либо `null`, если платформа игрока уже не знает).
 
 ## 6. Из другого потока и ошибки
 

@@ -9,8 +9,8 @@ import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.logging.LogLevel
-import org.pnfolder.pnlibrary.api.audience.Delivery
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.delivery.Delivery
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.bukkit.PnLoggerBuffer
 import org.pnfolder.pnlibrary.bukkit.currency.LEGACY
 import org.pnfolder.pnlibrary.bukkit.currency.error
@@ -40,8 +40,8 @@ internal class BukkitAdventureTransport(
     val nativeTransportAvailable: Boolean get() = !fallbackOnly.get()
 
     /** Wraps an online Bukkit [player] for the library API. */
-    fun player(player: Player): LibraryPlayer =
-        BukkitLibraryPlayer(player, this)
+    fun player(player: Player): OnlinePlayer =
+        BukkitOnlinePlayer(player, this)
 
     internal fun sendMessage(player: Player, message: Component) {
         if (!viaAdventure(player, "message") { it.sendMessage(message) }) player.sendMessage(LEGACY.serialize(message))

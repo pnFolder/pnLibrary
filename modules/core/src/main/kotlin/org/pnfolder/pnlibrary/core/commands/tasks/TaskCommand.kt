@@ -85,7 +85,7 @@ class TaskCommand(private val library: PnLibrary) {
         val kit = kit(context)
         val task = library.taskSnapshots().singleOrNull { it.id.value.startsWith(typed, ignoreCase = true) }
         if (task == null) {
-            context.sender.send(kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER))
+            context.sender.sendMessage(kit.text("Такой задачи нет или id неоднозначен: $typed. Список: $ROOT", ChatPalette.DANGER))
             return
         }
         action(kit, task)
@@ -231,7 +231,7 @@ class TaskCommand(private val library: PnLibrary) {
 
     private fun cancel(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val title = TaskLabels.title(task)
-        context.sender.send(
+        context.sender.sendMessage(
             when (library.cancelTask(task.id.value)) {
                 TaskControl.DONE -> kit.text("Задача $title остановлена.", ChatPalette.OK)
                 TaskControl.FORBIDDEN -> kit.text("Плагин не разрешает останавливать задачу $title.", ChatPalette.DANGER)
@@ -242,7 +242,7 @@ class TaskCommand(private val library: PnLibrary) {
 
     private fun run(context: CommandContext, typed: String) = withTask(context, typed) { kit, task ->
         val title = TaskLabels.title(task)
-        context.sender.send(
+        context.sender.sendMessage(
             when (library.runTaskNow(task.id.value)) {
                 TaskControl.DONE -> kit.text("Задача $title запущена.", ChatPalette.OK)
                 TaskControl.FORBIDDEN -> kit.text("Плагин не разрешает запускать задачу $title вручную.", ChatPalette.DANGER)

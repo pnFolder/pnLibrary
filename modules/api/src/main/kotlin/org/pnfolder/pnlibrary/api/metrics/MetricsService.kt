@@ -1,10 +1,12 @@
 package org.pnfolder.pnlibrary.api.metrics
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProviderConfiguration
 
 /** Public pnLibrary abstraction over the platform-specific metrics providers. */
+@ApiStatus.NonExtendable
 interface MetricsService {
     /** Providers available in the current platform runtime. */
     val providers: Set<MetricsProvider>

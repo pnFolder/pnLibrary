@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.api.expansions
 
+import org.jetbrains.annotations.ApiStatus
+import org.pnfolder.pnlibrary.api.registry.Registry
+
 /**
  * Registry that owns the lifecycle of [Expansion]s: it enables them on registration and disables
  * them in reverse order when the library stops.
@@ -14,6 +17,7 @@ package org.pnfolder.pnlibrary.api.expansions
  * handle.close() // disables and unregisters
  * ```
  */
+@ApiStatus.NonExtendable
 interface ExpansionManager {
     /**
      * Registers and enables [expansion].
@@ -31,4 +35,11 @@ interface ExpansionManager {
 
     /** Returns an immutable snapshot of the registered expansions in registration order. */
     fun all(): List<Expansion>
+
+    /** Returns the registered expansion called [id], or fails naming the registered ones. */
+    fun require(id: String): Expansion =
+        get(id) ?: error("Expansion '$id' is not registered; registered: ${all().joinToString { it.id }}")
+
+    /** The same expansions as [all], as a [Registry]: found by id, owned by the library. */
+    fun registry(): Registry<Expansion>
 }

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo;
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 
 import java.time.Duration;

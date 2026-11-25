@@ -6,7 +6,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.EventInfo
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry

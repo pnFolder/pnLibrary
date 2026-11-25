@@ -92,9 +92,9 @@ internal class UpdateCatalogBackupCommands(
         val id = backupId(context) ?: return
         val plugin = context.get<String>("backupPlugin")
         val name = context.get<String>("databaseName")
-        sender.send(error("База «$name» плагина $plugin будет заменена сохранённой: всё, что записано в неё после копии, пропадёт."))
-        sender.send(Component.text("Текущее состояние сохранится отдельной копией."))
-        sender.send(Component.text("Если согласны, выполните: /pn updates backups restore $id $plugin confirm $name"))
+        sender.sendMessage(error("База «$name» плагина $plugin будет заменена сохранённой: всё, что записано в неё после копии, пропадёт."))
+        sender.sendMessage(Component.text("Текущее состояние сохранится отдельной копией."))
+        sender.sendMessage(Component.text("Если согласны, выполните: /pn updates backups restore $id $plugin confirm $name"))
     }
 
     private fun restoreDatabase(context: CommandContext) {
@@ -105,8 +105,8 @@ internal class UpdateCatalogBackupCommands(
         val name = context.get<String>("databaseName")
         library.updates.backups.restoreDatabase(id, plugin, name, sender.asUpdateActor()).whenComplete { _, failure ->
             deliver(Runnable {
-                if (failure == null) sender.send(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
-                else sender.send(error("Не удалось вернуть базу: ${failure.rootCause().message}"))
+                if (failure == null) sender.sendMessage(Component.text("База «$name» возвращена. Перезапустите плагин $plugin."))
+                else sender.sendMessage(error("Не удалось вернуть базу: ${failure.rootCause().message}"))
             })
         }
     }
@@ -114,7 +114,7 @@ internal class UpdateCatalogBackupCommands(
     /** The id the sender typed, or `null` after telling them it is not one. */
     private fun backupId(context: CommandContext): java.util.UUID? =
         runCatching { java.util.UUID.fromString(context.get<String>("backupId")) }.getOrNull()
-            ?: run { context.sender.send(error("Некорректный ID резервного набора.")); null }
+            ?: run { context.sender.sendMessage(error("Некорректный ID резервного набора.")); null }
 
     /** Hands out the saved databases and exports of a plugin as plain files, for what the library cannot put back itself. */
     private fun extractBackup(context: CommandContext) {
@@ -125,8 +125,8 @@ internal class UpdateCatalogBackupCommands(
         val actor = sender.asUpdateActor()
         library.updates.backups.extract(id, plugin, actor).whenComplete { folder, failure ->
             deliver(Runnable {
-                if (failure == null) sender.send(Component.text("Файлы плагина $plugin лежат в папке: $folder"))
-                else sender.send(error("Не удалось выдать файлы: ${failure.rootCause().message}"))
+                if (failure == null) sender.sendMessage(Component.text("Файлы плагина $plugin лежат в папке: $folder"))
+                else sender.sendMessage(error("Не удалось выдать файлы: ${failure.rootCause().message}"))
             })
         }
     }
@@ -138,8 +138,8 @@ internal class UpdateCatalogBackupCommands(
         val actor = sender.asUpdateActor()
         library.updates.backups.delete(id, actor).whenComplete { _, failure ->
             deliver(Runnable {
-                if (failure == null) sender.send(Component.text("Резервный набор $id удалён."))
-                else sender.send(error("Не удалось удалить набор: ${failure.rootCause().message}"))
+                if (failure == null) sender.sendMessage(Component.text("Резервный набор $id удалён."))
+                else sender.sendMessage(error("Не удалось удалить набор: ${failure.rootCause().message}"))
             })
         }
     }
@@ -150,7 +150,7 @@ internal class UpdateCatalogBackupCommands(
         val query = backupQuery(context) ?: return
         library.updates.backups.list().whenComplete { backups, failure ->
             deliver(Runnable {
-                if (failure != null) context.sender.send(error("Не удалось прочитать резервные наборы."))
+                if (failure != null) context.sender.sendMessage(error("Не удалось прочитать резервные наборы."))
                 else UpdateCatalogView.backups(backups, page, routesFor(context), query = query).forEach(context.sender::send)
             })
         }
@@ -162,7 +162,7 @@ internal class UpdateCatalogBackupCommands(
         val sinceText = if (context.contains("backupSince")) context.get<String>("backupSince") else null
         val since = sinceText?.let {
             BackupQuery.parseSince(it, java.time.Instant.now(), org.pnfolder.pnlibrary.common.time.DisplayZone.zone)
-                ?: return context.sender.send(error("Не понял «$it»: после since напишите ${BackupQuery.SINCE_HELP}.")).let { null }
+                ?: return context.sender.sendMessage(error("Не понял «$it»: после since напишите ${BackupQuery.SINCE_HELP}.")).let { null }
         }
         val order = if (context.contains("backupSort")) BackupQuery.orderOf(context.get<String>("backupSort")) else BackupOrder.NEWEST
         return BackupQuery(plugin?.lowercase(Locale.ROOT), since, sinceText, order ?: BackupOrder.NEWEST)

@@ -1,53 +1,6 @@
 package org.pnfolder.pnlibrary.api.remote
 
-import org.pnfolder.pnlibrary.api.platform.PlatformType
-import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
-import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersionInfo
 import java.util.Collections
-import java.util.Locale
-
-/**
- * Identity of the product being evaluated.
- *
- * @property id stable machine-readable product identifier
- * @property name human-readable product name
- * @property version installed product version
- */
-data class ProductInfo(val id: String, val name: String, val version: String)
-
-/**
- * Runtime platform identity exposed to a remote policy.
- *
- * @property type normalized pnLibrary platform family
- * @property name platform implementation name
- * @property version platform implementation version
- */
-data class PlatformInfo(
-    val type: PlatformType,
-    val name: String,
-    val version: String,
-) {
-    /** Normalized alphanumeric implementation key used for tolerant comparisons. */
-    val key: String = name.filter(Char::isLetterOrDigit).lowercase(Locale.ROOT)
-
-    /** Returns whether the normalized platform name equals [value]. */
-    fun isNamed(value: String): Boolean =
-        key == value.filter(Char::isLetterOrDigit).lowercase(Locale.ROOT)
-}
-
-/**
- * Server and Minecraft protocol/version information exposed to a policy.
- *
- * @property version raw server-reported version string
- * @property minecraft parsed Minecraft version details
- */
-data class ServerInfo(
-    val version: String,
-    val minecraft: MinecraftVersionInfo,
-) {
-    /** Parsed comparable Minecraft version. */
-    val minecraftVersion: MinecraftVersion get() = minecraft.parsed
-}
 
 /**
  * One immutable context used by policies on every supported proxy/server platform.

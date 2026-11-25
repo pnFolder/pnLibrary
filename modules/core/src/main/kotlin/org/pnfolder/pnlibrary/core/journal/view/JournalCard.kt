@@ -23,7 +23,7 @@ internal fun journalCard(
 ) {
     val group = journal.read(limit = SCAN_LIMIT).filter { it.fingerprint == id }.sortedByDescending { it.timeMillis }
     if (id == null || group.isEmpty()) {
-        sender.send(kit.text("Такой записи нет: возможно, её уже удалили по сроку хранения.", ChatPalette.DANGER))
+        sender.sendMessage(kit.text("Такой записи нет: возможно, её уже удалили по сроку хранения.", ChatPalette.DANGER))
         return
     }
     val record = group.first()

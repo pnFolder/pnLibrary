@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network
 
+import java.time.Duration
 import com.velocitypowered.api.proxy.Player
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -16,7 +17,7 @@ internal class VelocityNetworkPlayer(
 
     override val uniqueId: UUID get() = native.uniqueId
     override val address: InetSocketAddress get() = native.remoteAddress
-    override val ping: Long get() = native.ping
+    override val ping: Duration get() = Duration.ofMillis(native.ping)
     override val currentServer: NetworkServer?
         get() = native.currentServer.orElse(null)?.server?.let(::VelocityNetworkServer)
 
@@ -32,7 +33,7 @@ internal class VelocityNetworkPlayer(
     override fun playSound(sound: Sound) = native.playSound(sound)
     override fun showTitle(title: Title) = native.showTitle(title)
 
-    override fun disconnect(reason: String) = native.disconnect(Component.text(reason))
+    override fun disconnect(reason: Component) = native.disconnect(reason)
 
     companion object {
         fun of(player: Player): NetworkPlayer = VelocityNetworkPlayer(player)

@@ -5,7 +5,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.OfflinePlayer
 import org.bukkit.plugin.Plugin
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapter
-import org.pnfolder.pnlibrary.api.placeholders.PublishedAnswers
+import org.pnfolder.pnlibrary.api.placeholders.reply.PublishedAnswers
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap

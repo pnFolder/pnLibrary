@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 
@@ -14,15 +15,14 @@ object Dependencies {
         repositoryOwner: String,
         repositoryName: String,
         required: Boolean = true,
-        automaticDownload: Boolean = false,
-        forceAutomaticDownload: Boolean = false,
+        downloadPolicy: DownloadPolicy = DownloadPolicy.MANUAL,
     ): PluginDependency = ManagedProductDependency(
         component,
         minimumVersion,
         repositoryOwner,
         repositoryName,
         required,
-        downloadPolicy(automaticDownload, forceAutomaticDownload),
+        downloadPolicy,
     )
 
     /** Declares an external plugin dependency with a manual download page. */
@@ -33,12 +33,11 @@ object Dependencies {
         minimumVersion: String,
         downloadPage: String,
         required: Boolean = true,
-        automaticDownload: Boolean = false,
-        forceAutomaticDownload: Boolean = false,
+        downloadPolicy: DownloadPolicy = DownloadPolicy.MANUAL,
     ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
         .downloadPage(downloadPage)
         .required(required)
-        .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+        .downloadPolicy(downloadPolicy)
         .build()
 
     /** Declares an external plugin dependency with a direct download checked by its SHA-256. */
@@ -50,12 +49,11 @@ object Dependencies {
         downloadUrl: String,
         sha256: String,
         required: Boolean = true,
-        automaticDownload: Boolean = true,
-        forceAutomaticDownload: Boolean = false,
+        downloadPolicy: DownloadPolicy = DownloadPolicy.AUTOMATIC,
     ): PluginDependency = ExternalPluginDependency.builder(plugin, minimumVersion)
         .artifact(downloadUrl, sha256)
         .required(required)
-        .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+        .downloadPolicy(downloadPolicy)
         .build()
 
     /**
@@ -69,21 +67,14 @@ object Dependencies {
         minimumVersion: String,
         sources: List<String>,
         required: Boolean = true,
-        automaticDownload: Boolean = true,
-        forceAutomaticDownload: Boolean = false,
+        downloadPolicy: DownloadPolicy = DownloadPolicy.AUTOMATIC,
     ): PluginDependency {
         require(sources.isNotEmpty()) { "At least one download address is required" }
         return ExternalPluginDependency.builder(plugin, minimumVersion)
             .url(sources.first())
             .also { builder -> sources.drop(1).forEach(builder::mirror) }
             .required(required)
-            .downloadPolicy(downloadPolicy(automaticDownload, forceAutomaticDownload))
+            .downloadPolicy(downloadPolicy)
             .build()
-    }
-
-    private fun downloadPolicy(automatic: Boolean, forced: Boolean): DownloadPolicy = when {
-        forced -> DownloadPolicy.FORCED
-        automatic -> DownloadPolicy.AUTOMATIC
-        else -> DownloadPolicy.MANUAL
     }
 }

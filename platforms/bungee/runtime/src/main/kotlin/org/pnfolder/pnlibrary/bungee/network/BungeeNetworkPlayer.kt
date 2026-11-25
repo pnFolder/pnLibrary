@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network
 
+import java.time.Duration
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.md_5.bungee.api.ChatMessageType
@@ -18,7 +19,7 @@ internal class BungeeNetworkPlayer(
 
     override val uniqueId: UUID get() = native.uniqueId
     override val address: InetSocketAddress? get() = native.address
-    override val ping: Long get() = native.ping.toLong()
+    override val ping: Duration get() = Duration.ofMillis(native.ping.toLong())
     override val currentServer: NetworkServer?
         get() = native.server?.info?.let(::BungeeNetworkServer)
 
@@ -37,7 +38,8 @@ internal class BungeeNetworkPlayer(
         native.sendMessage(ChatMessageType.ACTION_BAR, *TextComponent.fromLegacyText(LEGACY.serialize(message)))
 
 
-    override fun disconnect(reason: String) = native.disconnect(TextComponent(reason))
+    override fun disconnect(reason: Component) =
+        native.disconnect(*TextComponent.fromLegacyText(LEGACY.serialize(reason)))
 
     companion object {
         private val LEGACY = LegacyComponentSerializer.legacySection()

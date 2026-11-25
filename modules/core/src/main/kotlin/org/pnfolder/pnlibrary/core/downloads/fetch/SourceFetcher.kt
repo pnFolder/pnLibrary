@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch
 
-import org.pnfolder.pnlibrary.api.downloads.DirectDownloadSource
+import org.pnfolder.pnlibrary.api.downloads.source.DirectDownloadSource
 import org.pnfolder.pnlibrary.common.io.Digests
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient
 

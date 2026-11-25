@@ -1,30 +1,9 @@
 package org.pnfolder.pnlibrary.api.remote
 
-import org.pnfolder.pnlibrary.api.downloads.isHttps
+import org.pnfolder.pnlibrary.api.downloads.source.isHttps
 import java.net.URI
 import java.time.Duration
 import java.util.Collections
-
-/** Action applied when a remote policy denies operation. */
-enum class DenyAction {
-    DISABLE_PLUGIN,
-    DISABLE_MODULE
-}
-
-/** What happens when a policy cannot be checked at all: no network, no compiler, a broken file. */
-enum class PolicyErrorAction {
-    /** Treat it as a denial and apply [RemotePolicySettings.onDeny], at start and later. */
-    DENY,
-
-    /**
-     * Deny until the policy has been checked once: a plugin that could not be checked at start does not run. After a
-     * successful check a later failure, such as the network dropping for a while, only logs a warning.
-     */
-    DENY_UNTIL_CHECKED,
-
-    /** Log a warning and keep running; only an explicit denial stops anything. Safe for offline servers and JREs. */
-    KEEP_RUNNING,
-}
 
 /**
  * Reusable declaration for a remotely sourced policy.

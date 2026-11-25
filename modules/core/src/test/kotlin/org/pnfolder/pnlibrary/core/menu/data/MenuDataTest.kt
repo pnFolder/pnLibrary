@@ -161,7 +161,7 @@ class MenuDataTest {
 
     @Test
     fun `the placeholders of a server travel through the link`() {
-        val info = org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo(
+        val info = org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo(
             "clan.war.score", "Score", "pnclans/war", "Integer", "number", listOf("pnclans_clan_war_score"),
         )
         over("placeholders" to listOf(info)) { remote ->

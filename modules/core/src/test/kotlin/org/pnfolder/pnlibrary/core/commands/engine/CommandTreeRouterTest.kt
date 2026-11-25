@@ -211,6 +211,6 @@ class CommandTreeRouterTest {
 
     private class TestSender(private val permissions: Set<String>) : CommandSender {
         override fun pointers() = senderPointers("Sender", java.util.UUID.randomUUID()) { permission -> permission in permissions }
-        override fun send(message: Component) = Unit
+        override fun sendMessage(message: Component) = Unit
     }
 }

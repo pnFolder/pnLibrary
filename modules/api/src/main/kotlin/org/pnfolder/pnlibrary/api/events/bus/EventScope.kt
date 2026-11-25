@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.bus
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.listener.EventHandler
 import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration
@@ -14,6 +15,7 @@ import java.util.function.Consumer
  *
  * Closing the scope removes every listener registered through it.
  */
+@ApiStatus.NonExtendable
 interface EventScope : AutoCloseable {
     /** Plugin identity that owns every subscription in this scope. */
     val pluginId: PluginId

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.downloads
 
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DirectDownloadSource
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import java.nio.file.Paths
 
@@ -9,8 +11,7 @@ import java.nio.file.Paths
  * @property key application-defined download identifier
  * @property source verified remote source and compatibility constraints
  * @property required whether failure to obtain this file blocks its owner
- * @property automatic whether normal automatic download is enabled
- * @property forceAutomaticDownload whether automatic download is mandatory
+ * @property policy whether the file is downloaded by itself or only when an administrator asks
  * @property destination root used to resolve [relativePath]
  * @property relativePath normalized path confined to the selected destination
  */
@@ -18,8 +19,7 @@ class FileDownload internal constructor(builder: Builder) {
     val key: String = builder.id.trim()
     val source: DirectDownloadSource = builder.source.build()
     val required: Boolean = builder.required
-    val automatic: Boolean = builder.automatic
-    val forceAutomaticDownload: Boolean = builder.forceAutomatic
+    val policy: DownloadPolicy = builder.policy
     val destination: DownloadDestination = builder.destination
     val relativePath: String = safeRelativePath(builder.relativePath)
 
@@ -27,19 +27,15 @@ class FileDownload internal constructor(builder: Builder) {
     class Builder internal constructor(internal val id: String) {
         internal val source = DirectDownloadSource.builder()
         internal var required = true
-        internal var automatic = false
-        internal var forceAutomatic = false
+        internal var policy = DownloadPolicy.MANUAL
         internal var destination = DownloadDestination.DATA_FOLDER
         internal var relativePath = ""
 
-        /** Sets whether a failed download stops the whole batch. */
-        fun required(value: Boolean): Builder = apply { required = value }
+        /** Lets the owner work without this file: a failed download does not stop the whole batch. */
+        fun optional(): Builder = apply { required = false }
 
-        /** Enables or disables ordinary automatic downloading. */
-        fun automaticDownload(value: Boolean): Builder = apply { automatic = value }
-
-        /** Enables or disables mandatory automatic downloading. */
-        fun forceAutomaticDownload(value: Boolean): Builder = apply { forceAutomatic = value }
+        /** Whether the file is downloaded by itself ([DownloadPolicy.AUTOMATIC], [DownloadPolicy.FORCED]) or only when asked; [DownloadPolicy.MANUAL] by default. */
+        fun policy(value: DownloadPolicy): Builder = apply { policy = value }
 
         /** Sets the HTTPS URL to download from. */
         fun url(value: String): Builder = apply { source.url(value) }

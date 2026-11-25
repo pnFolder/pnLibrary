@@ -8,14 +8,16 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.audience.ForwardingAudience
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer
 import org.pnfolder.pnlibrary.api.audience.senderPointers
+import org.pnfolder.pnlibrary.api.audience.Console
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter
+import org.pnfolder.pnlibrary.spi.audience.PlatformConsole
 import java.util.UUID
 
 internal class VelocityAudienceAdapter(
     private val server: ProxyServer,
 ) : PlatformAudienceAdapter {
 
-    override fun console(): Audience = wrap(server.consoleCommandSource)
+    override fun console(): Console = PlatformConsole(wrap(server.consoleCommandSource))
 
     override fun player(uniqueId: UUID): NetworkPlayer? =
         server.getPlayer(uniqueId).orElse(null)?.let(VelocityNetworkPlayer::of)

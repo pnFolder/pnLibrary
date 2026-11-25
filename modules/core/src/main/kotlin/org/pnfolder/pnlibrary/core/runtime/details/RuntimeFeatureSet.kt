@@ -4,8 +4,8 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyProviderRegistry
 import org.pnfolder.pnlibrary.api.expansions.Expansion
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.config.YamlConfigurations
-import org.pnfolder.pnlibrary.core.downloads.fetch.DirectDownloads
-import org.pnfolder.pnlibrary.core.downloads.settings.downloads
+import org.pnfolder.pnlibrary.core.downloads.DownloadService
+import org.pnfolder.pnlibrary.core.downloads.downloads
 import org.pnfolder.pnlibrary.core.expansions.ExpansionRegistry
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine
@@ -39,7 +39,7 @@ internal class RuntimeFeatureSet(
         ConsoleStyle.THEME,
         settings.current().let { UpdateTiming(it.updateCheckInterval, it.updateConnectTimeout, it.updateReadTimeout) },
     )
-    val downloads: DirectDownloads = DirectDownloads(
+    val downloads: DownloadService = DownloadService(
         platform.identity, platform.ownership, platform.ownership, platform.readiness,
         logging, paths, { settings.current().downloads() },
         saveAutomatic = { settings.set("downloads.automatic", it.toString()) },

@@ -74,12 +74,14 @@ interface EventInspector {
     fun asyncQueued(): Int
 
     /**
-     * Writes the per-day and per-hour counters to a file next to the history file.
+     * Writes the per-day and per-hour counters to a CSV file next to the history file.
      *
-     * @param json `true` for a JSON file, `false` for CSV
      * @return the file written, or `null` when the history is off or cannot be written
      */
-    fun exportHistory(json: Boolean = false): java.nio.file.Path?
+    fun exportHistoryCsv(): java.nio.file.Path?
+
+    /** The same as [exportHistoryCsv], as a JSON file. */
+    fun exportHistoryJson(): java.nio.file.Path?
 
     /**
      * Starts recording every dispatch of [eventType] and its subclasses, keeping the latest

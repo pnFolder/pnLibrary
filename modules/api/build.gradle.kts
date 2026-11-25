@@ -76,6 +76,7 @@ dependencies {
     // Pure stdlib — no server-platform compile deps
     api(libs.kotlin.stdlib)
     api(libs.adventure.api)
+    api(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlin.compiler.embeddable)
     testRuntimeOnly(libs.junit.launcher)

@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin
 
-import org.pnfolder.pnlibrary.api.compat.MinecraftSupportDeclaration
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftSupportDeclaration
 import org.pnfolder.pnlibrary.api.dependencies.DependencyBuilder
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer

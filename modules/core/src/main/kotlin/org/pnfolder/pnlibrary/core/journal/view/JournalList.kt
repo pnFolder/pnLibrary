@@ -25,7 +25,7 @@ internal fun journalList(sender: CommandSender, kit: ChatKit, journal: JournalSt
     val word = arguments.getOrNull(0)?.lowercase(Locale.ROOT) ?: "all"
     val filter = FILTERS.firstOrNull { it.first == word || (word == "warn" && it.first == "warning") }
     if (filter == null) {
-        sender.send(kit.text("Неизвестный уровень $word. Доступны: all, error, warning, info.", ChatPalette.DANGER))
+        sender.sendMessage(kit.text("Неизвестный уровень $word. Доступны: all, error, warning, info.", ChatPalette.DANGER))
         return
     }
     val everything = journal.read(limit = SCAN_LIMIT).groupBy { it.fingerprint }.values

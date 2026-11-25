@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.downloads.dependencies
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalArtifact
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
-import org.pnfolder.pnlibrary.api.downloads.DownloadDestination
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads
 import org.pnfolder.pnlibrary.api.platform.PlatformType
 import org.pnfolder.pnlibrary.api.version.SemanticVersion
@@ -47,10 +47,9 @@ internal class DependencyDownloadRequestFactory(
                     val key = dependencyKey(external.plugin)
                     builder.file(key) { file ->
                         file.url(artifact.uri.toString())
-                            .required(dependency.required)
-                            .automaticDownload(dependency.automaticDownload)
-                            .forceAutomaticDownload(dependency.forceAutomaticDownload)
+                            .policy(dependency.downloadPolicy)
                             .destination(DownloadDestination.DATA_FOLDER, safeFileName(external.plugin))
+                        if (!dependency.required) file.optional()
                         artifact.mirrors.forEach { file.mirror(it.toString()) }
                         artifact.sha256?.let { file.sha256(it) }
                         artifact.maxBytes?.let { file.maxBytes(it) }

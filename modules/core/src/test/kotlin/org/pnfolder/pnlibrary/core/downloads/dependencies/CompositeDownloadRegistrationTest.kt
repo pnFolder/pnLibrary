@@ -59,6 +59,8 @@ class CompositeDownloadRegistrationTest {
 
         override fun downloadNow() = CompletableFuture.completedFuture(snapshots())
 
+        override fun whenFinished(handler: java.util.function.Consumer<List<DownloadSnapshot>>) = Unit
+
         override fun close() {
             isClosed = true
             closeFailure?.let { throw it }

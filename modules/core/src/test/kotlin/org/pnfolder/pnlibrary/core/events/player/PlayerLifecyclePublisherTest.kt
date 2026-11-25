@@ -9,7 +9,7 @@ import org.mockito.Mockito.`when`
 import org.pnfolder.pnlibrary.api.events.player.PlayerJoinedEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLeftEvent
 import org.pnfolder.pnlibrary.api.events.player.PlayerLifecycleEvent
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import org.pnfolder.pnlibrary.api.audience.Audiences
 import org.pnfolder.pnlibrary.api.plugin.PluginId
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
@@ -20,7 +20,7 @@ import java.util.function.Consumer
 class PlayerLifecyclePublisherTest {
     private val id = UUID.randomUUID()
 
-    private fun library(events: EventDispatcher, player: LibraryPlayer?): PnLibrary {
+    private fun library(events: EventDispatcher, player: OnlinePlayer?): PnLibrary {
         val audiences = mock(Audiences::class.java)
         `when`(audiences.player(id)).thenReturn(player)
         val library = mock(PnLibrary::class.java)
@@ -31,7 +31,7 @@ class PlayerLifecyclePublisherTest {
 
     @Test
     fun `join and quit reach portable listeners with the resolved player`() {
-        val player = mock(LibraryPlayer::class.java)
+        val player = mock(OnlinePlayer::class.java)
         EventDispatcher { _, _, _ -> }.use { events ->
             val seen = mutableListOf<PlayerLifecycleEvent>()
             val scope = events.scope(PluginId.of("test"))

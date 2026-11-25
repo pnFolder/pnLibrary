@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -23,9 +24,9 @@ class PluginDependencyTest {
         val dependency = Dependencies.plugin(
             "OptionalPlugin", "1.0.0", "https://example.org/plugin.jar",
             sha256 = "00".repeat(32), required = false,
-            automaticDownload = true, forceAutomaticDownload = true,
+            downloadPolicy = DownloadPolicy.FORCED,
         )
-        assertTrue(dependency.forceAutomaticDownload)
-        assertTrue(dependency.external!!.forceAutomaticDownload)
+        assertEquals(DownloadPolicy.FORCED, dependency.downloadPolicy)
+        assertEquals(DownloadPolicy.FORCED, dependency.external!!.downloadPolicy)
     }
 }

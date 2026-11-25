@@ -1,9 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.catalog
 
 import net.kyori.adventure.text.Component
-import org.pnfolder.pnlibrary.api.chat.ChatNotice
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice
 import org.pnfolder.pnlibrary.api.chat.ChatPalette
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel
@@ -49,11 +49,11 @@ internal class UpdateCatalogSettingsCommands(
         }
         val channel = UpdateCatalogView.CHANNELS.firstOrNull { it.name.equals(value, ignoreCase = true) }
         if (channel == null) {
-            context.sender.send(catalogError("Неизвестный канал $value. Доступны: ${available().joinToString { it.name.lowercase(Locale.ROOT) }}."))
+            context.sender.sendMessage(catalogError("Неизвестный канал $value. Доступны: ${available().joinToString { it.name.lowercase(Locale.ROOT) }}."))
             return
         }
         if (channel !in available()) {
-            context.sender.send(catalogError("Сейчас работает только канал dev, остальные пока не выпускаются. Выберите dev или default."))
+            context.sender.sendMessage(catalogError("Сейчас работает только канал dev, остальные пока не выпускаются. Выберите dev или default."))
             return
         }
         change(context, "Канал", { it.channel.name.lowercase(Locale.ROOT) }, channel.name.lowercase(Locale.ROOT)) { product,
@@ -65,7 +65,7 @@ internal class UpdateCatalogSettingsCommands(
         val value = context.get<String>("value")
         val java = value.toIntOrNull()
         if (java == null && !value.equals(DEFAULT_CHANNEL, ignoreCase = true)) {
-            context.sender.send(catalogError("Укажите версию Java, например 17, или default."))
+            context.sender.sendMessage(catalogError("Укажите версию Java, например 17, или default."))
             return
         }
         change(context, "Сборка Java", { it.javaBuild?.toString() ?: "подбирается" }, java?.toString() ?: "подбирается") { product, actor ->
@@ -91,7 +91,7 @@ internal class UpdateCatalogSettingsCommands(
             deliver(Runnable {
                 val text = if (failure != null) failure.rootCause().message ?: "Не удалось изменить настройку."
                 else "Сохранено. Автозагрузка для всех плагинов: ${if (enabled) "включена" else "выключена"}."
-                sender.send(if (failure != null) catalogError(text) else Component.text(text, ChatPalette.OK))
+                sender.sendMessage(if (failure != null) catalogError(text) else Component.text(text, ChatPalette.OK))
             })
         }
     }
@@ -103,7 +103,7 @@ internal class UpdateCatalogSettingsCommands(
             in OFF -> null
             in ON -> DEFAULT_HOLD
             else -> runCatchingNonFatal { FreezeDuration.parse(value) }.getOrElse {
-                context.sender.send(catalogError("Пауза — от 1m до 7d (например 3d) или off, получено: $value."))
+                context.sender.sendMessage(catalogError("Пауза — от 1m до 7d (например 3d) или off, получено: $value."))
                 return
             }
         }
@@ -121,7 +121,7 @@ internal class UpdateCatalogSettingsCommands(
             in OFF -> false
             else -> null
         }
-        if (parsed == null) context.sender.send(catalogError("Укажите on или off, получено: $value."))
+        if (parsed == null) context.sender.sendMessage(catalogError("Укажите on или off, получено: $value."))
         return parsed
     }
 
@@ -136,7 +136,7 @@ internal class UpdateCatalogSettingsCommands(
         apply(product, actor).whenComplete { snapshot, failure ->
             deliver(Runnable {
                 if (failure != null) {
-                    sender.send(catalogError(failure.rootCause().message ?: "Не удалось изменить настройку."))
+                    sender.sendMessage(catalogError(failure.rootCause().message ?: "Не удалось изменить настройку."))
                 } else {
                     val routes = routesFor(context)
                     val arrow = if (routes.ascii) "->" else "→"

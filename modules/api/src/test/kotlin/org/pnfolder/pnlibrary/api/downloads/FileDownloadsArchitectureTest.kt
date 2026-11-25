@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.downloads
 
+import org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows

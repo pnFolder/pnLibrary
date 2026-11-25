@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.bus
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.events.Event
 import org.pnfolder.pnlibrary.api.events.inspect.EventInspector
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace
@@ -22,6 +23,7 @@ import java.util.function.Consumer
  * events predictable: their final state is available as soon as the method returns.
  * Scope mutation and shutdown are safe from arbitrary threads.
  */
+@ApiStatus.NonExtendable
 interface EventService : AutoCloseable {
     /** Returns the existing plugin scope or creates it atomically. */
     fun scope(pluginId: PluginId): EventScope

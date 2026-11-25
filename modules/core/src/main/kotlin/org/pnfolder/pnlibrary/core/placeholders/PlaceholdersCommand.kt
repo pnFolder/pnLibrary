@@ -6,10 +6,10 @@ import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
 import org.pnfolder.pnlibrary.api.commands.definition.command
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
-import org.pnfolder.pnlibrary.api.placeholders.ViewerInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
-import org.pnfolder.pnlibrary.api.audience.LibraryPlayer
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
+import org.pnfolder.pnlibrary.api.audience.OnlinePlayer
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -29,7 +29,7 @@ fun placeholdersCommand(engine: PlaceholderEngine): CommandDefinition = command(
         argument("address", ArgumentType.string()) { executes { info(engine, it, it.get<String>("address")) } }
     }
     literal("formats") {
-        executes { it.sender.send(Component.text("Форматы: " + engine.formatNames().joinToString(", "), ChatPalette.TEXT)) }
+        executes { it.sender.sendMessage(Component.text("Форматы: " + engine.formatNames().joinToString(", "), ChatPalette.TEXT)) }
     }
     literal("test") {
         argument("address", ArgumentType.string()) {
@@ -47,9 +47,9 @@ private fun list(engine: PlaceholderEngine, context: CommandContext, requested: 
     val all = engine.list()
     val pages = ((all.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
     val page = requested.coerceIn(1, pages)
-    context.sender.send(Component.text("Плейсхолдеры: ${all.size}, страница $page/$pages", ChatPalette.ACCENT))
-    all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { context.sender.send(row(it)) }
-    context.sender.send(
+    context.sender.sendMessage(Component.text("Плейсхолдеры: ${all.size}, страница $page/$pages", ChatPalette.ACCENT))
+    all.drop((page - 1) * PAGE_SIZE).take(PAGE_SIZE).forEach { context.sender.sendMessage(row(it)) }
+    context.sender.sendMessage(
         Component.text(
             "Как писать: /pn placeholders info <адрес>; проверить: /pn placeholders test <адрес> [uuid]; форматы: /pn placeholders formats",
             ChatPalette.FAINT,
@@ -92,13 +92,13 @@ private fun info(engine: PlaceholderEngine, context: CommandContext, written: St
     val wanted = written.trim().removePrefix("{").removeSuffix("}").lowercase()
     val found = engine.list().filter { it.address.lowercase() == wanted }
     if (found.isEmpty()) {
-        context.sender.send(Component.text("{$wanted}: такого плейсхолдера нет. Список: /pn placeholders", ChatPalette.WARN))
+        context.sender.sendMessage(Component.text("{$wanted}: такого плейсхолдера нет. Список: /pn placeholders", ChatPalette.WARN))
         return
     }
     found.forEach { entry ->
-        context.sender.send(row(entry))
+        context.sender.sendMessage(row(entry))
         usageVariants(entry).forEach { variant ->
-            context.sender.send(
+            context.sender.sendMessage(
                 Component.text("  ${variant.label}: ", ChatPalette.SOFT)
                     .append(Component.text(variant.text, ChatPalette.TEXT))
                     .append(Component.text("  ${variant.meaning}", ChatPalette.FAINT)),
@@ -109,17 +109,17 @@ private fun info(engine: PlaceholderEngine, context: CommandContext, written: St
 
 private fun test(engine: PlaceholderEngine, context: CommandContext, address: String, player: String?) {
     val expression = address.removePrefix("{").removeSuffix("}")
-    val playerId = player?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: (context.sender as? LibraryPlayer)?.uniqueId
+    val playerId = player?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: (context.sender as? OnlinePlayer)?.uniqueId
     val result = try {
         engine.resolveAll(expression, ViewerInfo.of(playerId)).toCompletableFuture().get(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     } catch (_: TimeoutException) {
-        context.sender.send(Component.text("{$expression}: нет ответа за $TEST_TIMEOUT_SECONDS с", ChatPalette.WARN))
+        context.sender.sendMessage(Component.text("{$expression}: нет ответа за $TEST_TIMEOUT_SECONDS с", ChatPalette.WARN))
         return
     } catch (error: Exception) {
-        context.sender.send(Component.text("{$expression}: ${error.cause?.message ?: error.message}", ChatPalette.DANGER))
+        context.sender.sendMessage(Component.text("{$expression}: ${error.cause?.message ?: error.message}", ChatPalette.DANGER))
         return
     }
     val line = if (result == null) "не найден или нет значения" else result.toString()
     val color = if (result == null) ChatPalette.WARN else ChatPalette.OK
-    context.sender.send(Component.text("{$expression} = ", ChatPalette.SOFT).append(Component.text(line, color)))
+    context.sender.sendMessage(Component.text("{$expression} = ", ChatPalette.SOFT).append(Component.text(line, color)))
 }

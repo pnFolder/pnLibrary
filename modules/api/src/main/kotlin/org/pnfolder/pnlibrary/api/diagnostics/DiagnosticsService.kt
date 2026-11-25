@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.diagnostics
 
+import org.jetbrains.annotations.ApiStatus
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel
 import java.nio.file.Path
 
@@ -24,6 +25,7 @@ import java.nio.file.Path
  * Contributor callbacks may be collected concurrently and therefore must be thread-safe and
  * reasonably fast; slow file/network work does not belong in a diagnostic contributor.
  */
+@ApiStatus.NonExtendable
 interface DiagnosticsService {
 
     /** Incremented when the API contract changes incompatibly. */

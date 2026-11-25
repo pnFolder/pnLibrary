@@ -39,7 +39,7 @@ class ApiStyleJavaTest {
             .dataDirectory(Paths.get("plugins", "Example"))
             .file("rules", file -> file
                 .url("https://example.invalid/rules.json")
-                .destination(org.pnfolder.pnlibrary.api.downloads.DownloadDestination.DATA_FOLDER, "rules.json"))
+                .destination(org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination.DATA_FOLDER, "rules.json"))
             .build();
 
         CommandDefinition command = CommandDefinition.builder("example")

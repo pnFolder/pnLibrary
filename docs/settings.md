@@ -158,6 +158,9 @@
 | `/pn stats` | `pnlibrary.stats` | сводная статистика |
 | `/pn placeholders` | `pnlibrary.placeholders` | плейсхолдеры (`info <адрес>`: как писать) |
 | `/pn actions` | `pnlibrary.actions` | именованные действия, требования и функции |
+| `/pn registry` | `pnlibrary.registry` | один список для всех реестров: `/pn registry <вид>`, `/pn registry find <текст>` |
+| `/pn cooldowns` | `pnlibrary.cooldowns` | кулдауны игрока по всем плагинам, `clear` сбрасывает |
+| `/pn downloads` | `pnlibrary.downloads` | объявленные загрузки и их состояние, `now` запускает |
 | `/pn debug` | `pnlibrary.debug` | зашифрованный отчёт для поддержки |
 | `/pn settings` | `pnlibrary.settings` | настройки библиотеки |
 | `/pn configs` | `pnlibrary.configs` | конфигурации плагинов; менять: `pnlibrary.configs.edit` |

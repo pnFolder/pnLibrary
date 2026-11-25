@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error
 
 import org.pnfolder.pnlibrary.api.commands.CommandContext
-import java.time.Duration
 
 /**
  * Anything that stops a command: a sender without permission, a wrong argument, a player who is not online, or an
@@ -32,90 +31,14 @@ open class CommandError @JvmOverloads constructor(val defaultMessage: String? = 
     }
 }
 
-/**
- * The sender may not use the command or subcommand.
- *
- * @property permission missing permission; empty when an availability rule hid the command instead
- */
-open class NoPermission(val permission: String) : CommandError() {
-    override fun placeholders() = mapOf("permission" to permission)
-}
-
-/**
- * The command was typed wrongly.
- *
- * @property usage generated hint, such as `/shop buy <item>`
- */
-open class BadUsage(val usage: String) : CommandError() {
-    override fun placeholders(): Map<String, Any?> = mapOf("usage" to usage)
-}
-
-/**
- * A word the command does not know, or one too many.
- *
- * @property value the unexpected word
- */
-open class UnknownArgument(usage: String, val value: String) : BadUsage(usage) {
-    override fun placeholders(): Map<String, Any?> = super.placeholders() + ("value" to value)
-}
-
-/** The command stopped before a part it needs. */
-open class IncompleteCommand(usage: String) : BadUsage(usage)
-
-/**
- * An argument that does not parse.
- *
- * @property argument name of the argument
- * @property value what was typed
- */
-open class InvalidArgument(usage: String, val argument: String, val value: String) : BadUsage(usage) {
-    override fun placeholders(): Map<String, Any?> = super.placeholders() + mapOf("argument" to argument, "value" to value)
-}
-
-/** A player argument that names nobody online. */
-open class PlayerNotFound(usage: String, argument: String, value: String) : InvalidArgument(usage, argument, value)
-
-/** The command needs a player and the sender is the console. */
-class PlayerOnly : CommandError()
-
-/** The command needs the console and the sender is a player. */
-class ConsoleOnly : CommandError()
-
-/**
- * The sender used the command again too soon.
- *
- * @property remaining how long to wait
- */
-open class OnCooldown(val remaining: Duration) : CommandError() {
-    override fun placeholders(): Map<String, Any?> =
-        mapOf("seconds" to ((remaining.toMillis() + 999) / 1000), "remaining" to remaining)
-}
-
-/** The base of everything else that went wrong, and the last resort of the standard answers. */
-open class CommandFailed @JvmOverloads constructor(defaultMessage: String? = null) : CommandError(defaultMessage)
-
-/**
- * Stops the command with [error]. The library answers it through the five levels like any other error, so the
- * command does not print anything itself. Java callers may throw this directly.
- *
- * @property error the error to answer with
- */
-class CommandFailure(val error: CommandError) : RuntimeException(error.javaClass.simpleName, null, false, false)
-
 /** Stops the command with [error]; never returns. */
 @Suppress("unused")
-fun CommandContext.fail(error: CommandError): Nothing = throw CommandFailure(error)
+fun CommandContext.fail(error: CommandError): Nothing = throw CommandException(error)
 
 /**
  * Stops the command with the error made by [error] unless [condition] holds, the way `require` and `check` do:
  * `ensure(balance >= price) { NoMoney(price) }`. [error] is built only when it is needed.
  */
 inline fun CommandContext.ensure(condition: Boolean, error: () -> CommandError) {
-    if (!condition) throw CommandFailure(error())
-}
-
-/** Answers an error. `context` tells who ran which command; the sender can be messaged, played a sound, anything. */
-fun interface CommandErrorHandler<E : CommandError> {
-    /** Called with the error; throwing here is logged and the next level answers instead. */
-    fun handle(context: CommandContext, error: E)
+    if (!condition) throw CommandException(error())
 }

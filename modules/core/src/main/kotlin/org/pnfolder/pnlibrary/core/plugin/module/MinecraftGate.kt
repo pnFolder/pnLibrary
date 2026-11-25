@@ -2,9 +2,8 @@ package org.pnfolder.pnlibrary.core.plugin.module
 
 import org.pnfolder.pnlibrary.api.compat.MinecraftCompatibility
 import org.pnfolder.pnlibrary.api.compat.MinecraftSupport
-import org.pnfolder.pnlibrary.api.compat.MinecraftSupportRule
-import org.pnfolder.pnlibrary.api.compat.NewerAction
-import org.pnfolder.pnlibrary.api.compat.UnsupportedAction
+import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction
+import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion
 
 /**
@@ -54,7 +53,7 @@ internal class MinecraftGate(
             val newer = moduleRule.newerAction ?: pluginRule.newerAction ?: NewerAction.ALLOW_WITH_WARNING
             val info = server?.let(MinecraftVersion::parseInfo)?.takeIf { it.numeric }
             val serverText = info?.let { "${it.major}.${it.minor}" + (if (it.patch != null && it.patch != 0) ".${it.patch}" else "") }
-            val support = rule.evaluate(info)
+            val support = rule.versions.check(info)
             val declared = rule.description
             var warning: String? = null
             var block: String? = null

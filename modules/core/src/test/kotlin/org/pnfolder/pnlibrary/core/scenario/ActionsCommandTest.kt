@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderInfo
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import org.pnfolder.pnlibrary.core.placeholders.usageVariants
 
 class ActionsCommandTest {

@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module
 
-import org.pnfolder.pnlibrary.api.placeholders.Visibility
+import org.pnfolder.pnlibrary.api.registry.RegistryEntry
+import org.pnfolder.pnlibrary.api.registry.Visibility
 import org.pnfolder.pnlibrary.api.scenario.actions.Action
 import org.pnfolder.pnlibrary.api.scenario.actions.DefinitionConflict
 import org.pnfolder.pnlibrary.api.scenario.actions.ScenarioLookup
@@ -64,6 +65,20 @@ internal class ScenarioDefinitions {
         override fun requirement(name: String) = find(requirements, name, consumer)
         override fun function(name: String) = find(functions, name, consumer)
     }
+
+    /** The actions [consumer] (`plugin/module`) can see, for [org.pnfolder.pnlibrary.api.registry.Registry]. */
+    fun actionEntries(consumer: String) = visibleTo(actions, consumer)
+
+    fun requirementEntries(consumer: String) = visibleTo(requirements, consumer)
+
+    fun functionEntries(consumer: String) = visibleTo(functions, consumer)
+
+    @Synchronized
+    private fun <T : Any> visibleTo(map: Map<String, List<Entry<T>>>, consumer: String): List<RegistryEntry<T>> =
+        map.flatMap { (name, entries) ->
+            entries.filter { nearness(it.owner, it.visibility, consumer) != null }
+                .map { RegistryEntry(name, it.value, it.owner, it.visibility) }
+        }.sortedWith(compareBy({ it.key }, { it.owner }))
 
     /** The overview for commands and menus: every definition with its owner and who may use it. */
     @Synchronized

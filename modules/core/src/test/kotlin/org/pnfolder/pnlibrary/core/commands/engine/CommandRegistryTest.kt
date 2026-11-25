@@ -325,7 +325,7 @@ class CommandRegistryTest {
     }
 
     private fun say(text: String) = CommandErrorHandler<CommandError> { context, error ->
-        context.sender.send(Component.text(error.format(text)))
+        context.sender.sendMessage(Component.text(error.format(text)))
     }
 
     private fun service(native: RecordingCommands, standard: StandardCommandFeedback = StandardCommandFeedback()) =
@@ -360,7 +360,7 @@ class CommandRegistryTest {
                 permission("example.vip")
                 onError<NoPermission> { error ->
                     seen += "node:${error.permission}"
-                    sender.send(Component.text("Свой ответ"))
+                    sender.sendMessage(Component.text("Свой ответ"))
                 }
                 executes { }
             }
@@ -466,7 +466,7 @@ class CommandRegistryTest {
         val caught = TestSender()
         val second = RecordingCommands()
         service(second).register(Any(), command("hello") {
-            onError<BadUsage> { error -> sender.send(Component.text("общий: ${error.javaClass.simpleName}")) }
+            onError<BadUsage> { error -> sender.sendMessage(Component.text("общий: ${error.javaClass.simpleName}")) }
             literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
         })
         run(second, caught, "buy", "99")
@@ -477,7 +477,7 @@ class CommandRegistryTest {
         val exact = TestSender()
         val third = RecordingCommands()
         service(third).register(Any(), command("hello") {
-            onError<BadUsage> { sender.send(Component.text("общий")) }
+            onError<BadUsage> { sender.sendMessage(Component.text("общий")) }
             onError<InvalidArgument>("точный: {argument}={value}")
             literal("buy") { argument("amount", ArgumentType.integer(1, 5)) { executes { } } }
         })
@@ -520,7 +520,7 @@ class CommandRegistryTest {
         val native = RecordingCommands()
         val module = CommandFeedbackScope()
         module.handlers[NoMoney::class.java] = CommandErrorHandler<NoMoney> { context, error ->
-            context.sender.send(Component.text("Не хватает ${error.price} монет"))
+            context.sender.sendMessage(Component.text("Не хватает ${error.price} монет"))
         }
         service(native).register(Any(), command("hello") {
             executes { context -> context.ensure(false) { NoMoney(50) } }
@@ -549,7 +549,7 @@ class CommandRegistryTest {
         val sounds = mutableListOf<net.kyori.adventure.sound.Sound>()
         override fun playSound(sound: net.kyori.adventure.sound.Sound) { sounds += sound }
         override fun pointers() = senderPointers("sender", if (console) null else java.util.UUID.randomUUID()) { permission -> permission in permissions }
-        override fun send(message: Component) { messages += message }
+        override fun sendMessage(message: Component) { messages += message }
     }
 
     private class RecordingCommands : PlatformCommandAdapter {

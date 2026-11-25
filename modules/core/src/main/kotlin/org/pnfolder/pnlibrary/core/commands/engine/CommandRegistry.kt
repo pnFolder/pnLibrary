@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.engine
 
-import org.pnfolder.pnlibrary.api.chat.ChatTone
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone
 import org.pnfolder.pnlibrary.api.commands.CommandContext
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition
@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.definition.completedExecution
 import org.pnfolder.pnlibrary.api.commands.definition.completedSuggestions
 import org.pnfolder.pnlibrary.api.commands.error.CommandError
 import org.pnfolder.pnlibrary.api.commands.error.CommandFailed
-import org.pnfolder.pnlibrary.api.commands.error.CommandFailure
+import org.pnfolder.pnlibrary.api.commands.error.CommandException
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission
 import org.pnfolder.pnlibrary.api.logging.LogLevel
 import org.pnfolder.pnlibrary.api.audience.hasPermission
@@ -122,9 +122,9 @@ internal class CommandRegistry(
         }
     }
 
-    // CommandFailure = intentional error, answered through the normal chain. Anything else is logged and shown as a failure.
+    // CommandException = intentional error, answered through the normal chain. Anything else is logged and shown as a failure.
     private fun failed(registration: Registration, executable: CommandRoute.Executable, error: Throwable) {
-        val failure = generateSequence(error) { it.cause }.filterIsInstance<CommandFailure>().firstOrNull()
+        val failure = generateSequence(error) { it.cause }.filterIsInstance<CommandException>().firstOrNull()
         if (failure == null) {
             executionFailed(registration.owner, registration.command.name, executable.context, error)
             return

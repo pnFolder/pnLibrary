@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.dependencies
 
+import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy
 import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.dependencies.external.ManagedProductDependency
 import org.pnfolder.pnlibrary.api.updates.product.ProductId
@@ -135,10 +136,6 @@ class DependencyBuilder {
         fun verifyVersion(value: Boolean): ExternalBuilder = add { it.verifyVersion(value) }
         /** Sets how a missing or outdated plugin is downloaded. */
         fun downloadPolicy(value: DownloadPolicy): ExternalBuilder = add { it.downloadPolicy(value) }
-        /** Sets whether a missing plugin may be downloaded automatically. */
-        fun automaticDownload(value: Boolean): ExternalBuilder = add { it.automaticDownload(value) }
-        /** Sets whether the automatic download runs without asking an administrator. */
-        fun forceAutomaticDownload(value: Boolean): ExternalBuilder = add { it.forceAutomaticDownload(value) }
 
         private fun add(step: Consumer<ExternalPluginDependency.Builder>): ExternalBuilder = apply { settings += step }
 
