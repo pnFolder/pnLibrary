@@ -2,7 +2,6 @@
 // Folia is detected at runtime via reflection; no compile-time Folia API needed.
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -15,7 +14,6 @@ dependencies {
     implementation(project(":modules:core"))
     implementation(project(":modules:features:currency-api"))
     implementation(project(":platforms:bukkit:api"))
-    implementation(libs.kotlin.stdlib)
     implementation(project(":platforms:loader"))
     implementation(libs.libby.bukkit)
     implementation(libs.faststats.bukkit.j8)
@@ -27,6 +25,8 @@ dependencies {
     // 1.8.8 API covers the minimal surface we use; Paper 1.16.5 for compilation is fine
     compileOnly(libs.spigot.api.v18)
     compileOnly(libs.placeholderapi)
+    compileOnly(libs.jetbrains.annotations)
+    testCompileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

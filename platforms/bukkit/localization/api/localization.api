@@ -1,5 +1,4 @@
 public abstract interface class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations : org/pnfolder/pnlibrary/localization/LocaleTranslations {
-	public static final field Companion Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations$Companion;
 	public abstract fun biomes ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
 	public abstract fun colors ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
 	public abstract fun effects ()Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
@@ -17,19 +16,9 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/localization/Bukki
 	public static fun wrap (Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;)Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations;
 }
 
-public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations$Companion {
-	public final fun wrap (Lorg/pnfolder/pnlibrary/localization/LocaleTranslations;)Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocaleTranslations;
-}
-
 public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocalization {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitLocalization;
-	public static final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
-	public static final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
-}
-
-public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitLocalizationKt {
-	public static final fun bukkitLocale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
-	public static final fun bukkitLocale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
+	public static fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
+	public static fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Ljava/util/concurrent/CompletionStage;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatables {
@@ -39,7 +28,72 @@ public final class org/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatable
 	public static final field ENCHANTMENT Lorg/pnfolder/pnlibrary/localization/TranslatableType;
 	public static final field ENTITY Lorg/pnfolder/pnlibrary/localization/TranslatableType;
 	public static final field GAME_MODE Lorg/pnfolder/pnlibrary/localization/TranslatableType;
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/BukkitTranslatables;
 	public static final field MATERIAL Lorg/pnfolder/pnlibrary/localization/TranslatableType;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/BiomeTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/BiomeTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/block/Biome;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/block/Biome;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/BukkitTranslationIndexes {
+	public static fun biomes (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun colors (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun effects (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun enchantments (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun entities (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun gameModes (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+	public static fun materials (Ljava/util/Map;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/ColorTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/ColorTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/DyeColor;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/DyeColor;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/EffectTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/EffectTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/potion/PotionEffectType;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/potion/PotionEffectType;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/EnchantmentTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/EnchantmentTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/enchantments/Enchantment;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/enchantments/Enchantment;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/EntityTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/EntityTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/entity/EntityType;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/entity/EntityType;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/GameModeTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/GameModeTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/GameMode;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/GameMode;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/bukkit/localization/internal/MaterialTranslatable : org/pnfolder/pnlibrary/localization/TranslatableType {
+	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/localization/internal/MaterialTranslatable;
+	public synthetic fun fallbackName (Ljava/lang/Object;)Ljava/lang/String;
+	public fun fallbackName (Lorg/bukkit/Material;)Ljava/lang/String;
+	public synthetic fun keysOf (Ljava/lang/Object;)Ljava/util/List;
+	public fun keysOf (Lorg/bukkit/Material;)Ljava/util/List;
 }
 

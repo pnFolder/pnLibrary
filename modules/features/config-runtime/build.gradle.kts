@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -10,8 +9,8 @@ dependencies {
     api(project(":modules:features:config-api"))
     api(project(":modules:spi"))
     implementation(project(":modules:common"))
-    implementation(libs.kotlin.stdlib)
     implementation(libs.snakeyaml)
+    compileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)

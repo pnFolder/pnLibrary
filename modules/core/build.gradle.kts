@@ -1,7 +1,6 @@
 // pnlibrary-core — no server-platform classes, JVM 8 bytecode
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -15,7 +14,6 @@ dependencies {
     implementation(project(":modules:features:currency-runtime"))
     implementation(project(":modules:features:config-runtime"))
     implementation(project(":modules:features:localization-api"))
-    implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
     implementation(libs.adventure.minimessage)
@@ -23,6 +21,8 @@ dependencies {
     implementation(libs.adventure.gson)
     implementation(libs.adventure.plain)
     compileOnly(libs.faststats.core.j8)
+    compileOnly(libs.jetbrains.annotations)
+    testCompileOnly(libs.jetbrains.annotations)
     implementation(project(":modules:console"))
 
     testImplementation(libs.junit.jupiter)

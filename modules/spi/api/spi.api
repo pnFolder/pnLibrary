@@ -25,8 +25,16 @@ public abstract class org/pnfolder/pnlibrary/spi/commands/GenericPlatformCommand
 	protected final fun registerNative (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandDispatcher;)Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandRegistration;
 }
 
+public abstract interface class org/pnfolder/pnlibrary/spi/commands/NativeCommandExecutor {
+	public abstract fun execute (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)V
+}
+
 public abstract interface class org/pnfolder/pnlibrary/spi/commands/NativeCommandRegistrar {
-	public abstract fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;)Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandRegistration;
+	public abstract fun register (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;Lorg/pnfolder/pnlibrary/spi/commands/NativeCommandExecutor;Lorg/pnfolder/pnlibrary/spi/commands/NativeCommandSuggester;)Lorg/pnfolder/pnlibrary/spi/commands/PlatformCommandRegistration;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/spi/commands/NativeCommandSuggester {
+	public abstract fun suggest (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)Ljava/util/concurrent/CompletionStage;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/commands/PlatformCommandAdapter : java/lang/AutoCloseable {
@@ -56,15 +64,14 @@ public final class org/pnfolder/pnlibrary/spi/commands/UnsupportedPlatformComman
 }
 
 public final class org/pnfolder/pnlibrary/spi/libraries/ExternalLibraries {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/libraries/ExternalLibraries;
-	public final fun fileOf (Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/String;
-	public final fun load (Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/Object;)Ljava/lang/ClassLoader;
-	public static synthetic fun load$default (Lorg/pnfolder/pnlibrary/spi/libraries/ExternalLibraries;Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/Object;ILjava/lang/Object;)Ljava/lang/ClassLoader;
+	public static fun fileOf (Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/String;
+	public static fun load (Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Z)Ljava/lang/ClassLoader;
+	public static fun load (Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLjava/lang/Object;)Ljava/lang/ClassLoader;
 }
 
 public final class org/pnfolder/pnlibrary/spi/libraries/OptionalLibrary {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;)V
-	public final fun ensure ()Z
+	public fun ensure ()Z
 }
 
 public final class org/pnfolder/pnlibrary/spi/metrics/NoopMetricsFactory : org/pnfolder/pnlibrary/spi/metrics/PlatformMetricsFactory {
@@ -78,62 +85,45 @@ public abstract interface class org/pnfolder/pnlibrary/spi/metrics/PlatformMetri
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/DiagnosticDetailsCollector {
-	public fun <init> (Lkotlin/jvm/functions/Function0;)V
-	public final fun collect (ZLkotlin/jvm/functions/Function1;)Ljava/util/Map;
+	public fun <init> (Ljava/util/function/Supplier;)V
+	public fun collect (ZLjava/util/function/Consumer;)Ljava/util/Map;
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/DiagnosticSections {
 	public static final field HIGH_PING_THRESHOLD_MS J
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/spi/platform/DiagnosticSections;
-	public static final fun commonSignals (Ljava/util/List;Ljava/util/Collection;)Ljava/util/List;
-	public static final fun health (Ljava/util/List;)Ljava/util/Map;
-	public static final fun missingDependencies (Ljava/util/Map;Ljava/util/Set;)Ljava/util/List;
-	public static final fun percentile (Ljava/util/Collection;D)Ljava/lang/Long;
-	public static final fun pingSummary (Ljava/util/Collection;)Ljava/util/Map;
-	public static final fun proxySections (Ljava/util/Map;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/Collection;)V
+	public static fun commonSignals (Ljava/util/List;Ljava/util/Collection;)Ljava/util/List;
+	public static fun health (Ljava/util/List;)Ljava/util/Map;
+	public static fun missingDependencies (Ljava/util/Map;Ljava/util/Set;)Ljava/util/List;
+	public static fun percentile (Ljava/util/Collection;D)Ljava/lang/Long;
+	public static fun pingSummary (Ljava/util/Collection;)Ljava/util/Map;
+	public static fun proxySections (Ljava/util/Map;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/Collection;)V
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/JavaSnapshot {
-	public static final field Companion Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
+	public static fun current ()Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getName ()Ljava/lang/String;
-	public final fun getVendor ()Ljava/lang/String;
-	public final fun getVersion ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getVendor ()Ljava/lang/String;
+	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/spi/platform/JavaSnapshot$Companion {
-	public final fun current ()Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
-}
-
 public final class org/pnfolder/pnlibrary/spi/platform/JulLogObserver {
-	public static final field Companion Lorg/pnfolder/pnlibrary/spi/platform/JulLogObserver$Companion;
-	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
-	public static final fun julLevel (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)Ljava/util/logging/Level;
-	public final fun logHandler (Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function4;
-	public static final fun matchName (Ljava/lang/String;Ljava/util/Collection;)Ljava/lang/String;
-	public static final fun matchPlugin (Ljava/lang/String;Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public final fun observe (Lkotlin/jvm/functions/Function4;)V
-	public final fun runOwn (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-}
-
-public final class org/pnfolder/pnlibrary/spi/platform/JulLogObserver$Companion {
-	public final fun julLevel (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)Ljava/util/logging/Level;
-	public final fun matchName (Ljava/lang/String;Ljava/util/Collection;)Ljava/lang/String;
-	public final fun matchPlugin (Ljava/lang/String;Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun <init> (Ljava/util/function/Supplier;Ljava/lang/Object;Ljava/util/function/Function;)V
+	public static fun julLevel (Lorg/pnfolder/pnlibrary/api/logging/LogLevel;)Ljava/util/logging/Level;
+	public fun logHandler (Ljava/util/function/Function;)Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;
+	public static fun matchName (Ljava/lang/String;Ljava/util/Collection;)Ljava/lang/String;
+	public static fun matchPlugin (Ljava/lang/String;Ljava/util/Collection;Ljava/util/function/Function;)Ljava/lang/Object;
+	public fun observe (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;)V
+	public fun runOwn (Ljava/util/function/Supplier;)Ljava/lang/Object;
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/OwnLogScope {
 	public fun <init> ()V
-	public final fun isActive ()Z
-	public final fun run (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun isActive ()Z
+	public fun run (Ljava/util/function/Supplier;)Ljava/lang/Object;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformAdapter : org/pnfolder/pnlibrary/spi/platform/PlatformBinding, org/pnfolder/pnlibrary/spi/platform/PlatformDiagnostics, org/pnfolder/pnlibrary/spi/platform/PlatformExecution, org/pnfolder/pnlibrary/spi/platform/PlatformIdentity, org/pnfolder/pnlibrary/spi/platform/PlatformLogObservation, org/pnfolder/pnlibrary/spi/platform/PlatformLogging, org/pnfolder/pnlibrary/spi/platform/PlatformOwnership, org/pnfolder/pnlibrary/spi/platform/PlatformReadiness, org/pnfolder/pnlibrary/spi/platform/PlatformShutdown {
@@ -175,24 +165,28 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformIden
 
 public final class org/pnfolder/pnlibrary/spi/platform/PlatformLifecycle {
 	public fun <init> ()V
-	public final synthetic fun bind (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public final fun checkOpen ()V
-	public final fun close ()Z
-	public final fun close (Lkotlin/jvm/functions/Function0;)Z
-	public final fun closeAdapter (Lorg/pnfolder/pnlibrary/spi/platform/StartupGate;Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter;Lkotlin/jvm/functions/Function0;)Z
-	public final fun isClosed ()Z
-	public final fun track (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
+	public fun bind (Ljava/util/function/Supplier;)Ljava/lang/Object;
+	public fun checkOpen ()V
+	public fun close ()Z
+	public fun close (Ljava/lang/Runnable;)Z
+	public fun closeAdapter (Lorg/pnfolder/pnlibrary/spi/platform/StartupGate;Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter;Ljava/lang/Runnable;)Z
+	public fun isClosed ()Z
+	public fun track (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformLogObservation {
-	public fun observeNativeLogs (Lkotlin/jvm/functions/Function4;)V
+	public fun observeNativeLogs (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformLogSink {
+	public abstract fun log (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformLogging {
 	public fun console (Ljava/lang/Object;Ljava/lang/String;)V
-	public fun getLogHandler ()Lkotlin/jvm/functions/Function4;
+	public fun getLogHandler ()Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;
+	public fun log (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;)V
 	public fun log (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
-	public static synthetic fun log$default (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/logging/LogLevel;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwnerControl {
@@ -210,10 +204,7 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwne
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformOwnership : org/pnfolder/pnlibrary/spi/platform/PlatformOwnerControl, org/pnfolder/pnlibrary/spi/platform/PlatformOwnerMetadata, org/pnfolder/pnlibrary/spi/platform/PlatformPluginInventory {
-}
-
-public final class org/pnfolder/pnlibrary/spi/platform/PlatformOwnershipKt {
-	public static final fun unsupportedOwner (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
+	public static fun unsupportedOwner (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformPluginInventory {
@@ -221,12 +212,12 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformPlug
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/PlatformPlugins {
-	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
-	public final fun find (Ljava/lang/Object;)Ljava/lang/Object;
-	public final fun metadata (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
-	public final fun requireInstalled (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
-	public final fun snapshots ()Ljava/util/List;
-	public final fun versions ()Ljava/util/Map;
+	public fun <init> (Ljava/lang/String;Ljava/util/function/Supplier;Ljava/util/function/Function;Ljava/util/function/Function;)V
+	public fun find (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun metadata (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogging;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
+	public fun requireInstalled (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+	public fun snapshots ()Ljava/util/List;
+	public fun versions ()Ljava/util/Map;
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/PlatformPnLogger : org/pnfolder/pnlibrary/api/logging/PnLogger {
@@ -243,33 +234,22 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformShut
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/PlatformSnapshot {
-	public static final field Companion Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun asMap ()Ljava/util/Map;
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/Integer;
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Ljava/util/List;
-	public final fun component7 ()Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;)Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/util/List;Ljava/util/List;Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot;
+	public fun asMap ()Ljava/util/Map;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getJava ()Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getOnlinePlayers ()Ljava/lang/Integer;
-	public final fun getPlugins ()Ljava/util/List;
-	public final fun getRegisteredServers ()Ljava/util/List;
-	public final fun getVendor ()Ljava/lang/String;
-	public final fun getVersion ()Ljava/lang/String;
+	public fun getJava ()Lorg/pnfolder/pnlibrary/spi/platform/JavaSnapshot;
+	public fun getName ()Ljava/lang/String;
+	public fun getOnlinePlayers ()Ljava/lang/Integer;
+	public fun getPlugins ()Ljava/util/List;
+	public fun getRegisteredServers ()Ljava/util/List;
+	public fun getVendor ()Ljava/lang/String;
+	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/spi/platform/PlatformSnapshot$Companion {
-	public final fun unknown (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot;
+	public static fun unknown (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/spi/platform/PlatformSnapshot;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformSnapshotProvider {
@@ -277,56 +257,50 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformSnap
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/PluginSnapshot {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun asMap ()Ljava/util/Map;
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/platform/PluginSnapshot;
+	public fun asMap ()Ljava/util/Map;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAuthors ()Ljava/util/List;
-	public final fun getId ()Ljava/lang/String;
-	public final fun getMainClass ()Ljava/lang/String;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getVersion ()Ljava/lang/String;
+	public fun getAuthors ()Ljava/util/List;
+	public fun getId ()Ljava/lang/String;
+	public fun getMainClass ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/ProxyBackend {
-	public fun <init> (Ljava/lang/String;ILkotlin/jvm/functions/Function0;)V
-	public final fun getAddress ()Lkotlin/jvm/functions/Function0;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getPlayers ()I
+	public fun <init> (Ljava/lang/String;ILjava/util/function/Supplier;)V
+	public fun getAddress ()Ljava/util/function/Supplier;
+	public fun getName ()Ljava/lang/String;
+	public fun getPlayers ()I
 }
 
 public abstract class org/pnfolder/pnlibrary/spi/platform/ProxyPlatformAdapter : org/pnfolder/pnlibrary/spi/platform/PlatformAdapter {
-	public fun <init> (Ljava/lang/Object;)V
+	protected final field lifecycle Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;
+	protected fun <init> (Ljava/lang/Object;)V
 	public fun close ()V
 	public fun executeReply (Ljava/lang/Object;Ljava/lang/Runnable;)V
-	protected final fun getLifecycle ()Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;
 	public abstract fun getNetworkProxy ()Lorg/pnfolder/pnlibrary/api/network/NetworkProxy;
 	public final fun markReady ()V
-	public fun observeNativeLogs (Lkotlin/jvm/functions/Function4;)V
-	protected abstract fun observeProxyLogs (Lkotlin/jvm/functions/Function4;)V
+	public fun observeNativeLogs (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;)V
+	protected abstract fun observeProxyLogs (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;)V
 	public final fun warn (Ljava/lang/String;)V
 	public fun whenServerReady (Ljava/lang/Runnable;)V
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/StartupGate {
-	public fun <init> (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;Lkotlin/jvm/functions/Function1;)V
-	public final fun discardPending ()V
-	public final fun markReady ()V
-	public final fun whenReady (Ljava/lang/Runnable;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLifecycle;Ljava/util/function/Consumer;)V
+	public fun discardPending ()V
+	public fun markReady ()V
+	public fun whenReady (Ljava/lang/Runnable;)V
 }
 
 public final class org/pnfolder/pnlibrary/spi/platform/UncaughtExceptionLogObserver {
 	public fun <init> (Ljava/lang/Object;)V
-	public final fun observe (Lkotlin/jvm/functions/Function4;)V
+	public fun observe (Lorg/pnfolder/pnlibrary/spi/platform/PlatformLogSink;)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter : java/lang/AutoCloseable {
@@ -335,16 +309,16 @@ public abstract interface class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskAda
 }
 
 public final class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder {
-	public fun <init> (Lkotlin/jvm/functions/Function1;)V
-	public final fun build ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;
-	public final fun delay (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public final fun entity (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public final fun every (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public final fun execution (Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public static synthetic fun execution$default (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public final fun from (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
-	public final fun schedule ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskHandle;
-	public final fun task (Ljava/lang/Runnable;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun <init> (Ljava/util/function/Function;)V
+	public fun build ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;
+	public fun delay (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun entity (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun every (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun execution (Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun execution (Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun from (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
+	public fun schedule ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskHandle;
+	public fun task (Ljava/lang/Runnable;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskBuilder;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskHandle {
@@ -353,21 +327,15 @@ public abstract interface class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskHan
 
 public final class org/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest {
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;
-	public final fun component2 ()Ljava/lang/Object;
-	public final fun component3 ()Ljava/time/Duration;
-	public final fun component4 ()Ljava/time/Duration;
-	public final fun component5 ()Ljava/lang/Runnable;
-	public final fun copy (Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;Ljava/lang/Object;Ljava/time/Duration;Ljava/time/Duration;Ljava/lang/Runnable;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCallback ()Ljava/lang/Runnable;
-	public final fun getDelay ()Ljava/time/Duration;
-	public final fun getExecutionKind ()Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;
-	public final fun getInterval ()Ljava/time/Duration;
-	public final fun getTarget ()Ljava/lang/Object;
+	public fun getCallback ()Ljava/lang/Runnable;
+	public fun getDelay ()Ljava/time/Duration;
+	public fun getExecutionKind ()Lorg/pnfolder/pnlibrary/api/tasks/spec/TaskExecution$Kind;
+	public fun getInterval ()Ljava/time/Duration;
+	public fun getTarget ()Ljava/lang/Object;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+	public fun withCallback (Ljava/lang/Runnable;)Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskRequest;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/spi/tasks/RetirableCallback {

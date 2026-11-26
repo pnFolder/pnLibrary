@@ -24,7 +24,6 @@ public final class org/pnfolder/pnlibrary/localization/MinecraftLocale : java/la
 	public static final field CA_ES Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field CS_CZ Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field CY_GB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/MinecraftLocale$Companion;
 	public static final field DA_DK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field DE_AT Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field DE_CH Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
@@ -140,21 +139,15 @@ public final class org/pnfolder/pnlibrary/localization/MinecraftLocale : java/la
 	public static final field ZH_HK Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field ZH_TW Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static final field ZLM_ARAB Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
-	public final fun getCode ()Ljava/lang/String;
-	public final fun getEnglishName ()Ljava/lang/String;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getNativeName ()Ljava/lang/String;
-	public static final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
+	public fun getCode ()Ljava/lang/String;
+	public fun getEnglishName ()Ljava/lang/String;
+	public fun getNativeName ()Ljava/lang/String;
+	public static fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
 }
 
-public final class org/pnfolder/pnlibrary/localization/MinecraftLocale$Companion {
-	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;
-}
-
 public abstract interface class org/pnfolder/pnlibrary/localization/MinecraftLocalization : java/lang/AutoCloseable {
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Companion;
 	public abstract fun availableLocales (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun availableVersions ()Ljava/util/concurrent/CompletionStage;
 	public static fun builder ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
@@ -167,23 +160,19 @@ public abstract interface class org/pnfolder/pnlibrary/localization/MinecraftLoc
 }
 
 public final class org/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder {
-	public final fun build ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
-	public final fun cacheDirectory (Ljava/nio/file/Path;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun connectTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun downloadConcurrency (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun executor (Ljava/util/concurrent/ExecutorService;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun layouts (Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun manifestTtl (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun memoryEntries (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-	public final fun readTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun build ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;
+	public fun cacheDirectory (Ljava/nio/file/Path;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun connectTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun downloadConcurrency (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun executor (Ljava/util/concurrent/ExecutorService;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun layouts (Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun manifestTtl (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun memoryEntries (I)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
+	public fun readTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
 }
 
-public final class org/pnfolder/pnlibrary/localization/MinecraftLocalization$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/localization/MinecraftLocalizationDslKt {
-	public static final synthetic fun load (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
+public final class org/pnfolder/pnlibrary/localization/MinecraftLocalizationDsl {
+	public static fun load (Lorg/pnfolder/pnlibrary/localization/MinecraftLocalization;Ljava/util/function/Consumer;)Ljava/util/concurrent/CompletionStage;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/localization/TranslatableType {
@@ -193,16 +182,11 @@ public abstract interface class org/pnfolder/pnlibrary/localization/Translatable
 
 public final class org/pnfolder/pnlibrary/localization/Translation {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/localization/Translation;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/Translation;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/Translation;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getLocalized ()Z
-	public final fun getText ()Ljava/lang/String;
+	public fun getKey ()Ljava/lang/String;
+	public fun getText ()Ljava/lang/String;
 	public fun hashCode ()I
+	public fun isLocalized ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -217,30 +201,25 @@ public final class org/pnfolder/pnlibrary/localization/TranslationCategory : jav
 	public static final field BIOME Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field BLOCK Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field COLOR Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationCategory$Companion;
 	public static final field EFFECT Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field ENCHANTMENT Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field ENTITY Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field GAME_MODE Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field ITEM Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static final field VANILLA_NAMESPACE Ljava/lang/String;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getId ()Ljava/lang/String;
-	public final fun key (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public static synthetic fun key$default (Lorg/pnfolder/pnlibrary/localization/TranslationCategory;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
-	public final fun prefix (Ljava/lang/String;)Ljava/lang/String;
-	public static synthetic fun prefix$default (Lorg/pnfolder/pnlibrary/localization/TranslationCategory;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public fun getId ()Ljava/lang/String;
+	public fun key (Ljava/lang/String;)Ljava/lang/String;
+	public fun key (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public fun prefix ()Ljava/lang/String;
+	public fun prefix (Ljava/lang/String;)Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationCategory;
 }
 
-public final class org/pnfolder/pnlibrary/localization/TranslationCategory$Companion {
-}
-
-public final class org/pnfolder/pnlibrary/localization/TranslationException : java/lang/RuntimeException {
+public class org/pnfolder/pnlibrary/localization/TranslationException : java/lang/RuntimeException {
+	public fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getReason ()Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
+	public fun getReason ()Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationException$Reason : java/lang/Enum {
@@ -252,13 +231,11 @@ public final class org/pnfolder/pnlibrary/localization/TranslationException$Reas
 	public static final field REMOTE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
 	public static final field UNAVAILABLE_LOCALE Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
 	public static final field UNSUPPORTED_VERSION Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationException$Reason;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/localization/TranslationIndex {
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationIndex$Companion;
 	public fun best (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
 	public fun best (Ljava/lang/String;D)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
 	public abstract fun best (Ljava/lang/String;DLjava/util/Collection;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
@@ -274,74 +251,53 @@ public abstract interface class org/pnfolder/pnlibrary/localization/TranslationI
 	public abstract fun suggest (Ljava/lang/String;ILjava/util/Collection;)Ljava/util/List;
 }
 
-public final class org/pnfolder/pnlibrary/localization/TranslationIndex$Companion {
-	public final fun of (Ljava/util/List;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
-	public final fun of (Ljava/util/List;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
-	public static synthetic fun of$default (Lorg/pnfolder/pnlibrary/localization/TranslationIndex$Companion;Ljava/util/List;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationIndex;
-}
-
 public final class org/pnfolder/pnlibrary/localization/TranslationMatch {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/Object;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/TranslationMatch;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getTranslation ()Ljava/lang/String;
-	public final fun getValue ()Ljava/lang/Object;
+	public fun getKey ()Ljava/lang/String;
+	public fun getTranslation ()Ljava/lang/String;
+	public fun getValue ()Ljava/lang/Object;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationMetadata {
 	public fun <init> (Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/localization/TranslationSource;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Z
-	public final fun copy (Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;Z)Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;Lorg/pnfolder/pnlibrary/localization/TranslationSource;Ljava/lang/String;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/localization/TranslationMetadata;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getSha1 ()Ljava/lang/String;
-	public final fun getSource ()Lorg/pnfolder/pnlibrary/localization/TranslationSource;
-	public final fun getStale ()Z
+	public fun getSha1 ()Ljava/lang/String;
+	public fun getSource ()Lorg/pnfolder/pnlibrary/localization/TranslationSource;
 	public fun hashCode ()I
+	public fun isStale ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationRequest {
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Companion;
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun getFallbackLocale ()Ljava/lang/String;
-	public final fun getLocales ()Ljava/util/Set;
-	public final fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public static fun builder ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun getFallbackLocale ()Ljava/lang/String;
+	public fun getLocales ()Ljava/util/Set;
+	public fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public static fun normalizeLocale (Ljava/lang/String;)Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationRequest$Builder {
-	public final fun build ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest;
-	public final fun fallback (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun locale (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun locales (Ljava/util/Collection;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun locales ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-	public final fun version (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/localization/TranslationRequest$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun build ()Lorg/pnfolder/pnlibrary/localization/TranslationRequest;
+	public fun fallback (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun locale (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun locale (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun locales (Ljava/util/Collection;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun locales ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
+	public fun version (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/localization/TranslationRequest$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationRequestDsl {
-	public field version Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun fallback (Ljava/lang/String;)V
-	public final fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
-	public final fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun locales ([Ljava/lang/String;)V
-	public final fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
-	public final fun setVersion (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)V
+	public fun fallback (Ljava/lang/String;)V
+	public fun fallback (Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
+	public fun getVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public fun locales ([Ljava/lang/String;)V
+	public fun locales ([Lorg/pnfolder/pnlibrary/localization/MinecraftLocale;)V
+	public fun setVersion (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)V
 }
 
 public final class org/pnfolder/pnlibrary/localization/TranslationSource : java/lang/Enum {
@@ -349,15 +305,33 @@ public final class org/pnfolder/pnlibrary/localization/TranslationSource : java/
 	public static final field MEMORY Lorg/pnfolder/pnlibrary/localization/TranslationSource;
 	public static final field NETWORK Lorg/pnfolder/pnlibrary/localization/TranslationSource;
 	public static final field STALE_DISK Lorg/pnfolder/pnlibrary/localization/TranslationSource;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/TranslationSource;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/localization/TranslationSource;
+}
+
+public final class org/pnfolder/pnlibrary/localization/internal/DefaultMinecraftLocalization : org/pnfolder/pnlibrary/localization/MinecraftLocalization {
+	public fun <init> (Ljava/nio/file/Path;Ljava/time/Duration;Ljava/time/Duration;Ljava/time/Duration;IILjava/util/concurrent/ExecutorService;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)V
+	public fun availableLocales (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Ljava/util/concurrent/CompletionStage;
+	public fun availableVersions ()Ljava/util/concurrent/CompletionStage;
+	public fun close ()V
+	public fun getLayouts ()Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;
+	public fun load (Lorg/pnfolder/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+	public fun refresh (Lorg/pnfolder/pnlibrary/localization/TranslationRequest;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class org/pnfolder/pnlibrary/localization/internal/TranslationSearchIndex : org/pnfolder/pnlibrary/localization/TranslationIndex {
+	public fun <init> (Ljava/util/List;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;)V
+	public fun best (Ljava/lang/String;DLjava/util/Collection;)Lorg/pnfolder/pnlibrary/localization/TranslationMatch;
+	public fun findExact (Ljava/lang/String;)Ljava/util/List;
+	public fun fuzzy (Ljava/lang/String;DI)Ljava/util/List;
+	public fun getLayouts ()Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;
+	public fun search (Ljava/lang/String;)Ljava/util/List;
+	public fun suggest (Ljava/lang/String;ILjava/util/Collection;)Ljava/util/List;
 }
 
 public final class org/pnfolder/pnlibrary/localization/layout/KeyboardLayout {
 	public static final field BE Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public static final field CS Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout$Companion;
 	public static final field DE Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public static final field EN_US Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public static final field ES Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
@@ -370,40 +344,23 @@ public final class org/pnfolder/pnlibrary/localization/layout/KeyboardLayout {
 	public static final field TR_Q Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public static final field UK Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public static final field builtIn Ljava/util/List;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun alternatives (Ljava/lang/String;)Ljava/util/List;
-	public static final fun alternatives (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
-	public static final fun convert (Ljava/lang/String;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;)Ljava/lang/String;
-	public static final fun detect (Ljava/lang/String;)Ljava/util/List;
-	public static final fun detect (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
+	public static fun alternatives (Ljava/lang/String;)Ljava/util/List;
+	public static fun alternatives (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
+	public static fun convert (Ljava/lang/String;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;)Ljava/lang/String;
+	public static fun detect (Ljava/lang/String;)Ljava/util/List;
+	public static fun detect (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
+	public fun getId ()Ljava/lang/String;
 	public fun hashCode ()I
-	public static final fun of (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
+	public static fun of (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/localization/layout/KeyboardLayout$Companion {
-	public final fun alternatives (Ljava/lang/String;)Ljava/util/List;
-	public final fun alternatives (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
-	public static synthetic fun alternatives$default (Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout$Companion;Ljava/lang/String;Ljava/util/Collection;ILjava/lang/Object;)Ljava/util/List;
-	public final fun convert (Ljava/lang/String;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;)Ljava/lang/String;
-	public final fun detect (Ljava/lang/String;)Ljava/util/List;
-	public final fun detect (Ljava/lang/String;Ljava/util/Collection;)Ljava/util/List;
-	public static synthetic fun detect$default (Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout$Companion;Ljava/lang/String;Ljava/util/Collection;ILjava/lang/Object;)Ljava/util/List;
-	public final fun of (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;
-}
-
 public abstract interface class org/pnfolder/pnlibrary/localization/layout/KeyboardLayouts : java/lang/AutoCloseable {
-	public static final field Companion Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts$Companion;
 	public static final field builtIn Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;
 	public abstract fun all ()Ljava/util/List;
 	public abstract fun close ()V
 	public static fun create ()Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;
 	public abstract fun register (Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayout;)Ljava/lang/AutoCloseable;
-}
-
-public final class org/pnfolder/pnlibrary/localization/layout/KeyboardLayouts$Companion {
-	public final fun create ()Lorg/pnfolder/pnlibrary/localization/layout/KeyboardLayouts;
 }
 

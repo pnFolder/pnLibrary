@@ -28,80 +28,57 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/entity/VisualServi
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/Menu {
 	public fun <init> (Ljava/lang/String;ILorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;Ljava/util/Map;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;Z)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()I
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
-	public final fun component4 ()Ljava/util/Map;
-	public final fun component5 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;
-	public final fun component6 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;
-	public final fun component7 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;
-	public final fun component8 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
-	public final fun component9 ()Z
-	public final fun copy (Ljava/lang/String;ILorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;Ljava/util/Map;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/Menu;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/Menu;Ljava/lang/String;ILorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;Ljava/util/Map;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/Menu;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCancelPlayerInventory ()Z
-	public final fun getClickHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
-	public final fun getCloseHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;
-	public final fun getItems ()Ljava/util/Map;
-	public final fun getOpenHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;
-	public final fun getRenderer ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;
-	public final fun getRows ()I
-	public final fun getSize ()I
-	public final fun getTitle ()Ljava/lang/String;
-	public final fun getType ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
+	public fun getClickHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
+	public fun getCloseHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;
+	public fun getItems ()Ljava/util/Map;
+	public fun getOpenHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;
+	public fun getRenderer ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;
+	public fun getRows ()I
+	public fun getSize ()I
+	public fun getTitle ()Ljava/lang/String;
+	public fun getType ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
 	public fun hashCode ()I
+	public fun isCancelPlayerInventory ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder {
-	public final fun border (Lorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/bukkit/inventory/Menu;
-	public final fun button (ILorg/bukkit/inventory/ItemStack;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun cancelPlayerInventory (Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun editable (I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun editable (ILorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun fill (Lorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun fill (Lorg/bukkit/inventory/ItemStack;I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun fill (Lorg/bukkit/inventory/ItemStack;II)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static synthetic fun fill$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;Lorg/bukkit/inventory/ItemStack;IIILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun onClick (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun onClose (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun onOpen (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun render (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun rows (I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun slot (ILorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun slot (ILorg/bukkit/inventory/ItemStack;Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public final fun slot (ILorg/bukkit/inventory/ItemStack;ZLorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static synthetic fun slot$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;ILorg/bukkit/inventory/ItemStack;ZLorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun border (Lorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun build ()Lorg/pnfolder/pnlibrary/bukkit/inventory/Menu;
+	public fun button (ILorg/bukkit/inventory/ItemStack;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun cancelPlayerInventory (Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun editable (I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun editable (ILorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun fill (Lorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun fill (Lorg/bukkit/inventory/ItemStack;I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun fill (Lorg/bukkit/inventory/ItemStack;II)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun onClick (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun onClose (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuCloseHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun onOpen (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuOpenHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun render (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuRenderer;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun rows (I)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun slot (ILorg/bukkit/inventory/ItemStack;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun slot (ILorg/bukkit/inventory/ItemStack;Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public fun slot (ILorg/bukkit/inventory/ItemStack;ZLorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/MenuClick {
+	public fun <init> (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILorg/bukkit/inventory/ItemStack;Lorg/bukkit/inventory/ItemStack;Lorg/bukkit/event/inventory/ClickType;Lorg/bukkit/event/inventory/InventoryAction;Z)V
 	public fun <init> (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILorg/bukkit/inventory/ItemStack;Lorg/bukkit/inventory/ItemStack;Lorg/bukkit/event/inventory/ClickType;Lorg/bukkit/event/inventory/InventoryAction;ZLjava/lang/String;)V
-	public synthetic fun <init> (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILorg/bukkit/inventory/ItemStack;Lorg/bukkit/inventory/ItemStack;Lorg/bukkit/event/inventory/ClickType;Lorg/bukkit/event/inventory/InventoryAction;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun close ()V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
-	public final fun component2 ()I
-	public final fun component3 ()Lorg/bukkit/inventory/ItemStack;
-	public final fun component4 ()Lorg/bukkit/inventory/ItemStack;
-	public final fun component5 ()Lorg/bukkit/event/inventory/ClickType;
-	public final fun component6 ()Lorg/bukkit/event/inventory/InventoryAction;
-	public final fun component7 ()Z
-	public final fun component8 ()Ljava/lang/String;
-	public final fun copy (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILorg/bukkit/inventory/ItemStack;Lorg/bukkit/inventory/ItemStack;Lorg/bukkit/event/inventory/ClickType;Lorg/bukkit/event/inventory/InventoryAction;ZLjava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClick;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClick;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILorg/bukkit/inventory/ItemStack;Lorg/bukkit/inventory/ItemStack;Lorg/bukkit/event/inventory/ClickType;Lorg/bukkit/event/inventory/InventoryAction;ZLjava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClick;
+	public fun close ()V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAction ()Lorg/bukkit/event/inventory/InventoryAction;
-	public final fun getClick ()Lorg/bukkit/event/inventory/ClickType;
-	public final fun getCursor ()Lorg/bukkit/inventory/ItemStack;
-	public final fun getItem ()Lorg/bukkit/inventory/ItemStack;
-	public final fun getPlayer ()Lorg/bukkit/entity/Player;
-	public final fun getRenameText ()Ljava/lang/String;
-	public final fun getSession ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
-	public final fun getSlot ()I
-	public final fun getTopInventory ()Z
+	public fun getAction ()Lorg/bukkit/event/inventory/InventoryAction;
+	public fun getClick ()Lorg/bukkit/event/inventory/ClickType;
+	public fun getCursor ()Lorg/bukkit/inventory/ItemStack;
+	public fun getItem ()Lorg/bukkit/inventory/ItemStack;
+	public fun getPlayer ()Lorg/bukkit/entity/Player;
+	public fun getRenameText ()Ljava/lang/String;
+	public fun getSession ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
+	public fun getSlot ()I
 	public fun hashCode ()I
-	public final fun refresh ()V
+	public fun isTopInventory ()Z
+	public fun refresh ()V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -111,11 +88,8 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/inventory/MenuClic
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/MenuClose {
 	public fun <init> (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;)V
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
-	public final fun copy (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClose;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClose;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClose;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getSession ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
+	public fun getSession ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuSession;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -126,16 +100,11 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/inventory/MenuClos
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/MenuItem {
 	public fun <init> (Lorg/bukkit/inventory/ItemStack;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;Z)V
-	public final fun component1 ()Lorg/bukkit/inventory/ItemStack;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
-	public final fun component3 ()Z
-	public final fun copy (Lorg/bukkit/inventory/ItemStack;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;Z)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuItem;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuItem;Lorg/bukkit/inventory/ItemStack;Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuItem;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getEditable ()Z
-	public final fun getHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
-	public final fun getItem ()Lorg/bukkit/inventory/ItemStack;
+	public fun getHandler ()Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuClickHandler;
+	public fun getItem ()Lorg/bukkit/inventory/ItemStack;
 	public fun hashCode ()I
+	public fun isEditable ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -171,20 +140,18 @@ public final class org/pnfolder/pnlibrary/bukkit/inventory/MenuType : java/lang/
 	public static final field DROPPER Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
 	public static final field HOPPER Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
 	public static final field WORKBENCH Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
-	public final fun getDefaultSize ()I
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public fun getDefaultSize ()I
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuType;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/inventory/Menus {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/bukkit/inventory/Menus;
-	public static final fun anvil (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static final fun chest (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static final fun dispenser (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static final fun dropper (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static final fun hopper (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
-	public static final fun workbench (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun anvil (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun chest (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun dispenser (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun dropper (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun hopper (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
+	public static fun workbench (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/inventory/MenuBuilder;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/bukkit/item/ItemCustomizer {
@@ -196,39 +163,29 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/item/ItemField {
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/item/ItemFormat {
-	public static final field Companion Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Companion;
 	public static final field DEFAULT Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat;
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun getAmount ()Ljava/lang/String;
-	public final fun getEnchantments ()Ljava/lang/String;
-	public final fun getExact ()Ljava/lang/String;
-	public final fun getFields ()Ljava/util/Map;
-	public final fun getLore ()Ljava/lang/String;
-	public final fun getMaterial ()Ljava/lang/String;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getTextures ()Ljava/util/List;
-	public final fun toBuilder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public static fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun getAmount ()Ljava/lang/String;
+	public fun getEnchantments ()Ljava/lang/String;
+	public fun getExact ()Ljava/lang/String;
+	public fun getFields ()Ljava/util/Map;
+	public fun getLore ()Ljava/lang/String;
+	public fun getMaterial ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getTextures ()Ljava/util/List;
+	public fun toBuilder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder {
-	public final fun amount (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat;
-	public final fun enchantments (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun exact (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun field (Ljava/lang/String;Lorg/pnfolder/pnlibrary/bukkit/item/ItemField;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun lore (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun material (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-	public final fun texture ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/bukkit/item/ItemFormat$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/bukkit/item/ItemFormatKt {
-	public static final fun itemFormat (Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat;
+	public fun amount (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun build ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat;
+	public fun enchantments (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun exact (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun field (Ljava/lang/String;Lorg/pnfolder/pnlibrary/bukkit/item/ItemField;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun lore (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun material (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
+	public fun texture ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemFormat$Builder;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/bukkit/item/ItemService {
@@ -253,59 +210,43 @@ public abstract interface class org/pnfolder/pnlibrary/bukkit/item/ItemService {
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/item/ItemSpec {
-	public static final field Companion Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Companion;
-	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun getAmount ()I
-	public final fun getCustomizers ()Ljava/util/List;
-	public final fun getEnchantments ()Ljava/util/Map;
-	public final fun getExact ()Ljava/lang/String;
-	public final fun getLore ()Ljava/util/List;
-	public final fun getMaterial ()Ljava/lang/String;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getTexture ()Ljava/lang/String;
-	public final fun toBuilder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public static fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun getAmount ()I
+	public fun getCustomizers ()Ljava/util/List;
+	public fun getEnchantments ()Ljava/util/Map;
+	public fun getExact ()Ljava/lang/String;
+	public fun getLore ()Ljava/util/List;
+	public fun getMaterial ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getTexture ()Ljava/lang/String;
+	public fun toBuilder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder {
-	public final fun addLore (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun amount (I)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec;
-	public final fun customize (Lorg/pnfolder/pnlibrary/bukkit/item/ItemCustomizer;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun enchant (Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun exact (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun lore (Ljava/util/List;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun lore ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun material (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-	public final fun texture (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/bukkit/item/ItemSpec$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/bukkit/item/ItemSpecKt {
-	public static final fun itemSpec (Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec;
+	public fun addLore (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun amount (I)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun build ()Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec;
+	public fun customize (Lorg/pnfolder/pnlibrary/bukkit/item/ItemCustomizer;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun enchant (Ljava/lang/String;I)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun exact (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun lore (Ljava/util/List;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun lore ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun material (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun name (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
+	public fun texture (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/item/ItemSpec$Builder;
 }
 
 public final class org/pnfolder/pnlibrary/bukkit/server/ServerInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/bukkit/server/ServerInfo;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/bukkit/server/ServerInfo;Ljava/lang/String;Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/String;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/bukkit/server/ServerInfo;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDisplayName ()Ljava/lang/String;
-	public final fun getMinecraftVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getRawMinecraftVersion ()Ljava/lang/String;
-	public final fun getVersion ()Ljava/lang/String;
+	public fun getDisplayName ()Ljava/lang/String;
+	public fun getMinecraftVersion ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public fun getName ()Ljava/lang/String;
+	public fun getRawMinecraftVersion ()Ljava/lang/String;
+	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
-	public final fun isMinecraftAtLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun supports (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
+	public fun isMinecraftAtLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun supports (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
 	public fun toString ()Ljava/lang/String;
 }
 

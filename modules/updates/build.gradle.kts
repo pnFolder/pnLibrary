@@ -1,7 +1,6 @@
 // pnlibrary-updates — update catalog, resolver, installer and orchestration; no server-platform classes, JVM 8 bytecode
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -77,7 +76,8 @@ dependencies {
     implementation(project(":modules:spi"))
     implementation(project(":modules:features:config-runtime"))
     implementation(project(":modules:common"))
-    implementation(libs.kotlin.stdlib)
+    compileOnly(libs.jetbrains.annotations)
+    testCompileOnly(libs.jetbrains.annotations)
     implementation(libs.gson)
     implementation(libs.snakeyaml)
     // Loaded through Libby the first time a MongoDB backup needs it; never packed.

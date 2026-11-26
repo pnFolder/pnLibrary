@@ -4,7 +4,7 @@
 #
 #   ./dev.sh                       меню (menu.py; простое по номерам: DEV_SIMPLE=1 ./dev.sh)
 #   ./dev.sh status                ветки и несохранённые правки всех репозиториев
-#   ./dev.sh lib-check             тесты, spotless и проверка публичного API библиотеки
+#   ./dev.sh lib-check             тесты и проверка публичного API библиотеки
 #   ./dev.sh lib-publish           собрать библиотеку из рабочей папки в локальный Maven (0.1.0-dev.local)
 #   ./dev.sh plugins [имена|all]   собрать плагины против локальной библиотеки
 #   ./dev.sh api-diff [тег]        что изменилось в публичном API по сравнению с релизом (по умолчанию v0.1.0-dev.6)
@@ -70,7 +70,7 @@ cmd_api_diff() {
 }
 
 cmd_api_map() {
-  local base="$LIB/modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api" out="$HERE/API-MAP.md" dir name files types sample
+  local base="$LIB/modules/api/src/main/java/org/pnfolder/pnlibrary/api" out="$HERE/API-MAP.md" dir name files types sample
   {
     echo '# Карта публичного API pnLibrary'
     echo
@@ -80,9 +80,9 @@ cmd_api_map() {
     echo '|---|---|---|---|'
     for dir in "$base"/*/; do
       name="$(basename "$dir")"
-      files="$(find "$dir" -name '*.kt' | wc -l)"
-      types="$( (grep -rhE '^\s*(public |internal |abstract |open |sealed |data |enum |fun |annotation )*(class|interface|object) ' --include='*.kt' "$dir" || true) | wc -l)"
-      sample="$(find "$dir" -name '*.kt' | sort | head -4 | xargs -r -n1 basename | sed 's/\.kt$//' | paste -sd, - | sed 's/,/, /g')"
+      files="$(find "$dir" -name '*.java' | wc -l)"
+      types="$( (grep -rhE '^\s*(public |protected |abstract |final |static )*(class|interface|enum) ' --include='*.java' "$dir" || true) | wc -l)"
+      sample="$(find "$dir" -name '*.java' | sort | head -4 | xargs -r -n1 basename | sed 's/\.java$//' | paste -sd, - | sed 's/,/, /g')"
       echo "| api.$name | $files | $types | $sample |"
     done
   } > "$out"

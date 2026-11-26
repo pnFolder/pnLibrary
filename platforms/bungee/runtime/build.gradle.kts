@@ -1,7 +1,6 @@
 // pnlibrary-bungee — BungeeCord / Waterfall adapter, JVM 8 bytecode
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
 }
 
@@ -12,12 +11,12 @@ dependencies {
     implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":platforms:bungee:api"))
-    implementation(libs.kotlin.stdlib)
     implementation(project(":platforms:loader"))
     implementation(libs.libby.bungee)
     implementation(libs.faststats.bungeecord.j8)
     implementation(libs.adventure.legacy)
     compileOnly(libs.bungeecord.api)
+    compileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

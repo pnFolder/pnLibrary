@@ -1,4 +1,4 @@
-// pnlibrary-distribution — produces fat JARs for each platform with relocated Kotlin runtime
+// pnlibrary-distribution — produces fat JARs for each platform
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
@@ -46,23 +46,12 @@ val pnChannel = when {
 fun ShadowJar.applyCommonConfig() {
     archiveClassifier = ""
     archiveVersion    = pnVer
-    // Shadow's resource transformers must see duplicate Kotlin metadata before
-    // they can merge it. EXCLUDE drops later entries too early and produces a
-    // warning for every dependency that contributes a .kotlin_module file.
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    // Built-ins are identical runtime resources rather than mergeable module
-    // descriptors. Keep one copy while allowing the Kotlin metadata transformer
-    // to process every .kotlin_module contribution.
-    filesMatching("**/*.kotlin_builtins") {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
     filesMatching("META-INF/faststats.properties") {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
-    // kotlin.* stays intact; platform plugin classloaders isolate it from unrelated plugins.
-    relocate("kotlinx.",                "org.pnfolder.pnlibrary.libs.kotlinx.")
     relocate("com.google.gson",         "org.pnfolder.pnlibrary.libs.gson")
     relocate("org.yaml.snakeyaml",      "org.pnfolder.pnlibrary.libs.yaml")
     relocate("org.bstats",              "org.pnfolder.pnlibrary.libs.bstats")
@@ -87,7 +76,7 @@ dependencies {
 
 tasks.register<ShadowJar>("shadowBukkit") {
     group = "distribution"
-    description = "Fat JAR for Bukkit/Spigot/Paper/Folia with relocated Kotlin runtime"
+    description = "Fat JAR for Bukkit/Spigot/Paper/Folia"
     archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(bukkitRuntime)
     applyCommonConfig()
@@ -103,7 +92,7 @@ dependencies {
 
 tasks.register<ShadowJar>("shadowBungee") {
     group = "distribution"
-    description = "Fat JAR for BungeeCord / Waterfall with relocated Kotlin runtime"
+    description = "Fat JAR for BungeeCord / Waterfall"
     archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(bungeeRuntime)
     applyCommonConfig()
@@ -120,7 +109,7 @@ dependencies {
 
 tasks.register<ShadowJar>("shadowVelocity") {
     group = "distribution"
-    description = "Fat JAR for Velocity 3.x with relocated Kotlin runtime"
+    description = "Fat JAR for Velocity 3.x"
     archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(velocityRuntime)
     applyCommonConfig()
@@ -141,18 +130,17 @@ dependencies {
     universalRuntime(project(":platforms:velocity:faststats"))
 }
 
-// The universal JAR is light: Kotlin and Adventure are not packed. At start, Libby (packed and relocated) downloads
+// The universal JAR is light: Adventure are not packed. At start, Libby (packed and relocated) downloads
 // them from Maven Central, checking the SHA-256 listed in the loader module's RuntimeLibraries.
 // The platform JARs above stay complete.
 tasks.register<ShadowJar>("shadowUniversal") {
     group = "distribution"
-    description = "Light universal JAR for Bukkit/Paper, BungeeCord and Velocity; Kotlin and Adventure are downloaded at start"
+    description = "Light universal JAR for Bukkit/Paper, BungeeCord and Velocity; Adventure are downloaded at start"
     archiveBaseName = "${rootProject.property("pnlibrary.name")}"
     configurations = listOf(universalRuntime)
     applyCommonConfig()
     archiveClassifier = "universal"
     dependencies {
-        exclude(dependency("org.jetbrains.kotlin:.*"))
         exclude(dependency("org.jetbrains:annotations"))
         exclude(dependency("org.intellij:annotations"))
         exclude(dependency("net.kyori:.*"))
@@ -162,9 +150,9 @@ tasks.register<ShadowJar>("shadowUniversal") {
     filesMatching("velocity-plugin.json") { expand("version" to pnVer) }
 }
 
-// The same universal JAR with Kotlin and Adventure packed, for servers that cannot reach a repository at start or
+// The same universal JAR with Adventure packed, for servers that cannot reach a repository at start or
 // when a download must never be needed. It is a release asset with a checksum, a manual download: it is not in the catalog, because the
-// updater picks one UNIVERSAL file per release and two would be ambiguous. LibraryLoader sees Kotlin already there
+// updater picks one UNIVERSAL file per release and two would be ambiguous. LibraryLoader sees Adventure already there
 // and downloads nothing.
 tasks.register<ShadowJar>("shadowUniversalFull") {
     group = "distribution"
@@ -194,7 +182,6 @@ dependencies {
     updaterRuntime(project(":modules:updates")) { isTransitive = false }
     updaterRuntime(project(":modules:api")) { isTransitive = false }
     updaterRuntime(project(":modules:common")) { isTransitive = false }
-    updaterRuntime(libs.kotlin.stdlib)
     updaterRuntime(libs.gson)
 }
 val shadowUpdater = tasks.register<ShadowJar>("shadowUpdater") {
@@ -292,9 +279,9 @@ val optionalJavaPackages = listOf(
 // Velocity proxy code: only the Velocity entrypoint loads it, so it may need Java 17 inside a Java 8 universal JAR.
 val velocityJavaPackage = "org/pnfolder/pnlibrary/velocity/"
 val apiVersionSource = rootProject.file(
-    "modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt",
+    "modules/api/src/main/java/org/pnfolder/pnlibrary/api/version/PnLibraryApi.java",
 ).readText()
-val pnApiVersion = Regex("const\\s+val\\s+VERSION\\s*:\\s*Int\\s*=\\s*(\\d+)")
+val pnApiVersion = Regex("int\\s+VERSION\\s*=\\s*(\\d+)")
     .find(apiVersionSource)?.groupValues?.get(1)?.toInt()
     ?: error("PnLibraryApi.VERSION was not found")
 
@@ -348,9 +335,6 @@ val verifyEmbeddedMetadata = tasks.register("verifyEmbeddedMetadata") {
             val jar = layout.buildDirectory.file("libs/pnLibrary-$pnVer-${platform.id}.jar").get().asFile
             require(jar.isFile) { "Missing platform JAR: ${jar.name}" }
             JarFile(jar).use { archive ->
-                require(archive.getJarEntry("org/jetbrains/kotlin/cli/jvm/K2JVMCompiler.class") == null) {
-                    "The Kotlin compiler must not be bundled in ${jar.name}"
-                }
                 val embedded = archive.getJarEntry("META-INF/pnlibrary/component.json")
                     ?: error("Missing embedded component metadata in ${jar.name}")
                 val json = archive.getInputStream(embedded).bufferedReader(Charsets.UTF_8).use { it.readText() }

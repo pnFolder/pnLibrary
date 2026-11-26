@@ -1,7 +1,6 @@
 // pnlibrary-api — zero server-platform dependencies, JVM 8 bytecode
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -10,7 +9,7 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-api" }
 
 // Product identity generated from gradle.properties (pnlibrary.* keys), so the name and author
 // live in one file. The generated source is never edited by hand.
-val identityDir = layout.buildDirectory.dir("generated/identity/kotlin")
+val identityDir = layout.buildDirectory.dir("generated/identity/java")
 val generateIdentity by tasks.registering {
     val productId = rootProject.property("pnlibrary.product-id").toString()
     val productName = rootProject.property("pnlibrary.name").toString()
@@ -31,54 +30,62 @@ val generateIdentity by tasks.registering {
     inputs.property("version", productVersion)
     outputs.dir(identityDir)
     doLast {
+        fun literal(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         identityDir.get().asFile.deleteRecursively()
-        val target = identityDir.get().file("org/pnfolder/pnlibrary/api/runtime/PnLibraryIdentity.kt").asFile
+        val target = identityDir.get().file("org/pnfolder/pnlibrary/api/runtime/PnLibraryIdentity.java").asFile
         target.parentFile.mkdirs()
         target.writeText(
             """
-            |package org.pnfolder.pnlibrary.api.runtime
+            |package org.pnfolder.pnlibrary.api.runtime;
+            |
+            |import java.util.Arrays;
+            |import java.util.Collections;
+            |import java.util.List;
             |
             |/** Generated from gradle.properties. Change the pnlibrary.* keys there, not this file. */
-            |object PnLibraryIdentity {
-            |    const val PRODUCT_ID = "$productId"
-            |    const val NAME = "$productName"
-            |    const val ORGANIZATION = "$organization"
-            |    const val DESCRIPTION = "$description"
-            |    const val REPOSITORY = "$repository"
-            |    @JvmField val REPOSITORY_URL: String = runtimeValue("https://github.com/$repository")
+            |public final class PnLibraryIdentity {
+            |    public static final String PRODUCT_ID = ${literal(productId)};
+            |    public static final String NAME = ${literal(productName)};
+            |    public static final String ORGANIZATION = ${literal(organization)};
+            |    public static final String DESCRIPTION = ${literal(description)};
+            |    public static final String REPOSITORY = ${literal(repository)};
+            |    public static final String REPOSITORY_URL = runtimeValue(${literal("https://github.com/$repository")});
             |    /**
-            |     * Where to get help. Not `const` on purpose: a constant is copied into the bytecode of every plugin built against this API,
+            |     * Where to get help. Not a constant on purpose: a constant is copied into the bytecode of every plugin built against this API,
             |     * so a new link would reach only rebuilt plugins. A plain field is read from the running library instead.
             |     */
-            |    @JvmField val SUPPORT_URL: String = runtimeValue("$supportUrl")
-            |    private fun runtimeValue(value: String): String = value
+            |    public static final String SUPPORT_URL = runtimeValue(${literal(supportUrl)});
             |    /** Single display string for platforms that accept one author. */
-            |    const val AUTHOR = "${authors.joinToString(", ")}"
+            |    public static final String AUTHOR = ${literal(authors.joinToString(", "))};
             |    /** Every author, in declaration order, for platforms that accept a list. */
-            |    val AUTHORS: List<String> = listOf(${authors.joinToString(", ") { "\"$it\"" }})
-            |    const val VERSION = "$productVersion"
+            |    public static final List<String> AUTHORS = Collections.unmodifiableList(Arrays.asList(${authors.joinToString(", ") { literal(it) }}));
+            |    public static final String VERSION = ${literal(productVersion)};
+            |
+            |    private PnLibraryIdentity() {
+            |    }
+            |
+            |    private static String runtimeValue(String value) {
+            |        return value;
+            |    }
             |}
             |""".trimMargin(),
         )
     }
 }
 
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(identityDir)
+sourceSets.named("main") {
+    java.srcDir(identityDir)
 }
-tasks.named("compileKotlin") { dependsOn(generateIdentity) }
+tasks.named("compileJava") { dependsOn(generateIdentity) }
 tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateIdentity) }
 
 dependencies {
     api(project(":modules:common"))
     api(project(":modules:features:config-api"))
     api(project(":modules:features:localization-api"))
-    // Pure stdlib — no server-platform compile deps
-    api(libs.kotlin.stdlib)
     api(libs.adventure.api)
     api(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.kotlin.compiler.embeddable)
     testRuntimeOnly(libs.junit.launcher)
 }
 

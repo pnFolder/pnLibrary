@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
 }
 
@@ -13,5 +12,6 @@ dependencies {
     // All platform adapters share the same Java 8-compatible SDK core.
     implementation(libs.faststats.core.j8)
     compileOnly(libs.velocity.api)
+    compileOnly(libs.jetbrains.annotations)
 }
 

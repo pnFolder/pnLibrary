@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -8,8 +7,8 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-currency" }
 
 dependencies {
     api(project(":modules:features:currency-api"))
-    implementation(libs.kotlin.stdlib)
     implementation(libs.gson)
+    compileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.h2)

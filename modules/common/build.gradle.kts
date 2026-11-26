@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -7,7 +6,7 @@ plugins {
 base { archivesName = "${rootProject.property("pnlibrary.name")}-common" }
 
 dependencies {
-    api(libs.kotlin.stdlib)
+    compileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
 }

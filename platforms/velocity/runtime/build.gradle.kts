@@ -2,7 +2,6 @@
 // Velocity 3 requires Java 17+; that is a platform requirement, not a preference.
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
 }
 
@@ -13,7 +12,6 @@ dependencies {
     implementation(project(":modules:spi"))
     implementation(project(":modules:core"))
     implementation(project(":platforms:velocity:api"))
-    implementation(libs.kotlin.stdlib)
     implementation(project(":platforms:loader"))
     implementation(libs.libby.velocity)
     // The adapter is instantiated only after the factory checks for Java 21. The bridge is built for Java 21,
@@ -22,11 +20,11 @@ dependencies {
         attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21) }
     }
     compileOnly(libs.velocity.api)
+    compileOnly(libs.jetbrains.annotations)
     // Provided by the proxy; used only to observe plugin warnings and errors.
     compileOnly(libs.log4j.core)
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.core)
     testImplementation(libs.velocity.api)
     testImplementation(libs.log4j.core)
@@ -39,7 +37,7 @@ java {
 
 // Velocity's @Plugin annotation takes compile-time literals only, so the descriptor class is generated
 // from gradle.properties. Lifecycle logic stays in VelocityRuntime.
-val descriptorDir = layout.buildDirectory.dir("generated/velocity/kotlin")
+val descriptorDir = layout.buildDirectory.dir("generated/velocity/java")
 val descriptorResources = layout.buildDirectory.dir("generated/velocity/resources")
 val generateVelocityDescriptor by tasks.registering {
     val props = rootProject
@@ -193,11 +191,8 @@ val generateVelocityDescriptor by tasks.registering {
     }
 }
 
-kotlin.sourceSets.named("main") {
-    resources.srcDir(descriptorResources)
-}
+sourceSets.named("main") { resources.srcDir(descriptorResources) }
 sourceSets.named("main") { java.srcDir(descriptorDir) }
-tasks.named("compileKotlin") { dependsOn(generateVelocityDescriptor) }
 tasks.named("compileJava") { dependsOn(generateVelocityDescriptor) }
 tasks.named("processResources") { dependsOn(generateVelocityDescriptor) }
 tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateVelocityDescriptor) }

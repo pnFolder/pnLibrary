@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -10,8 +9,9 @@ dependencies {
     api(project(":modules:common"))
     api(project(":modules:features:localization-api"))
     api(project(":platforms:bukkit:api"))
-    api(libs.kotlin.stdlib)
     compileOnly(libs.spigot.api.v18)
+    compileOnly(libs.jetbrains.annotations)
+    testCompileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.spigot.api.v18)
     testRuntimeOnly(libs.junit.launcher)

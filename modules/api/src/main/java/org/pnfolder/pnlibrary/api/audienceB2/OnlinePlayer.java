@@ -25,7 +25,7 @@ import org.pnfolder.pnlibrary.api.world.StatusEffect;
  */
 public interface OnlinePlayer extends Audience {
     /** The player's UUID. */
-    @NotNull UUID uniqueId();
+    @NotNull UUID getUniqueId();
 
     /** Gives the player a temporary status effect. */
     default @NotNull Delivery addEffect(@NotNull StatusEffect effect) {

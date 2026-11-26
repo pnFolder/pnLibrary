@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -8,8 +7,9 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-minecraft-local
 
 dependencies {
     api(project(":modules:common"))
-    api(libs.kotlin.stdlib)
     implementation(libs.gson)
+    compileOnly(libs.jetbrains.annotations)
+    testCompileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
 }

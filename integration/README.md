@@ -20,7 +20,7 @@
    ```
 
 2. **Зависимость в `plugin.yml`**: `depend: [pnLibrary]`.
-3. **Регистрация плагина** при запуске: `PnLibraryProvider.get().plugins.register(this)`.
+3. **Регистрация плагина** при запуске: `PnLibraryProvider.get().getPlugins().register(this)`.
 4. **Папка `.pnlibrary` в корне репозитория плагина.** Это единственный источник правды о версиях: библиотека читает из
    неё список релизов и описания изменений. Заготовка лежит в [template/.pnlibrary](template/.pnlibrary).
 5. **Обновления**, если плагин хочет получать их через pnLibrary:
@@ -94,17 +94,19 @@ pnLibrary, поэтому в плагин она не попадает.
 
 Библиотека копирует перед обновлением только то, что плагин назвал сам (`PluginUpdateRequest.builder()`):
 
-```kotlin
+```java
 .configurationBackup(dataFolder.toPath(), "config.yml", "messages.yml")
 .backup(BackupKind.DATABASE, "Кланы", dataFolder.toPath(), "clans.db")          // файловая база (SQLite, H2)
-.backupExport(BackupKind.DATABASE, "Кланы", "clans.sql") { file -> dump(file) } // своя выгрузка, откат её не возвращает
+.backupExport(BackupKind.DATABASE, "Кланы", "clans.sql", file -> dump(file)) // своя выгрузка, откат её не возвращает
 ```
 
+Полный пример регистрации всех настроек: [example/PnLibraryRegistrationExample.java](example/PnLibraryRegistrationExample.java).
+
 Базы MySQL/MariaDB, PostgreSQL и MongoDB библиотека копирует сама по аннотациям в классе настроек:
-`@field:BackupDatabase(DatabaseKind.MYSQL, "Кланы", tables = ["clans", "log_*"])` на поле с подключением,
-`@field:DatabaseField(DatabaseRole.HOST)` для полей с другими именами, `@field:BackupTable` для имени таблицы из конфига.
+`@BackupDatabase(kind = DatabaseKind.MYSQL, ..., tables = {"clans", "log_*"})` на поле с подключением,
+`@DatabaseField(DatabaseRole.HOST)` для полей с другими именами, `@BackupTable` для имени таблицы из конфига.
 Несколько баз в одном классе: у `@DatabaseField` и `@BackupTable` указывайте `database = "имя базы"`. Пароль помечайте
-`@field:ConfigSecret`. Драйвер скачивается при первой копии. Подробности: [docs/updates.md](../docs/updates.md), раздел 5.
+`@ConfigSecret`. Драйвер скачивается при первой копии. Подробности: [docs/updates.md](../docs/updates.md), раздел 5.
 
 ## Что лежит в `.pnlibrary`
 

@@ -26,11 +26,11 @@ distribution                                     итоговые jar-файлы
 Плагин видит только интерфейсы и модели. Где лежит реализация, он не знает, и она может меняться, не ломая его.
 Сервисы платформы плагин получает так:
 
-```kotlin
-val library = PnLibraryProvider.get()
-val bukkit = library.platform<BukkitPlatform>()
-bukkit.items.fromSection(config.getConfigurationSection("reward"))
-bukkit.menus.open(this, player, menu)
+```java
+PnLibrary library = PnLibraryProvider.get();
+BukkitPlatform bukkit = library.platform(BukkitPlatform.class);
+bukkit.getItems().fromSection(config.getConfigurationSection("reward"));
+bukkit.getMenus().open(this, player, menu);
 ```
 
 ## Создание сервисов и владение ресурсами
@@ -90,7 +90,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 | `platforms/bukkit/runtime` | адаптер Bukkit, Spigot, Paper и Folia и реализации контрактов выше |
 | `platforms/bukkit/paper` | регистрация команд через Brigadier на Paper (Java 21) |
 | `platforms/bukkit/localization` | реализация `minecraft-localization-api` для Bukkit: перевод и поиск материалов, зачарований, существ и т.д. (`BukkitLocaleTranslations`); входит в Bukkit- и universal-JAR, плагинам подключается как `compileOnly` |
-| `platforms/loader` | Java 8 загрузчик: при старте скачивает Kotlin и Adventure (Libby) для лёгкого `universal`, при `universal-full` ничего не качает |
+| `platforms/loader` | Java 8 загрузчик: при старте скачивает Adventure (Libby) для лёгкого `universal`, при `universal-full` ничего не качает |
 | `modules/bootstrap` | общая часть встраиваемого установщика: версии, релиз GitHub, проверка и установка `universal.jar` |
 | `platforms/*/bootstrap` | вход установщика для Bukkit, BungeeCord и Velocity: плагин сам ставит pnLibrary и проверяет версию |
 | `platforms/bungee/api`, `platforms/velocity/api` | доступ к прокси-серверу платформы |

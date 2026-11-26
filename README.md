@@ -113,7 +113,7 @@ API состоит из интерфейсов, моделей и небольш
 ./gradlew :distribution:shadowUniversal  # distribution/build/libs/pnLibrary-<версия>-universal.jar
 ```
 
-Кроме лёгкого `universal` (Kotlin и Adventure скачиваются при старте) есть `universal-full` (`shadowUniversalFull`):
+Кроме лёгкого `universal` (Adventure скачивается при старте) есть `universal-full` (`shadowUniversalFull`):
 всё внутри, ничего не скачивается. Он лежит в релизе GitHub как ручная загрузка и в каталог обновлений не входит.
 Платформенные сборки: `shadowBukkit`, `shadowBungee`, `shadowVelocity`.
 

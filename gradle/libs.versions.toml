@@ -1,7 +1,5 @@
 [versions]
-kotlin                  = "2.1.21"
 shadow                  = "9.6.1"
-dokka                   = "2.2.0"
 mavenPublish            = "0.35.0"
 gson                    = "2.11.0"
 snakeyaml               = "2.3"
@@ -30,14 +28,11 @@ mariadb-jdbc              = { module = "org.mariadb.jdbc:mariadb-java-client",  
 mongodb-driver-sync       = { module = "org.mongodb:mongodb-driver-sync",                       version.ref = "mongodb-driver"         }
 postgresql-jdbc           = { module = "org.postgresql:postgresql",                             version.ref = "postgresql-jdbc"        }
 jetbrains-annotations    = { module = "org.jetbrains:annotations",                              version = "24.1.0"                     }
-kotlin-stdlib             = { module = "org.jetbrains.kotlin:kotlin-stdlib",                     version.ref = "kotlin"                 }
-kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable",       version.ref = "kotlin"                 }
 gson                      = { module = "com.google.code.gson:gson",                              version.ref = "gson"                   }
 snakeyaml                 = { module = "org.yaml:snakeyaml",                                     version.ref = "snakeyaml"              }
 junit-jupiter             = { module = "org.junit.jupiter:junit-jupiter",                        version.ref = "junit"                  }
 junit-launcher            = { module = "org.junit.platform:junit-platform-launcher",             version = "1.11.4"                     }
 mockito-core              = { module = "org.mockito:mockito-core",                               version.ref = "mockito"                }
-mockito-kotlin            = { module = "org.mockito.kotlin:mockito-kotlin",                      version = "5.4.0"                      }
 h2                        = { module = "com.h2database:h2",                                      version = "2.2.224"                    }
 spigot-api-v18            = { module = "org.spigotmc:spigot-api",                                version.ref = "spigot18"               }
 paper-api                 = { module = "io.papermc.paper:paper-api",                             version.ref = "paper"                  }
@@ -61,7 +56,5 @@ libby-velocity            = { module = "net.byteflux:libby-velocity",           
 faststats-velocity        = { module = "dev.faststats.metrics:velocity", version.ref = "faststats" }
 
 [plugins]
-kotlin-jvm    = { id = "org.jetbrains.kotlin.jvm",             version.ref = "kotlin"       }
 shadow        = { id = "com.gradleup.shadow",                  version.ref = "shadow"       }
-dokka         = { id = "org.jetbrains.dokka",                  version.ref = "dokka"        }
 maven-publish = { id = "com.vanniktech.maven.publish",         version.ref = "mavenPublish" }

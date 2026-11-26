@@ -23,7 +23,7 @@ import org.mockito.InOrder;
 
 /** Checks repository order, retries and optional library groups of {@link LibraryLoader}. */
 class LibraryLoaderTest {
-    // Kotlin is not on this module's classpath, which is exactly the light JAR's situation.
+    // Adventure is not on this module's classpath, which is exactly the light JAR's situation.
     private static final ClassLoader LOADER = LibraryLoaderTest.class.getClassLoader();
     private static final Library LIBRARY = Library.builder().groupId("g").artifactId("a").version("1").build();
 

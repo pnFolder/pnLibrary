@@ -2,7 +2,7 @@
 
 Плейсхолдер — значение, которое плагин отдаёт текстам, меню, сценариям и PlaceholderAPI. Значения описываются **классом с аннотациями**, а не строками регистрации.
 
-Код лежит в `api/placeholders`, движок в `core/placeholders`. Примеры кода (компилируются вместе с тестами): `modules/core/src/test/kotlin/org/pnfolder/pnlibrary/core/placeholders/examples/`.
+Код лежит в `api/placeholders`, движок в `core/placeholders`. Примеры кода (компилируются вместе с тестами): `modules/core/src/test/java/org/pnfolder/pnlibrary/core/placeholders/examples/`.
 
 ## Адрес
 
@@ -24,14 +24,14 @@ class ClanValues {
 
 ```kotlin
 module.placeholders.formats(ClanFormats())
-module.placeholders.register(ClanValues(), papi = "pnclans")   // papi можно не писать
+module.placeholders.registerPublished("pnclans", ClanValues())   // без PlaceholderAPI: register(ClanValues())
 ```
 
 ## Что можно в методе
 
 - `@Viewer viewer: ViewerInfo` в параметрах (аннотация обязательна): кто спрашивает (`playerId`, `language`, `viaPapi`). Без игрока `viewer.requirePlayerId()` тихо оставляет плейсхолдер пустым.
 - `ArgumentValue<T>`: часть адреса. `value`, `text`, `error`, `required()`, `orMe(viewer)`, `orElse(...)`. Параметры уточняет `@Argument(range, choices, name)`; несколько аргументов собираются в класс, параметр с ним помечается `@Group`: `fun kills(@Group query: KillsQuery)`.
-- `Reply.none()` (или `Reply.of(null)`) значит «значения нет». Что показать вместо него, решает `@Placeholder(onInvalid = KEEP/DEFAULT/EMPTY, default = "...")`.
+- `Reply.none()` (или `Reply.of(null)`) значит «значения нет». Что показать вместо него, решает `@Placeholder(onInvalid = KEEP/DEFAULT/EMPTY, defaultText = "...")`.
 - `Reply.next(объект)`: объект с такими же `@Placeholder`: так получаются ветки `clan.war.score`. `CompletableFuture` годится для асинхронных значений.
 - `@Hide` прячет значение из списков и из PlaceholderAPI.
 
@@ -71,7 +71,7 @@ module.placeholders.render("Клан {clan.tag}, монет {amount|group}", pla
 
 ## PlaceholderAPI
 
-С `papi = "pnclans"` адрес `clan.war.score` виден как `%pnclans_clan_war_score%` (`_` разделяет части; настоящий `_` в аргументе пишется `~5F`). Префикс: 2–32 символа `a-z 0-9 -`. Выключить для модуля целиком: `placeholderApi(false)` в настройках модуля.
+С `registerPublished("pnclans", ...)` адрес `clan.war.score` виден как `%pnclans_clan_war_score%` (`_` разделяет части; настоящий `_` в аргументе пишется `~5F`). Префикс: 2–32 символа `a-z 0-9 -`. Выключить для модуля целиком: `placeholderApi(false)` в настройках модуля.
 
 Части адреса с точкой, чёрточкой, двоеточием или запятой берут в кавычки (`clan.friend."a.b"`); код `~XX` пишет символ по его шестнадцатеричному коду (`~7C` — `|`).
 
@@ -90,7 +90,7 @@ module.placeholders.render("Клан {clan.tag}, монет {amount|group}", pla
 
 ## Свой разбор аргумента
 
-`ArgumentConverter<T>` превращает текст аргумента в объект: `read(input)` (синхронно) или `readLater(input)` (когда ответ приходит позже, например из базы). Указывается на параметре: `@Argument(converter = ClanByName::class) clan: ArgumentValue<Clan>`, а для типа целиком: `placeholders.converter(Clan::class.java, ClanByName())`. В `ArgumentInput` лежат `text`, `viewer`, `route`, `name`, `position`, `previous` (аргументы слева); `input.fail("причина")` говорит, почему текст не подошёл: причина попадёт в `ArgumentValue.error`. `suggest(input)` отдаёт подходящие слова для подсказок. Примеры: `modules/core/src/test/.../placeholders/examples/Example8Converters.kt`.
+`ArgumentConverter<T>` превращает текст аргумента в объект: `read(input)` (синхронно) или `readLater(input)` (когда ответ приходит позже, например из базы). Указывается на параметре: `@Argument(converter = ClanByName::class) clan: ArgumentValue<Clan>`, а для типа целиком: `placeholders.converter(Clan::class.java, ClanByName())`. В `ArgumentInput` лежат `text`, `viewer`, `route`, `name`, `position`, `previous` (аргументы слева); `input.fail("причина")` говорит, почему текст не подошёл: причина попадёт в `ArgumentValue.error`. `suggest(input)` отдаёт подходящие слова для подсказок. Примеры: `modules/core/src/test/.../placeholders/examples/ClanByName.java`.
 
 ## Асинхронные значения и ветки
 
@@ -127,7 +127,7 @@ class ShopValues {
     val counter: Reply<Int> get() = Reply.of(42)                        // только этот модуль
 }
 
-module.placeholders.register(ShopValues(), papi = "shop")
+module.placeholders.registerPublished("shop", ShopValues())
 module.placeholders.value("shop.level", "", null, Visibility.PLUGIN) { 10 }   // без аннотации
 ```
 

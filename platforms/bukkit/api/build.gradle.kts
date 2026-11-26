@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -50,12 +49,13 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-bukkit-api" }
 dependencies {
     api(project(":modules:common"))
     api(project(":modules:api"))
-    api(libs.kotlin.stdlib)
     compileOnly(libs.spigot.api.v18)
+    compileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.spigot.api.v18)
+    testCompileOnly(libs.jetbrains.annotations)
     testRuntimeOnly(libs.junit.launcher)
 }
 
