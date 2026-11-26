@@ -31,6 +31,6 @@ class ApiVersionRangeTest {
     @Test
     @DisplayName("publishes the current independent API generation")
     void publishesTheCurrentIndependentApiGeneration() {
-        assertEquals(2, PnLibraryApi.VERSION);
+        assertEquals(3, PnLibraryApi.VERSION);
     }
 }
