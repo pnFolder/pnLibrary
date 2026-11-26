@@ -151,6 +151,33 @@ module.placeholders.value("shop.level", "", null, Visibility.PLUGIN) { 10 }   //
 
 `~` (плагин), `~~` (модуль), `~~~` (библиотека): чем больше знаков, тем ближе к модулю, три знака это библиотека. Они не могут совпасть с именем плагина. Если владелец написан, значения запуска (`values`) не читаются, ищется только среди зарегистрированного. Если такого владельца нет или он не виден, адрес остаётся в тексте как написан, а формат пропускается.
 
+### Аргумент прямо под группой
+
+Обычно слово метода входит в адрес. Чтобы слот шёл сразу после группы (или ветки), пометьте метод `bare = true`: слова у него нет, адрес идёт дальше аргументом. Нужно для старых адресов вроде `%pncases_keys_donat%`.
+
+```java
+@Placeholders("keys")
+public class KeysValues {
+    @Placeholder(bare = true) // keys.<кейс>
+    public Reply<Integer> keys(@Argument ArgumentValue<String> name) {
+        return Reply.value(keys.count(name.required()));
+    }
+
+    @Placeholder // keys.total: слово метода главнее голого слота
+    public Reply<Integer> total() { return Reply.value(keys.all()); }
+}
+
+@Placeholders("player")
+public class PlayerValues {
+    @Placeholder(bare = true) // player.<имя>.<ключ>, в PlaceholderAPI player_<имя>_<ключ>
+    public Reply<Stats> player(@Argument ArgumentValue<String> name) {
+        return Reply.next(stats.of(name.required()));
+    }
+}
+```
+
+Правила: у такого метода есть хотя бы один `@Argument`; на одном уровне класса он один (иначе ошибка при регистрации); сначала ищется точное слово соседних методов, потом голый слот. Работает с `Reply.next(объект)`, в PlaceholderAPI и в `/pn placeholders` (слот виден как `{имя}`).
+
 ### Плейсхолдер внутри плейсхолдера
 
 Любая часть адреса может быть плейсхолдером: `{clan.of.{player.name}.level}`, аргумент формата `{score|pad:{width}}`, владелец `{{owner}@shop.price}`. Внутренний читается первым, его значение подставляется в кавычках (если в нём есть точка, пробел и т.п.). Вложенность до 16 уровней, больше отклоняется с предупреждением. Если внутренний не дал значения, внешний остаётся в тексте как написан. Значение с `{` внутри заново не разбирается.

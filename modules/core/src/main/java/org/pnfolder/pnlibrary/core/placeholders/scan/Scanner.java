@@ -70,7 +70,15 @@ public final class Scanner {
             throw new IllegalStateException(owner.getName() + ": placeholder objects are nested deeper than " + MAX_DEPTH + " levels");
         }
         Set<String> names = new HashSet<>();
+        String bare = null;
         for (Member member : Members.collect(owner)) {
+            if (member.getPlaceholder().bare()) {
+                if (bare != null) {
+                    throw new IllegalStateException(owner.getName() + ": only one placeholder may be bare, but both '" + bare + "' and '"
+                            + member.getName() + "' are; their arguments would be ambiguous");
+                }
+                bare = member.getName();
+            }
             if (!names.add(member.getName())) {
                 throw new IllegalStateException(owner.getName() + ": two placeholders are called '" + member.getName() + "'");
             }

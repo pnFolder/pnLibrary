@@ -1756,6 +1756,7 @@ public final class org/pnfolder/pnlibrary/api/placeholders/annotation/Invalid : 
 }
 
 public abstract interface annotation class org/pnfolder/pnlibrary/api/placeholders/annotation/Placeholder : java/lang/annotation/Annotation {
+	public abstract fun bare ()Z
 	public abstract fun defaultText ()Ljava/lang/String;
 	public abstract fun onInvalid ()Lorg/pnfolder/pnlibrary/api/placeholders/annotation/Invalid;
 	public abstract fun value ()Ljava/lang/String;
