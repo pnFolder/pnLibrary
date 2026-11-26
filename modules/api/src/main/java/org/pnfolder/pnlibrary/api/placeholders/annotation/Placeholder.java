@@ -31,4 +31,11 @@ public @interface Placeholder {
 
     /** Who may use this placeholder. */
     Visibility visibility() default Visibility.ALL;
+
+    /**
+     * Leaves the method name out of the address: its {@code @Argument} slots follow the group (or the branch) right
+     * away, so {@code @Placeholders("keys")} with a bare {@code keys(@Argument name)} answers {@code keys.donat}. A word
+     * of a sibling placeholder is tried first. Needs at least one argument, and a class may have one such member.
+     */
+    boolean bare() default false;
 }
