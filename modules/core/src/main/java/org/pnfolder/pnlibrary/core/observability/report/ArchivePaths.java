@@ -48,7 +48,7 @@ public final class ArchivePaths {
     @NotNull
     public static String safeConfigurationPath(@NotNull String value) {
         List<String> parts = new ArrayList<>();
-        for (String part : value.replace('\\', '/').split("/")) {
+        for (String part : value.replace('\\', '/').split("/", -1)) {
             if (part.trim().isEmpty() || part.equals(".") || part.equals("..")) {
                 continue;
             }

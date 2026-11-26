@@ -28,8 +28,8 @@ public final class ObservationRequest {
 
     /** An {@link ObservationLevel#INFO} request with only a message. */
     public ObservationRequest(@NotNull String message) {
-        this(null, null, message, ObservationLevel.INFO, Collections.<String, String>emptyMap(),
-                Collections.<Path>emptyList(), null);
+        this(null, null, message, ObservationLevel.INFO, Collections.emptyMap(),
+                Collections.emptyList(), null);
     }
 
     /** A request about a plugin and component without data, files and failure. */
@@ -40,13 +40,13 @@ public final class ObservationRequest {
     /** A request with a severity but without data, files and failure. */
     public ObservationRequest(@Nullable String plugin, @Nullable String source, @NotNull String message,
                               @NotNull ObservationLevel level) {
-        this(plugin, source, message, level, Collections.<String, String>emptyMap());
+        this(plugin, source, message, level, Collections.emptyMap());
     }
 
     /** A request with metadata but without files and failure. */
     public ObservationRequest(@Nullable String plugin, @Nullable String source, @NotNull String message,
                               @NotNull ObservationLevel level, @NotNull Map<String, String> data) {
-        this(plugin, source, message, level, data, Collections.<Path>emptyList(), null);
+        this(plugin, source, message, level, data, Collections.emptyList(), null);
     }
 
     /** A request with metadata and files but without a failure. */

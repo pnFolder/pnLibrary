@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -25,7 +26,7 @@ public final class BungeeNetworkServer implements NetworkServer {
 
     /** Wraps the native {@code server}. */
     public BungeeNetworkServer(@NotNull ServerInfo server) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
     }
 
     @NotNull

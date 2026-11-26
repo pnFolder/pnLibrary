@@ -47,7 +47,7 @@ public final class DiskUsage {
     public static DiskReport scan(@Nullable Path plugins, @NotNull Collection<String> registered) {
         long known = registeredSize(registered);
         if (plugins == null || !Files.isDirectory(plugins)) {
-            return new DiskReport(Collections.<DiskRow>emptyList(), known, -1, -1);
+            return new DiskReport(Collections.emptyList(), known, -1, -1);
         }
         Map<String, DiskRow> rows = new LinkedHashMap<String, DiskRow>();
         List<Path> children = children(plugins);

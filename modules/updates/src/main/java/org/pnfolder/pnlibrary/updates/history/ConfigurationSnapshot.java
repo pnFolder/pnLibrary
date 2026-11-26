@@ -16,10 +16,10 @@ public final class ConfigurationSnapshot {
     public ConfigurationSnapshot(int schema, @NotNull String id, @NotNull String planId, @NotNull String createdAt,
                                  @NotNull List<ConfigurationSnapshotFile> files) {
         this.schema = schema;
-        this.id = id;
-        this.planId = planId;
-        this.createdAt = createdAt;
-        this.files = files;
+        this.id = Objects.requireNonNull(id, "id");
+        this.planId = Objects.requireNonNull(planId, "planId");
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+        this.files = Objects.requireNonNull(files, "files");
     }
 
     /** The version of the manifest format. */

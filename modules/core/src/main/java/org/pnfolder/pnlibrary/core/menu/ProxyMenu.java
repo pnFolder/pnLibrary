@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyCommandNames;
 import org.pnfolder.pnlibrary.core.commands.proxy.ProxyControlCommand;
 import org.pnfolder.pnlibrary.core.link.Link;
-import org.pnfolder.pnlibrary.core.menu.data.LocalMenuData;
+import org.pnfolder.pnlibrary.core.menu.data.local.LocalMenuData;
 import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer;
 import org.pnfolder.pnlibrary.core.menu.data.ViewerInfo;
 

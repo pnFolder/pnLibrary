@@ -74,7 +74,7 @@ class UpdateHistoryViewTest {
         assertFalse(clicks(history(Collections.singletonList(entry), 4, BUKKIT, 4, null)).contains("/pn updates history 5"));
         assertTrue(clicks(history(Collections.singletonList(entry), 1, BUKKIT, 2, "pnlibrary")).contains("/pn updates history plugin pnlibrary 2"));
         boolean empty = false;
-        for (Component line : history(Collections.<UpdateHistoryEntry>emptyList())) {
+        for (Component line : history(Collections.emptyList())) {
             empty |= plain(line).equals(" Событий пока нет.");
         }
         assertTrue(empty);
@@ -93,7 +93,7 @@ class UpdateHistoryViewTest {
     @Test
     void anEventWithoutVersionChangesShowsItsMessageAsPlainText() {
         UpdateHistoryEntry entry = new UpdateHistoryEntry(UUID.randomUUID(), Instant.parse("2026-10-17T09:05:00Z"), UUID.randomUUID(),
-            UpdateState.FAILED, UpdateActor.SYSTEM, "CHECK", Collections.<ProductChange>emptyList(), "<red>HTTP 404</red>");
+            UpdateState.FAILED, UpdateActor.SYSTEM, "CHECK", Collections.emptyList(), "<red>HTTP 404</red>");
 
         assertEquals("    <red>HTTP 404</red>  ошибка", plain(row(history(Collections.singletonList(entry)), "HTTP 404")));
     }

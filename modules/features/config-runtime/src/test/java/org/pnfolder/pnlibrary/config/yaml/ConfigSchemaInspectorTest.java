@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.YamlFieldMetadata;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigSchemaInspector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,11 +27,11 @@ import org.pnfolder.pnlibrary.api.config.ConfigSerializer;
 class ConfigSchemaInspectorTest {
     private final ConfigObjectIntrospector introspector = new ConfigObjectIntrospector(ConfigNamingStrategy.KEBAB_CASE);
     private final ConfigSchemaInspector inspector = new ConfigSchemaInspector(introspector,
-            new ConfigSerializerResolver(Collections.<Class<?>, ConfigSerializer<?>>emptyMap()));
+            new ConfigSerializerResolver(Collections.emptyMap()));
 
     @Test
     void findsRequiredPathsInsideNestedConfigurationObjects() {
-        assertEquals(new LinkedHashSet<String>(Arrays.asList("name", "connection.host")), inspector.requiredPaths(RootConfig.class));
+        assertEquals(new LinkedHashSet<>(Arrays.asList("name", "connection.host")), inspector.requiredPaths(RootConfig.class));
     }
 
     @Test
@@ -40,7 +43,7 @@ class ConfigSchemaInspectorTest {
 
         List<ConfigProblem> problems = inspector.validate(invalid, RootConfig.class);
 
-        List<String> paths = new ArrayList<String>();
+        List<String> paths = new ArrayList<>();
         for (ConfigProblem problem : problems) {
             paths.add(problem.getPath());
         }

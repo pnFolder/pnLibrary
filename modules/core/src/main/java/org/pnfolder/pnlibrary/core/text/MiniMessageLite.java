@@ -24,10 +24,10 @@ import org.jetbrains.annotations.NotNull;
  * {@code rainbow} degrade to their first color or to no color.
  */
 public final class MiniMessageLite {
-    private static final Map<String, TextColor> COLORS = new HashMap<String, TextColor>();
-    private static final Map<String, TextDecoration> DECORATIONS = new HashMap<String, TextDecoration>();
-    private static final Set<String> COLOR_PREFIXES = new HashSet<String>(Arrays.asList("color", "c", "colour"));
-    private static final Set<String> FADES = new HashSet<String>(Arrays.asList("gradient", "transition", "rainbow"));
+    private static final Map<String, TextColor> COLORS = new HashMap<>();
+    private static final Map<String, TextDecoration> DECORATIONS = new HashMap<>();
+    private static final Set<String> COLOR_PREFIXES = new HashSet<>(Arrays.asList("color", "c", "colour"));
+    private static final Set<String> FADES = new HashSet<>(Arrays.asList("gradient", "transition", "rainbow"));
 
     static {
         COLORS.put("black", NamedTextColor.BLACK);
@@ -69,9 +69,9 @@ public final class MiniMessageLite {
     }
 
     public static @NotNull Component deserialize(@NotNull String input) {
-        List<LiteTag> stack = new ArrayList<LiteTag>();
+        List<LiteTag> stack = new ArrayList<>();
         StringBuilder text = new StringBuilder();
-        List<Component> parts = new ArrayList<Component>();
+        List<Component> parts = new ArrayList<>();
         int i = 0;
         while (i < input.length()) {
             char c = input.charAt(i);
@@ -217,7 +217,7 @@ public final class MiniMessageLite {
                 break;
             }
         }
-        Map<TextDecoration, Boolean> decorations = new LinkedHashMap<TextDecoration, Boolean>();
+        Map<TextDecoration, Boolean> decorations = new LinkedHashMap<>();
         for (LiteTag tag : stack) {
             if (tag.decoration != null) {
                 decorations.put(tag.decoration, tag.state);

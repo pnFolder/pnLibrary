@@ -154,7 +154,7 @@ class EventInspectionTest {
             EventInfo info = events.getInspector().event(ResultEvent.class);
             assertEquals(1, info.getListeners());
             assertEquals(2, info.getCalls());
-            List<PluginId> plugins = new ArrayList<PluginId>(events.getInspector().plugins(ResultEvent.class));
+            List<PluginId> plugins = new ArrayList<>(events.getInspector().plugins(ResultEvent.class));
             assertEquals(Arrays.asList(PluginId.of("a")), plugins);
         } finally {
             events.close();

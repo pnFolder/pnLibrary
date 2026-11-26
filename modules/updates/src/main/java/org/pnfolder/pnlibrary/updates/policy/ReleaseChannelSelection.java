@@ -13,7 +13,7 @@ public final class ReleaseChannelSelection {
 
     /** Creates the selection. */
     public ReleaseChannelSelection(@NotNull List<ProductRelease> all, @Nullable ProductRelease latestAllowed) {
-        this.all = all;
+        this.all = Objects.requireNonNull(all, "all");
         this.latestAllowed = latestAllowed;
     }
 

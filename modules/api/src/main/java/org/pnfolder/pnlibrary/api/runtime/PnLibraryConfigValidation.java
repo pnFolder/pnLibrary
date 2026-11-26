@@ -57,8 +57,8 @@ final class PnLibraryConfigValidation {
     private static void checkUpload(PnLibraryConfig c) {
         require(c.getUploadMode().equals("encrypted") || c.getUploadMode().equals("disabled"),
                 "Setting uploadMode must be encrypted or disabled");
-        require(!c.getUploadProviders().isEmpty() && Arrays.asList("catbox", "fileio", "custom").containsAll(c.getUploadProviders()),
-                "Setting uploadProviders may contain only catbox, fileio, and custom");
+        require(!c.getUploadProviders().isEmpty() && Arrays.asList("catbox", "litterbox", "gofile", "custom").containsAll(c.getUploadProviders()),
+                "Setting uploadProviders may contain only catbox, litterbox, gofile, and custom");
         require(!c.getUploadKeyId().trim().isEmpty() && c.getUploadKeyId().length() <= 128, "Setting uploadKeyId is invalid");
     }
 

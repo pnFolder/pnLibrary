@@ -49,7 +49,7 @@ public final class CompareRequirement implements Requirement {
 
     /** Creates it with every setting given. */
     public CompareRequirement(@NotNull String left, @NotNull CompareOperator operator, @NotNull String right, boolean ignoreCase) {
-        this.left = left;
+        this.left = Objects.requireNonNull(left, "left");
         this.operator = operator;
         this.right = right;
         this.ignoreCase = ignoreCase;

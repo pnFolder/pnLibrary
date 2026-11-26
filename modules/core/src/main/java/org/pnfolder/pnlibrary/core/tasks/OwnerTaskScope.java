@@ -136,7 +136,7 @@ final class OwnerTaskScope implements TaskScope {
         if (!scopeClosed.compareAndSet(false, true)) {
             return;
         }
-        List<Runnable> steps = new ArrayList<Runnable>();
+        List<Runnable> steps = new ArrayList<>();
         synchronized (service.getLock()) {
             for (ManagedTask task : service.getActive().values()) {
                 if (task.getScopeToken() == scopeToken) {

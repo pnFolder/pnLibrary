@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics.command;
 
+import java.util.Objects;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +22,7 @@ import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
 public final class DiagnosticCommandExecutor {
     private final PnLibrary library;
     private final Clock clock;
-    private final Map<String, Long> lastRequestTimes = new ConcurrentHashMap<String, Long>();
+    private final Map<String, Long> lastRequestTimes = new ConcurrentHashMap<>();
 
     /** Creates an executor that uses {@code library} for report generation and task dispatch. */
     public DiagnosticCommandExecutor(@NotNull PnLibrary library) {
@@ -30,7 +31,7 @@ public final class DiagnosticCommandExecutor {
 
     /** Creates an executor whose user-facing cooldown reads time from {@code clock}. */
     public DiagnosticCommandExecutor(@NotNull PnLibrary library, @NotNull Clock clock) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
         this.clock = clock;
     }
 

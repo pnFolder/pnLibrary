@@ -23,7 +23,7 @@ class CompositePluginMetricsTest {
     @Test
     void callerCannotRemoveOwnedBackendsOrMutateProviderMetadata() {
         List<String> calls = new ArrayList<>();
-        List<PluginMetrics> source = new ArrayList<>(Arrays.<PluginMetrics>asList(
+        List<PluginMetrics> source = new ArrayList<>(Arrays.asList(
                 new FakeMetrics(MetricsProvider.BSTATS, calls, () -> { }),
                 new FakeMetrics(MetricsProvider.FASTSTATS, calls, () -> { })));
         CompositePluginMetrics composite = new CompositePluginMetrics(source);
@@ -40,7 +40,7 @@ class CompositePluginMetricsTest {
         FakeMetrics second = new FakeMetrics(MetricsProvider.FASTSTATS, calls, () -> {
             throw new IllegalStateException("shutdown failed");
         });
-        CompositePluginMetrics composite = new CompositePluginMetrics(Arrays.<PluginMetrics>asList(first, second));
+        CompositePluginMetrics composite = new CompositePluginMetrics(Arrays.asList(first, second));
         assertThrows(IllegalStateException.class, composite::close);
         assertEquals(Arrays.asList("faststats:close", "bstats:close"), calls);
         composite.close();
@@ -66,14 +66,14 @@ class CompositePluginMetricsTest {
                 return reporter;
             }
         };
-        assertEquals(reporter, new CompositePluginMetrics(Arrays.<PluginMetrics>asList(charts, errors)).getErrorReporter());
-        assertNull(new CompositePluginMetrics(Arrays.<PluginMetrics>asList(charts)).getErrorReporter());
+        assertEquals(reporter, new CompositePluginMetrics(Arrays.asList(charts, errors)).getErrorReporter());
+        assertNull(new CompositePluginMetrics(Arrays.asList(charts)).getErrorReporter());
     }
 
     @Test
     void sharedChartsFanOutToEveryProviderAndCloseInReverseOrder() {
         List<String> calls = new ArrayList<>();
-        CompositePluginMetrics composite = new CompositePluginMetrics(Arrays.<PluginMetrics>asList(
+        CompositePluginMetrics composite = new CompositePluginMetrics(Arrays.asList(
                 new FakeMetrics(MetricsProvider.BSTATS, calls, () -> { }),
                 new FakeMetrics(MetricsProvider.FASTSTATS, calls, () -> { })));
 

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.tasks;
 
+import java.util.Objects;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.Scheduler;
@@ -27,7 +28,7 @@ public final class VelocityTaskAdapter extends TrackingPlatformTaskAdapter {
     VelocityTaskAdapter(
             @NotNull Consumer<String> warning,
             @NotNull Function<PlatformTaskRequest, PlatformTaskHandle> nativeSchedule) {
-        this.warning = warning;
+        this.warning = Objects.requireNonNull(warning, "warning");
         this.nativeSchedule = nativeSchedule;
     }
 

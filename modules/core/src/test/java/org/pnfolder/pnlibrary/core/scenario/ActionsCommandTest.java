@@ -43,13 +43,13 @@ class ActionsCommandTest {
     @Test
     void aPlaceholderShowsItsFormsAndHidesTheOnesThatCannotWork() {
         List<String> open = texts(UsageVariants.of(new PlaceholderInfo("shop.price", "", "shop/main", "Int", null,
-            Collections.<String>emptyList(), Visibility.ALL)));
+            Collections.emptyList(), Visibility.ALL)));
         assertTrue(open.contains("{shop/main@shop.price}"));
         assertTrue(open.contains("{shop@shop.price}"));
         assertTrue(open.contains("{~@shop.price}"));
 
         List<String> hidden = texts(UsageVariants.of(new PlaceholderInfo("shop.secret", "", "shop/main", "Int", null,
-            Collections.<String>emptyList(), Visibility.MODULE)));
+            Collections.emptyList(), Visibility.MODULE)));
         assertTrue(hidden.contains("{~~@shop.secret}"));
         assertFalse(hidden.contains("{shop@shop.secret}"));
         assertFalse(hidden.contains("{~@shop.secret}"));

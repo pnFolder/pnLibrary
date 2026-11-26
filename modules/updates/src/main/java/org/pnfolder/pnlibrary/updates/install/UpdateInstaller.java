@@ -38,7 +38,7 @@ import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
 import org.pnfolder.pnlibrary.updates.history.PrivateFiles;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
-import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 
 /**
  * Stages update files together with their safety copies, and verifies a staged transaction after the next server
@@ -72,8 +72,8 @@ public final class UpdateInstaller {
                            @NotNull UpdateConfiguration configuration, @NotNull TrustedHttpClient http,
                            @NotNull DatabaseBackups databases, @NotNull Function<ProductId, Integer> javaChoice,
                            @NotNull Function<ProductId, Integer> installedJava, @NotNull Consumer<String> warn) {
-        this.paths = paths;
-        this.databases = databases;
+        this.paths = Objects.requireNonNull(paths, "paths");
+        this.databases = Objects.requireNonNull(databases, "databases");
         this.configurations = new ConfigurationSnapshots(paths.getConfigurations(), paths.getPlugins());
         this.libraryConfiguration = new UpdateConfigurationBackup(paths.getPluginFolder(),
                 Collections.singletonList(paths.getPluginFolder().relativize(paths.getSettings()).toString()

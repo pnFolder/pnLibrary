@@ -60,12 +60,7 @@ public final class CooldownsCommand {
                 }
             }
         }
-        Collections.sort(running, new Comparator<RunningCooldown>() {
-            @Override
-            public int compare(RunningCooldown left, RunningCooldown right) {
-                return right.getRemaining().compareTo(left.getRemaining());
-            }
-        });
+        Collections.sort(running, (left, right) -> right.getRemaining().compareTo(left.getRemaining()));
         return running;
     }
 

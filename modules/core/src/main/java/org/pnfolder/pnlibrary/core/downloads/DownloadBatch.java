@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +41,7 @@ public final class DownloadBatch implements DownloadRegistration {
     private final Object stateLock = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicReference<CompletableFuture<List<DownloadSnapshot>>> activeDownload =
-        new AtomicReference<CompletableFuture<List<DownloadSnapshot>>>();
+        new AtomicReference<>();
     private final AtomicReference<List<DownloadSnapshot>> currentSnapshots;
     private final BatchSnapshots snapshotBoard;
 
@@ -62,18 +63,18 @@ public final class DownloadBatch implements DownloadRegistration {
                          @NotNull Consumer<List<FileDownload>> dependenciesStaged,
                          @NotNull BiConsumer<List<FileDownload>, Throwable> failed,
                          @NotNull Consumer<DownloadBatch> remove, @NotNull BooleanSupplier automaticAllowed) {
-        this.request = request;
-        this.configuration = configuration;
-        this.executor = executor;
-        this.managerIsClosed = managerIsClosed;
-        this.install = install;
-        this.onBlocked = onBlocked;
-        this.dependenciesStaged = dependenciesStaged;
-        this.failed = failed;
-        this.remove = remove;
+        this.request = Objects.requireNonNull(request, "request");
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.executor = Objects.requireNonNull(executor, "executor");
+        this.managerIsClosed = Objects.requireNonNull(managerIsClosed, "managerIsClosed");
+        this.install = Objects.requireNonNull(install, "install");
+        this.onBlocked = Objects.requireNonNull(onBlocked, "onBlocked");
+        this.dependenciesStaged = Objects.requireNonNull(dependenciesStaged, "dependenciesStaged");
+        this.failed = Objects.requireNonNull(failed, "failed");
+        this.remove = Objects.requireNonNull(remove, "remove");
         this.automaticAllowed = automaticAllowed;
         this.snapshotBoard = new BatchSnapshots(request.getFiles());
-        this.currentSnapshots = new AtomicReference<List<DownloadSnapshot>>(
+        this.currentSnapshots = new AtomicReference<>(
             snapshotBoard.all(DownloadState.DECLARED, null));
     }
 
@@ -84,7 +85,7 @@ public final class DownloadBatch implements DownloadRegistration {
 
     @Override
     public @NotNull List<DownloadSnapshot> snapshots() {
-        return Collections.unmodifiableList(new ArrayList<DownloadSnapshot>(currentSnapshots.get()));
+        return Collections.unmodifiableList(new ArrayList<>(currentSnapshots.get()));
     }
 
     @Override
@@ -94,7 +95,7 @@ public final class DownloadBatch implements DownloadRegistration {
 
     /** Starts the files whose policy allows it without a command. */
     public void startAutomatic() {
-        List<FileDownload> automaticFiles = new ArrayList<FileDownload>();
+        List<FileDownload> automaticFiles = new ArrayList<>();
         for (FileDownload file : request.getFiles()) {
             if (file.getPolicy() != DownloadPolicy.MANUAL) {
                 automaticFiles.add(file);
@@ -127,7 +128,7 @@ public final class DownloadBatch implements DownloadRegistration {
     }
 
     private CompletableFuture<List<DownloadSnapshot>> start(List<FileDownload> declarations, boolean automaticPolicy) {
-        CompletableFuture<List<DownloadSnapshot>> promise = new CompletableFuture<List<DownloadSnapshot>>();
+        CompletableFuture<List<DownloadSnapshot>> promise = new CompletableFuture<>();
         if (isShutDown()) {
             promise.completeExceptionally(new IllegalStateException(CLOSED_MESSAGE));
             return promise;
@@ -187,7 +188,7 @@ public final class DownloadBatch implements DownloadRegistration {
         if (!automaticPolicy || automaticAllowed.getAsBoolean()) {
             return declarations;
         }
-        List<FileDownload> forced = new ArrayList<FileDownload>();
+        List<FileDownload> forced = new ArrayList<>();
         for (FileDownload file : declarations) {
             if (file.getPolicy() == DownloadPolicy.FORCED) {
                 forced.add(file);

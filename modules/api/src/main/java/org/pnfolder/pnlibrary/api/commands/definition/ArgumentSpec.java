@@ -12,11 +12,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class ArgumentSpec {
     /** Any single word. */
-    public static final ArgumentSpec TEXT = new ArgumentSpec(Kind.TEXT, null, null, Collections.<String>emptyList());
+    public static final ArgumentSpec TEXT = new ArgumentSpec(Kind.TEXT, null, null, Collections.emptyList());
     /** Every remaining word of the line, joined by single spaces. */
-    public static final ArgumentSpec GREEDY = new ArgumentSpec(Kind.GREEDY, null, null, Collections.<String>emptyList());
+    public static final ArgumentSpec GREEDY = new ArgumentSpec(Kind.GREEDY, null, null, Collections.emptyList());
     /** A true/false token. */
-    public static final ArgumentSpec BOOLEAN = new ArgumentSpec(Kind.BOOLEAN, null, null, Collections.<String>emptyList());
+    public static final ArgumentSpec BOOLEAN = new ArgumentSpec(Kind.BOOLEAN, null, null, Collections.emptyList());
 
     private final Kind kind;
     private final Double minimum;
@@ -27,7 +27,7 @@ public final class ArgumentSpec {
         this.kind = kind;
         this.minimum = minimum;
         this.maximum = maximum;
-        this.choices = Collections.unmodifiableList(new ArrayList<String>(choices));
+        this.choices = Collections.unmodifiableList(new ArrayList<>(choices));
     }
 
     /** A whole number of any size. */
@@ -39,7 +39,7 @@ public final class ArgumentSpec {
     /** A whole number between {@code minimum} and {@code maximum}. */
     @NotNull
     public static ArgumentSpec integer(int minimum, int maximum) {
-        return new ArgumentSpec(Kind.INTEGER, (double) minimum, (double) maximum, Collections.<String>emptyList());
+        return new ArgumentSpec(Kind.INTEGER, (double) minimum, (double) maximum, Collections.emptyList());
     }
 
     /** A 64-bit whole number of any size. */
@@ -51,7 +51,7 @@ public final class ArgumentSpec {
     /** A 64-bit whole number between {@code minimum} and {@code maximum}. */
     @NotNull
     public static ArgumentSpec longInteger(long minimum, long maximum) {
-        return new ArgumentSpec(Kind.LONG, (double) minimum, (double) maximum, Collections.<String>emptyList());
+        return new ArgumentSpec(Kind.LONG, (double) minimum, (double) maximum, Collections.emptyList());
     }
 
     /** A decimal number of any size. */
@@ -63,7 +63,7 @@ public final class ArgumentSpec {
     /** A decimal number between {@code minimum} and {@code maximum}. */
     @NotNull
     public static ArgumentSpec decimal(double minimum, double maximum) {
-        return new ArgumentSpec(Kind.DECIMAL, minimum, maximum, Collections.<String>emptyList());
+        return new ArgumentSpec(Kind.DECIMAL, minimum, maximum, Collections.emptyList());
     }
 
     /** One of {@code choices}. */

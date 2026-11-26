@@ -10,10 +10,10 @@ import java.util.Set;
 
 /** Reads the rows of {@code groups.tsv} into groups. */
 final class GroupRecords {
-    private final Map<String, Set<String>> servers = new LinkedHashMap<String, Set<String>>();
-    private final Map<String, Set<String>> plugins = new LinkedHashMap<String, Set<String>>();
-    private final Map<String, Map<String, Set<String>>> extra = new LinkedHashMap<String, Map<String, Set<String>>>();
-    private final Map<String, Map<String, Set<String>>> skip = new LinkedHashMap<String, Map<String, Set<String>>>();
+    private final Map<String, Set<String>> servers = new LinkedHashMap<>();
+    private final Map<String, Set<String>> plugins = new LinkedHashMap<>();
+    private final Map<String, Map<String, Set<String>>> extra = new LinkedHashMap<>();
+    private final Map<String, Map<String, Set<String>>> skip = new LinkedHashMap<>();
 
     void add(List<String> fields) {
         String group = fields.isEmpty() ? "" : fields.get(0);
@@ -37,15 +37,15 @@ final class GroupRecords {
     }
 
     List<ServerGroup> groups() {
-        List<String> names = new ArrayList<String>(servers.keySet());
+        List<String> names = new ArrayList<>(servers.keySet());
         Collections.sort(names, new LowerCaseOrder());
-        List<ServerGroup> result = new ArrayList<ServerGroup>();
+        List<ServerGroup> result = new ArrayList<>();
         for (String name : names) {
             Map<String, Set<String>> groupExtra = extra.get(name);
             Map<String, Set<String>> groupSkip = skip.get(name);
             result.add(new ServerGroup(name, servers.get(name), plugins.get(name),
-                groupExtra == null ? Collections.<String, Set<String>>emptyMap() : groupExtra,
-                groupSkip == null ? Collections.<String, Set<String>>emptyMap() : groupSkip));
+                groupExtra == null ? Collections.emptyMap() : groupExtra,
+                groupSkip == null ? Collections.emptyMap() : groupSkip));
         }
         return result;
     }
@@ -56,19 +56,19 @@ final class GroupRecords {
 
     private static void set(Map<String, Set<String>> map, String group) {
         if (!map.containsKey(group)) {
-            map.put(group, new LinkedHashSet<String>());
+            map.put(group, new LinkedHashSet<>());
         }
     }
 
     private static Set<String> override(Map<String, Map<String, Set<String>>> map, String group, String server) {
         Map<String, Set<String>> perServer = map.get(group);
         if (perServer == null) {
-            perServer = new LinkedHashMap<String, Set<String>>();
+            perServer = new LinkedHashMap<>();
             map.put(group, perServer);
         }
         Set<String> plugins = perServer.get(server);
         if (plugins == null) {
-            plugins = new LinkedHashSet<String>();
+            plugins = new LinkedHashSet<>();
             perServer.put(server, plugins);
         }
         return plugins;

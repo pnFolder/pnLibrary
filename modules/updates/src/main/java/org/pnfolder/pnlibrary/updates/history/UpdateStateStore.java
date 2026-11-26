@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.history;
 
+import java.util.Locale;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -80,7 +81,7 @@ public final class UpdateStateStore {
         byte[] bytes = UpdateStateJson.encode(snapshot, gson).getBytes(StandardCharsets.UTF_8);
         AtomicFiles.write(stateFile, bytes, true);
         AtomicFiles.write(historyDirectory.resolve(
-            String.format("%020d-%s.json", snapshot.getRevision(), snapshot.getId())), bytes, true);
+            String.format(Locale.ROOT, "%020d-%s.json", snapshot.getRevision(), snapshot.getId())), bytes, true);
         prune();
     }
 
@@ -93,7 +94,7 @@ public final class UpdateStateStore {
     /** Earlier states, newest first; unreadable ones are skipped. */
     @NotNull
     public List<UpdatePlanSnapshot> history() throws IOException {
-        List<UpdatePlanSnapshot> result = new ArrayList<UpdatePlanSnapshot>();
+        List<UpdatePlanSnapshot> result = new ArrayList<>();
         for (Path file : historyFiles()) {
             UpdatePlanSnapshot snapshot = read(file, false);
             if (snapshot != null) {
@@ -150,7 +151,7 @@ public final class UpdateStateStore {
     private void prune() throws IOException {
         // A history file that vanished or is locked (antivirus on Windows) is skipped; retention retries on the next
         // write. Failing here would fail a save whose state file is already written.
-        List<Path> files = new ArrayList<Path>(historyFiles());
+        List<Path> files = new ArrayList<>(historyFiles());
         long bytes = 0;
         for (Path file : files) {
             bytes += sizeOrZero(file);
@@ -171,7 +172,7 @@ public final class UpdateStateStore {
     private List<Path> historyFiles() throws IOException {
         try (Stream<Path> stream = Files.list(historyDirectory)) {
             List<Path> files = stream.filter(Files::isRegularFile).collect(Collectors.toList());
-            Collections.sort(files, Collections.<Path>reverseOrder());
+            Collections.sort(files, Collections.reverseOrder());
             return files;
         }
     }

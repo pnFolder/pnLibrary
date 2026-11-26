@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,7 +79,7 @@ class ConfigReflectionCostTest {
     @Test
     void cachedFieldsEqualAFreshDiscovery() {
         ConfigObjectIntrospector introspector = new ConfigObjectIntrospector(ConfigNamingStrategy.KEBAB_CASE);
-        for (Class<?> type : Arrays.<Class<?>>asList(Base.class, Child.class, Object.class)) {
+        for (Class<?> type : Arrays.asList(Base.class, Child.class, Object.class)) {
             assertEquals(discoveredAgain(type), introspector.fields(type), type.getName());
         }
         List<String> names = new ArrayList<String>();

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics.factory;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics;
 
@@ -27,8 +28,8 @@ public class NativePluginMetricsFactory<P> extends ProviderMetricsFactory {
     public NativePluginMetricsFactory(@NotNull Class<P> ownerType, @NotNull String platformName,
                                       @NotNull BiFunction<P, Integer, PluginMetrics> bStats,
                                       @NotNull BiFunction<P, String, PluginMetrics> fastStats) {
-        this.ownerType = ownerType;
-        this.platformName = platformName;
+        this.ownerType = Objects.requireNonNull(ownerType, "ownerType");
+        this.platformName = Objects.requireNonNull(platformName, "platformName");
         this.bStats = bStats;
         this.fastStats = fastStats;
     }

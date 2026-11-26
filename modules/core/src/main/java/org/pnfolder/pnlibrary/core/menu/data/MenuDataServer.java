@@ -1,5 +1,11 @@
 package org.pnfolder.pnlibrary.core.menu.data;
 
+import org.pnfolder.pnlibrary.core.menu.data.question.MenuQuestion;
+import org.pnfolder.pnlibrary.core.menu.data.question.UpdateQuestions;
+import org.pnfolder.pnlibrary.core.menu.data.question.SystemQuestions;
+import org.pnfolder.pnlibrary.core.menu.data.question.NetworkQuestions;
+import org.pnfolder.pnlibrary.core.menu.data.question.EventQuestions;
+import java.util.Objects;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.HashMap;
@@ -38,9 +44,9 @@ public final class MenuDataServer implements DataHandler, AutoCloseable {
      * this server does not know
      */
     public MenuDataServer(@NotNull MenuData data, @NotNull Executor executor, @NotNull BiPredicate<String, String> holds) {
-        this.data = data;
-        this.executor = executor;
-        this.holds = holds;
+        this.data = Objects.requireNonNull(data, "data");
+        this.executor = Objects.requireNonNull(executor, "executor");
+        this.holds = Objects.requireNonNull(holds, "holds");
     }
 
     @Override
@@ -93,7 +99,6 @@ public final class MenuDataServer implements DataHandler, AutoCloseable {
         Map<String, String> needed = new HashMap<>();
         needed.put(MenuCalls.CHECK_ALL, MenuPermissions.UPDATES_DOWNLOAD);
         needed.put(MenuCalls.CHECK_ONE, MenuPermissions.UPDATES_DOWNLOAD);
-        needed.put(MenuCalls.SET_AUTOMATIC, MenuConstants.SETTINGS);
         needed.put(MenuCalls.SET_CHANNEL, MenuConstants.SETTINGS);
         needed.put(MenuCalls.SET_HELD, MenuConstants.SETTINGS);
         needed.put(MenuCalls.ROLLBACK, MenuConstants.ROLLBACK);

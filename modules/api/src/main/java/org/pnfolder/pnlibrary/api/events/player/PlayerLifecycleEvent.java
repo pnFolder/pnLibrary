@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.player;
 
+import java.util.Objects;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,8 +26,8 @@ public abstract class PlayerLifecycleEvent extends Event {
      * @param player the player as a library audience, or {@code null} when the platform no longer knows the player
      */
     protected PlayerLifecycleEvent(@NotNull UUID uniqueId, @NotNull String name, @Nullable OnlinePlayer player) {
-        this.uniqueId = uniqueId;
-        this.name = name;
+        this.uniqueId = Objects.requireNonNull(uniqueId, "uniqueId");
+        this.name = Objects.requireNonNull(name, "name");
         this.player = player;
     }
 

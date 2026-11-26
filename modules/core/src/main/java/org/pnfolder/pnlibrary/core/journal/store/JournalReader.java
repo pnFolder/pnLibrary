@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.store;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.core.journal.JournalLevel;
@@ -28,7 +29,7 @@ public final class JournalReader {
     private final long maximumReadBytes;
 
     public JournalReader(@NotNull JournalFiles files, long maximumReadBytes) {
-        this.files = files;
+        this.files = Objects.requireNonNull(files, "files");
         this.maximumReadBytes = maximumReadBytes;
     }
 
@@ -39,7 +40,7 @@ public final class JournalReader {
             throw new IllegalArgumentException("Journal limit must be between 1 and 100000");
         }
         Set<JournalLevel> wanted = levels.isEmpty() ? EnumSet.allOf(JournalLevel.class) : levels;
-        PriorityQueue<JournalRecord> newest = new PriorityQueue<JournalRecord>(
+        PriorityQueue<JournalRecord> newest = new PriorityQueue<>(
             Comparator.comparingLong(JournalRecord::getTimeMillis));
         RecordFilter filter = new RecordFilter(source, sinceMillis, type);
         long remaining = maximumReadBytes;
@@ -69,7 +70,7 @@ public final class JournalReader {
             }
             remaining -= size;
         }
-        List<JournalRecord> records = new ArrayList<JournalRecord>(newest);
+        List<JournalRecord> records = new ArrayList<>(newest);
         records.sort(Comparator.comparingLong(JournalRecord::getTimeMillis).reversed());
         return new JournalSnapshot(records, truncated);
     }
@@ -85,7 +86,7 @@ public final class JournalReader {
     private List<Path> segmentsNewestFirst(Set<JournalLevel> levels, Long sinceMillis) {
         LocalDate sinceDate = sinceMillis == null ? null : utcDate(sinceMillis);
         List<Path> all = files.all();
-        List<Path> segments = new ArrayList<Path>();
+        List<Path> segments = new ArrayList<>();
         for (JournalLevel level : levels) {
             for (Path file : files.of(level, all)) {
                 LocalDate date = files.dateOf(file);

@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigId;
 
 /** Every file registered through any scope, by identifier. */
 final class ConfigFileRegistry {
-    private final Map<ConfigId, OwnedConfig<?>> files = new LinkedHashMap<ConfigId, OwnedConfig<?>>();
+    private final Map<ConfigId, OwnedConfig<?>> files = new LinkedHashMap<>();
 
     /** Adds {@code owned}; a second registration of one identifier or a second writer of one file is refused. */
     void add(@NotNull OwnedConfig<?> owned) {
@@ -58,14 +58,14 @@ final class ConfigFileRegistry {
     @NotNull
     List<OwnedConfig<?>> all() {
         synchronized (files) {
-            return new ArrayList<OwnedConfig<?>>(files.values());
+            return new ArrayList<>(files.values());
         }
     }
 
     /** The files that wait for a type word and lie under {@code where}. */
     @NotNull
     List<OwnedConfig<?>> waitingUnder(@NotNull ConfigAddress where) {
-        List<OwnedConfig<?>> waiting = new ArrayList<OwnedConfig<?>>();
+        List<OwnedConfig<?>> waiting = new ArrayList<>();
         synchronized (files) {
             for (OwnedConfig<?> file : files.values()) {
                 if (file.isWaitingForTypes() && where.matches(file.getId())) {

@@ -70,12 +70,12 @@ class VelocityCommandAdapterTest {
     void adapterClosesEveryNativeRegistrationExactlyOnce() {
         RecordingRegistrar registrar = new RecordingRegistrar();
         VelocityCommandAdapter adapter = new VelocityCommandAdapter(registrar,
-                nativeSource -> audience(nativeSource, false, new ArrayList<Component>(), new ArrayList<Component>()));
+                nativeSource -> audience(nativeSource, false, new ArrayList<>(), new ArrayList<>()));
 
         PlatformCommandRegistration first = adapter.register(new Object(), command("first", builder -> { }),
-                new RecordingDispatcher(CompletableFuture.completedFuture(Collections.<String>emptyList())));
+                new RecordingDispatcher(CompletableFuture.completedFuture(Collections.emptyList())));
         adapter.register(new Object(), command("second", builder -> { }),
-                new RecordingDispatcher(CompletableFuture.completedFuture(Collections.<String>emptyList())));
+                new RecordingDispatcher(CompletableFuture.completedFuture(Collections.emptyList())));
         first.close();
         first.close();
         adapter.close();

@@ -18,7 +18,6 @@ public final class MenuCalls {
     public static final String BACKUPS = "backups";
     public static final String CHECK_ALL = "checkAll";
     public static final String CHECK_ONE = "checkOne";
-    public static final String SET_AUTOMATIC = "setAutomatic";
     public static final String SET_CHANNEL = "setChannel";
     public static final String SET_JAVA_BUILD = "setJavaBuild";
     public static final String SET_HELD = "setHeld";

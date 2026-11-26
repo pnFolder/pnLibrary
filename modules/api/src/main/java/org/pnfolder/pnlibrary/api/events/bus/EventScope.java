@@ -64,7 +64,7 @@ public interface EventScope extends AutoCloseable {
      */
     @NotNull
     default <E extends Event> EventListenerBuilder<E> on(@NotNull Class<E> eventType) {
-        return new EventListenerBuilder<E>(this, eventType);
+        return new EventListenerBuilder<>(this, eventType);
     }
 
     /** Invokes every matching listener synchronously and returns the same event instance. */

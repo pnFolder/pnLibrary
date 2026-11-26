@@ -16,12 +16,12 @@ public final class RandomOption {
 
     /** Creates it with every setting at its default. */
     public RandomOption() {
-        this(1.0, Collections.<Action>emptyList());
+        this(1.0, Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public RandomOption(double weight) {
-        this(weight, Collections.<Action>emptyList());
+        this(weight, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */

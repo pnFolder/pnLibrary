@@ -50,7 +50,7 @@ public final class TaskSnapshot {
         this.ownerName = b.ownerName;
         this.executionKind = b.executionKind;
         this.status = b.status;
-        this.tags = Collections.unmodifiableSet(new LinkedHashSet<String>(b.tags));
+        this.tags = Collections.unmodifiableSet(new LinkedHashSet<>(b.tags));
         this.createdAt = b.createdAt;
         this.nextRunAt = b.nextRunAt;
         this.runCount = b.runCount;
@@ -97,7 +97,7 @@ public final class TaskSnapshot {
         Builder b = new Builder(id, ownerName, executionKind, status, createdAt);
         b.name = name;
         b.key = key;
-        b.tags = new LinkedHashSet<String>(tags);
+        b.tags = new LinkedHashSet<>(tags);
         b.nextRunAt = nextRunAt;
         b.runCount = runCount;
         b.skippedCount = skippedCount;
@@ -180,7 +180,7 @@ public final class TaskSnapshot {
         private String ownerName;
         private TaskExecution.Kind executionKind;
         private TaskStatus status;
-        private Set<String> tags = new LinkedHashSet<String>();
+        private Set<String> tags = new LinkedHashSet<>();
         private Instant createdAt;
         private Instant nextRunAt = null;
         private long runCount = 0L;
@@ -216,7 +216,7 @@ public final class TaskSnapshot {
         /** Sets createdAt. */ @NotNull public Builder createdAt(@NotNull Instant value) { createdAt = value; return this; }
         /** Sets name. */ @NotNull public Builder name(@Nullable String value) { name = value; return this; }
         /** Sets key. */ @NotNull public Builder key(@Nullable String value) { key = value; return this; }
-        /** Sets the application-defined tags. */ @NotNull public Builder tags(@NotNull Set<String> value) { tags = new LinkedHashSet<String>(value); return this; }
+        /** Sets the application-defined tags. */ @NotNull public Builder tags(@NotNull Set<String> value) { tags = new LinkedHashSet<>(value); return this; }
         /** Sets nextRunAt. */ @NotNull public Builder nextRunAt(@Nullable Instant value) { nextRunAt = value; return this; }
         /** Sets runCount. */ @NotNull public Builder runCount(long value) { runCount = value; return this; }
         /** Sets skippedCount. */ @NotNull public Builder skippedCount(long value) { skippedCount = value; return this; }

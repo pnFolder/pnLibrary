@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -31,8 +32,8 @@ final class ConfigPaths {
      * @param plugin the plugin the files belong to, for messages
      */
     ConfigPaths(@NotNull Path directory, @NotNull PluginId plugin) {
-        this.directory = directory;
-        this.plugin = plugin;
+        this.directory = Objects.requireNonNull(directory, "directory");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     /** The folder paths of {@code root} are counted from. */

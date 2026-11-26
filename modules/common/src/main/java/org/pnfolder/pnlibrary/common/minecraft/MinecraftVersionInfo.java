@@ -27,8 +27,8 @@ public final class MinecraftVersionInfo {
      */
     public MinecraftVersionInfo(@NotNull String raw, @NotNull MinecraftVersion parsed,
                                 @Nullable Integer major, @Nullable Integer minor, @Nullable Integer patch) {
-        this.raw = raw;
-        this.parsed = parsed;
+        this.raw = Objects.requireNonNull(raw, "raw");
+        this.parsed = Objects.requireNonNull(parsed, "parsed");
         this.major = major;
         this.minor = minor;
         this.patch = patch;

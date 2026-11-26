@@ -12,13 +12,13 @@ final class ContextPnLogger implements PnLogger {
 
     ContextPnLogger(PnLogger base, Map<String, ?> facts) {
         this.base = base;
-        this.facts = new LinkedHashMap<String, Object>(facts);
+        this.facts = new LinkedHashMap<>(facts);
     }
 
     @Override
     public void log(@NotNull LogLevel level, @NotNull String message, @Nullable Throwable error,
                     @NotNull Map<String, ?> context) {
-        Map<String, Object> merged = new LinkedHashMap<String, Object>(facts);
+        Map<String, Object> merged = new LinkedHashMap<>(facts);
         merged.putAll(context);
         base.log(level, message, error, merged);
     }

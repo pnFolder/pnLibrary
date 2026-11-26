@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.link;
 
+import java.util.Objects;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PluginMessageEvent;
@@ -15,7 +16,7 @@ public final class BungeeLinkListener implements Listener {
 
     /** Creates a listener that forwards link frames to {@code receiver}. */
     public BungeeLinkListener(@NotNull LinkReceiver receiver) {
-        this.receiver = receiver;
+        this.receiver = Objects.requireNonNull(receiver, "receiver");
     }
 
     /** Handles one plugin message; frames on the link channel never reach a player or another server. */

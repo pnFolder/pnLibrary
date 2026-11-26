@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,20 +46,20 @@ public final class SettingSpec {
                        @NotNull Function<LibrarySettings, Object> read,
                        @NotNull BiFunction<LibrarySettings, Object, LibrarySettings> write,
                        @NotNull Function<String, Object> parse, @NotNull Function<Object, String> show) {
-        this.key = key;
-        this.title = title;
-        this.field = field;
-        this.kind = kind;
-        this.description = description;
-        this.applies = applies;
+        this.key = Objects.requireNonNull(key, "key");
+        this.title = Objects.requireNonNull(title, "title");
+        this.field = Objects.requireNonNull(field, "field");
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.description = Objects.requireNonNull(description, "description");
+        this.applies = Objects.requireNonNull(applies, "applies");
         this.min = min;
         this.max = max;
-        this.examples = Collections.unmodifiableList(new ArrayList<String>(examples));
+        this.examples = Collections.unmodifiableList(new ArrayList<>(examples));
         this.choices = choices;
-        this.read = read;
+        this.read = Objects.requireNonNull(read, "read");
         this.write = write;
-        this.parse = parse;
-        this.show = show;
+        this.parse = Objects.requireNonNull(parse, "parse");
+        this.show = Objects.requireNonNull(show, "show");
     }
 
     /** The name used in commands and in {@code settings.json}. */

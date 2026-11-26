@@ -68,7 +68,7 @@ public final class TranslationRequest {
     /** Fluent builder for {@link TranslationRequest}. */
     public static final class Builder {
         private MinecraftVersion version;
-        private final Set<String> locales = new LinkedHashSet<String>();
+        private final Set<String> locales = new LinkedHashSet<>();
         private String fallbackLocale;
 
         Builder() {
@@ -147,7 +147,7 @@ public final class TranslationRequest {
                 throw new IllegalArgumentException("At least one locale is required");
             }
             return new TranslationRequest(
-                    version, Collections.unmodifiableSet(new LinkedHashSet<String>(locales)), fallbackLocale);
+                    version, Collections.unmodifiableSet(new LinkedHashSet<>(locales)), fallbackLocale);
         }
     }
 }

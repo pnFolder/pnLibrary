@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
 
     private final PlatformOwnership platform;
     private final PlatformLogging logging;
-    private final Map<Object, Map<PluginId, ModuleConfigScope>> scopes = new IdentityHashMap<Object, Map<PluginId, ModuleConfigScope>>();
+    private final Map<Object, Map<PluginId, ModuleConfigScope>> scopes = new IdentityHashMap<>();
     private final ConfigFileRegistry files = new ConfigFileRegistry();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ConfigAdditions additions = new ConfigAdditions(this::reloadWaiting);
@@ -50,8 +51,8 @@ public final class YamlConfigurations implements ConfigurationRuntime {
 
     /** Creates the service writing plugin logs through {@code logging}. */
     public YamlConfigurations(@NotNull PlatformOwnership platform, @NotNull PlatformLogging logging) {
-        this.platform = platform;
-        this.logging = logging;
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.logging = Objects.requireNonNull(logging, "logging");
     }
 
     /**
@@ -95,7 +96,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
             }
             Map<PluginId, ModuleConfigScope> byPlugin = scopes.get(owner);
             if (byPlugin == null) {
-                byPlugin = new LinkedHashMap<PluginId, ModuleConfigScope>();
+                byPlugin = new LinkedHashMap<>();
                 scopes.put(owner, byPlugin);
             }
             ModuleConfigScope scope = byPlugin.get(key);
@@ -131,7 +132,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
     /** Closes the scopes created for {@code owner} and forgets them. */
     @Override
     public void close(@NotNull Object owner) {
-        List<ModuleConfigScope> owned = new ArrayList<ModuleConfigScope>();
+        List<ModuleConfigScope> owned = new ArrayList<>();
         synchronized (scopes) {
             Map<PluginId, ModuleConfigScope> removed = scopes.remove(owner);
             if (removed != null) {
@@ -149,7 +150,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        List<ModuleConfigScope> owned = new ArrayList<ModuleConfigScope>();
+        List<ModuleConfigScope> owned = new ArrayList<>();
         synchronized (scopes) {
             for (Map<PluginId, ModuleConfigScope> byPlugin : scopes.values()) {
                 owned.addAll(byPlugin.values());
@@ -164,7 +165,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
     @Override
     @NotNull
     public List<ConfigInfo> all() {
-        List<ConfigInfo> result = new ArrayList<ConfigInfo>();
+        List<ConfigInfo> result = new ArrayList<>();
         for (OwnedConfig<?> file : files.all()) {
             result.add(file.getInfo());
         }
@@ -174,7 +175,7 @@ public final class YamlConfigurations implements ConfigurationRuntime {
     @Override
     @NotNull
     public List<ConfigInfo> find(@NotNull ConfigAddress address) {
-        List<ConfigInfo> result = new ArrayList<ConfigInfo>();
+        List<ConfigInfo> result = new ArrayList<>();
         for (OwnedConfig<?> file : files.all()) {
             if (address.matches(file.getId())) {
                 result.add(file.getInfo());

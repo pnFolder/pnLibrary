@@ -55,7 +55,7 @@ class ConfigEditingKindsTest {
     @Test
     void theStepTheUnitAndTheHintsReachTheMenu() throws IOException {
         try (YamlConfigurations service = new YamlConfigurations(FakeOwnerPlatform.INSTANCE)) {
-            Map<String, ConfigSetting> settings = new LinkedHashMap<String, ConfigSetting>();
+            Map<String, ConfigSetting> settings = new LinkedHashMap<>();
             for (ConfigSetting setting : open(service).getSettings()) {
                 settings.put(setting.getPath(), setting);
             }

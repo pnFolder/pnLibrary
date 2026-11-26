@@ -10,8 +10,8 @@ public final class ViewerInfo {
     private final Set<String> permissions;
 
     public ViewerInfo(@NotNull String name, @NotNull Set<String> permissions) {
-        this.name = name;
-        this.permissions = permissions;
+        this.name = Objects.requireNonNull(name, "name");
+        this.permissions = Objects.requireNonNull(permissions, "permissions");
     }
 
     public @NotNull String getName() {

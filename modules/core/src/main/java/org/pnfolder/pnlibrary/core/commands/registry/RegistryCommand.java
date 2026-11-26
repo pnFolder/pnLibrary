@@ -55,7 +55,7 @@ public final class RegistryCommand {
 
     private static void show(List<Registry<?>> registries, CommandContext context, String kind, int requested) {
         Registry<?> registry = null;
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Registry<?> candidate : registries) {
             names.add(candidate.getName());
             if (registry == null && candidate.getName().equalsIgnoreCase(kind)) {
@@ -79,7 +79,7 @@ public final class RegistryCommand {
 
     private static void find(List<Registry<?>> registries, CommandContext context, String text) {
         String needle = text.toLowerCase(Locale.ROOT);
-        List<Component> found = new ArrayList<Component>();
+        List<Component> found = new ArrayList<>();
         int count = 0;
         for (Registry<?> registry : registries) {
             for (RegistryEntry<?> entry : registry.entries()) {

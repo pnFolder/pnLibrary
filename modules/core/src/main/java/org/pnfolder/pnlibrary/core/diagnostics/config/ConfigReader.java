@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config;
 
+import java.util.Objects;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public final class ConfigReader {
 
     /** Creates a reader that also applies the process-wide exclusions and patterns of {@code globalConfig}. */
     public ConfigReader(@NotNull Path dataFolder, @NotNull PnLibraryConfig globalConfig) {
-        this.dataFolder = dataFolder;
+        this.dataFolder = Objects.requireNonNull(dataFolder, "dataFolder");
         this.globalConfig = globalConfig;
     }
 
@@ -92,7 +93,7 @@ public final class ConfigReader {
             return new RedactedFile(configSpec.getPath(), "", error.toString());
         }
         Object data = result.get("data");
-        Map<String, Object> tree = data instanceof Map ? (Map<String, Object>) data : Collections.<String, Object>emptyMap();
+        Map<String, Object> tree = data instanceof Map ? (Map<String, Object>) data : Collections.emptyMap();
         return new RedactedFile(configSpec.getPath(), documentCodec.render(configSpec.getPath(), tree), null);
     }
 
@@ -111,7 +112,7 @@ public final class ConfigReader {
     @NotNull
     public Map<String, Object> readAndRedact(@NotNull DiagnosticConfiguration configSpec, @NotNull Path rootDirectory) {
         String path = configSpec.getPath();
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("path", path);
         SecureConfigReader.Result read = secureFileReader.read(rootDirectory, path);
         byte[] content = read.getContent();
@@ -138,14 +139,14 @@ public final class ConfigReader {
 
     private ConfigRedaction redaction(DiagnosticConfiguration configSpec) {
         return new ConfigRedaction(
-            new HashSet<String>(configSpec.getExcludedPaths()),
+            new HashSet<>(configSpec.getExcludedPaths()),
             ConfigRedaction.compile(concat(globalConfig.getSecretKeyPatterns(), configSpec.getSecretKeyPatterns())),
             ConfigRedaction.compile(concat(globalConfig.getRedactValuePatterns(), configSpec.getValuePatterns())),
             redactor);
     }
 
     private static List<String> concat(List<String> first, List<String> second) {
-        List<String> all = new ArrayList<String>(first);
+        List<String> all = new ArrayList<>(first);
         all.addAll(second);
         return all;
     }

@@ -102,7 +102,7 @@ class PnLibraryLauncherTest {
 
         // Container 1 succeeds
         registry.register("pnMarket", DiagnosticContainer.builder("auction")
-            .snapshot(() -> Collections.<String, Object>singletonMap("lots", 10))
+            .snapshot(() -> Collections.singletonMap("lots", 10))
             .build());
 
         // Container 2 throws an exception
@@ -184,7 +184,7 @@ class PnLibraryLauncherTest {
 
         @Override
         public @NotNull Map<String, Object> diagnosticDetails(boolean includeSensitive) {
-            return Collections.<String, Object>singletonMap("test", true);
+            return Collections.singletonMap("test", true);
         }
 
         @Override

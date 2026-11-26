@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -22,8 +23,8 @@ public abstract class MenuScreens {
     protected final MenuRoutes routes;
 
     protected MenuScreens(@NotNull MenuSession session, @NotNull MenuRoutes routes) {
-        this.session = session;
-        this.routes = routes;
+        this.session = Objects.requireNonNull(session, "session");
+        this.routes = Objects.requireNonNull(routes, "routes");
     }
 
     protected MenuData data() {

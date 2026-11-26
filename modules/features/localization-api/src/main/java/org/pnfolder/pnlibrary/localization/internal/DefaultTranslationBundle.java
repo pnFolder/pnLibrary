@@ -21,7 +21,7 @@ final class DefaultTranslationBundle implements TranslationBundle {
     DefaultTranslationBundle(MinecraftVersion version, Set<String> requested, String fallback,
                              Map<String, LoadedLocale> loaded) {
         this.version = version;
-        this.locales = Collections.unmodifiableSet(new LinkedHashSet<String>(requested));
+        this.locales = Collections.unmodifiableSet(new LinkedHashSet<>(requested));
         this.fallback = fallback;
         this.loaded = loaded;
     }

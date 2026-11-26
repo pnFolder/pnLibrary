@@ -28,7 +28,7 @@ public final class StandardCommandFeedback {
     private static final String DEFAULT_INVALID = "Неверное значение «{value}» для {argument}. {usage}";
 
     private final Sound deniedSound;
-    private final Map<Class<?>, String> texts = new HashMap<Class<?>, String>();
+    private final Map<Class<?>, String> texts = new HashMap<>();
 
     public StandardCommandFeedback(
             @NotNull String deniedMessage,
@@ -114,6 +114,6 @@ public final class StandardCommandFeedback {
     }
 
     public void answer(@NotNull CommandContext context, @NotNull CommandError error) {
-        answer(context, error, java.util.Collections.<String>emptyList());
+        answer(context, error, java.util.Collections.emptyList());
     }
 }

@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.core.menu.LibraryMenu;
 import org.pnfolder.pnlibrary.core.menu.MenuHost;
 import org.pnfolder.pnlibrary.core.menu.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
-import org.pnfolder.pnlibrary.core.menu.data.RemoteMenuData;
+import org.pnfolder.pnlibrary.core.menu.data.remote.RemoteMenuData;
 
 /** What the portable menu needs from a Bukkit server. */
 final class BukkitMenuHost implements MenuHost {

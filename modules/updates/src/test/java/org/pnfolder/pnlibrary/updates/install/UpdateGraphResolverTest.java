@@ -34,7 +34,7 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode;
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides;
-import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 
 class UpdateGraphResolverTest {
     @TempDir
@@ -80,7 +80,7 @@ class UpdateGraphResolverTest {
     @Test
     @DisplayName("nothing registered resolves to an empty plan without loading any catalog")
     void nothingRegisteredResolvesToAnEmptyPlanWithoutLoadingAnyCatalog() {
-        ResolutionResult result = resolver().resolve(Collections.<RegisteredUpdate>emptyList());
+        ResolutionResult result = resolver().resolve(Collections.emptyList());
 
         assertTrue(result instanceof ResolutionResult.Ready);
         assertTrue(((ResolutionResult.Ready) result).getPlan().getChanges().isEmpty());
@@ -127,7 +127,7 @@ class UpdateGraphResolverTest {
     @DisplayName("the library channel comes from configuration and a plugin keeps its requested channel")
     void theLibraryChannelComesFromConfigurationAndAPluginKeepsItsRequestedChannel() throws IOException {
         UpdateConfiguration configuration = new UpdateConfiguration()
-            .withLibrary(new UpdateConfiguration.LibraryPolicy(UpdateChannel.DEV, true));
+            .withLibrary(new UpdateConfiguration.LibraryPolicy(UpdateChannel.DEV));
         UpdateGraphResolver resolver = resolver(configuration, null);
 
         assertEquals(UpdateChannel.DEV, resolver.channelFor(ProductId.of(PnLibraryIdentity.PRODUCT_ID), UpdateChannel.STABLE));

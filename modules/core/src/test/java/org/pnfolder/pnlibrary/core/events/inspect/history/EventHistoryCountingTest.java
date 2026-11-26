@@ -33,8 +33,8 @@ class EventHistoryCountingTest {
     /** The counting as it was before: two tree maps behind one lock, a fresh local time for every call. */
     private static final class OldCounting {
         private final int retentionDays;
-        private final TreeMap<java.time.LocalDate, Map<String, long[]>> days = new TreeMap<java.time.LocalDate, Map<String, long[]>>();
-        private final TreeMap<LocalDateTime, Map<String, long[]>> hours = new TreeMap<LocalDateTime, Map<String, long[]>>();
+        private final TreeMap<java.time.LocalDate, Map<String, long[]>> days = new TreeMap<>();
+        private final TreeMap<LocalDateTime, Map<String, long[]>> hours = new TreeMap<>();
 
         OldCounting(int retentionDays) {
             this.retentionDays = retentionDays;
@@ -43,8 +43,8 @@ class EventHistoryCountingTest {
         void record(String eventType, boolean denied, LocalDateTime now) {
             java.time.LocalDate today = now.toLocalDate();
             synchronized (days) {
-                bump(days.computeIfAbsent(today, key -> new HashMap<String, long[]>()), eventType, denied);
-                bump(hours.computeIfAbsent(now.truncatedTo(ChronoUnit.HOURS), key -> new HashMap<String, long[]>()), eventType, denied);
+                bump(days.computeIfAbsent(today, key -> new HashMap<>()), eventType, denied);
+                bump(hours.computeIfAbsent(now.truncatedTo(ChronoUnit.HOURS), key -> new HashMap<>()), eventType, denied);
                 long keep = Math.min(retentionDays, 30) * 24L;
                 hours.headMap(now.truncatedTo(ChronoUnit.HOURS).minusHours(keep - 1)).clear();
                 java.time.LocalDate limit = today.minusDays(retentionDays - 1L);
@@ -71,7 +71,7 @@ class EventHistoryCountingTest {
         }
 
         private static <K> List<String> totals(TreeMap<K, Map<String, long[]>> source) {
-            List<String> lines = new ArrayList<String>();
+            List<String> lines = new ArrayList<>();
             for (Map.Entry<K, Map<String, long[]>> period : source.entrySet()) {
                 for (Map.Entry<String, long[]> event : period.getValue().entrySet()) {
                     lines.add(period.getKey() + " " + event.getKey() + " " + event.getValue()[0] + " " + event.getValue()[1]);
@@ -103,11 +103,11 @@ class EventHistoryCountingTest {
             millis.addAndGet(433_000);
             index++;
         }
-        List<String> days = new ArrayList<String>();
+        List<String> days = new ArrayList<>();
         for (EventDay day : fresh.entries()) {
             days.add(day.getDate() + " " + day.getEventType() + " " + day.getCalls() + " " + day.getDenied());
         }
-        List<String> hours = new ArrayList<String>();
+        List<String> hours = new ArrayList<>();
         for (EventHour hour : fresh.hourly()) {
             hours.add(hour.getHour() + " " + hour.getEventType() + " " + hour.getCalls() + " " + hour.getDenied());
         }
@@ -119,7 +119,7 @@ class EventHistoryCountingTest {
     }
 
     private static List<java.time.LocalDate> datesOf(EventHistory history) {
-        List<java.time.LocalDate> dates = new ArrayList<java.time.LocalDate>();
+        List<java.time.LocalDate> dates = new ArrayList<>();
         for (EventDay day : history.entries()) {
             dates.add(day.getDate());
         }
@@ -139,7 +139,7 @@ class EventHistoryCountingTest {
 
         List<String> lines = Files.readAllLines(file);
         assertEquals("# pnLibrary event history v1", lines.get(0));
-        List<String> body = new ArrayList<String>(lines.subList(1, lines.size()));
+        List<String> body = new ArrayList<>(lines.subList(1, lines.size()));
         Collections.sort(body);
         assertEquals(Arrays.asList("2026-11-09\ta.Buy\t3\t1", "2026-11-09\ta.Join\t1\t0",
                 "2026-11-09T13:00\ta.Buy\t3\t1", "2026-11-09T13:00\ta.Join\t1\t0"), body);
@@ -170,7 +170,7 @@ class EventHistoryCountingTest {
     private static long blockedWhile(int threads, int perThread, IntConsumer work) throws InterruptedException {
         ThreadMXBean bean = ManagementFactory.getThreadMXBean();
         AtomicLong blocked = new AtomicLong();
-        List<Thread> workers = new ArrayList<Thread>();
+        List<Thread> workers = new ArrayList<>();
         for (int index = 0; index < threads; index++) {
             int number = index;
             Thread worker = new Thread(() -> {
@@ -222,7 +222,7 @@ class EventHistoryCountingTest {
         millis.addAndGet(60_000);
         history.record("a.Buy", false);
 
-        List<LocalDateTime> hours = new ArrayList<LocalDateTime>();
+        List<LocalDateTime> hours = new ArrayList<>();
         for (EventHour hour : history.hourly()) {
             hours.add(hour.getHour());
         }

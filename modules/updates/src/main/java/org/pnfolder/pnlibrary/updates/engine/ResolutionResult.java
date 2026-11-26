@@ -55,7 +55,7 @@ public abstract class ResolutionResult {
          * @param fallbackPlan best compatible lower-risk plan, when one exists
          */
         public Blocked(@NotNull List<BlockedReason> reasons, @Nullable UpdatePlan fallbackPlan) {
-            this.reasons = Collections.unmodifiableList(new ArrayList<BlockedReason>(reasons));
+            this.reasons = Collections.unmodifiableList(new ArrayList<>(reasons));
             this.fallbackPlan = fallbackPlan;
         }
 

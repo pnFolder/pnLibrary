@@ -1,16 +1,18 @@
 package org.pnfolder.pnlibrary.core.remote;
 
+import org.pnfolder.pnlibrary.core.remote.engine.PolicyCompilers;
+import org.pnfolder.pnlibrary.core.remote.engine.RemotePolicyEngine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.PlatformInfo;
-import org.pnfolder.pnlibrary.api.remote.ProductInfo;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult;
-import org.pnfolder.pnlibrary.api.remote.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyResult;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
 
 class RemotePolicyEngineTest {

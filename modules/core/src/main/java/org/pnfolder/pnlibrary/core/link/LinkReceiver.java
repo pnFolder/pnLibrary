@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,7 @@ public final class LinkReceiver {
      * @param data answers the menu questions addressed to the proxy
      */
     public LinkReceiver(@NotNull Link link, @Nullable RemoteExecutor executor, @Nullable DataHandler data) {
-        this.link = link;
+        this.link = Objects.requireNonNull(link, "link");
         this.executor = executor;
         this.data = data;
     }

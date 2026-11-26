@@ -87,7 +87,7 @@ class CommandFeedbackTest {
     @DisplayName("a handler receives the typed error and the context, so the sender is right there")
     void aHandlerReceivesTheTypedErrorAndTheContextSoTheSenderIsRightThere() {
         RecordingCommands nativeCommands = new RecordingCommands();
-        final List<String> seen = new ArrayList<String>();
+        final List<String> seen = new ArrayList<>();
         service(nativeCommands).register(new Object(), CommandDefinition.command("hello", root -> {
             root.executes(context -> { });
             root.onError(NoPermission.class, (context, error) ->
@@ -194,7 +194,7 @@ class CommandFeedbackTest {
                     root.literal("a", a -> a.executes(context -> { }));
                 }));
         TestCommandSender denied = new TestCommandSender();
-        TestCommandSender allowed = new TestCommandSender(new HashSet<String>(Arrays.asList("p.hello")));
+        TestCommandSender allowed = new TestCommandSender(new HashSet<>(Arrays.asList("p.hello")));
 
         run(nativeCommands, denied);
         run(nativeCommands, allowed, "zzz");

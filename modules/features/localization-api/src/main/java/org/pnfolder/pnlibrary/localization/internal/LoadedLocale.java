@@ -79,7 +79,7 @@ final class LoadedLocale implements LocaleTranslations {
         private TranslationIndex<String> keys;
 
         LocaleData(Map<String, String> values, KeyboardLayouts layouts) {
-            this.values = Collections.unmodifiableMap(new LinkedHashMap<String, String>(values));
+            this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
             this.layouts = layouts;
         }
 

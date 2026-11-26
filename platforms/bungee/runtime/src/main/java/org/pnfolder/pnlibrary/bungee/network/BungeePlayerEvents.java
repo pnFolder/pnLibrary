@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import java.util.Objects;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -15,7 +16,7 @@ public final class BungeePlayerEvents implements Listener {
 
     /** Creates a listener that publishes the events through {@code library}. */
     public BungeePlayerEvents(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     /** Publishes the join event once the player is logged in. */

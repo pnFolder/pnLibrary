@@ -42,7 +42,7 @@ class VelocityLogObserverTest {
     private final PluginB pluginB = new PluginB();
     private final List<Seen> seen = new ArrayList<>();
     private final VelocityLogObserver observer =
-            new VelocityLogObserver(fallback, () -> Arrays.<Object>asList(pluginA, pluginB));
+            new VelocityLogObserver(fallback, () -> Arrays.asList(pluginA, pluginB));
     private final String loggerName = "org.pnfolder.pnlibrary.velocity.test." + System.nanoTime();
 
     private void start() {
@@ -83,7 +83,7 @@ class VelocityLogObserverTest {
 
         LogManager.getLogger(loggerName).error("after stop");
 
-        assertEquals(Collections.<String>emptyList(), messages());
+        assertEquals(Collections.emptyList(), messages());
     }
 
     @Test

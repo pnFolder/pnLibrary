@@ -1,31 +1,33 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import java.util.Objects;
+import org.pnfolder.pnlibrary.core.placeholders.address.ParsedArgument;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
 import org.pnfolder.pnlibrary.api.placeholders.route.RouteInfo;
 
 /** What a placeholder method sees: who asks and the text of every slot on the path. */
-final class Call {
+public final class Call {
     private final ViewerInfo viewer;
     private final Map<String, ParsedArgument> slots;
     private final RouteInfo route;
 
     Call(@NotNull ViewerInfo viewer, @NotNull Map<String, ParsedArgument> slots, @NotNull RouteInfo route) {
-        this.viewer = viewer;
-        this.slots = slots;
-        this.route = route;
+        this.viewer = Objects.requireNonNull(viewer, "viewer");
+        this.slots = Objects.requireNonNull(slots, "slots");
+        this.route = Objects.requireNonNull(route, "route");
     }
 
-    ViewerInfo getViewer() {
+    public ViewerInfo getViewer() {
         return viewer;
     }
 
-    RouteInfo getRoute() {
+    public RouteInfo getRoute() {
         return route;
     }
 
-    ParsedArgument slot(String name) {
+    public ParsedArgument slot(String name) {
         ParsedArgument found = slots.get(name);
         if (found == null) {
             throw new IllegalStateException("The path has no argument '" + name + "'");

@@ -64,7 +64,7 @@ class BungeeCommandAdapterTest {
     void closingRegistrationAndAdapterUnregistersEachNativeCommandOnce() {
         RecordingRegistrar registrar = new RecordingRegistrar();
         BungeeCommandAdapter adapter = new BungeeCommandAdapter(registrar,
-                sender -> audience(sender, false, new ArrayList<Component>(), new ArrayList<Component>()));
+                sender -> audience(sender, false, new ArrayList<>(), new ArrayList<>()));
 
         PlatformCommandRegistration first = adapter.register(new Object(), command("first", builder -> { }),
                 new RecordingDispatcher());

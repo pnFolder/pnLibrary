@@ -11,8 +11,8 @@ public final class Fact {
     private final String value;
 
     public Fact(@NotNull String label, @NotNull String value) {
-        this.label = label;
-        this.value = value;
+        this.label = Objects.requireNonNull(label, "label");
+        this.value = Objects.requireNonNull(value, "value");
     }
 
     public static @NotNull Fact of(@NotNull String label, @NotNull String value) {

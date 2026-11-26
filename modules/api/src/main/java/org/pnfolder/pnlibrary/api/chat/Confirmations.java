@@ -26,7 +26,7 @@ final class Confirmations {
     List<Component> choices(String title, List<String> lines, List<ConfirmChoice> choices) {
         List<Component> result = intro(title, lines);
         if (kit.getReader().isInteractive()) {
-            List<Component> buttons = new ArrayList<Component>();
+            List<Component> buttons = new ArrayList<>();
             for (ConfirmChoice choice : choices) {
                 buttons.add(kit.button(choice.getLabel(), choice.getCommand(), choice.getHint(), ChatPalette.DANGER));
             }
@@ -44,7 +44,7 @@ final class Confirmations {
     }
 
     private List<Component> intro(String title, List<String> lines) {
-        List<Component> result = new ArrayList<Component>();
+        List<Component> result = new ArrayList<>();
         result.add(kit.header(title));
         result.add(kit.blank());
         for (String line : lines) {

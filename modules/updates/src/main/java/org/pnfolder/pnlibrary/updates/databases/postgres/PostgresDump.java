@@ -63,7 +63,7 @@ public final class PostgresDump {
 
     private static void writeAll(Connection connection, PostgresSchema schema, List<String> only, BufferedWriter out,
                                  SqlRowWriter rowWriter) throws IOException, SQLException {
-        List<String> tables = new ArrayList<String>();
+        List<String> tables = new ArrayList<>();
         for (String table : schema.tables()) {
             if (TableMask.matches(only, table)) {
                 tables.add(table);

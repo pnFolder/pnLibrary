@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -62,7 +63,7 @@ public final class PnLibraryImpl implements PnLibrary, PlatformRegistration, Run
 
     public PnLibraryImpl(@NotNull Object owner, @NotNull PlatformRuntimeContext platform, @NotNull DiagnosticsRegistry diagnostics,
                          @Nullable PnLibraryConfig presetConfig, @NotNull Runnable onClose) {
-        this.onClose = onClose;
+        this.onClose = Objects.requireNonNull(onClose, "onClose");
         this.parts = new RuntimeParts(owner, platform, diagnostics, presetConfig, closedFlag::get);
     }
 

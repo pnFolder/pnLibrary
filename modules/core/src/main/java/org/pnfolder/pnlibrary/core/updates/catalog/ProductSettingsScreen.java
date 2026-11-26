@@ -37,7 +37,7 @@ final class ProductSettingsScreen extends CatalogStyle {
         }
         if (isClickable()) {
             result.add(note("Нажмите на кнопку, чтобы выбрать. " + glyph('✔') + " — выбрано сейчас."));
-            result.add(note("Пауза — не дольше 7 дней."));
+            result.add(note("Пауза — не дольше 5 дней."));
         }
         result.add(blank());
         List<Pair<UpdateChannel, String>> channels = new ArrayList<>();
@@ -53,13 +53,6 @@ final class ProductSettingsScreen extends CatalogStyle {
                 result.add(line);
             }
         }
-        List<Pair<Boolean, String>> autos = new ArrayList<>();
-        autos.add(new Pair<>(true, "вкл"));
-        autos.add(new Pair<>(false, "выкл"));
-        result.add(choices("Автозагрузка", autos, snapshot.getAutomaticDownload(),
-            on -> on ? ChatPalette.OK : ChatPalette.DANGER, on -> new Pair<>(routes.set(product, "auto", on ? "on" : "off"),
-                on ? "Скачивать и проверять новые версии автоматически.\nПрименение — после перезапуска."
-                    : "Обновлять только по команде администратора")));
         result.addAll(holdRows(product, snapshot.getState() == UpdateState.FROZEN || heldUntil != null, heldUntil));
         result.add(blank());
         Component line = actions(
@@ -76,7 +69,6 @@ final class ProductSettingsScreen extends CatalogStyle {
             }
             result.addAll(commandHints(
                 new CommandHint(routes.set(product, "channel", "<" + String.join("|", names) + "|default>"), "канал (default: как задал плагин)"),
-                new CommandHint(routes.set(product, "auto", "<on|off>"), "автозагрузка"),
                 new CommandHint(routes.set(product, "hold", "<" + String.join("|", UpdateCatalogView.HOLD_PERIODS) + "|off>"), "пауза")));
         }
         return framed(result);

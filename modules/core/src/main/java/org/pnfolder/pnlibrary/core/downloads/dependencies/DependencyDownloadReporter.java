@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
@@ -36,8 +37,8 @@ public final class DependencyDownloadReporter {
      */
     public DependencyDownloadReporter(@NotNull PlatformLogging logging, @NotNull PlatformOwnerMetadata ownership,
                                       @NotNull String root) {
-        this.logging = logging;
-        this.ownership = ownership;
+        this.logging = Objects.requireNonNull(logging, "logging");
+        this.ownership = Objects.requireNonNull(ownership, "ownership");
         this.root = root;
     }
 
@@ -64,8 +65,8 @@ public final class DependencyDownloadReporter {
     /** Tells the administrator what is missing, where to get it, and how to have it installed. */
     public void missing(@NotNull Object owner, @NotNull MissingGroup group, boolean installingNow) {
         String command = root + " deps install " + group.getCode();
-        List<MissingDependency> needed = new ArrayList<MissingDependency>();
-        List<MissingDependency> optional = new ArrayList<MissingDependency>();
+        List<MissingDependency> needed = new ArrayList<>();
+        List<MissingDependency> optional = new ArrayList<>();
         for (MissingDependency item : group.getItems()) {
             (item.getRequired() ? needed : optional).add(item);
         }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.history;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -36,12 +37,12 @@ public final class UpdateHistoryEntry {
     public UpdateHistoryEntry(@NotNull UUID id, @NotNull Instant occurredAt, @NotNull UUID planId,
                               @NotNull UpdateState state, @NotNull UpdateActor actor, @NotNull String operation,
                               @NotNull List<ProductChange> changes, @Nullable String message) {
-        this.id = id;
-        this.occurredAt = occurredAt;
-        this.planId = planId;
-        this.state = state;
-        this.actor = actor;
-        this.operation = operation;
+        this.id = Objects.requireNonNull(id, "id");
+        this.occurredAt = Objects.requireNonNull(occurredAt, "occurredAt");
+        this.planId = Objects.requireNonNull(planId, "planId");
+        this.state = Objects.requireNonNull(state, "state");
+        this.actor = Objects.requireNonNull(actor, "actor");
+        this.operation = Objects.requireNonNull(operation, "operation");
         this.changes = UpdateValidation.frozen(changes);
         this.message = message;
     }

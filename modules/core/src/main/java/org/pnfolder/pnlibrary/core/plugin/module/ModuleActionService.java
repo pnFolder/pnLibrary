@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ScenarioDefinitions;
+import java.util.Locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -42,12 +44,7 @@ public final class ModuleActionService implements ActionService {
     public @NotNull ActionContext context(@NotNull OnlinePlayer player, @NotNull Audience allPlayers,
                                           @NotNull Map<String, Object> values, @NotNull ComponentSerializerType serializerType) {
         return new ActionContext(player, allPlayers, resources.getComponents(), resources.getLogger(), resources.getTasks(),
-                serializerType, values, Collections.<Class<?>, Object>emptyMap(), new Function<Class<?>, Object>() {
-                    @Override
-                    public Object apply(Class<?> type) {
-                        return resources.getServices().get(type);
-                    }
-                }, lookup, resources.getPlaceholders());
+                serializerType, values, Collections.emptyMap(), type -> resources.getServices().get(type), lookup, resources.getPlaceholders());
     }
 
     @Override
@@ -80,7 +77,7 @@ public final class ModuleActionService implements ActionService {
     @Override
     public @NotNull AutoCloseable defineFunction(@NotNull String name, @NotNull ExpressionFunction function,
                                                  @NotNull DefinitionScope scope, @NotNull DefinitionConflict conflict) {
-        if (Expression.isBuiltin(name.trim().toLowerCase())) {
+        if (Expression.isBuiltin(name.trim().toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException("'" + name + "' is a function of the expression language itself");
         }
         return shared.defineFunction(name, function, owner, conflict, visibility(scope), warner());

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config;
 
+import java.util.Objects;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -49,18 +50,18 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
     private volatile boolean waitingForTypes;
     /** The strongest requirement of edits that do not work yet; a read clears {@link ConfigApply#RELOAD}, a restart clears the rest. */
     private volatile ConfigApply pending;
-    private final CopyOnWriteArrayList<Consumer<ConfigChange>> changeListeners = new CopyOnWriteArrayList<Consumer<ConfigChange>>();
-    private final CopyOnWriteArrayList<Consumer<ReloadRequest>> reloadListeners = new CopyOnWriteArrayList<Consumer<ReloadRequest>>();
+    private final CopyOnWriteArrayList<Consumer<ConfigChange>> changeListeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<ReloadRequest>> reloadListeners = new CopyOnWriteArrayList<>();
 
     OwnedConfig(@NotNull ConfigId id, @NotNull Path file, @NotNull Class<?> modelType, boolean readOnly,
                 @NotNull CodeFirstYaml<T> delegate, @NotNull ConfigSettingsEditor editor, @NotNull PnLogger logger) {
-        this.id = id;
-        this.file = file;
-        this.modelType = modelType;
+        this.id = Objects.requireNonNull(id, "id");
+        this.file = Objects.requireNonNull(file, "file");
+        this.modelType = Objects.requireNonNull(modelType, "modelType");
         this.readOnly = readOnly;
-        this.delegate = delegate;
-        this.editor = editor;
-        this.logger = logger;
+        this.delegate = Objects.requireNonNull(delegate, "delegate");
+        this.editor = Objects.requireNonNull(editor, "editor");
+        this.logger = Objects.requireNonNull(logger, "logger");
     }
 
     Path getFile() {
@@ -85,7 +86,7 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
     @Override
     @NotNull
     public ConfigInfo getInfo() {
-        List<ConfigProblem> problems = Collections.<ConfigProblem>emptyList();
+        List<ConfigProblem> problems = Collections.emptyList();
         if (isLoaded()) {
             problems = Failures.runCatchingNonFatal(delegate::validate).getOrDefault(problems);
         }
@@ -191,19 +192,19 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
     @Override
     public void save() {
         delegate.save();
-        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.<String>emptyList()));
+        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.emptyList()));
     }
 
     @Override
     public void save(T value) {
         delegate.save(value);
-        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.<String>emptyList()));
+        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.emptyList()));
     }
 
     @Override
     public T update(@NotNull UnaryOperator<T> updater) {
         T updated = delegate.update(updater);
-        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.<String>emptyList()));
+        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.SAVED, Collections.emptyList()));
         return updated;
     }
 
@@ -216,7 +217,7 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
     @Override
     public T resetToDefaults() {
         T defaults = delegate.resetToDefaults();
-        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.RESET, Collections.<String>emptyList()));
+        fire(changeListeners, new ConfigChange(id, ConfigChangeCause.RESET, Collections.emptyList()));
         return defaults;
     }
 
@@ -244,7 +245,7 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
         if (pending == ConfigApply.RELOAD) {
             pending = null;
         }
-        fire(changeListeners, new ConfigChange(id, cause, Collections.<String>emptyList()));
+        fire(changeListeners, new ConfigChange(id, cause, Collections.emptyList()));
         return result;
     }
 
@@ -263,12 +264,12 @@ final class OwnedConfig<T> implements ManagedConfig<T> {
 
     private static <E> AutoCloseable subscribe(CopyOnWriteArrayList<Consumer<E>> target, List<Consumer<E>> listeners) {
         target.addAll(listeners);
-        return () -> target.removeAll(new HashSet<Consumer<E>>(listeners));
+        return () -> target.removeAll(new HashSet<>(listeners));
     }
 
     /** A failing listener is logged and never stops the others or the change itself. */
     private <E> void fire(List<Consumer<E>> listeners, E event) {
-        for (Consumer<E> listener : new ArrayList<Consumer<E>>(listeners)) {
+        for (Consumer<E> listener : new ArrayList<>(listeners)) {
             try {
                 listener.accept(event);
             } catch (Exception error) {

@@ -42,21 +42,11 @@ final class CommandAnswers {
             }
         }
         final List<String> help = helpFor(nodes.isEmpty() ? null : nodes.get(0), context);
-        react(registration, new Runnable() {
-            @Override
-            public void run() {
-                standard.answer(context, error, help);
-            }
-        });
+        react(registration, () -> standard.answer(context, error, help));
     }
 
     private boolean warn(RegisteredCommand registration, final CommandContext context, final String text) {
-        return react(registration, new Runnable() {
-            @Override
-            public void run() {
-                SenderNotices.notice(context.getSender(), ChatTone.WARNING, text, null);
-            }
-        });
+        return react(registration, () -> SenderNotices.notice(context.getSender(), ChatTone.WARNING, text, null));
     }
 
     private boolean handledBy(RegisteredCommand registration, final CommandContext context, final CommandError error,
@@ -65,12 +55,7 @@ final class CommandAnswers {
         if (handler == null) {
             return false;
         }
-        return react(registration, new Runnable() {
-            @Override
-            public void run() {
-                handler.handle(context, error);
-            }
-        });
+        return react(registration, () -> handler.handle(context, error));
     }
 
     // A broken handler logs and returns false so the next level answers: the sender never sees handler exceptions.
@@ -88,7 +73,7 @@ final class CommandAnswers {
         if (node == null) {
             return Collections.emptyList();
         }
-        List<String> help = new ArrayList<String>(node.getDescription());
+        List<String> help = new ArrayList<>(node.getDescription());
         for (CommandNode child : node.getChildren()) {
             if (!child.getDescription().isEmpty() && visibleTo(child, context)) {
                 String name = child.getKind() == CommandNodeKind.ARGUMENT ? "<" + child.getName() + ">" : child.getName();

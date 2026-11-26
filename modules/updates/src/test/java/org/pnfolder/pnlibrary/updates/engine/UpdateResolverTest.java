@@ -52,13 +52,13 @@ class UpdateResolverTest {
     }
 
     private static ProductRelease release(ProductId id, String version, ApiVersionRange api) {
-        return release(id, version, api, null, UpdateChannel.STABLE, Collections.<ProductDependency>emptyList(),
-            Collections.<ExternalPluginDependency>emptyList(), Collections.<ArtifactDescriptor>emptyList());
+        return release(id, version, api, null, UpdateChannel.STABLE, Collections.emptyList(),
+            Collections.emptyList(), Collections.emptyList());
     }
 
     private static ProductRelease release(ProductId id, String version, ApiVersionRange api, Integer provides) {
-        return release(id, version, api, provides, UpdateChannel.STABLE, Collections.<ProductDependency>emptyList(),
-            Collections.<ExternalPluginDependency>emptyList(), Collections.<ArtifactDescriptor>emptyList());
+        return release(id, version, api, provides, UpdateChannel.STABLE, Collections.emptyList(),
+            Collections.emptyList(), Collections.emptyList());
     }
 
     private static ProductRelease release(ProductId id, String version, ApiVersionRange api, Integer provides,
@@ -85,7 +85,7 @@ class UpdateResolverTest {
 
     @SafeVarargs
     private static <T> List<T> list(T... values) {
-        return new ArrayList<T>(Arrays.asList(values));
+        return new ArrayList<>(Arrays.asList(values));
     }
 
     @Test
@@ -107,7 +107,7 @@ class UpdateResolverTest {
             list(release(library, "3.0.0", range(5), 5), release(economy, "3.0.0", range(5))));
 
         assertEquals(5, result.getPlan().getTargetApi());
-        assertEquals(new HashSet<ProductId>(Arrays.asList(library, economy)), changed(result));
+        assertEquals(new HashSet<>(Arrays.asList(library, economy)), changed(result));
         assertEquals(version("3.0.0"), selected(result.getPlan(), market).getVersion());
     }
 
@@ -135,13 +135,13 @@ class UpdateResolverTest {
             list(installed(library, "2.9.0", range(4), 4), installed(market, "3.0.0", range(4)),
                 installed(economy, "2.0.0", range(4))),
             list(release(market, "4.0.0", range(4), null, UpdateChannel.STABLE, list(dependency),
-                    Collections.<ExternalPluginDependency>emptyList(), Collections.<ArtifactDescriptor>emptyList()),
-                release(economy, "3.1.0", range(4), null, UpdateChannel.BETA, Collections.<ProductDependency>emptyList(),
-                    Collections.<ExternalPluginDependency>emptyList(), Collections.<ArtifactDescriptor>emptyList())),
-            Collections.singletonMap(economy, UpdateChannel.BETA), UpdateChannel.STABLE, Collections.<ProductId>emptySet(),
+                    Collections.emptyList(), Collections.emptyList()),
+                release(economy, "3.1.0", range(4), null, UpdateChannel.BETA, Collections.emptyList(),
+                    Collections.emptyList(), Collections.emptyList())),
+            Collections.singletonMap(economy, UpdateChannel.BETA), UpdateChannel.STABLE, Collections.emptySet(),
             null, Integer.MAX_VALUE, new ResolverPolicy());
 
-        assertEquals(new HashSet<ProductId>(Arrays.asList(market, economy)), changed(result));
+        assertEquals(new HashSet<>(Arrays.asList(market, economy)), changed(result));
     }
 
     @Test
@@ -150,7 +150,7 @@ class UpdateResolverTest {
         ResolutionResult.Blocked result = (ResolutionResult.Blocked) new UpdateResolver(library).resolve(
             list(installed(library, "2.9.0", range(4), 4), installed(market, "2.7.1", range(4))),
             list(release(library, "3.0.0", range(5), 5), release(market, "3.0.0", range(5))),
-            Collections.<ProductId, UpdateChannel>emptyMap(), UpdateChannel.STABLE, Collections.singleton(market),
+            Collections.emptyMap(), UpdateChannel.STABLE, Collections.singleton(market),
             null, Integer.MAX_VALUE, new ResolverPolicy());
 
         boolean reported = false;
@@ -190,7 +190,7 @@ class UpdateResolverTest {
         ProductDependency dependency = new ProductDependency(economy, version("2.0.0"));
         List<ProductRelease> releases = list(
             release(market, "2.0.0", range(1), null, UpdateChannel.STABLE, list(dependency),
-                Collections.<ExternalPluginDependency>emptyList(), Collections.<ArtifactDescriptor>emptyList()),
+                Collections.emptyList(), Collections.emptyList()),
             release(economy, "2.1.0", range(1)));
         List<InstalledProduct> installed = list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1)));
 
@@ -203,9 +203,9 @@ class UpdateResolverTest {
         assertTrue(reported);
 
         ResolutionResult.Ready ready = (ResolutionResult.Ready) new UpdateResolver(library).resolve(
-            installed, releases, Collections.<ProductId, UpdateChannel>emptyMap(), UpdateChannel.STABLE,
-            Collections.<ProductId>emptySet(), PlatformType.BUKKIT, 17,
-            new ResolverPolicy(true, Collections.<String>emptySet()));
+            installed, releases, Collections.emptyMap(), UpdateChannel.STABLE,
+            Collections.emptySet(), PlatformType.BUKKIT, 17,
+            new ResolverPolicy(true, Collections.emptySet()));
         assertEquals(version("2.1.0"), selected(ready.getPlan(), economy).getVersion());
     }
 
@@ -218,11 +218,11 @@ class UpdateResolverTest {
             "market.jar", PlatformType.VELOCITY, 17, null, 10L, repeat("00", 32), null);
         ResolutionResult.Blocked result = (ResolutionResult.Blocked) new UpdateResolver(library).resolve(
             list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1))),
-            list(release(market, "3.0.0", range(1), null, UpdateChannel.STABLE, Collections.<ProductDependency>emptyList(),
-                    Collections.<ExternalPluginDependency>emptyList(), list(velocityOnly)),
-                release(market, "2.0.0", range(1), null, UpdateChannel.STABLE, Collections.<ProductDependency>emptyList(),
-                    list(vault), Collections.<ArtifactDescriptor>emptyList())),
-            Collections.<ProductId, UpdateChannel>emptyMap(), UpdateChannel.STABLE, Collections.<ProductId>emptySet(),
+            list(release(market, "3.0.0", range(1), null, UpdateChannel.STABLE, Collections.emptyList(),
+                    Collections.emptyList(), list(velocityOnly)),
+                release(market, "2.0.0", range(1), null, UpdateChannel.STABLE, Collections.emptyList(),
+                    list(vault), Collections.emptyList())),
+            Collections.emptyMap(), UpdateChannel.STABLE, Collections.emptySet(),
             PlatformType.BUKKIT, 17, new ResolverPolicy());
 
         boolean reported = false;
@@ -235,7 +235,7 @@ class UpdateResolverTest {
     }
 
     private static java.util.Set<ProductId> changed(ResolutionResult.Ready result) {
-        java.util.Set<ProductId> products = new HashSet<ProductId>();
+        java.util.Set<ProductId> products = new HashSet<>();
         for (ProductChange change : result.getPlan().getChanges()) {
             products.add(change.getProduct());
         }

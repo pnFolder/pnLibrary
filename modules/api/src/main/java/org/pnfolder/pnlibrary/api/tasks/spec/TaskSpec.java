@@ -57,9 +57,9 @@ public final class TaskSpec {
         lagThreshold = b.lagThreshold;
         lagHandler = b.lagHandler;
         cancelWithParent = b.cancelWithParent;
-        conditions = Collections.unmodifiableList(new ArrayList<BooleanSupplier>(b.conditions));
-        cancellationConditions = Collections.unmodifiableList(new ArrayList<BooleanSupplier>(b.cancellationConditions));
-        tags = Collections.unmodifiableSet(new LinkedHashSet<String>(b.tags));
+        conditions = Collections.unmodifiableList(new ArrayList<>(b.conditions));
+        cancellationConditions = Collections.unmodifiableList(new ArrayList<>(b.cancellationConditions));
+        tags = Collections.unmodifiableSet(new LinkedHashSet<>(b.tags));
         action = b.action;
     }
 
@@ -128,9 +128,9 @@ public final class TaskSpec {
         Duration lagThreshold = DEFAULT_LAG_THRESHOLD;
         TaskLagHandler lagHandler;
         boolean cancelWithParent;
-        final List<BooleanSupplier> conditions = new ArrayList<BooleanSupplier>();
-        final List<BooleanSupplier> cancellationConditions = new ArrayList<BooleanSupplier>();
-        final Set<String> tags = new LinkedHashSet<String>();
+        final List<BooleanSupplier> conditions = new ArrayList<>();
+        final List<BooleanSupplier> cancellationConditions = new ArrayList<>();
+        final Set<String> tags = new LinkedHashSet<>();
         TaskAction action;
 
         private Builder() {}

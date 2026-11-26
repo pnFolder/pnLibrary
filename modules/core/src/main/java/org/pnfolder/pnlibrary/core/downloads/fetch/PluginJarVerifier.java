@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -33,7 +34,7 @@ public final class PluginJarVerifier {
 
     /** Creates a verifier that reads the descriptor file of {@code platform}. */
     public PluginJarVerifier(@NotNull PlatformIdentity platform) {
-        this.platform = platform;
+        this.platform = Objects.requireNonNull(platform, "platform");
     }
 
     /** Throws {@link IllegalArgumentException} when the JAR at {@code path} does not meet {@code expected}. */
@@ -63,7 +64,7 @@ public final class PluginJarVerifier {
                 throw new IllegalArgumentException("descriptor плагина повреждён");
             }
             Map<String, Object> values = (Map<String, Object>) loaded;
-            List<String> names = new ArrayList<String>();
+            List<String> names = new ArrayList<>();
             addText(names, values.get("id"));
             addText(names, values.get("name"));
             Object version = values.get("version");

@@ -117,6 +117,6 @@ class ConfigStepsTest {
     }
 
     private static ConfigDocument emptyDocument() {
-        return new ConfigDocument(Collections.<String, Object>emptyMap());
+        return new ConfigDocument(Collections.emptyMap());
     }
 }

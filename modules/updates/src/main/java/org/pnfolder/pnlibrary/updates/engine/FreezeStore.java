@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.updates.product.ProductId;
@@ -21,7 +22,7 @@ public final class FreezeStore {
     }
 
     public FreezeStore(@NotNull UpdatePreferencesStore store, @NotNull Clock clock) {
-        this.store = store;
+        this.store = Objects.requireNonNull(store, "store");
         this.clock = clock;
         this.expiries = load();
     }
@@ -61,7 +62,7 @@ public final class FreezeStore {
     @NotNull
     public synchronized Map<ProductId, Instant> active() {
         removeExpired();
-        return new LinkedHashMap<ProductId, Instant>(expiries);
+        return new LinkedHashMap<>(expiries);
     }
 
     private void removeExpired() {
@@ -74,7 +75,7 @@ public final class FreezeStore {
     private Map<ProductId, Instant> load() {
         // A pause saved under an older, longer limit still ends within the current maximum.
         Instant latest = clock.instant().plus(FreezeDuration.MAXIMUM);
-        Map<ProductId, Instant> loaded = new LinkedHashMap<ProductId, Instant>();
+        Map<ProductId, Instant> loaded = new LinkedHashMap<>();
         for (Map.Entry<String, Long> entry : store.current().getFreezes().entrySet()) {
             Instant expiry = Instant.ofEpochMilli(entry.getValue());
             loaded.put(ProductId.of(entry.getKey()), expiry.compareTo(latest) <= 0 ? expiry : latest);
@@ -83,7 +84,7 @@ public final class FreezeStore {
     }
 
     private void persist() {
-        Map<String, Long> stored = new LinkedHashMap<String, Long>();
+        Map<String, Long> stored = new LinkedHashMap<>();
         for (Map.Entry<ProductId, Instant> entry : expiries.entrySet()) {
             stored.put(entry.getKey().getValue(), entry.getValue().toEpochMilli());
         }

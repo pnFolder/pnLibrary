@@ -53,12 +53,12 @@ public final class ReleaseCatalogCodec {
             throw fail("schema", "unsupported schema " + schema);
         }
         String product = CatalogJson.requiredString(root, "product");
-        List<CatalogRelease> releases = new ArrayList<CatalogRelease>();
+        List<CatalogRelease> releases = new ArrayList<>();
         int index = 0;
         for (JsonElement value : CatalogJson.requiredArray(root, "releases")) {
             releases.add(decodeRelease(value.getAsJsonObject(), "releases[" + index++ + "]"));
         }
-        Set<SemanticVersion> versions = new HashSet<SemanticVersion>();
+        Set<SemanticVersion> versions = new HashSet<>();
         for (CatalogRelease release : releases) {
             versions.add(release.getVersion());
         }
@@ -78,7 +78,7 @@ public final class ReleaseCatalogCodec {
 
     private CatalogRelease decodeRelease(JsonObject value, String field) {
         try {
-            List<CatalogArtifact> artifacts = new ArrayList<CatalogArtifact>();
+            List<CatalogArtifact> artifacts = new ArrayList<>();
             int index = 0;
             for (JsonElement raw : CatalogJson.requiredArray(value, "artifacts")) {
                 artifacts.add(decodeArtifact(raw.getAsJsonObject(), field + ".artifacts[" + index++ + "]"));

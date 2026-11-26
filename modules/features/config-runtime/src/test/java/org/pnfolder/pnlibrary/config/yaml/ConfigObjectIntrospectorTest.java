@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.database.DatabasePath;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
@@ -31,26 +33,26 @@ class ConfigObjectIntrospectorTest {
 
         List<Field> fields = introspector.fields(ChildConfig.class);
 
-        List<String> keys = new ArrayList<String>();
-        List<Object> values = new ArrayList<Object>();
+        List<String> keys = new ArrayList<>();
+        List<Object> values = new ArrayList<>();
         for (Field field : fields) {
             keys.add(introspector.key(field));
             values.add(introspector.read(field, new ChildConfig()));
         }
         assertEquals(Arrays.asList("base-value", "explicit", "child-value"), keys);
-        assertEquals(Arrays.<Object>asList(1, 2, 3), values);
+        assertEquals(Arrays.asList(1, 2, 3), values);
     }
 
     @Test
     void materializesStandardCollectionInterfacesPredictably() {
         ConfigObjectIntrospector introspector = new ConfigObjectIntrospector(ConfigNamingStrategy.AS_DECLARED);
 
-        Collection<Object> set = introspector.collection(Set.class, Arrays.<Object>asList("a", "a", "b"), "values");
-        Map<Object, Object> source = new LinkedHashMap<Object, Object>();
+        Collection<Object> set = introspector.collection(Set.class, Arrays.asList("a", "a", "b"), "values");
+        Map<Object, Object> source = new LinkedHashMap<>();
         source.put("a", 1);
         Map<Object, Object> map = introspector.map(Map.class, source, "values");
 
-        assertEquals(new LinkedHashSet<Object>(Arrays.<Object>asList("a", "b")), set);
+        assertEquals(new LinkedHashSet<>(Arrays.asList("a", "b")), set);
         assertEquals(source, map);
     }
 
@@ -97,7 +99,7 @@ class ConfigObjectIntrospectorTest {
         assertEquals(Arrays.asList("Игроки", "Экономика"), names(paths));
         assertEquals(keys(DatabaseRole.USER, "user", DatabaseRole.DATABASE, "playersSchema"), paths.get(0).getKeys());
         assertEquals(keys(DatabaseRole.USER, "user", DatabaseRole.DATABASE, "economySchema"), paths.get(1).getKeys());
-        assertEquals(Collections.<String>emptyList(), paths.get(0).getTableKeys());
+        assertEquals(Collections.emptyList(), paths.get(0).getTableKeys());
         assertEquals(Collections.singletonList("accounts"), paths.get(1).getTableKeys());
     }
 
@@ -120,7 +122,7 @@ class ConfigObjectIntrospectorTest {
         List<DatabasePath> paths = new ConfigObjectIntrospector(ConfigNamingStrategy.AS_DECLARED).databasePaths(OnTheFields.class);
 
         assertEquals(Arrays.asList("Игроки", "Кланы"), names(paths));
-        List<DatabaseKind> kinds = new ArrayList<DatabaseKind>();
+        List<DatabaseKind> kinds = new ArrayList<>();
         for (DatabasePath path : paths) {
             kinds.add(path.getKind());
         }
@@ -131,7 +133,7 @@ class ConfigObjectIntrospectorTest {
     }
 
     private static List<String> names(List<DatabasePath> paths) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (DatabasePath path : paths) {
             names.add(path.getName());
         }
@@ -139,7 +141,7 @@ class ConfigObjectIntrospectorTest {
     }
 
     private static Map<DatabaseRole, String> keys(DatabaseRole first, String firstKey, DatabaseRole second, String secondKey) {
-        Map<DatabaseRole, String> keys = new LinkedHashMap<DatabaseRole, String>();
+        Map<DatabaseRole, String> keys = new LinkedHashMap<>();
         keys.put(first, firstKey);
         keys.put(second, secondKey);
         return keys;

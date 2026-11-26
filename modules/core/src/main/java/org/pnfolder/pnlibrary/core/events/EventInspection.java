@@ -122,12 +122,7 @@ final class EventInspection implements EventInspector {
         for (Map.Entry<String, Class<?>> entry : types.entrySet()) {
             found.add(counters.info(entry.getKey(), openListeners(entry.getValue())));
         }
-        Collections.sort(found, new Comparator<EventInfo>() {
-            @Override
-            public int compare(EventInfo left, EventInfo right) {
-                return left.getEventType().compareTo(right.getEventType());
-            }
-        });
+        Collections.sort(found, (left, right) -> left.getEventType().compareTo(right.getEventType()));
         return found;
     }
 
@@ -147,13 +142,13 @@ final class EventInspection implements EventInspector {
     @NotNull
     @Override
     public List<EventDay> history(@Nullable String eventType) {
-        return history == null ? Collections.<EventDay>emptyList() : history.entries(eventType);
+        return history == null ? Collections.emptyList() : history.entries(eventType);
     }
 
     @NotNull
     @Override
     public List<EventHour> hourly(@Nullable String eventType) {
-        return history == null ? Collections.<EventHour>emptyList() : history.hourly(eventType);
+        return history == null ? Collections.emptyList() : history.hourly(eventType);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.view;
 
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +12,7 @@ public final class TraceView {
     private final boolean trimmed;
 
     TraceView(@NotNull List<Component> lines, boolean trimmed) {
-        this.lines = lines;
+        this.lines = Objects.requireNonNull(lines, "lines");
         this.trimmed = trimmed;
     }
 

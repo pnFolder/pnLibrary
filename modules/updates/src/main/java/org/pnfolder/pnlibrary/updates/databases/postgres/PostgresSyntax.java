@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.postgres;
 
+import java.util.Locale;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +49,7 @@ public final class PostgresSyntax {
     public static String bytes(@NotNull byte[] value) {
         StringBuilder hex = new StringBuilder("'\\x");
         for (byte b : value) {
-            hex.append(String.format("%02x", b));
+            hex.append(String.format(Locale.ROOT, "%02x", b));
         }
         return hex.append('\'').toString();
     }

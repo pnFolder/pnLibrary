@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.proxy.ProxyUpdateCommand;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -44,9 +45,6 @@ class ProxyUpdateCommandTest {
         assertEquals("pnlibrary", updates.channelProduct);
         assertEquals(UpdateChannel.DEV, updates.channelSet);
         assertEquals(UpdateActor.Kind.PLAYER, updates.actor.getKind());
-        execute(updates, new Sender("player", true, null), "updates", "set", "pnlibrary", "auto", "on");
-        assertEquals("pnlibrary", updates.automaticProduct);
-        assertEquals(Boolean.TRUE, updates.automaticSet);
         execute(updates, new Sender("player", false, null), "updates", "set", "pnlibrary", "hold", "3d");
         assertEquals("pnlibrary", updates.heldProduct);
         assertEquals(Duration.ofDays(3), updates.heldSet);
@@ -57,18 +55,22 @@ class ProxyUpdateCommandTest {
         FakeUpdates updates = new FakeUpdates();
         Set<String> nothing = Collections.emptySet();
 
-        assertFalse(route(updates, new Sender("player", false, nothing), "updates", "set", "pnlibrary", "auto", "on") instanceof ExecutableRoute);
+        assertFalse(route(updates, new Sender("player", false, nothing), "updates", "set", "pnlibrary", "hold", "3d") instanceof ExecutableRoute);
         assertFalse(route(updates, new Sender("player", false, nothing), "update", "rollback") instanceof ExecutableRoute);
+    }
+
+    @Test
+    void thereIsNoAutomaticDownloadSwitchAnyMore() {
+        assertFalse(route(new FakeUpdates(), new Sender("player", true, null), "updates", "set", "pnlibrary", "auto", "on") instanceof ExecutableRoute);
+        assertFalse(route(new FakeUpdates(), new Sender("player", true, null), "updates", "set", "all", "auto", "on") instanceof ExecutableRoute);
     }
 
     @Test
     void invalidValuesNeverChangeSettings() {
         FakeUpdates updates = new FakeUpdates();
         execute(updates, new Sender("player", false, null), "updates", "set", "pnlibrary", "channel", "nightly");
-        execute(updates, new Sender("player", false, null), "updates", "set", "pnlibrary", "auto", "maybe");
         execute(updates, new Sender("player", false, null), "updates", "set", "pnlibrary", "hold", "90d");
         assertNull(updates.channelProduct);
-        assertNull(updates.automaticProduct);
         assertNull(updates.heldProduct);
     }
 

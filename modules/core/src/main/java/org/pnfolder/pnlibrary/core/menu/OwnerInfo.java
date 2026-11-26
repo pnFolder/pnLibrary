@@ -12,9 +12,9 @@ public final class OwnerInfo {
     private final List<String> authors;
 
     public OwnerInfo(@NotNull String name, @Nullable String version, @NotNull List<String> authors) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.version = version;
-        this.authors = authors;
+        this.authors = Objects.requireNonNull(authors, "authors");
     }
 
     public @NotNull String getName() {

@@ -28,10 +28,10 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope;
 import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
-import org.pnfolder.pnlibrary.core.plugin.module.MinecraftGate;
-import org.pnfolder.pnlibrary.core.plugin.module.MinecraftSupportRule;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleDefinitionBuilder;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibraryLoader;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftGate;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftSupportRule;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
+import org.pnfolder.pnlibrary.core.plugin.module.library.ModuleLibraryLoader;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKey;
 
@@ -41,7 +41,7 @@ final class LoadedPlugin implements PluginRegistration {
     private final Object owner;
     private final PluginId nativeId;
     private final long registrationId;
-    private final Map<ModuleId, LoadedModule> moduleContexts = new LinkedHashMap<ModuleId, LoadedModule>();
+    private final Map<ModuleId, LoadedModule> moduleContexts = new LinkedHashMap<>();
     private final MinecraftSupportRule minecraftRule = new MinecraftSupportRule();
     private final ModuleLibraries libraries;
     private final AtomicBoolean pluginClosed = new AtomicBoolean(false);
@@ -231,7 +231,7 @@ final class LoadedPlugin implements PluginRegistration {
     @Override
     public @NotNull List<ModuleContext> all() {
         synchronized (moduleContexts) {
-            return Collections.<ModuleContext>unmodifiableList(new ArrayList<ModuleContext>(moduleContexts.values()));
+            return Collections.unmodifiableList(new ArrayList<>(moduleContexts.values()));
         }
     }
 
@@ -255,11 +255,11 @@ final class LoadedPlugin implements PluginRegistration {
         }
         List<LoadedModule> current;
         synchronized (moduleContexts) {
-            current = new ArrayList<LoadedModule>(moduleContexts.values());
+            current = new ArrayList<>(moduleContexts.values());
             moduleContexts.clear();
         }
         Collections.reverse(current);
-        List<CleanupStep> steps = new ArrayList<CleanupStep>();
+        List<CleanupStep> steps = new ArrayList<>();
         for (final LoadedModule module : current) {
             steps.add(module::closeInternal);
         }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Locale;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -422,7 +423,7 @@ class NativeProxyUpdateTest {
         }
         StringBuilder hex = new StringBuilder();
         for (byte value : sha.digest()) {
-            hex.append(String.format("%02x", value));
+            hex.append(String.format(Locale.ROOT, "%02x", value));
         }
         return hex.toString();
     }

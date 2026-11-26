@@ -52,7 +52,7 @@ public final class DiagnosticCommandRenderer {
         String link = report.getUploadedUrl();
         String error = report.getUploadError();
         if (link != null) {
-            List<Component> lines = new ArrayList<Component>(kit.notice(new ChatNotice(ChatTone.SUCCESS, "Отчёт готов.", link)));
+            List<Component> lines = new ArrayList<>(kit.notice(new ChatNotice(ChatTone.SUCCESS, "Отчёт готов.", link)));
             Component actions = kit.actions(
                 kit.linkButton("Открыть отчёт", link, "Открыть отчёт в браузере", ChatPalette.INFO));
             if (actions != null) {

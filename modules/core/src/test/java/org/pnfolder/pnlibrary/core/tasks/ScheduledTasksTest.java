@@ -81,7 +81,7 @@ class ScheduledTasksTest {
         RecordingTaskAdapter adapter = new RecordingTaskAdapter(false, 0);
         IllegalStateException actionFailure = new IllegalStateException("action failed");
         IllegalArgumentException loggerFailure = new IllegalArgumentException("logger failed");
-        List<Throwable> reported = new ArrayList<Throwable>();
+        List<Throwable> reported = new ArrayList<>();
         ScheduledTasks service = new ScheduledTasks(adapter, new TaskServiceSettings(), (owner, message, error) -> {
             reported.add(error);
             throw loggerFailure;
@@ -93,7 +93,7 @@ class ScheduledTasksTest {
         assertEquals(TaskStatus.FAILED, task.getStatus());
         assertNull(service.get(task.getId()));
         assertNotNull(service.query().get(0).getLastCompletedAt());
-        assertEquals(Arrays.<Throwable>asList(actionFailure), reported);
+        assertEquals(Arrays.asList(actionFailure), reported);
         assertEquals("native cancellation failed", actionFailure.getSuppressed()[0].getMessage());
         assertEquals("logger failed", actionFailure.getSuppressed()[1].getMessage());
         service.close();

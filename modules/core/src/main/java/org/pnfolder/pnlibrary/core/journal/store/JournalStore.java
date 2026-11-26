@@ -59,8 +59,8 @@ public final class JournalStore {
     private final JournalFiles files;
     private final JournalReader reader;
     private final JournalRetention retentionRules;
-    private final Map<JournalDay, Segment> active = new HashMap<JournalDay, Segment>();
-    private final Set<LocalDate> loadedDays = new HashSet<LocalDate>();
+    private final Map<JournalDay, Segment> active = new HashMap<>();
+    private final Set<LocalDate> loadedDays = new HashSet<>();
     // One per chunk, not per record.
     private final AtomicLong blocksWritten = new AtomicLong();
     private LocalDate lastPrunedOn;
@@ -140,12 +140,12 @@ public final class JournalStore {
     }
 
     private static Map<JournalDay, List<JournalRecord>> groupByDay(List<JournalRecord> records) {
-        Map<JournalDay, List<JournalRecord>> groups = new LinkedHashMap<JournalDay, List<JournalRecord>>();
+        Map<JournalDay, List<JournalRecord>> groups = new LinkedHashMap<>();
         for (JournalRecord record : records) {
             JournalDay day = new JournalDay(record.getLevel(), utcDate(record.getTimeMillis()));
             List<JournalRecord> group = groups.get(day);
             if (group == null) {
-                group = new ArrayList<JournalRecord>();
+                group = new ArrayList<>();
                 groups.put(day, group);
             }
             group.add(record);
@@ -176,7 +176,7 @@ public final class JournalStore {
                 rejected.rejected(chunk.get(0), error);
                 return;
             }
-            for (JournalRecord single : new ArrayList<JournalRecord>(chunk)) {
+            for (JournalRecord single : new ArrayList<>(chunk)) {
                 writeChunk(day, Collections.singletonList(single), rejected);
             }
             return;
@@ -234,22 +234,22 @@ public final class JournalStore {
     }
 
     public @NotNull List<JournalRecord> read() {
-        return read(Collections.<JournalLevel>emptySet(), null, null, 100, null);
+        return read(Collections.emptySet(), null, null, 100, null);
     }
 
     public @NotNull List<JournalRecord> read(int limit) {
-        return read(Collections.<JournalLevel>emptySet(), null, null, limit, null);
+        return read(Collections.emptySet(), null, null, limit, null);
     }
 
     /** The last 24 hours per level as counts and limits, without any message text. */
     public @NotNull Map<String, Object> summary() {
         long since = clock.millis() - Duration.ofHours(24).toMillis();
-        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        Map<String, Object> summary = new LinkedHashMap<>();
         for (JournalLevel level : JournalLevel.values()) {
             JournalSnapshot snapshot = reader.readSnapshot(Collections.singleton(level), null, since,
                 SUMMARY_LIMIT, null);
             List<JournalRecord> recent = snapshot.getRecords();
-            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("recordsLast24h", recent.size());
             entry.put("countCapped", recent.size() >= SUMMARY_LIMIT || snapshot.isTruncated());
             entry.put("readBudgetExhausted", snapshot.isTruncated());

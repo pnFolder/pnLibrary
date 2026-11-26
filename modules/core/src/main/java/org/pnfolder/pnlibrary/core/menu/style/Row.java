@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.style;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
@@ -11,7 +12,7 @@ public final class Row {
     private final MenuClickHandler click;
 
     public Row(@NotNull ItemSpec stack, @Nullable MenuClickHandler click) {
-        this.stack = stack;
+        this.stack = Objects.requireNonNull(stack, "stack");
         this.click = click;
     }
 

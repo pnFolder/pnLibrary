@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.data;
 
+import org.pnfolder.pnlibrary.core.menu.data.question.EventAbout;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -29,7 +30,7 @@ import org.pnfolder.pnlibrary.core.journal.JournalDetail;
 import org.pnfolder.pnlibrary.core.journal.JournalGroup;
 import org.pnfolder.pnlibrary.core.link.ServerGroup;
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
-import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow;
+import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot;
 import org.pnfolder.pnlibrary.core.tasks.TaskControl;
@@ -70,8 +71,6 @@ public interface MenuData {
 
     /** Asks the catalog of one plugin for a new version; it does not wait for the answer. */
     void checkOne(@NotNull String product, @NotNull UpdateActor actor);
-
-    @NotNull CompletionStage<Boolean> setAutomatic(@NotNull String product, boolean enabled, @NotNull UpdateActor actor);
 
     /** Sets the update channel of {@code product}; null returns it to the default. */
     @NotNull CompletionStage<Boolean> setChannel(@NotNull String product, @Nullable UpdateChannel channel, @NotNull UpdateActor actor);

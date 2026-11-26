@@ -42,45 +42,25 @@ public final class HidingLifecycleBox implements MessageBox {
 
     @Override
     public @NotNull MessageBox ok(@NotNull final String label, @NotNull final String detail) {
-        pluginRows.add(new Consumer<MessageBox>() {
-            @Override
-            public void accept(MessageBox box) {
-                box.ok(label, detail);
-            }
-        });
+        pluginRows.add(box -> box.ok(label, detail));
         return this;
     }
 
     @Override
     public @NotNull MessageBox warn(@NotNull final String label, @NotNull final String detail) {
-        pluginRows.add(new Consumer<MessageBox>() {
-            @Override
-            public void accept(MessageBox box) {
-                box.warn(label, detail);
-            }
-        });
+        pluginRows.add(box -> box.warn(label, detail));
         return this;
     }
 
     @Override
     public @NotNull MessageBox skip(@NotNull final String label, @NotNull final String detail) {
-        pluginRows.add(new Consumer<MessageBox>() {
-            @Override
-            public void accept(MessageBox box) {
-                box.skip(label, detail);
-            }
-        });
+        pluginRows.add(box -> box.skip(label, detail));
         return this;
     }
 
     @Override
     public @NotNull MessageBox fail(@NotNull final String label, @NotNull final String detail, @Nullable final Throwable error) {
-        pluginRows.add(new Consumer<MessageBox>() {
-            @Override
-            public void accept(MessageBox box) {
-                box.fail(label, detail, error);
-            }
-        });
+        pluginRows.add(box -> box.fail(label, detail, error));
         return this;
     }
 

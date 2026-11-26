@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.api.placeholders.route.RoutePart;
 
 class PlaceholderRouteTest {
     private final PlaceholderEngine engine = new PlaceholderEngine(problem -> { });
-    private final List<RouteInfo> seen = new ArrayList<RouteInfo>();
+    private final List<RouteInfo> seen = new ArrayList<>();
 
     private Object read(String address) throws Exception {
         return read(address, ViewerInfo.none());
@@ -33,7 +33,7 @@ class PlaceholderRouteTest {
 
         assertEquals(1, seen.size());
         RouteInfo route = seen.get(0);
-        List<RouteKind> kinds = new ArrayList<RouteKind>();
+        List<RouteKind> kinds = new ArrayList<>();
         for (RoutePart part : route.getParts()) {
             kinds.add(part.getKind());
         }
@@ -41,7 +41,7 @@ class PlaceholderRouteTest {
         assertEquals("route.war.score", route.getPath());
         assertEquals(Collections.singletonList("4"), route.of(RouteKind.FORMAT).get(0).getArguments());
         assertTrue(route.hasFormat("pad0"));
-        List<String> fields = new ArrayList<String>();
+        List<String> fields = new ArrayList<>();
         for (RoutePart part : route.after("war")) {
             if (part.getKind() == RouteKind.FIELD) {
                 fields.add(part.getText());

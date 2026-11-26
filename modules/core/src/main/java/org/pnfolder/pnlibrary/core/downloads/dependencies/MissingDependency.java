@@ -29,10 +29,10 @@ public final class MissingDependency {
     private MissingDependency(String plugin, String minimum, URI page, List<URI> sources, String title,
                               String description, boolean required, boolean checked, String variant,
                               boolean noFileForServer) {
-        this.plugin = plugin;
-        this.minimum = minimum;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.minimum = Objects.requireNonNull(minimum, "minimum");
         this.page = page;
-        this.sources = new ArrayList<URI>(sources);
+        this.sources = new ArrayList<>(sources);
         this.title = title;
         this.description = description;
         this.required = required;
@@ -94,7 +94,7 @@ public final class MissingDependency {
 
     /** Direct addresses of the file, the main one first. */
     public @NotNull List<URI> getSources() {
-        return new ArrayList<URI>(sources);
+        return new ArrayList<>(sources);
     }
 
     /** The name shown to people; the plugin name unless a title was given. */

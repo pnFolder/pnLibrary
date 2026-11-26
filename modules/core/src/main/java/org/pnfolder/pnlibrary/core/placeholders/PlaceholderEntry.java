@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import java.util.Objects;
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,8 +12,8 @@ final class PlaceholderEntry {
     private final String papi;
 
     PlaceholderEntry(@NotNull String owner, @NotNull PhNode root, @Nullable String papi) {
-        this.owner = owner;
-        this.root = root;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.root = Objects.requireNonNull(root, "root");
         this.papi = papi;
     }
 

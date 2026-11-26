@@ -64,12 +64,12 @@ class ConfigEditingTest {
         try (YamlConfigurations service = new YamlConfigurations(FakeOwnerPlatform.INSTANCE)) {
             ManagedConfig<EditableFile> config = open(service);
 
-            Set<String> paths = new HashSet<String>();
+            Set<String> paths = new HashSet<>();
             for (ConfigSetting setting : config.getSettings()) {
                 paths.add(setting.getPath());
             }
 
-            assertEquals(new HashSet<String>(Arrays.asList("greeting", "poolSize", "difficulty", "shop.enabled", "shop.tax")), paths);
+            assertEquals(new HashSet<>(Arrays.asList("greeting", "poolSize", "difficulty", "shop.enabled", "shop.tax")), paths);
             assertFalse(paths.contains("token"));
             assertFalse(paths.contains("hidden"));
             ConfigSetting pool = setting(config, "poolSize");
@@ -126,9 +126,9 @@ class ConfigEditingTest {
     void listenersHearAboutReadsEditsAndSettingsThatNeedAReload() throws IOException {
         try (YamlConfigurations service = new YamlConfigurations(FakeOwnerPlatform.INSTANCE)) {
             ManagedConfig<EditableFile> config = open(service);
-            List<ConfigChange> changes = new ArrayList<ConfigChange>();
-            List<ReloadRequest> requests = new ArrayList<ReloadRequest>();
-            List<ReloadRequest> second = new ArrayList<ReloadRequest>();
+            List<ConfigChange> changes = new ArrayList<>();
+            List<ReloadRequest> requests = new ArrayList<>();
+            List<ReloadRequest> second = new ArrayList<>();
             config.onChanged((Consumer<ConfigChange>) changes::add);
             config.onReloadRequired((Consumer<ReloadRequest>) requests::add, (Consumer<ReloadRequest>) second::add);
 
@@ -137,14 +137,14 @@ class ConfigEditingTest {
             config.edit("poolSize", "20");
             config.edit("difficulty", "HARD");
 
-            List<ConfigApply> applies = new ArrayList<ConfigApply>();
+            List<ConfigApply> applies = new ArrayList<>();
             for (ReloadRequest request : requests) {
                 applies.add(request.getApply());
             }
             assertEquals(Arrays.asList(ConfigApply.RESTART, ConfigApply.RELOAD), applies);
             assertEquals(2, second.size(), "every listener is called");
             assertEquals(ConfigApply.RESTART, service.get(config.getId()).getInfo().getPendingApply());
-            List<String> paths = new ArrayList<String>();
+            List<String> paths = new ArrayList<>();
             for (ConfigChange change : changes) {
                 assertEquals(1, change.getPaths().size());
                 paths.add(change.getPaths().get(0));
@@ -163,7 +163,7 @@ class ConfigEditingTest {
     void aPendingReloadIsClearedByReadingTheFileAgainAndAFailingListenerDoesNotStopOthers() throws Exception {
         try (YamlConfigurations service = new YamlConfigurations(FakeOwnerPlatform.INSTANCE)) {
             ManagedConfig<EditableFile> config = open(service);
-            List<ReloadRequest> heard = new ArrayList<ReloadRequest>();
+            List<ReloadRequest> heard = new ArrayList<>();
             AutoCloseable subscription = config.onReloadRequired(
                     (Consumer<ReloadRequest>) request -> {
                         throw new IllegalStateException("broken listener");

@@ -47,7 +47,7 @@ public final class StatsRuntime implements AutoCloseable {
     /** The numbers as {@code pnlibrary} placeholders see them. */
     public @NotNull Map<String, Long> values() {
         StatsSnapshot now = snapshot();
-        Map<String, Long> values = new LinkedHashMap<String, Long>();
+        Map<String, Long> values = new LinkedHashMap<>();
         values.put("errors", (long) now.getErrors24h());
         values.put("warnings", (long) now.getWarnings24h());
         values.put("tasks", (long) now.getTasksActive());

@@ -57,7 +57,7 @@ public final class DiagnosticCommands {
 
     private static List<String> suggestions(PnLibrary library, CommandContext context) {
         String prefix = context.getCurrentInput().toLowerCase(Locale.ROOT);
-        Set<String> all = new LinkedHashSet<String>();
+        Set<String> all = new LinkedHashSet<>();
         all.add("all");
         for (PluginRegistration plugin : library.getPlugins().all()) {
             for (ModuleContext module : plugin.all()) {
@@ -65,7 +65,7 @@ public final class DiagnosticCommands {
             }
         }
         all.add("--local");
-        List<String> matching = new ArrayList<String>();
+        List<String> matching = new ArrayList<>();
         for (String candidate : all) {
             if (candidate.toLowerCase(Locale.ROOT).startsWith(prefix)) {
                 matching.add(candidate);

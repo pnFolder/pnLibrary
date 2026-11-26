@@ -16,9 +16,9 @@ import org.pnfolder.pnlibrary.core.registry.ListRegistry;
 
 class PlaceholderRegistryTest {
     private final PlaceholderInfo coins =
-            new PlaceholderInfo("shop.coins", "Coins", "shop/main", "Int", null, Collections.<String>emptyList(), Visibility.PLUGIN);
-    private final Registry<PlaceholderInfo> registry = new ListRegistry<PlaceholderInfo>("placeholders", () -> Collections.singletonList(
-            new RegistryEntry<PlaceholderInfo>(coins.getAddress(), coins, coins.getOwner(), coins.getVisibility(), coins.getDescription())));
+            new PlaceholderInfo("shop.coins", "Coins", "shop/main", "Int", null, Collections.emptyList(), Visibility.PLUGIN);
+    private final Registry<PlaceholderInfo> registry = new ListRegistry<>("placeholders", () -> Collections.singletonList(
+            new RegistryEntry<>(coins.getAddress(), coins, coins.getOwner(), coins.getVisibility(), coins.getDescription())));
 
     @Test
     void anEntryCarriesTheOwnerAndTheVisibilityOfThePlaceholder() {

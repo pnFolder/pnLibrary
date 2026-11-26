@@ -23,12 +23,12 @@ public final class DelayAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public DelayAction() {
-        this(Duration.ofSeconds(1), Collections.<Action>emptyList());
+        this(Duration.ofSeconds(1), Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public DelayAction(@NotNull Duration after) {
-        this(after, Collections.<Action>emptyList());
+        this(after, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */

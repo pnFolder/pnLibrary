@@ -89,7 +89,7 @@ final class DigestStrip {
     }
 
     private HoverEvent<Component> tip(ChatKit kit) {
-        List<Component> tip = new ArrayList<Component>();
+        List<Component> tip = new ArrayList<>();
         tip.add(kit.text("Последние " + windowHours + " " + RussianText.plural(windowHours, "час", "часа", "часов"),
             ChatPalette.LABEL));
         tip.add(kit.blank());
@@ -109,7 +109,7 @@ final class DigestStrip {
     }
 
     private List<Integer> worstColumns() {
-        List<Integer> busy = new ArrayList<Integer>();
+        List<Integer> busy = new ArrayList<>();
         for (int column = 0; column < COLUMNS; column++) {
             if (total(column) > 0) {
                 busy.add(column);

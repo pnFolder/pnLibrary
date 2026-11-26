@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link;
 
+import java.util.Objects;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,10 +23,10 @@ public final class ServerGroupState {
      */
     public ServerGroupState(@NotNull String server, @Nullable NetworkServer known, @NotNull List<String> missing,
                             @NotNull List<String> outdated, boolean customized) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
         this.known = known;
-        this.missing = missing;
-        this.outdated = outdated;
+        this.missing = Objects.requireNonNull(missing, "missing");
+        this.outdated = Objects.requireNonNull(outdated, "outdated");
         this.customized = customized;
     }
 

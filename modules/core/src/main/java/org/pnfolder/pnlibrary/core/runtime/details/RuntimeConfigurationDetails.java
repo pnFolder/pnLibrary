@@ -11,7 +11,7 @@ public final class RuntimeConfigurationDetails {
     }
 
     public static @NotNull Map<String, Object> of(@NotNull PnLibraryConfig config) {
-        Map<String, Object> details = new LinkedHashMap<String, Object>();
+        Map<String, Object> details = new LinkedHashMap<>();
         details.put("privacy", config.isPrivacy());
         details.put("configs", config.isConfigs());
         details.put("logs", config.isLogs());

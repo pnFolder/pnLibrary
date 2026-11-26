@@ -88,7 +88,7 @@ final class RouteRules {
 
 
     static String usage(List<String> path, CommandNode node, CommandContext context) {
-        List<CommandNode> accessible = new ArrayList<CommandNode>();
+        List<CommandNode> accessible = new ArrayList<>();
         for (CommandNode child : node.getChildren()) {
             if (canSuggest(child, context)) {
                 accessible.add(child);
@@ -100,7 +100,7 @@ final class RouteRules {
         } else if (accessible.size() == 1) {
             suffix = " " + display(accessible.get(0));
         } else {
-            List<String> shown = new ArrayList<String>();
+            List<String> shown = new ArrayList<>();
             for (CommandNode child : accessible) {
                 shown.add(display(child));
             }

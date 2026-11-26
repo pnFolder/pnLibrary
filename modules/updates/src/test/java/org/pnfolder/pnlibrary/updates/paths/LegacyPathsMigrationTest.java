@@ -27,7 +27,7 @@ class LegacyPathsMigrationTest {
     @TempDir
     Path directory;
 
-    private final List<String> warnings = new ArrayList<String>();
+    private final List<String> warnings = new ArrayList<>();
 
     private Path plugin() {
         return directory.resolve("plugins/pnLibrary");
@@ -129,8 +129,6 @@ class LegacyPathsMigrationTest {
         UpdatePreferencesStore store = new UpdatePreferencesStore(paths.getPreferences());
         UpdatePolicyOverrides overrides = new UpdatePolicyOverrides(store);
         assertEquals(UpdateChannel.BETA, overrides.channel("shop"));
-        assertEquals(Boolean.FALSE, overrides.automatic("shop"));
-        assertEquals(Boolean.TRUE, overrides.allPlugins());
         Clock clock = Clock.fixed(Instant.parse("2026-09-17T10:00:00Z"), ZoneOffset.UTC);
         assertEquals(Collections.singleton(ProductId.of("shop")), new FreezeStore(store, clock).active().keySet());
     }

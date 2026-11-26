@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,7 +12,7 @@ public class OnCooldown extends CommandError {
 
     /** @param remaining how long to wait */
     public OnCooldown(@NotNull Duration remaining) {
-        this.remaining = remaining;
+        this.remaining = Objects.requireNonNull(remaining, "remaining");
     }
 
     /** How long to wait. */
@@ -23,7 +24,7 @@ public class OnCooldown extends CommandError {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        Map<String, Object> values = new LinkedHashMap<String, Object>();
+        Map<String, Object> values = new LinkedHashMap<>();
         values.put("seconds", (remaining.toMillis() + 999) / 1000);
         values.put("remaining", remaining);
         return values;

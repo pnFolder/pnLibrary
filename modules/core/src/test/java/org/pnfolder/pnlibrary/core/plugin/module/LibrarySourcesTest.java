@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.library.SourceHealth;
+import org.pnfolder.pnlibrary.core.plugin.module.library.ModuleLibraryLoader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;

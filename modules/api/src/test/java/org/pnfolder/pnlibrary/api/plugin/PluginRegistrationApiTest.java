@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class PluginRegistrationApiTest {
     @Test
     void registryExposesOnlyPhysicalPluginRegistration() {
-        List<Method> registrations = new ArrayList<Method>();
+        List<Method> registrations = new ArrayList<>();
         for (Method method : PluginRegistry.class.getDeclaredMethods()) {
             if (method.getName().equals("register")) {
                 registrations.add(method);
@@ -30,7 +30,7 @@ class PluginRegistrationApiTest {
 
     @Test
     void pluginRegistrationOwnsLogicalModulesButNotModuleCapabilities() {
-        Set<String> methods = new HashSet<String>();
+        Set<String> methods = new HashSet<>();
         for (Method method : PluginRegistration.class.getMethods()) {
             methods.add(method.getName());
         }

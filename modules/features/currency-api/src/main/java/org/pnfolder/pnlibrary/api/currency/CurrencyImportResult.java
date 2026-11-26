@@ -25,8 +25,8 @@ public final class CurrencyImportResult {
      */
     public CurrencyImportResult(@NotNull CurrencyKey currency, @NotNull CurrencyImportMode mode, int importedAccounts,
                                 int skippedAccounts, int importedTransactions, int skippedTransactions) {
-        this.currency = currency;
-        this.mode = mode;
+        this.currency = Objects.requireNonNull(currency, "currency");
+        this.mode = Objects.requireNonNull(mode, "mode");
         this.importedAccounts = importedAccounts;
         this.skippedAccounts = skippedAccounts;
         this.importedTransactions = importedTransactions;

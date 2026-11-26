@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.metrics;
 
+import java.util.Objects;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.jetbrains.annotations.NotNull;
@@ -33,9 +34,9 @@ public final class VelocityMetricsFactory extends ProviderMetricsFactory {
      */
     public VelocityMetricsFactory(
             @NotNull ProxyServer server, @NotNull Path dataDirectory, @NotNull Supplier<PnLogger> pnLogger) {
-        this.server = server;
-        this.dataDirectory = dataDirectory;
-        this.pnLogger = pnLogger;
+        this.server = Objects.requireNonNull(server, "server");
+        this.dataDirectory = Objects.requireNonNull(dataDirectory, "dataDirectory");
+        this.pnLogger = Objects.requireNonNull(pnLogger, "pnLogger");
     }
 
     /** Opens a bStats session for the plugin instance {@code owner} under {@code projectId}. */
@@ -43,13 +44,11 @@ public final class VelocityMetricsFactory extends ProviderMetricsFactory {
     @Override
     protected PluginMetrics openBStats(@NotNull Object owner, int projectId) {
         BStatsClient client = openBStats(owner, projectId, server, pnLogger.get(), dataDirectory);
-        return new BStatsMetricsSession(projectId,
-                chart -> {
-                    client.addCustomChart(chart);
-                },
-                () -> {
-                    client.shutdown();
-                });
+        return new BStatsMetricsSession(
+            projectId,
+            client::addCustomChart,
+            client::shutdown
+        );
     }
 
     /**
@@ -99,16 +98,10 @@ public final class VelocityMetricsFactory extends ProviderMetricsFactory {
                     data.appendField("velocityVersionName", server.getVersion().getName());
                     data.appendField("velocityVersionVendor", server.getVersion().getVendor());
                 },
-                task -> {
-                    server.getScheduler().buildTask(owner, task).schedule();
-                },
+                task -> server.getScheduler().buildTask(owner, task).schedule(),
                 () -> true,
-                (message, error) -> {
-                    log.warning(message, error);
-                },
-                message -> {
-                    log.info(message);
-                });
+                (message, error) -> log.warning(message, error),
+                message -> log.info(message));
     }
 
     private static void logNotice(PnLogger log) {

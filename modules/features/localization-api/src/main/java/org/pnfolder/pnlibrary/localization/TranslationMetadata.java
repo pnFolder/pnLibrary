@@ -13,7 +13,7 @@ public final class TranslationMetadata {
 
     /** Creates provenance data; {@code sha1} is {@code null} when Mojang provided no digest. */
     public TranslationMetadata(@NotNull TranslationSource source, @Nullable String sha1, boolean stale) {
-        this.source = source;
+        this.source = Objects.requireNonNull(source, "source");
         this.sha1 = sha1;
         this.stale = stale;
     }

@@ -21,12 +21,11 @@ public final class RuntimeUpdateSummary {
         for (UpdateRegistration registration : registrations) {
             tally.add(registration.getSnapshot());
         }
-        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("count", registrations.size());
         summary.put("byChannel", tally.byChannel);
         summary.put("byState", tally.byState);
         summary.put("availableCount", tally.available);
-        summary.put("automaticDownloadCount", tally.automatic);
         summary.put("javaIncompatibleCount", tally.javaIncompatible);
         summary.put("releaseCountByProduct", tally.releaseCountByProduct);
         summary.put("releaseCountByChannel", tally.releaseCountByChannel);
@@ -36,8 +35,8 @@ public final class RuntimeUpdateSummary {
     }
 
     private static void addAges(Map<String, Object> summary, Map<String, Instant> latestByChannel) {
-        Map<String, Object> latest = new LinkedHashMap<String, Object>();
-        Map<String, Object> ageDays = new LinkedHashMap<String, Object>();
+        Map<String, Object> latest = new LinkedHashMap<>();
+        Map<String, Object> ageDays = new LinkedHashMap<>();
         int stale = 0;
         Instant now = Instant.now();
         for (Map.Entry<String, Instant> entry : latestByChannel.entrySet()) {
@@ -53,21 +52,19 @@ public final class RuntimeUpdateSummary {
 
     /** The counts of one pass over the registrations. */
     private static final class Tally {
-        private final Map<String, Instant> latestByChannel = new LinkedHashMap<String, Instant>();
-        private final Map<String, Integer> byChannel = new LinkedHashMap<String, Integer>();
-        private final Map<String, Integer> byState = new LinkedHashMap<String, Integer>();
-        private final Map<String, Integer> releaseCountByProduct = new LinkedHashMap<String, Integer>();
-        private final Map<String, Integer> releaseCountByChannel = new LinkedHashMap<String, Integer>();
-        private final Map<String, Integer> messages = new LinkedHashMap<String, Integer>();
+        private final Map<String, Instant> latestByChannel = new LinkedHashMap<>();
+        private final Map<String, Integer> byChannel = new LinkedHashMap<>();
+        private final Map<String, Integer> byState = new LinkedHashMap<>();
+        private final Map<String, Integer> releaseCountByProduct = new LinkedHashMap<>();
+        private final Map<String, Integer> releaseCountByChannel = new LinkedHashMap<>();
+        private final Map<String, Integer> messages = new LinkedHashMap<>();
         private int available;
-        private int automatic;
         private int javaIncompatible;
 
         private void add(UpdateSnapshot snapshot) {
             count(byChannel, snapshot.getChannel().name());
             count(byState, snapshot.getState().name());
             available += snapshot.getLatestVersion() != null ? 1 : 0;
-            automatic += snapshot.getAutomaticDownload() ? 1 : 0;
             String message = snapshot.getMessage();
             boolean javaMessage = message != null && message.toLowerCase(Locale.ROOT).contains("java");
             javaIncompatible += snapshot.getState().name().toLowerCase(Locale.ROOT).contains("java") || javaMessage ? 1 : 0;

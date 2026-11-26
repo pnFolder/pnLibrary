@@ -29,6 +29,8 @@ final class ReportWire {
             out.writeUTF(WireText.take(plugin.getLatest() == null ? "" : plugin.getLatest(), MAX_TEXT));
             out.writeUTF(WireText.take(plugin.getState(), MAX_TEXT));
         }
+        out.writeBoolean(report.getRestartNeeded());
+        out.writeUTF(WireText.take(report.getAddress() == null ? "" : report.getAddress(), MAX_TEXT));
     }
 
     static LinkReport read(DataInputStream input) throws IOException {
@@ -37,7 +39,7 @@ final class ReportWire {
         String library = input.readUTF();
         int players = input.readInt();
         int count = Math.max(0, Math.min(input.readInt(), LinkCodec.MAX_PLUGINS));
-        List<LinkPlugin> plugins = new ArrayList<LinkPlugin>(count);
+        List<LinkPlugin> plugins = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             String product = input.readUTF();
             String version = input.readUTF();
@@ -45,6 +47,9 @@ final class ReportWire {
             String state = input.readUTF();
             plugins.add(new LinkPlugin(product, version, latest.isEmpty() ? null : latest, state));
         }
-        return new LinkReport(platform, library, players, plugins, sentAt);
+        boolean restartNeeded = input.readBoolean();
+        String address = input.readUTF();
+        return new LinkReport(platform, library, players, plugins, sentAt, restartNeeded,
+            address.isEmpty() ? null : address);
     }
 }

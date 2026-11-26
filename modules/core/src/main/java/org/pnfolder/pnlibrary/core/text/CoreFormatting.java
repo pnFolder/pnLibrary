@@ -28,9 +28,9 @@ public final class CoreFormatting {
     /** Nanoseconds as "x.y мс" or "x.y мкс". */
     public static @NotNull String nanosText(long nanos) {
         if (nanos >= NANOS_PER_MILLI) {
-            return String.format("%.1f мс", nanos / (double) NANOS_PER_MILLI);
+            return String.format(Locale.ROOT, "%.1f мс", nanos / (double) NANOS_PER_MILLI);
         }
-        return String.format("%.1f мкс", nanos / (double) NANOS_PER_MICRO);
+        return String.format(Locale.ROOT, "%.1f мкс", nanos / (double) NANOS_PER_MICRO);
     }
 
     /** "Сегодня", "Вчера" or the date, with the year only when it differs from today's. */
@@ -56,7 +56,7 @@ public final class CoreFormatting {
 
     /** Wraps {@code text} to {@code width} columns, keeping {@code limit} lines and ending with "…" when cut. */
     public static @NotNull List<String> wrapText(@NotNull String text, int width, int limit) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (String raw : text.split("\r\n|\n|\r", -1)) {
             StringBuilder line = new StringBuilder();
             for (String word : trimWhitespace(raw).split(" ", -1)) {
@@ -79,7 +79,7 @@ public final class CoreFormatting {
         if (lines.size() <= limit) {
             return lines;
         }
-        List<String> cut = new ArrayList<String>(lines.subList(0, limit));
+        List<String> cut = new ArrayList<>(lines.subList(0, limit));
         cut.add("…");
         return cut;
     }

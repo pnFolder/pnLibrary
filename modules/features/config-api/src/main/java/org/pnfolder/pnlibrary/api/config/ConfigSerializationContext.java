@@ -44,10 +44,10 @@ public final class ConfigSerializationContext {
     public ConfigSerializationContext(@NotNull String path, @NotNull Type declaredType, @NotNull Class<?> rawType,
                                       @NotNull List<Annotation> annotations, @Nullable Object defaultValue,
                                       @Nullable ConfigValueDecoder decoder, @Nullable ConfigValueEncoder encoder) {
-        this.path = path;
-        this.declaredType = declaredType;
-        this.rawType = rawType;
-        this.annotations = annotations;
+        this.path = Objects.requireNonNull(path, "path");
+        this.declaredType = Objects.requireNonNull(declaredType, "declaredType");
+        this.rawType = Objects.requireNonNull(rawType, "rawType");
+        this.annotations = Objects.requireNonNull(annotations, "annotations");
         this.defaultValue = defaultValue;
         this.decoder = decoder;
         this.encoder = encoder;

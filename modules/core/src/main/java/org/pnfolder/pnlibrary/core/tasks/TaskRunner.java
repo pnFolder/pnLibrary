@@ -15,11 +15,8 @@ import java.util.function.BooleanSupplier;
 
 /** Carries out the runs of one task: checks the conditions and the lag, runs the action and handles its failure. */
 final class TaskRunner {
-    private static final Runnable NOTHING = new Runnable() {
-        @Override
-        public void run() {
-        }
-    };
+    private static final Runnable NOTHING = () -> {
+        };
 
     private final ManagedTask task;
     private final TaskSpec spec;

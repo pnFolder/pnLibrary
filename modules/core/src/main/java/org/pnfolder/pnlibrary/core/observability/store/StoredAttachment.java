@@ -17,13 +17,13 @@ public final class StoredAttachment {
 
     public StoredAttachment(@NotNull String id, @NotNull String observationId, @NotNull String originalName,
                             @NotNull String contentType, long size, @NotNull String sha256, @NotNull Path storedPath) {
-        this.id = id;
-        this.observationId = observationId;
-        this.originalName = originalName;
-        this.contentType = contentType;
+        this.id = Objects.requireNonNull(id, "id");
+        this.observationId = Objects.requireNonNull(observationId, "observationId");
+        this.originalName = Objects.requireNonNull(originalName, "originalName");
+        this.contentType = Objects.requireNonNull(contentType, "contentType");
         this.size = size;
-        this.sha256 = sha256;
-        this.storedPath = storedPath;
+        this.sha256 = Objects.requireNonNull(sha256, "sha256");
+        this.storedPath = Objects.requireNonNull(storedPath, "storedPath");
     }
 
     @NotNull

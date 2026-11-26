@@ -59,7 +59,7 @@ class ConfigurationFileStoreTest {
             Thread.sleep(2);
         }
 
-        List<Path> backups = new ArrayList<Path>();
+        List<Path> backups = new ArrayList<>();
         try (Stream<Path> paths = Files.list(directory)) {
             paths.filter(path -> path.getFileName().toString().endsWith(".bak")).forEach(backups::add);
         }

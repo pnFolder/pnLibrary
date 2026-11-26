@@ -24,8 +24,8 @@ public final class ConfigLoadResult<T> {
 
     /** Creates a result without removed paths, added comments or applied migrations. */
     public ConfigLoadResult(T value, @NotNull List<String> addedPaths, @Nullable File backup) {
-        this(value, addedPaths, backup, Collections.<String>emptyList(), Collections.<String>emptyList(),
-                Collections.<String>emptyList());
+        this(value, addedPaths, backup, Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyList());
     }
 
     /**
@@ -42,7 +42,7 @@ public final class ConfigLoadResult<T> {
                             @NotNull List<String> removedPaths, @NotNull List<String> addedComments,
                             @NotNull List<String> appliedMigrations) {
         this.value = value;
-        this.addedPaths = addedPaths;
+        this.addedPaths = Objects.requireNonNull(addedPaths, "addedPaths");
         this.backup = backup;
         this.removedPaths = removedPaths;
         this.addedComments = addedComments;

@@ -61,12 +61,7 @@ final class DiagnosticHistoryAnalytics {
             order.add(index);
         }
         final List<Map<String, Object>> source = incidents;
-        Collections.sort(order, new Comparator<Integer>() {
-            @Override
-            public int compare(Integer left, Integer right) {
-                return text(source.get(left).get("lastSeenUtc"), "").compareTo(text(source.get(right).get("lastSeenUtc"), ""));
-            }
-        });
+        Collections.sort(order, (left, right) -> text(source.get(left).get("lastSeenUtc"), "").compareTo(text(source.get(right).get("lastSeenUtc"), "")));
         List<Map<String, Object>> recent = new ArrayList<Map<String, Object>>();
         for (int index = Math.max(0, order.size() - limit); index < order.size(); index++) {
             int position = order.get(index);

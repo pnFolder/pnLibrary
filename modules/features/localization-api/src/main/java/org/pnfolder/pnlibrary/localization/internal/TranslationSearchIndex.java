@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization.internal;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.localization.TranslationIndex;
@@ -61,7 +62,7 @@ public final class TranslationSearchIndex<T> implements TranslationIndex<T> {
 
     TranslationSearchIndex(List<TranslationMatch<T>> matches, KeyboardLayouts layouts,
                            ToIntBiFunction<String, String> distance) {
-        this.layouts = layouts;
+        this.layouts = Objects.requireNonNull(layouts, "layouts");
         this.distance = distance;
         List<Indexed<T>> indexed = new ArrayList<Indexed<T>>(matches.size());
         Map<String, List<TranslationMatch<T>>> grouped = new LinkedHashMap<String, List<TranslationMatch<T>>>();
@@ -108,7 +109,7 @@ public final class TranslationSearchIndex<T> implements TranslationIndex<T> {
     @Override
     public List<TranslationMatch<T>> findExact(@NotNull String text) {
         List<TranslationMatch<T>> found = exact.get(normalize(text));
-        return found == null ? Collections.<TranslationMatch<T>>emptyList() : found;
+        return found == null ? Collections.emptyList() : found;
     }
 
     @NotNull
@@ -165,7 +166,7 @@ public final class TranslationSearchIndex<T> implements TranslationIndex<T> {
         if (query.isEmpty()) {
             return Collections.emptyList();
         }
-        return matches(ranked(query, minSimilarity, Collections.<KeyboardLayout>emptyList()), limit);
+        return matches(ranked(query, minSimilarity, Collections.emptyList()), limit);
     }
 
     @NotNull

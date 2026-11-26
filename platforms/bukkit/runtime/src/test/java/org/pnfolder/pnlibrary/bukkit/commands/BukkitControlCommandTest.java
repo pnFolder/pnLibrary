@@ -44,8 +44,8 @@ class BukkitControlCommandTest {
         // The root has no permission of its own: every administrative word asks for pnlibrary.admin by itself.
         assertNull(definition.getPermission());
         assertEquals(Arrays.asList("status", "check", "gui", "updates", "update", "support", "bus", "tasks", "modules",
-            "configs", "deps", "servers", "money"), names(definition.getRoot().getChildren()));
-        Set<String> hidden = new HashSet<>(Arrays.asList("money", "bus", "tasks", "modules", "configs", "deps", "servers"));
+            "configs", "deps", "servers", "notices", "money"), names(definition.getRoot().getChildren()));
+        Set<String> hidden = new HashSet<>(Arrays.asList("money", "bus", "tasks", "modules", "configs", "deps", "servers", "notices"));
         List<CommandNode> administrative = new ArrayList<>();
         for (CommandNode child : definition.getRoot().getChildren()) {
             if (!hidden.contains(child.getName())) {
@@ -74,24 +74,24 @@ class BukkitControlCommandTest {
         BlockedReason blocked = new BlockedReason.NoCompatibleRelease(product, 2);
 
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.SUCCESS, "Плагин acceptance уже использует актуальную версию.")),
-            status(snapshot(UpdateState.UP_TO_DATE, null, Collections.<BlockedReason>emptyList(), null, false)));
+            status(snapshot(UpdateState.UP_TO_DATE, null, Collections.emptyList(), null, false)));
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.WARNING, "Обновления плагина acceptance временно приостановлены.")),
-            status(snapshot(UpdateState.FROZEN, null, Collections.<BlockedReason>emptyList(), null, false)));
+            status(snapshot(UpdateState.FROZEN, null, Collections.emptyList(), null, false)));
         assertEquals(Arrays.asList(
             new ChatNotice(ChatTone.FAILURE, "Обновление плагина acceptance заблокировано."),
             new ChatNotice(ChatTone.WARNING, "Причина: для плагина acceptance нет версии, совместимой с pnLibrary API 2.")),
             status(snapshot(UpdateState.BLOCKED, null, Collections.singletonList(blocked), null, false)));
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.FAILURE,
             "Не удалось проверить обновление плагина acceptance.", "GitHub вернул HTTP 404.")),
-            status(snapshot(UpdateState.FAILED, null, Collections.<BlockedReason>emptyList(), "GitHub вернул HTTP 404", false)));
+            status(snapshot(UpdateState.FAILED, null, Collections.emptyList(), "GitHub вернул HTTP 404", false)));
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.INFO,
             "Для плагина acceptance доступно обновление: v2.2.0 » v2.5.0.")),
-            status(snapshot(UpdateState.UPDATE_AVAILABLE, "2.5.0", Collections.<BlockedReason>emptyList(), null, true)));
+            status(snapshot(UpdateState.UPDATE_AVAILABLE, "2.5.0", Collections.emptyList(), null, true)));
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.SUCCESS, "Плагин acceptance уже использует актуальную версию.")),
-            status(snapshot(UpdateState.UPDATE_STAGED, "2.5.0", Collections.<BlockedReason>emptyList(), null, false)));
+            status(snapshot(UpdateState.UPDATE_STAGED, "2.5.0", Collections.emptyList(), null, false)));
         assertEquals(Collections.singletonList(new ChatNotice(ChatTone.SUCCESS,
             "Обновление плагина acceptance проверено и подготовлено.", "Полностью перезапустите сервер.")),
-            status(snapshot(UpdateState.UPDATE_STAGED, "2.5.0", Collections.<BlockedReason>emptyList(), null, true)));
+            status(snapshot(UpdateState.UPDATE_STAGED, "2.5.0", Collections.emptyList(), null, true)));
     }
 
     private static List<ChatNotice> status(Pair<UpdatePlanSnapshot, UpdateSnapshot> pair) {
@@ -121,7 +121,7 @@ class BukkitControlCommandTest {
         UpdatePlan plan = changed ? new UpdatePlan(PnLibraryApi.VERSION,
             Collections.singletonList(new ProductChange(ProductId.of("acceptance"), SemanticVersion.parse("2.2.0"),
                 SemanticVersion.parse(latest != null ? latest : "2.5.0"))),
-            Collections.<org.pnfolder.pnlibrary.api.updates.release.ProductRelease>emptyList()) : null;
+            Collections.emptyList()) : null;
         return new Pair<>(new UpdatePlanSnapshot(UUID.randomUUID(), 1, state, plan, blockers, message),
             new UpdateSnapshot("acceptance", "2.2.0", latest, UpdateChannel.STABLE, state, 17, 8, false, null, message));
     }

@@ -42,7 +42,7 @@ public final class UpdatePlanSnapshot {
     }
 
     private static UpdatePlan detached(UpdatePlan plan) {
-        List<ProductRelease> selected = new ArrayList<ProductRelease>();
+        List<ProductRelease> selected = new ArrayList<>();
         for (ProductRelease release : plan.getSelected()) {
             selected.add(new ProductRelease(release.getProduct(), release.getVersion(), release.getChannel(),
                 release.getSupportedApi(), release.getProvidesApi(),

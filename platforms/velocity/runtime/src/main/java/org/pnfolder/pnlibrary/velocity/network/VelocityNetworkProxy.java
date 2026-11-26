@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import java.util.Objects;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.Player;
@@ -26,7 +27,7 @@ public final class VelocityNetworkProxy implements NetworkProxy, ForwardingAudie
 
     /** Wraps the native {@code server}. */
     public VelocityNetworkProxy(@NotNull ProxyServer server) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
     }
 
     @NotNull

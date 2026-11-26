@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -17,9 +18,9 @@ public final class ProxyBackend {
      * @param address reads the backend address; called only for reports that include sensitive data
      */
     public ProxyBackend(@NotNull String name, int players, @NotNull Supplier<InetSocketAddress> address) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.players = players;
-        this.address = address;
+        this.address = Objects.requireNonNull(address, "address");
     }
 
     /** Backend server name. */

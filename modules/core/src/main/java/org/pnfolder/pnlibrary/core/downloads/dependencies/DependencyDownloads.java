@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -58,15 +59,15 @@ public final class DependencyDownloads {
                                @NotNull DependencyDownloadRequestFactory requests,
                                @NotNull DependencyDownloadReporter reporter, @NotNull DownloadedDependencyStore store,
                                @NotNull PluginJarVerifier jarVerifier, @NotNull BooleanSupplier automatic) {
-        this.ownership = ownership;
-        this.inventory = inventory;
-        this.readiness = readiness;
-        this.logging = logging;
-        this.requests = requests;
-        this.reporter = reporter;
-        this.store = store;
-        this.jarVerifier = jarVerifier;
-        this.automatic = automatic;
+        this.ownership = Objects.requireNonNull(ownership, "ownership");
+        this.inventory = Objects.requireNonNull(inventory, "inventory");
+        this.readiness = Objects.requireNonNull(readiness, "readiness");
+        this.logging = Objects.requireNonNull(logging, "logging");
+        this.requests = Objects.requireNonNull(requests, "requests");
+        this.reporter = Objects.requireNonNull(reporter, "reporter");
+        this.store = Objects.requireNonNull(store, "store");
+        this.jarVerifier = Objects.requireNonNull(jarVerifier, "jarVerifier");
+        this.automatic = Objects.requireNonNull(automatic, "automatic");
     }
 
     /**
@@ -108,7 +109,7 @@ public final class DependencyDownloads {
 
     /** Remembers the dependency files among {@code declarations} until a restart confirms them. */
     public void remember(@NotNull List<FileDownload> declarations) throws IOException {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (FileDownload file : declarations) {
             if (file.getKey().startsWith(DEPENDENCY_PREFIX)) {
                 names.add(file.getKey().substring(DEPENDENCY_PREFIX.length()));
@@ -147,12 +148,12 @@ public final class DependencyDownloads {
         attempt.onFailure(error -> logging.log(owner, LogLevel.WARNING,
             "Could not read installed plugins; dependencies are treated as missing: " + error.getMessage()));
         Map<String, String> installed = attempt.getOrNull();
-        return installed == null ? Collections.<String, String>emptyMap() : installed;
+        return installed == null ? Collections.emptyMap() : installed;
     }
 
     private void announce(Object owner, List<ExternalPluginDependency> lacking,
                           @Nullable DownloadRegistration registration) {
-        List<MissingDependency> items = new ArrayList<MissingDependency>();
+        List<MissingDependency> items = new ArrayList<>();
         for (ExternalPluginDependency dependency : lacking) {
             items.add(describe(dependency));
         }
@@ -166,7 +167,7 @@ public final class DependencyDownloads {
 
     private MissingDependency describe(ExternalPluginDependency dependency) {
         ExternalArtifact file = requests.fileFor(dependency);
-        List<URI> sources = new ArrayList<URI>();
+        List<URI> sources = new ArrayList<>();
         if (file != null) {
             sources.add(file.getUri());
             sources.addAll(file.getMirrors());

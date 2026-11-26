@@ -27,7 +27,7 @@ import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersionInfo;
  */
 public final class MinecraftVersions {
     /** Nothing declared: every version is fine, and a module takes its plugin's declaration. */
-    public static final MinecraftVersions NONE = new MinecraftVersions(Collections.<Range>emptyList());
+    public static final MinecraftVersions NONE = new MinecraftVersions(Collections.emptyList());
 
     /** Every version, declared on purpose. */
     public static final MinecraftVersions ANY = new MinecraftVersions(Collections.singletonList(new Range(null, null)));
@@ -41,7 +41,7 @@ public final class MinecraftVersions {
     private final List<Range> ranges;
 
     private MinecraftVersions(List<Range> ranges) {
-        this.ranges = Collections.unmodifiableList(new ArrayList<Range>(ranges));
+        this.ranges = Collections.unmodifiableList(new ArrayList<>(ranges));
     }
 
     /** The parts, each from a version to a version; a {@code null} side is open. Empty means nothing was declared. */
@@ -83,7 +83,7 @@ public final class MinecraftVersions {
 
     /** These versions and {@code other} together. */
     public @NotNull MinecraftVersions plus(@NotNull MinecraftVersions other) {
-        List<Range> joined = new ArrayList<Range>(ranges);
+        List<Range> joined = new ArrayList<>(ranges);
         joined.addAll(other.ranges);
         return new MinecraftVersions(joined);
     }

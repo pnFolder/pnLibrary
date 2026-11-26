@@ -36,7 +36,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
         this.major = major;
         this.minor = minor;
         this.patch = patch;
-        this.prerelease = Collections.unmodifiableList(new ArrayList<String>(prerelease));
+        this.prerelease = Collections.unmodifiableList(new ArrayList<>(prerelease));
     }
 
     /** The major compatibility version. */
@@ -200,7 +200,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
     }
 
     private static List<String> prerelease(@Nullable String text) {
-        List<String> identifiers = new ArrayList<String>();
+        List<String> identifiers = new ArrayList<>();
         if (text == null) {
             return identifiers;
         }

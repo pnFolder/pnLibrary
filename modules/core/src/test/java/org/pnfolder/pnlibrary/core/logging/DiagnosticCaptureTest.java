@@ -142,7 +142,7 @@ class DiagnosticCaptureTest {
     @Test
     void aStageThatFailsIsReportedOnceToTheConsoleAndDoesNotStopTheOtherStages() {
         DiagnosticLogBuffer buffer = new DiagnosticLogBuffer();
-        List<Object[]> printed = new ArrayList<Object[]>();
+        List<Object[]> printed = new ArrayList<>();
         AtomicInteger reports = new AtomicInteger();
         DiagnosticCapture capture = new DiagnosticCapture(ownership,
             logging((o, l, m, e) -> printed.add(new Object[] {l, e})), buffer,
@@ -158,7 +158,7 @@ class DiagnosticCaptureTest {
 
         assertEquals(2, reports.get());
         assertEquals(2L, buffer.summary().get("occurrenceCount"));
-        List<String> failures = new ArrayList<String>();
+        List<String> failures = new ArrayList<>();
         for (Object[] line : printed) {
             if (line[0] == LogLevel.ERROR && line[1] instanceof IllegalStateException) {
                 failures.add(((Throwable) line[1]).getMessage());
@@ -169,7 +169,7 @@ class DiagnosticCaptureTest {
 
     @Test
     void anErrorLoggedAsTextOnlyStillReachesTheErrorReport() {
-        List<Throwable> reported = new ArrayList<Throwable>();
+        List<Throwable> reported = new ArrayList<>();
         DiagnosticCapture capture = new DiagnosticCapture(ownership, logging((o, l, m, e) -> { }), null, null,
             (o, m, e) -> reported.add(e));
 

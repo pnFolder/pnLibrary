@@ -10,8 +10,8 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskRequest;
 
 /** A platform that only remembers what was scheduled; the test fires the callbacks itself. */
 final class RecordingTaskAdapter implements PlatformTaskAdapter {
-    final List<PlatformTaskRequest> requests = new ArrayList<PlatformTaskRequest>();
-    final List<NativeHandle> handles = new ArrayList<NativeHandle>();
+    final List<PlatformTaskRequest> requests = new ArrayList<>();
+    final List<NativeHandle> handles = new ArrayList<>();
     boolean closed;
     private final boolean fireDuringSchedule;
     private final int failingCancelIndex;

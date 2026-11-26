@@ -22,7 +22,7 @@ import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 
 class ManagedTaskTest {
     private final RecordingTaskAdapter adapter = new RecordingTaskAdapter();
-    private final List<ManagedTask> terminal = new ArrayList<ManagedTask>();
+    private final List<ManagedTask> terminal = new ArrayList<>();
 
     private ManagedTask task(TaskSpec spec) {
         return new ManagedTask(new Object(), new Object(), spec, adapter, (owner, message, error) -> { }, terminal::add);
@@ -43,7 +43,7 @@ class ManagedTaskTest {
 
     @Test
     void cancelDuringTheRunIsNotOverwrittenWhenTheRunEnds() {
-        AtomicReference<ManagedTask> holder = new AtomicReference<ManagedTask>();
+        AtomicReference<ManagedTask> holder = new AtomicReference<>();
         ManagedTask task = task(TaskSpec.builder().interval(Duration.ofSeconds(1)).action(context -> holder.get().cancel()).build());
         holder.set(task);
         task.invoke();

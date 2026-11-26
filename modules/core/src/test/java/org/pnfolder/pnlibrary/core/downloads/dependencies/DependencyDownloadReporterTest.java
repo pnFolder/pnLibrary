@@ -56,7 +56,7 @@ class DependencyDownloadReporterTest {
 
     @Test
     void rendersStagedDependencyAndHumanReadableFailureCards() {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
         PlatformAdapter platform = platformInto(output, PlatformType.BUKKIT);
         DependencyDownloadReporter reporter = new DependencyDownloadReporter(platform, platform);
         FileDownload declaration = FileDownloads.builder().file("dependency:Vault", file -> file
@@ -73,10 +73,10 @@ class DependencyDownloadReporterTest {
 
     @Test
     void theCommandInTheAdviceIsTheOneThatWorksOnThisPlatform() {
-        List<String> onProxy = new ArrayList<String>();
+        List<String> onProxy = new ArrayList<>();
         PlatformAdapter proxyPlatform = platformInto(onProxy, PlatformType.VELOCITY);
         new DependencyDownloadReporter(proxyPlatform, proxyPlatform, "pnproxy").missing(new Object(), group(), false);
-        List<String> onServer = new ArrayList<String>();
+        List<String> onServer = new ArrayList<>();
         PlatformAdapter serverPlatform = platformInto(onServer, PlatformType.VELOCITY);
         new DependencyDownloadReporter(serverPlatform, serverPlatform).missing(new Object(), group(), false);
 
@@ -91,7 +91,7 @@ class DependencyDownloadReporterTest {
 
     @Test
     void theNoticeTellsWhatEachPluginIsForWhetherItIsRequiredAndHowItsFileIsChecked() {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
         DownloadRegistration registration = (DownloadRegistration) Proxy.newProxyInstance(getClass().getClassLoader(),
             new Class<?>[] {DownloadRegistration.class}, (proxy, method, arguments) -> null);
         MissingGroup group = new MissingGroup("Demo", "abc123", Arrays.asList(
@@ -100,7 +100,7 @@ class DependencyDownloadReporterTest {
                 .withTitle("Экономика").withDescription("Нужна для денег и магазинов.")
                 .withRequired(true).withChecked(true),
             new MissingDependency("Essentials", "2.20.0", URI.create("https://example.org/essentials"),
-                Collections.<URI>emptyList()).withRequired(false)), registration);
+                Collections.emptyList()).withRequired(false)), registration);
 
         PlatformAdapter platform = platformInto(output, PlatformType.VELOCITY);
         new DependencyDownloadReporter(platform, platform).missing(new Object(), group, false);

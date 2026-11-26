@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ final class CurrencyDefinition extends CurrencyOptions implements CurrencyDefini
     private final CurrencyOperationsBuilder operations = new CurrencyOperationsBuilder();
 
     CurrencyDefinition(@NotNull String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.descriptor = CurrencyDescriptor.builder(name);
     }
 

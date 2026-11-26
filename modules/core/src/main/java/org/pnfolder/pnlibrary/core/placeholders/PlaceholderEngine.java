@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import java.util.Objects;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatRegistry;
+import org.pnfolder.pnlibrary.core.placeholders.format.BuiltInFormats;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +49,7 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
 
     /** {@code onProblem} receives a readable line for every problem that is not an exception of the caller, such as an unknown format. */
     public PlaceholderEngine(@NotNull Consumer<String> onProblem) {
-        this.onProblem = onProblem;
+        this.onProblem = Objects.requireNonNull(onProblem, "onProblem");
         BuiltInFormats.register(formats);
     }
 
@@ -96,7 +99,7 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
         return (playerId, params, wait) -> {
             String address = params.replace('_', '.');
             ViewerInfo viewer = new ViewerInfo(playerId, ViewerInfo.DEFAULT_LANGUAGE, true);
-            CompletableFuture<Object> future = resolveIn(address, viewer, Collections.<String, Object>emptyMap(), prefix, null)
+            CompletableFuture<Object> future = resolveIn(address, viewer, Collections.emptyMap(), prefix, null)
                     .toCompletableFuture();
             Object value = null;
             try {
@@ -115,7 +118,7 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
 
     /** Like {@link #resolve(String)} for one viewer. */
     public @NotNull CompletionStage<Object> resolve(@NotNull String address, @NotNull ViewerInfo viewer) {
-        return resolve(address, viewer, Collections.<String, Object>emptyMap());
+        return resolve(address, viewer, Collections.emptyMap());
     }
 
     /** Like {@link #resolve(String, ViewerInfo)}; the {@code values} of the caller win over registered placeholders. */
@@ -130,7 +133,7 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
 
     /** Like {@link #resolveAll(String)} for one viewer. */
     public @NotNull CompletionStage<Object> resolveAll(@NotNull String address, @NotNull ViewerInfo viewer) {
-        return resolveIn(address, viewer, Collections.<String, Object>emptyMap(), null, Ownership.EVERYTHING);
+        return resolveIn(address, viewer, Collections.emptyMap(), null, Ownership.EVERYTHING);
     }
 
     CompletionStage<String> renderAs(String text, ViewerInfo viewer, Map<String, Object> values, String consumer) {
@@ -148,7 +151,7 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
 
     /** Like {@link #render(String)} for one viewer. */
     public @NotNull CompletionStage<String> render(@NotNull String text, @NotNull ViewerInfo viewer) {
-        return render(text, viewer, Collections.<String, Object>emptyMap());
+        return render(text, viewer, Collections.emptyMap());
     }
 
     /** Like {@link #render(String, ViewerInfo)}; the {@code values} of the caller win over registered placeholders. */

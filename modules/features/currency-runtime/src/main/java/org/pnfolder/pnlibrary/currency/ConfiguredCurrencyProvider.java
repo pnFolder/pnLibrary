@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -46,16 +47,16 @@ final class ConfiguredCurrencyProvider implements CurrencyProvider, CurrencyDepo
                                @Nullable Function<CurrencyAccount, CompletionStage<CurrencyResult>> resets,
                                @Nullable AsyncTransfer transfers, @Nullable Function<BigDecimal, String> formatting,
                                @NotNull Map<Class<?>, Object> extensions) {
-        this.descriptor = descriptor;
-        this.balances = balances;
+        this.descriptor = Objects.requireNonNull(descriptor, "descriptor");
+        this.balances = Objects.requireNonNull(balances, "balances");
         this.deposits = deposits;
         this.withdrawals = withdrawals;
         this.mutation = mutation;
         this.resets = resets;
         this.transfers = transfers;
         this.formatting = formatting;
-        this.extensions = extensions;
-        Set<CurrencyCapability> declared = new LinkedHashSet<CurrencyCapability>();
+        this.extensions = Objects.requireNonNull(extensions, "extensions");
+        Set<CurrencyCapability> declared = new LinkedHashSet<>();
         declared.add(CurrencyCapability.BALANCE);
         if (deposits != null) {
             declared.add(CurrencyCapability.DEPOSIT);

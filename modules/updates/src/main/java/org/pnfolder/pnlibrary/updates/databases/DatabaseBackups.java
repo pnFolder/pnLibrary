@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -47,8 +48,8 @@ public final class DatabaseBackups {
 
     public DatabaseBackups(@NotNull Path folder, @NotNull DatabaseSources sources,
                            @NotNull Map<DatabaseKind, DatabaseEngine> engines) {
-        this.folder = folder;
-        this.sources = sources;
+        this.folder = Objects.requireNonNull(folder, "folder");
+        this.sources = Objects.requireNonNull(sources, "sources");
         this.engines = engines;
     }
 
@@ -76,7 +77,7 @@ public final class DatabaseBackups {
         if (!Files.isDirectory(root)) {
             return Collections.emptyList();
         }
-        List<Path> copies = new ArrayList<Path>();
+        List<Path> copies = new ArrayList<>();
         try (Stream<Path> paths = Files.walk(root, 2)) {
             for (Path path : (Iterable<Path>) paths::iterator) {
                 if (path.getFileName().toString().endsWith(SUFFIX) && !path.getParent().equals(root)) {
@@ -84,7 +85,7 @@ public final class DatabaseBackups {
                 }
             }
         }
-        List<UpdateBackupItem> items = new ArrayList<UpdateBackupItem>();
+        List<UpdateBackupItem> items = new ArrayList<>();
         for (Path path : copies) {
             items.add(new UpdateBackupItem(ProductId.of(path.getParent().getFileName().toString()), BackupKind.DATABASE,
                     nameOf(path), Files.size(path)));
@@ -152,7 +153,7 @@ public final class DatabaseBackups {
     }
 
     private static Map<DatabaseKind, DatabaseEngine> defaultEngines() {
-        Map<DatabaseKind, DatabaseEngine> engines = new EnumMap<DatabaseKind, DatabaseEngine>(DatabaseKind.class);
+        Map<DatabaseKind, DatabaseEngine> engines = new EnumMap<>(DatabaseKind.class);
         engines.put(DatabaseKind.MYSQL, new MysqlEngine());
         engines.put(DatabaseKind.POSTGRESQL, new PostgresEngine());
         engines.put(DatabaseKind.MONGODB, new MongoEngine());

@@ -31,7 +31,7 @@ class DependencyDownloadRequestFactoryTest {
             .build();
 
         DependencyDownloadRequest plan = factory(PlatformType.BUKKIT, "1.21.4")
-            .create(Arrays.<PluginDependency>asList(dependency), Collections.<String, String>emptyMap());
+            .create(Arrays.asList(dependency), Collections.emptyMap());
 
         assertNotNull(plan);
         assertEquals(directory.resolve("update"), plan.getRequest().getDataDirectory());
@@ -47,7 +47,7 @@ class DependencyDownloadRequestFactoryTest {
             .build();
 
         assertNull(factory(PlatformType.BUKKIT, "1.21.4").create(
-            Arrays.<PluginDependency>asList(dependency), Collections.singletonMap("vault", "1.7.3")));
+            Arrays.asList(dependency), Collections.singletonMap("vault", "1.7.3")));
     }
 
     @Test
@@ -55,17 +55,17 @@ class DependencyDownloadRequestFactoryTest {
         String old = repeat('a');
         String modern = repeat('b');
         ExternalPluginDependency dependency = ExternalPluginDependency.builder("Vault", "1.7.0")
-            .variant("https://example.org/Vault-old.jar", old, Collections.<PlatformType>emptySet(), null, "1.20",
-                Collections.<String>emptyList(), null, null)
+            .variant("https://example.org/Vault-old.jar", old, Collections.emptySet(), null, "1.20",
+                Collections.emptyList(), null, null)
             .variant("https://example.org/Vault-proxy.jar", repeat('c'),
-                new HashSet<PlatformType>(Arrays.asList(PlatformType.VELOCITY)), null, null,
-                Collections.<String>emptyList(), null, null)
-            .variant("https://example.org/Vault-new.jar", modern, Collections.<PlatformType>emptySet(), "1.20", null,
-                Collections.<String>emptyList(), "для 1.20 и новее", null)
+                new HashSet<>(Arrays.asList(PlatformType.VELOCITY)), null, null,
+                Collections.emptyList(), null, null)
+            .variant("https://example.org/Vault-new.jar", modern, Collections.emptySet(), "1.20", null,
+                Collections.emptyList(), "для 1.20 и новее", null)
             .build();
 
         DependencyDownloadRequest plan = factory(PlatformType.BUKKIT, "1.21.4")
-            .create(Arrays.<PluginDependency>asList(dependency), Collections.<String, String>emptyMap());
+            .create(Arrays.asList(dependency), Collections.emptyMap());
         assertNotNull(plan);
         assertEquals("https://example.org/Vault-new.jar",
             plan.getRequest().getFiles().get(0).getSource().getUri().toString());
@@ -83,7 +83,7 @@ class DependencyDownloadRequestFactoryTest {
             .build();
 
         DependencyDownloadRequest plan = factory(PlatformType.BUKKIT, null)
-            .create(Arrays.<PluginDependency>asList(dependency), Collections.<String, String>emptyMap());
+            .create(Arrays.asList(dependency), Collections.emptyMap());
 
         assertNotNull(plan);
         assertEquals(Long.valueOf(2_000_000L), plan.getRequest().getFiles().get(0).getSource().getMaxBytes());

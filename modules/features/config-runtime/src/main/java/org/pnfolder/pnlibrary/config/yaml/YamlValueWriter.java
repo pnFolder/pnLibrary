@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ResolvedConfigType;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigPolymorphicResolver;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import java.util.Objects;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -25,22 +29,22 @@ final class YamlValueWriter {
 
     YamlValueWriter(@NotNull ConfigObjectIntrospector introspector, @NotNull ConfigSerializerResolver serializers,
                     @NotNull ConfigPolymorphicResolver polymorphic, @NotNull SerializationContexts contexts) {
-        this.introspector = introspector;
-        this.serializers = serializers;
-        this.polymorphic = polymorphic;
-        this.contexts = contexts;
+        this.introspector = Objects.requireNonNull(introspector, "introspector");
+        this.serializers = Objects.requireNonNull(serializers, "serializers");
+        this.polymorphic = Objects.requireNonNull(polymorphic, "polymorphic");
+        this.contexts = Objects.requireNonNull(contexts, "contexts");
     }
 
     /** {@code value} typed by its own class, at the root. */
     @Nullable
     Object write(@Nullable Object value) {
-        return write(value, typeOf(value), "", Collections.<Annotation>emptyList(), value);
+        return write(value, typeOf(value), "", Collections.emptyList(), value);
     }
 
     /** {@code value} typed as {@code declaredType}, as nested values of serializers are written. */
     @Nullable
     Object write(@Nullable Object value, @NotNull Type declaredType, @NotNull String path) {
-        return write(value, declaredType, path, Collections.<Annotation>emptyList(), value);
+        return write(value, declaredType, path, Collections.emptyList(), value);
     }
 
     @Nullable
@@ -77,7 +81,7 @@ final class YamlValueWriter {
         Class<?> base = introspector.rawClass(declaredType);
         ConfigPolymorphic marker = base.getAnnotation(ConfigPolymorphic.class);
         ResolvedConfigType selected = polymorphic.encodingType(base, annotations, value.getClass());
-        Map<String, Object> written = new LinkedHashMap<String, Object>();
+        Map<String, Object> written = new LinkedHashMap<>();
         written.put(marker.discriminator(), selected.serializedName());
         written.putAll(writeObject(value, path));
         return written;
@@ -91,7 +95,7 @@ final class YamlValueWriter {
                 elementType = arguments[0];
             }
         }
-        List<Object> out = new ArrayList<Object>();
+        List<Object> out = new ArrayList<>();
         int index = 0;
         for (Object item : value) {
             out.add(write(item, elementType, path + "[" + index + "]", annotations, item));
@@ -101,26 +105,26 @@ final class YamlValueWriter {
     }
 
     private List<Object> writeArray(Object[] value, String path) {
-        List<Object> out = new ArrayList<Object>();
+        List<Object> out = new ArrayList<>();
         for (int index = 0; index < value.length; index++) {
             out.add(write(value[index], typeOf(value[index]), path + "[" + index + "]",
-                    Collections.<Annotation>emptyList(), value[index]));
+                    Collections.emptyList(), value[index]));
         }
         return out;
     }
 
     private Map<Object, Object> writeMap(Map<?, ?> value, String path) {
-        Map<Object, Object> out = new LinkedHashMap<Object, Object>();
+        Map<Object, Object> out = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : value.entrySet()) {
             Object key = write(entry.getKey());
             out.put(key, write(entry.getValue(), typeOf(entry.getValue()), path + "." + entry.getKey(),
-                    Collections.<Annotation>emptyList(), entry.getValue()));
+                    Collections.emptyList(), entry.getValue()));
         }
         return out;
     }
 
     private Map<String, Object> writeObject(Object value, String path) {
-        Map<String, Object> out = new LinkedHashMap<String, Object>();
+        Map<String, Object> out = new LinkedHashMap<>();
         for (Field field : introspector.fields(value.getClass())) {
             Object fieldValue = introspector.read(field, value);
             ConfigSerializer<Object> serializer = serializers.forField(field);

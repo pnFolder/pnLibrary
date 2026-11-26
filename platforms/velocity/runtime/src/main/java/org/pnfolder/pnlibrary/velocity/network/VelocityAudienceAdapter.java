@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import java.util.Objects;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ConsoleCommandSource;
 import com.velocitypowered.api.proxy.Player;
@@ -25,7 +26,7 @@ public final class VelocityAudienceAdapter implements PlatformAudienceAdapter {
 
     /** Creates an adapter that reads players and the console from {@code server}. */
     public VelocityAudienceAdapter(@NotNull ProxyServer server) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
     }
 
     @NotNull

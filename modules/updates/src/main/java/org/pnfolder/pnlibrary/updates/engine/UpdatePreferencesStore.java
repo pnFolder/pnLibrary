@@ -40,8 +40,8 @@ public final class UpdatePreferencesStore {
     }
 
     public UpdatePreferencesStore(@NotNull Path file, @NotNull Consumer<String> warning) {
-        this.file = file;
-        this.warning = warning;
+        this.file = Objects.requireNonNull(file, "file");
+        this.warning = Objects.requireNonNull(warning, "warning");
         this.preferences = load();
     }
 
@@ -91,7 +91,7 @@ public final class UpdatePreferencesStore {
     }
 
     private static <T> Map<String, T> section(JsonObject root, String name, Function<JsonElement, T> value) {
-        Map<String, T> result = new LinkedHashMap<String, T>();
+        Map<String, T> result = new LinkedHashMap<>();
         JsonObject node = root.getAsJsonObject(name);
         if (node != null) {
             for (Map.Entry<String, JsonElement> entry : node.entrySet()) {
@@ -119,7 +119,7 @@ public final class UpdatePreferencesStore {
 
     private static JsonObject sorted(Map<String, ?> values) {
         JsonObject node = new JsonObject();
-        for (Map.Entry<String, ?> entry : new TreeMap<String, Object>(values).entrySet()) {
+        for (Map.Entry<String, ?> entry : new TreeMap<>(values).entrySet()) {
             Object value = entry.getValue();
             if (value instanceof Number) {
                 node.addProperty(entry.getKey(), (Number) value);
@@ -141,18 +141,18 @@ public final class UpdatePreferencesStore {
         private final Map<String, Integer> javaBuilds;
 
         public Preferences() {
-            this(Collections.<String, String>emptyMap(), Collections.<String, Boolean>emptyMap(), null,
-                Collections.<String, Long>emptyMap(), Collections.<String, Integer>emptyMap());
+            this(Collections.emptyMap(), Collections.emptyMap(), null,
+                Collections.emptyMap(), Collections.emptyMap());
         }
 
         public Preferences(@NotNull Map<String, String> channels, @NotNull Map<String, Boolean> automatic,
                            @Nullable Boolean allPlugins, @NotNull Map<String, Long> freezes,
                            @NotNull Map<String, Integer> javaBuilds) {
-            this.channels = Collections.unmodifiableMap(new LinkedHashMap<String, String>(channels));
-            this.automatic = Collections.unmodifiableMap(new LinkedHashMap<String, Boolean>(automatic));
+            this.channels = Collections.unmodifiableMap(new LinkedHashMap<>(channels));
+            this.automatic = Collections.unmodifiableMap(new LinkedHashMap<>(automatic));
             this.allPlugins = allPlugins;
-            this.freezes = Collections.unmodifiableMap(new LinkedHashMap<String, Long>(freezes));
-            this.javaBuilds = Collections.unmodifiableMap(new LinkedHashMap<String, Integer>(javaBuilds));
+            this.freezes = Collections.unmodifiableMap(new LinkedHashMap<>(freezes));
+            this.javaBuilds = Collections.unmodifiableMap(new LinkedHashMap<>(javaBuilds));
         }
 
         @NotNull

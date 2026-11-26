@@ -36,7 +36,7 @@ class SettingsCommandTest {
     private final SettingPickerHook hook = new SettingPickerHook();
     private CommandDefinition definition;
     private boolean console = true;
-    private final List<String> sent = new ArrayList<String>();
+    private final List<String> sent = new ArrayList<>();
     private final CommandSender sender = new CommandSender() {
         @NotNull
         @Override
@@ -74,7 +74,7 @@ class SettingsCommandTest {
     }
 
     private static List<String> sorted(List<String> values) {
-        List<String> copy = new ArrayList<String>(values);
+        List<String> copy = new ArrayList<>(values);
         Collections.sort(copy);
         return copy;
     }
@@ -90,7 +90,9 @@ class SettingsCommandTest {
         assertTrue(first.contains("privacy = включено  (по умолчанию выключено)"), first);
         assertTrue(first.contains("history-retention-days = 30"), first);
         assertTrue(second.contains("страница 2/2"), second);
-        assertTrue(second.contains("updates.read-timeout = 30с"), second);
+        assertTrue(second.contains("updates.check-interval = 6ч"), second);
+        assertTrue(second.contains("updates.restart.quiet-time = 2м"), second);
+        assertTrue(second.contains("updates.restart.auto = выключено"), second);
         assertEquals(first, run(), "the bare command is the list");
     }
 
@@ -160,8 +162,8 @@ class SettingsCommandTest {
     void keysAndValuesAreSuggested() {
         List<String> keys = suggest("set", "");
         assertTrue(keys.contains("downloads.enabled") && keys.contains("privacy") && keys.contains("updates.check-interval"), keys.toString());
-        assertEquals(Arrays.asList("downloads.destinations.cache", "downloads.destinations.data-folder"),
-                sorted(suggest("get", "downloads.dest")));
+        assertEquals(Arrays.asList("downloads.automatic", "downloads.enabled"),
+                sorted(suggest("get", "downloads.")));
         assertEquals(Arrays.asList("включено", "выключено"), sorted(suggest("set", "privacy", "")));
         assertTrue(suggest("set", "updates.check-interval", "").contains("6h"));
         run("set", "privacy", "true");
@@ -195,14 +197,14 @@ class SettingsCommandTest {
         List<String> zones = suggest("set", "time-zone", "");
 
         assertTrue(zones.contains("Europe/Moscow") && zones.contains("UTC") && zones.contains("America/New_York"), String.valueOf(zones.size()));
-        assertEquals(zones.size(), new HashSet<String>(zones).size());
+        assertEquals(zones.size(), new HashSet<>(zones).size());
     }
 
     @Test
     @DisplayName("pick opens the list of a choice setting for a player with the words after the key as the filter")
     void pickOpensTheListOfAChoiceSettingForAPlayerWithTheWordsAfterTheKeyAsTheFilter() {
         console = false;
-        final List<String> opened = new ArrayList<String>();
+        final List<String> opened = new ArrayList<>();
         hook.setOpener((context, key, filter) -> opened.add(key + "|" + filter));
 
         run("pick", "time-zone");
@@ -214,7 +216,7 @@ class SettingsCommandTest {
     @Test
     @DisplayName("pick refuses the console, a setting without a list and a platform without menus")
     void pickRefusesTheConsoleASettingWithoutAListAndAPlatformWithoutMenus() {
-        final List<String> opened = new ArrayList<String>();
+        final List<String> opened = new ArrayList<>();
         hook.setOpener((context, key, filter) -> opened.add(key));
 
         assertTrue(run("pick", "time-zone").contains("меню игрока"));

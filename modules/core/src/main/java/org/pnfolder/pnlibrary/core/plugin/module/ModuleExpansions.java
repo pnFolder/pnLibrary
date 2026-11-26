@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,9 +26,9 @@ public final class ModuleExpansions implements ExpansionManager, AutoCloseable {
     private final ExpansionManager shared;
     private final ExpansionManager library;
     private final Object lock = new Object();
-    private final Map<Expansion, AutoCloseable> registered = new LinkedHashMap<Expansion, AutoCloseable>();
-    private final Map<Class<?>, Object> views = new HashMap<Class<?>, Object>();
-    private final List<AutoCloseable> owned = new ArrayList<AutoCloseable>();
+    private final Map<Expansion, AutoCloseable> registered = new LinkedHashMap<>();
+    private final Map<Class<?>, Object> views = new HashMap<>();
+    private final List<AutoCloseable> owned = new ArrayList<>();
     private boolean closed;
 
     private final ModuleBinding binding = new ModuleBinding() {
@@ -43,8 +44,8 @@ public final class ModuleExpansions implements ExpansionManager, AutoCloseable {
     };
 
     public ModuleExpansions(@NotNull ExpansionManager shared, @NotNull ExpansionManager library) {
-        this.shared = shared;
-        this.library = library;
+        this.shared = Objects.requireNonNull(shared, "shared");
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     @SuppressWarnings("unchecked")
@@ -116,13 +117,13 @@ public final class ModuleExpansions implements ExpansionManager, AutoCloseable {
         synchronized (lock) {
             closed = true;
             views.clear();
-            resources = new ArrayList<AutoCloseable>(registered.values());
+            resources = new ArrayList<>(registered.values());
             resources.addAll(owned);
             registered.clear();
             owned.clear();
         }
         Collections.reverse(resources);
-        List<CleanupStep> steps = new ArrayList<CleanupStep>();
+        List<CleanupStep> steps = new ArrayList<>();
         for (final AutoCloseable resource : resources) {
             steps.add(resource::close);
         }

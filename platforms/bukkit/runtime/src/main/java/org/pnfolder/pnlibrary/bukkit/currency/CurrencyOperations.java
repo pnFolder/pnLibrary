@@ -146,7 +146,7 @@ final class CurrencyOperations {
             : ledger.transact(new CurrencyTransactionRequest(CurrencyTransactionType.TRANSFER, amount,
                 new CurrencyAccount(source.getUniqueId()), new CurrencyAccount(target),
                 CurrencyActor.player(source.getUniqueId()), "pnlibrary.command", "Player payment",
-                Collections.<String, String>emptyMap(), null)).thenApply(CurrencyOperations::transactionResult);
+                Collections.emptyMap(), null)).thenApply(CurrencyOperations::transactionResult);
         complete(sender, stage, result -> CurrencyChat.showResult(sender, currency, result, amount));
         return true;
     }

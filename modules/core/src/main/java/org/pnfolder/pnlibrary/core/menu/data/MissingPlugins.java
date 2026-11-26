@@ -19,11 +19,11 @@ public final class MissingPlugins {
 
     public MissingPlugins(@NotNull String code, @NotNull String owner, boolean installable,
                           @NotNull List<String> lines, @NotNull List<String> links) {
-        this.code = code;
-        this.owner = owner;
+        this.code = Objects.requireNonNull(code, "code");
+        this.owner = Objects.requireNonNull(owner, "owner");
         this.installable = installable;
-        this.lines = lines;
-        this.links = links;
+        this.lines = Objects.requireNonNull(lines, "lines");
+        this.links = Objects.requireNonNull(links, "links");
     }
 
     public @NotNull String getCode() {

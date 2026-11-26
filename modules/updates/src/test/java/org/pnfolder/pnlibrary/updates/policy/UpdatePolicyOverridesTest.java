@@ -32,8 +32,6 @@ class UpdatePolicyOverridesTest {
     void nothingIsOverriddenUntilAChoiceIsMade() {
         UpdatePolicyOverrides overrides = open();
         assertNull(overrides.channel("pnlibrary"));
-        assertNull(overrides.automatic("pnlibrary"));
-        assertFalse(overrides.anyAutomaticEnabled());
         assertFalse(Files.exists(file()));
     }
 
@@ -41,28 +39,22 @@ class UpdatePolicyOverridesTest {
     void choicesApplyImmediatelyAndSurviveReopening() {
         UpdatePolicyOverrides overrides = open();
         overrides.setChannel("pnlibrary", UpdateChannel.BETA);
-        overrides.setAutomatic("pnlibrary", true);
-        overrides.setAutomatic("shop", false);
+        overrides.setJavaBuild("pnlibrary", 17);
 
         assertEquals(UpdateChannel.BETA, overrides.channel("pnlibrary"));
-        assertTrue(overrides.anyAutomaticEnabled());
 
         UpdatePolicyOverrides reopened = open();
         assertEquals(UpdateChannel.BETA, reopened.channel("pnlibrary"));
-        assertEquals(Boolean.TRUE, reopened.automatic("pnlibrary"));
-        assertEquals(Boolean.FALSE, reopened.automatic("shop"));
+        assertEquals(Integer.valueOf(17), reopened.javaBuild("pnlibrary"));
         assertNull(reopened.channel("shop"));
     }
 
     @Test
-    void aLaterChoiceReplacesTheEarlierOneAndTurningEverythingOffClearsTheFlag() {
+    void aLaterChoiceReplacesTheEarlierOne() {
         UpdatePolicyOverrides overrides = open();
-        overrides.setAutomatic("pnlibrary", true);
-        overrides.setAutomatic("pnlibrary", false);
         overrides.setChannel("pnlibrary", UpdateChannel.RC);
         overrides.setChannel("pnlibrary", UpdateChannel.STABLE);
 
-        assertFalse(overrides.anyAutomaticEnabled());
         assertEquals(UpdateChannel.STABLE, overrides.channel("pnlibrary"));
     }
 
@@ -84,7 +76,7 @@ class UpdatePolicyOverridesTest {
     void unreadableOrInvalidContentIsIgnoredWithAWarning() throws IOException {
         Files.createDirectories(file().getParent());
         Files.write(file(), "{ not json".getBytes(StandardCharsets.UTF_8));
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         assertNull(new UpdatePolicyOverrides(new UpdatePreferencesStore(file(), warnings::add)).channel("pnlibrary"));
         assertEquals(1, warnings.size());
 

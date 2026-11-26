@@ -49,7 +49,7 @@ class CorePackageCyclesTest {
     }
 
     private List<String> visit(Map<String, Set<String>> graph, String start, String node, List<String> path, Set<String> seen) {
-        Set<String> next = graph.containsKey(node) ? new TreeSet<>(graph.get(node)) : Collections.<String>emptySet();
+        Set<String> next = graph.containsKey(node) ? new TreeSet<>(graph.get(node)) : Collections.emptySet();
         for (String candidate : next) {
             if (candidate.equals(start)) {
                 List<String> cycle = new ArrayList<>(path);

@@ -55,7 +55,7 @@ final class UpdateEventJson {
     static UpdateEvent read(@NotNull JsonObject json, @NotNull Set<String> operations) {
         require(json.get("schema").getAsInt() == 1 && json.get("kind").getAsString().equals("STATE_OBSERVED"),
             "Unsupported event schema");
-        List<UpdateEventChange> changes = new ArrayList<UpdateEventChange>();
+        List<UpdateEventChange> changes = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray("changes")) {
             JsonObject change = element.getAsJsonObject();
             changes.add(new UpdateEventChange(change.get("product").getAsString(), text(change.get("from")),

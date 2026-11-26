@@ -7,11 +7,11 @@ import org.pnfolder.pnlibrary.api.placeholders.NoValueException;
 import org.pnfolder.pnlibrary.api.placeholders.reply.PlaceholderAnswer;
 
 /** The value of a placeholder: runs the steps of its address and puts the fallback in place of a missing value. */
-final class LeafValue implements Function<Call, CompletionStage<Object>> {
+public final class LeafValue implements Function<Call, CompletionStage<Object>> {
     private final Function<Call, Object> step;
     private final Object fallback;
 
-    LeafValue(Function<Call, Object> step, Object fallback) {
+    public LeafValue(Function<Call, Object> step, Object fallback) {
         this.step = step;
         this.fallback = fallback;
     }

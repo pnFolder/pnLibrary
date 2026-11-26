@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.state;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -55,11 +56,11 @@ public final class UpdateSnapshot {
                           @Nullable ApiVersionRange supportedApi, @NotNull List<ReleaseSummary> availableReleases,
                           @NotNull List<Integer> javaBuilds, @Nullable Integer javaBuild,
                           @Nullable Integer recommendedJava) {
-        this.product = product;
-        this.currentVersion = currentVersion;
+        this.product = Objects.requireNonNull(product, "product");
+        this.currentVersion = Objects.requireNonNull(currentVersion, "currentVersion");
         this.latestVersion = latestVersion;
-        this.channel = channel;
-        this.state = state;
+        this.channel = Objects.requireNonNull(channel, "channel");
+        this.state = Objects.requireNonNull(state, "state");
         this.currentJava = currentJava;
         this.requiredJava = requiredJava;
         this.automaticDownload = automaticDownload;
@@ -79,8 +80,8 @@ public final class UpdateSnapshot {
                           int requiredJava, boolean automaticDownload, @Nullable String releaseUrl,
                           @Nullable String message) {
         this(product, currentVersion, latestVersion, channel, state, currentJava, requiredJava, automaticDownload,
-            releaseUrl, message, null, null, Collections.<ReleaseSummary>emptyList(),
-            Collections.<Integer>emptyList(), null, null);
+            releaseUrl, message, null, null, Collections.emptyList(),
+            Collections.emptyList(), null, null);
     }
 
     /** Creates a snapshot with a changelog link and no API range, releases or Java builds. */
@@ -99,7 +100,7 @@ public final class UpdateSnapshot {
                           @Nullable String message, @Nullable String latestChangelogUrl,
                           @Nullable ApiVersionRange supportedApi) {
         this(product, currentVersion, latestVersion, channel, state, currentJava, requiredJava, automaticDownload,
-            releaseUrl, message, latestChangelogUrl, supportedApi, Collections.<ReleaseSummary>emptyList());
+            releaseUrl, message, latestChangelogUrl, supportedApi, Collections.emptyList());
     }
 
     /** Creates a snapshot with the known releases and no Java builds. */
@@ -110,7 +111,7 @@ public final class UpdateSnapshot {
                           @Nullable ApiVersionRange supportedApi, @NotNull List<ReleaseSummary> availableReleases) {
         this(product, currentVersion, latestVersion, channel, state, currentJava, requiredJava, automaticDownload,
             releaseUrl, message, latestChangelogUrl, supportedApi, availableReleases,
-            Collections.<Integer>emptyList(), null, null);
+            Collections.emptyList(), null, null);
     }
 
     /** Display name resolved from native plugin metadata. */

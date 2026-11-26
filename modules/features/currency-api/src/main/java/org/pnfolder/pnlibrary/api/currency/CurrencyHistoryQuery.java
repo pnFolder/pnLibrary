@@ -33,7 +33,7 @@ public final class CurrencyHistoryQuery {
 
     /** Creates a query without filters: the newest 50 records. */
     public CurrencyHistoryQuery() {
-        this(null, null, null, Collections.<CurrencyTransactionType>emptySet(), null, null, 0, 50);
+        this(null, null, null, Collections.emptySet(), null, null, 0, 50);
     }
 
     /**
@@ -60,7 +60,7 @@ public final class CurrencyHistoryQuery {
         this.account = account;
         this.actor = actor;
         this.service = service;
-        this.types = Collections.unmodifiableSet(new LinkedHashSet<CurrencyTransactionType>(types));
+        this.types = Collections.unmodifiableSet(new LinkedHashSet<>(types));
         this.from = from;
         this.until = until;
         this.offset = offset;

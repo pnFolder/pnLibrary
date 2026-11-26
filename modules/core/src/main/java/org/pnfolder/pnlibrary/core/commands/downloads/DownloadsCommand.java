@@ -63,7 +63,7 @@ public final class DownloadsCommand {
     /** The downloads that every module of every plugin declared, with who asked. */
     @NotNull
     public static List<DeclaredDownload> declaredDownloads(@NotNull PluginRegistry plugins) {
-        List<DeclaredDownload> all = new ArrayList<DeclaredDownload>();
+        List<DeclaredDownload> all = new ArrayList<>();
         for (PluginRegistration plugin : plugins.all()) {
             for (ModuleContext module : plugin.all()) {
                 DownloadRegistration downloads = module.getDownloads();

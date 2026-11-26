@@ -24,7 +24,7 @@ class SettingsStoreTest {
     @TempDir
     Path directory;
 
-    private final List<String> warnings = new ArrayList<String>();
+    private final List<String> warnings = new ArrayList<>();
 
     private Path file() {
         return directory.resolve("data/settings.json");
@@ -35,7 +35,7 @@ class SettingsStoreTest {
     }
 
     private static Set<String> changedKeys(SettingsStore store) {
-        Set<String> changed = new HashSet<String>();
+        Set<String> changed = new HashSet<>();
         for (SettingValue value : store.values()) {
             if (value.getChanged()) {
                 changed.add(value.getSpec().getKey());
@@ -63,15 +63,15 @@ class SettingsStoreTest {
         SettingsStore first = store();
         first.set("privacy", "true");
         first.set("updates.check-interval", "90m");
-        first.set("downloads.destinations.cache", "off");
+        first.set("downloads.automatic", "off");
 
         SettingsStore second = store();
 
         assertTrue(second.current().getPrivacy());
         assertEquals(Duration.ofMinutes(90), second.current().getUpdateCheckInterval());
-        assertFalse(second.current().getDownloadsToCache());
-        Set<String> expected = new HashSet<String>(
-            Arrays.asList("privacy", "updates.check-interval", "downloads.destinations.cache"));
+        assertFalse(second.current().getDownloadsAutomatic());
+        Set<String> expected = new HashSet<>(
+            Arrays.asList("privacy", "updates.check-interval", "downloads.automatic"));
         assertEquals(expected, changedKeys(second));
         JsonObject json = json();
         assertEquals(expected, json.keySet());
@@ -103,6 +103,18 @@ class SettingsStoreTest {
         assertThrows(SettingException.class, () -> store.reset("no-such-key"));
 
         assertEquals(60, store().current().getHistoryRetentionDays());
+    }
+
+    @Test
+    void retiredSettingsInTheFileAreIgnoredWithoutAWarning() throws IOException {
+        Files.createDirectories(file().getParent());
+        Files.write(file(), ("{\"updates.read-timeout\": \"5m\", \"downloads.destinations.cache\": false, "
+            + "\"privacy\": true}").getBytes(StandardCharsets.UTF_8));
+
+        SettingsStore store = store();
+
+        assertTrue(store.current().getPrivacy());
+        assertTrue(warnings.isEmpty(), warnings.toString());
     }
 
     @Test
@@ -150,7 +162,7 @@ class SettingsStoreTest {
     @Test
     void listenersHearAboutAChangeAndTheConfigFollowsIt() {
         SettingsStore store = store();
-        List<String> heard = new ArrayList<String>();
+        List<String> heard = new ArrayList<>();
         store.onChange(settings -> heard.add(settings.getTimeZone()));
 
         store.set("time-zone", "Europe/Moscow");

@@ -26,12 +26,7 @@ final class TaskListPage {
     private static final int PAGE_SIZE = 6;
     private static final int DESCRIPTION_PREVIEW = 70;
     private static final int CHILD_PREVIEW = 3;
-    private static final Comparator<TaskSnapshot> NEWEST_FIRST = new Comparator<TaskSnapshot>() {
-        @Override
-        public int compare(TaskSnapshot left, TaskSnapshot right) {
-            return TaskLabels.activity(right).compareTo(TaskLabels.activity(left));
-        }
-    };
+    private static final Comparator<TaskSnapshot> NEWEST_FIRST = (left, right) -> TaskLabels.activity(right).compareTo(TaskLabels.activity(left));
 
     private final PnLibrary library;
 

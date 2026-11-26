@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public final class ConfigurationDocumentCodec {
 
     /** Creates a codec that redacts the raw text of unknown formats with {@code redactor}. */
     public ConfigurationDocumentCodec(@NotNull DiagnosticRedactor redactor) {
-        this.redactor = redactor;
+        this.redactor = Objects.requireNonNull(redactor, "redactor");
     }
 
     /** Whether {@code path} has an extension that {@link #parse} turns into real keys rather than one {@code raw} text. */
@@ -82,7 +83,7 @@ public final class ConfigurationDocumentCodec {
             return parseConf(text);
         }
         String raw = text.length() <= MAX_RAW_CHARACTERS ? text : text.substring(0, MAX_RAW_CHARACTERS);
-        return Collections.<String, Object>singletonMap("raw", redactor.redact(raw));
+        return Collections.singletonMap("raw", redactor.redact(raw));
     }
 
     /** Writes {@code data} in the format of {@code path}. */
@@ -119,7 +120,7 @@ public final class ConfigurationDocumentCodec {
         } catch (IOException impossible) {
             throw new UncheckedIOException(impossible);
         }
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (String name : properties.stringPropertyNames()) {
             result.put(name, properties.getProperty(name));
         }
@@ -127,7 +128,7 @@ public final class ConfigurationDocumentCodec {
     }
 
     private static Map<String, Object> parseToml(String text) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         String section = "";
         for (String line : LINE_BREAK.split(text, -1)) {
             String trimmed = Whitespace.trim(line);
@@ -148,7 +149,7 @@ public final class ConfigurationDocumentCodec {
     }
 
     private static Map<String, Object> parseConf(String text) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (String line : LINE_BREAK.split(text, -1)) {
             String trimmed = Whitespace.trim(line);
             if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("//")) {
@@ -174,7 +175,7 @@ public final class ConfigurationDocumentCodec {
     }
 
     private static Map<String, Object> objectToMap(Object value) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         if (value == null) {
             return result;
         }
@@ -198,7 +199,7 @@ public final class ConfigurationDocumentCodec {
             return objectToMap(value);
         }
         if (value instanceof List) {
-            List<Object> items = new ArrayList<Object>();
+            List<Object> items = new ArrayList<>();
             for (Object item : (List<?>) value) {
                 items.add(transform(item));
             }

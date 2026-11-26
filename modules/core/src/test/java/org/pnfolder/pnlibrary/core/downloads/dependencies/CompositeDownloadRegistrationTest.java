@@ -20,7 +20,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadState;
 
 class CompositeDownloadRegistrationTest {
     private static List<String> keys(List<DownloadSnapshot> snapshots) {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (DownloadSnapshot snapshot : snapshots) {
             keys.add(snapshot.getKey());
         }

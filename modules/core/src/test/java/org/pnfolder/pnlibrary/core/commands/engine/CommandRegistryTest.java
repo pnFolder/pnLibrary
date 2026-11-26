@@ -30,7 +30,7 @@ class CommandRegistryTest {
     }
 
     static <T> CompletableFuture<T> failed(Throwable error) {
-        CompletableFuture<T> future = new CompletableFuture<T>();
+        CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(error);
         return future;
     }
@@ -81,7 +81,7 @@ class CommandRegistryTest {
 
         nativeCommands.dispatcher.execute(nativeCommands.command, context(new TestCommandSender())).toCompletableFuture().join();
 
-        assertEquals(Collections.<Throwable>singletonList(failure), platform.errors);
+        assertEquals(Collections.singletonList(failure), platform.errors);
     }
 
     @Test
@@ -142,7 +142,7 @@ class CommandRegistryTest {
             root.executes(context -> executed[0] = true);
             root.suggests(context -> Arrays.asList("world"));
         }));
-        CommandContext context = context(new TestCommandSender(new HashSet<String>(Arrays.asList("example.hello"))));
+        CommandContext context = context(new TestCommandSender(new HashSet<>(Arrays.asList("example.hello"))));
 
         nativeCommands.dispatcher.execute(nativeCommands.command, context).toCompletableFuture().join();
         List<String> suggestions = nativeCommands.dispatcher.suggest(nativeCommands.command, context).toCompletableFuture().join();
@@ -236,7 +236,7 @@ class CommandRegistryTest {
         assertEquals(Arrays.asList("Не удалось выполнить команду."), sender.texts());
         assertTrue(suggestions.isEmpty());
         assertEquals(2, platform.errors.size());
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         for (Throwable error : platform.errors) {
             messages.add(error.getMessage());
         }
@@ -257,7 +257,7 @@ class CommandRegistryTest {
         registration.close();
         registration.close();
         service.unregisterOwner(firstOwner);
-        assertEquals(new HashSet<String>(Arrays.asList("first", "second")), nativeCommands.unregisteredNames);
+        assertEquals(new HashSet<>(Arrays.asList("first", "second")), nativeCommands.unregisteredNames);
         assertFalse(nativeCommands.unregisteredNames.contains("third"));
         service.close();
         service.close();
@@ -281,7 +281,7 @@ class CommandRegistryTest {
 
         service.close();
 
-        assertEquals(new HashSet<String>(Arrays.asList("first", "second", "third")), nativeCommands.unregisteredNames);
+        assertEquals(new HashSet<>(Arrays.asList("first", "second", "third")), nativeCommands.unregisteredNames);
         assertEquals(1, nativeCommands.closeCalls);
         boolean logged = false;
         for (Throwable error : platform.errors) {

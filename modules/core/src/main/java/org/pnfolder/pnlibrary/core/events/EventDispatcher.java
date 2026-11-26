@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.events;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.events.Event;
@@ -34,8 +35,8 @@ public final class EventDispatcher implements EventService {
 
     private final EventHistory history;
     private final EventErrorLogger errorLogger;
-    private final Map<PluginId, PluginEventScope> scopes = new HashMap<PluginId, PluginEventScope>();
-    private final CopyOnWriteArrayList<ListenerSubscription> subscriptions = new CopyOnWriteArrayList<ListenerSubscription>();
+    private final Map<PluginId, PluginEventScope> scopes = new HashMap<>();
+    private final CopyOnWriteArrayList<ListenerSubscription> subscriptions = new CopyOnWriteArrayList<>();
     private final AtomicLong sequence = new AtomicLong();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ManagedWorker worker = new ManagedWorker("pnLibrary-events", ASYNC_THREADS);
@@ -52,9 +53,9 @@ public final class EventDispatcher implements EventService {
     /** A dispatcher that counts calls in {@code history} and passes listener failures to {@code errorLogger}. */
     public EventDispatcher(@Nullable EventHistory history, @NotNull EventErrorLogger errorLogger) {
         this.history = history;
-        this.errorLogger = errorLogger;
+        this.errorLogger = Objects.requireNonNull(errorLogger, "errorLogger");
         this.counters = new EventCounters(history);
-        this.handlers = new HandlerCache<ListenerSubscription>(
+        this.handlers = new HandlerCache<>(
                 () -> subscriptions,
                 (subscription, type) -> !subscription.isClosed() && subscription.getEventType().isAssignableFrom(type),
                 Comparator.comparingInt(ListenerSubscription::getPriority).thenComparingLong(ListenerSubscription::getOrder));
@@ -123,7 +124,7 @@ public final class EventDispatcher implements EventService {
         event.bindDispatch(mode, Thread.currentThread());
         List<ListenerSubscription> matching = handlers.handlersFor(event.getClass());
         Class<? extends Event> tracedAs = tracer.tracedAs(event.getClass());
-        List<EventTrace.Step> steps = tracedAs != null ? new ArrayList<EventTrace.Step>(matching.size()) : null;
+        List<EventTrace.Step> steps = tracedAs != null ? new ArrayList<>(matching.size()) : null;
         for (int index = 0; index < matching.size(); index++) {
             ListenerSubscription subscription = matching.get(index);
             if (!subscription.isClosed()) {
@@ -201,7 +202,7 @@ public final class EventDispatcher implements EventService {
         }
         List<PluginEventScope> current;
         synchronized (scopes) {
-            current = new ArrayList<PluginEventScope>(scopes.values());
+            current = new ArrayList<>(scopes.values());
             scopes.clear();
         }
         for (PluginEventScope scope : current) {

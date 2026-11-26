@@ -62,7 +62,7 @@ class BukkitCommandAdapterTest {
     void registrationAndAdapterCloseUnregisterEachNativeCommandOnce() throws Exception {
         RecordingRegistrar registrar = new RecordingRegistrar();
         BukkitCommandAdapter adapter = new BukkitCommandAdapter(registrar,
-            source -> audience(source, new ArrayList<Component>(), new ArrayList<Component>()));
+            source -> audience(source, new ArrayList<>(), new ArrayList<>()));
         PlatformCommandRegistration first = adapter.register(new Object(), CommandDefinition.command("first", root -> { }),
             new RecordingDispatcher());
         adapter.register(new Object(), CommandDefinition.command("second", root -> { }), new RecordingDispatcher());

@@ -16,7 +16,7 @@ public final class BusConstants {
     public static final Map<String, Integer> RANGES;
 
     static {
-        Map<String, Integer> ranges = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> ranges = new LinkedHashMap<>();
         ranges.put("1h", 1);
         ranges.put("24h", 24);
         ranges.put("7d", 168);

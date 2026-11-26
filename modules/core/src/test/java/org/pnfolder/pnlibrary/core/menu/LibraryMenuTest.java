@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo;
 import org.pnfolder.pnlibrary.core.menu.data.MenuData;
-import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow;
+import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.menu.style.MenuConstants;
 
 class LibraryMenuTest {
@@ -51,7 +51,7 @@ class LibraryMenuTest {
     }
 
     private static MenuData data() {
-        return data(Collections.<PlaceholderInfo>emptyList(), Collections.<ConfigRow>emptyList());
+        return data(Collections.emptyList(), Collections.emptyList());
     }
 
     private static List<PlaceholderInfo> placeholders(int count) {
@@ -82,7 +82,7 @@ class LibraryMenuTest {
     @Test
     void aSectionOpensForAViewerWithItsPermissionAndIsRefusedWithoutIt() {
         TestMenuViewer allowed = viewer(MenuConstants.PLACEHOLDERS);
-        new LibraryMenu(data(placeholders(2), Collections.<ConfigRow>emptyList()), new ImmediateHost()).home(allowed);
+        new LibraryMenu(data(placeholders(2), Collections.emptyList()), new ImmediateHost()).home(allowed);
         click(allowed, last(allowed), 23);
         assertTrue(last(allowed).getTitle().contains("Плейсхолдеры"));
 
@@ -100,7 +100,7 @@ class LibraryMenuTest {
     @Test
     void aLongListIsCutIntoPagesThatLeadToEachOther() {
         TestMenuViewer viewer = viewer(MenuConstants.PLACEHOLDERS);
-        new LibraryMenu(data(placeholders(50), Collections.<ConfigRow>emptyList()), new ImmediateHost()).home(viewer);
+        new LibraryMenu(data(placeholders(50), Collections.emptyList()), new ImmediateHost()).home(viewer);
         click(viewer, last(viewer), 23);
 
         Menu first = last(viewer);
@@ -137,7 +137,7 @@ class LibraryMenuTest {
     void configurationsGoFromPluginsToModulesToFilesAndBack() {
         TestMenuViewer viewer = viewer(MenuConstants.CONFIGS);
         List<ConfigRow> files = Arrays.asList(file("shop/main:a.yml"), file("shop/main:b.yml"), file("shop/vip:c.yml"), file("clans/core:d.yml"));
-        new LibraryMenu(data(Collections.<PlaceholderInfo>emptyList(), files), new ImmediateHost()).home(viewer);
+        new LibraryMenu(data(Collections.emptyList(), files), new ImmediateHost()).home(viewer);
         click(viewer, last(viewer), 21);
 
         Menu plugins = last(viewer);
@@ -177,7 +177,7 @@ class LibraryMenuTest {
         for (int index = 1; index <= 50; index++) {
             files.add(file("big/core:f" + index + ".yml"));
         }
-        new LibraryMenu(data(Collections.<PlaceholderInfo>emptyList(), files), new ImmediateHost()).home(viewer);
+        new LibraryMenu(data(Collections.emptyList(), files), new ImmediateHost()).home(viewer);
         click(viewer, last(viewer), 21);
         click(viewer, last(viewer), 0);
 

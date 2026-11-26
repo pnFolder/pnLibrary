@@ -51,15 +51,15 @@ public final class ConfigInfo {
                       boolean loaded, @Nullable Instant loadedAt, boolean readOnly,
                       @NotNull List<String> skippedUnknownTypes, @NotNull List<ConfigProblem> problems,
                       @Nullable ConfigApply pendingApply) {
-        this.id = id;
-        this.modelType = modelType;
-        this.file = file;
+        this.id = Objects.requireNonNull(id, "id");
+        this.modelType = Objects.requireNonNull(modelType, "modelType");
+        this.file = Objects.requireNonNull(file, "file");
         this.exists = exists;
         this.loaded = loaded;
         this.loadedAt = loadedAt;
         this.readOnly = readOnly;
-        this.skippedUnknownTypes = skippedUnknownTypes;
-        this.problems = problems;
+        this.skippedUnknownTypes = Objects.requireNonNull(skippedUnknownTypes, "skippedUnknownTypes");
+        this.problems = Objects.requireNonNull(problems, "problems");
         this.pendingApply = pendingApply;
     }
 

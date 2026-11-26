@@ -20,7 +20,7 @@ class DatabaseConnectionTest {
     Path directory;
 
     private DatabaseSource source(String yaml, String path) throws IOException {
-        return source(yaml, path, Collections.<DatabaseRole, String>emptyMap(), "Кланы");
+        return source(yaml, path, Collections.emptyMap(), "Кланы");
     }
 
     private DatabaseSource source(String yaml, String path, Map<DatabaseRole, String> keys, String name) throws IOException {
@@ -39,7 +39,7 @@ class DatabaseConnectionTest {
 
     @Test
     void fieldsWithOtherNamesAreReadThroughTheirRoles() throws Exception {
-        Map<DatabaseRole, String> keys = new EnumMap<DatabaseRole, String>(DatabaseRole.class);
+        Map<DatabaseRole, String> keys = new EnumMap<>(DatabaseRole.class);
         keys.put(DatabaseRole.HOST, "server-address");
         keys.put(DatabaseRole.PORT, "tcp");
         keys.put(DatabaseRole.DATABASE, "schema");
@@ -57,7 +57,7 @@ class DatabaseConnectionTest {
     @Test
     void twoDatabasesOfOneFileDoNotGetMixedUp() throws Exception {
         String yaml = "clans:\n  host: a\n  database: one\n  user: u\nbank:\n  host: b\n  database: two\n  user: u\n";
-        Map<DatabaseRole, String> none = Collections.<DatabaseRole, String>emptyMap();
+        Map<DatabaseRole, String> none = Collections.emptyMap();
         assertEquals("u@a:3306/one", DatabaseConnection.read(source(yaml, "clans", none, "Кланы")).toString());
         assertEquals("u@b:3306/two", DatabaseConnection.read(source(yaml, "bank", none, "Банк")).toString());
     }
@@ -87,14 +87,14 @@ class DatabaseConnectionTest {
         DatabaseSource marked = new DatabaseSource(base.getPlugin(), base.getKind(), base.getName(), base.getFile(),
                 base.getPath(), base.getKeys(), Arrays.asList("clans"), Arrays.asList("members"));
         assertEquals(Arrays.asList("clans", "clan_members"), DatabaseConnection.read(marked).getTables());
-        assertEquals(Collections.<String>emptyList(), DatabaseConnection.read(base).getTables());
+        assertEquals(Collections.emptyList(), DatabaseConnection.read(base).getTables());
     }
 
     @Test
     void anEmptyMarkedTableFieldIsAnErrorAndNotACopyOfEverything() throws Exception {
         DatabaseSource base = source("storage:\n  host: h\n  database: d\n  user: u\n  table: ''\n", "storage");
         DatabaseSource marked = new DatabaseSource(base.getPlugin(), base.getKind(), base.getName(), base.getFile(),
-                base.getPath(), base.getKeys(), Collections.<String>emptyList(), Arrays.asList("table"));
+                base.getPath(), base.getKeys(), Collections.emptyList(), Arrays.asList("table"));
         assertThrows(IllegalStateException.class, () -> DatabaseConnection.read(marked));
     }
 }

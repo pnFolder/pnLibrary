@@ -25,32 +25,32 @@ public final class ArgumentAdapters {
     private static final Pattern DURATION = Pattern.compile("(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?", Pattern.CASE_INSENSITIVE);
 
     static {
-        register(Integer.class, new ArgumentAdapter<Integer>("int", text -> {
+        register(Integer.class, new ArgumentAdapter<>("int", text -> {
             try {
                 return Integer.valueOf(text);
             } catch (NumberFormatException notInt) {
                 return null;
             }
         }));
-        register(Long.class, new ArgumentAdapter<Long>("long", text -> {
+        register(Long.class, new ArgumentAdapter<>("long", text -> {
             try {
                 return Long.valueOf(text);
             } catch (NumberFormatException notLong) {
                 return null;
             }
         }));
-        register(Double.class, new ArgumentAdapter<Double>("number", ArgumentAdapters::parseFinite));
-        register(String.class, new ArgumentAdapter<String>("text", text -> text));
-        register(Boolean.class, new ArgumentAdapter<Boolean>("yes/no", ArgumentAdapters::parseBoolean));
-        register(UUID.class, new ArgumentAdapter<UUID>("uuid", text -> {
+        register(Double.class, new ArgumentAdapter<>("number", ArgumentAdapters::parseFinite));
+        register(String.class, new ArgumentAdapter<>("text", text -> text));
+        register(Boolean.class, new ArgumentAdapter<>("yes/no", ArgumentAdapters::parseBoolean));
+        register(UUID.class, new ArgumentAdapter<>("uuid", text -> {
             try {
                 return UUID.fromString(text);
             } catch (IllegalArgumentException notUuid) {
                 return null;
             }
         }));
-        register(Duration.class, new ArgumentAdapter<Duration>("duration, like 90s, 15m, 1h30m or 2d", ArgumentAdapters::parseDuration));
-        register(PlayerRef.class, new ArgumentAdapter<PlayerRef>("player", Collections.<String>emptyList(),
+        register(Duration.class, new ArgumentAdapter<>("duration, like 90s, 15m, 1h30m or 2d", ArgumentAdapters::parseDuration));
+        register(PlayerRef.class, new ArgumentAdapter<>("player", Collections.emptyList(),
                 viewer -> viewer.getPlayerId() == null ? null : new PlayerRef(viewer.getPlayerId().toString()),
                 text -> PLAYER_NAME.matcher(text).matches() ? new PlayerRef(text) : null));
     }
@@ -65,7 +65,7 @@ public final class ArgumentAdapters {
 
     /** Adds or replaces the converter of {@code type} made of a {@code label} and a {@code parse} function. */
     public static <T> void register(@NotNull Class<T> type, @NotNull String label, @NotNull Function<String, T> parse) {
-        register(type, new ArgumentAdapter<T>(label, parse));
+        register(type, new ArgumentAdapter<>(label, parse));
     }
 
     /** Removes the adapter of {@code type}. Built-in types come back as they were only after a restart. */
@@ -101,7 +101,7 @@ public final class ArgumentAdapters {
         for (T constant : constants) {
             names.add(((Enum<?>) constant).name().toLowerCase(Locale.ROOT));
         }
-        return new ArgumentAdapter<T>("one of the words", names, text -> {
+        return new ArgumentAdapter<>("one of the words", names, text -> {
             for (T constant : constants) {
                 if (((Enum<?>) constant).name().equalsIgnoreCase(text)) {
                     return constant;

@@ -11,10 +11,10 @@ public final class ScenarioDefinitionInfo {
     private final String visibility;
 
     public ScenarioDefinitionInfo(@NotNull String kind, @NotNull String name, @NotNull String owner, @NotNull String visibility) {
-        this.kind = kind;
-        this.name = name;
-        this.owner = owner;
-        this.visibility = visibility;
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.name = Objects.requireNonNull(name, "name");
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.visibility = Objects.requireNonNull(visibility, "visibility");
     }
 
     public @NotNull String getKind() {

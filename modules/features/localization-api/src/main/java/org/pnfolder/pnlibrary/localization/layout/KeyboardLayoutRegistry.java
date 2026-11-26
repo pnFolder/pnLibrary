@@ -25,7 +25,7 @@ final class KeyboardLayoutRegistry implements KeyboardLayouts {
                     throw new IllegalArgumentException("Keyboard layout '" + layout.getId() + "' is already registered");
                 }
             }
-            List<KeyboardLayout> next = new ArrayList<KeyboardLayout>(layouts);
+            List<KeyboardLayout> next = new ArrayList<>(layouts);
             next.add(layout);
             layouts = Collections.unmodifiableList(next);
         }
@@ -37,7 +37,7 @@ final class KeyboardLayoutRegistry implements KeyboardLayouts {
                     return;
                 }
                 synchronized (lock) {
-                    List<KeyboardLayout> next = new ArrayList<KeyboardLayout>();
+                    List<KeyboardLayout> next = new ArrayList<>();
                     for (KeyboardLayout existing : layouts) {
                         if (existing != layout) {
                             next.add(existing);

@@ -29,7 +29,7 @@ public final class BungeeRuntime {
 
     /** Creates the runtime of the pnLibrary plugin {@code plugin}. */
     public BungeeRuntime(@NotNull Plugin plugin) {
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     /** Starts the runtime; a failure stops what already started and is rethrown. */

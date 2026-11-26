@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.registry;
 
+import java.util.Objects;
 import java.util.List;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
@@ -12,8 +13,8 @@ public final class ListRegistry<T> implements Registry<T> {
     private final Supplier<List<RegistryEntry<T>>> source;
 
     public ListRegistry(@NotNull String name, @NotNull Supplier<List<RegistryEntry<T>>> source) {
-        this.name = name;
-        this.source = source;
+        this.name = Objects.requireNonNull(name, "name");
+        this.source = Objects.requireNonNull(source, "source");
     }
 
     @Override

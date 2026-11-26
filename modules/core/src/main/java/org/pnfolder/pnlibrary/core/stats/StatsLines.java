@@ -17,7 +17,7 @@ public final class StatsLines {
     }
 
     public static @NotNull List<Component> of(@NotNull StatsSnapshot now, @NotNull List<StatsSnapshot> history) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(Component.text("Статистика pnLibrary", ChatPalette.ACCENT));
         lines.add(row("Задачи", now.getTasksActive() + " активно, " + now.getTasksFailed() + " с ошибкой",
             now.getTasksFailed() > 0 ? ChatPalette.WARN : ChatPalette.OK));

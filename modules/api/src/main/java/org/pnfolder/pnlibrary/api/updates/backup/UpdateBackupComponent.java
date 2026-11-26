@@ -20,7 +20,7 @@ public final class UpdateBackupComponent {
      */
     public UpdateBackupComponent(@NotNull ProductId product, @Nullable String updatedVersion,
                                  @Nullable String backupVersion) {
-        this.product = product;
+        this.product = Objects.requireNonNull(product, "product");
         this.updatedVersion = updatedVersion;
         this.backupVersion = backupVersion;
     }

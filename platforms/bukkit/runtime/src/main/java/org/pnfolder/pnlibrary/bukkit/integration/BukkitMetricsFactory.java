@@ -16,11 +16,7 @@ public final class BukkitMetricsFactory extends NativePluginMetricsFactory<Plugi
         super(Plugin.class, "Bukkit",
             (plugin, projectId) -> {
                 BStatsClient client = BukkitBStats.open(plugin, projectId, pnLogger);
-                return new BStatsMetricsSession(projectId, chart -> {
-                    client.addCustomChart(chart);
-                }, () -> {
-                    client.shutdown();
-                });
+                return new BStatsMetricsSession(projectId, chart -> client.addCustomChart(chart), () -> client.shutdown());
             },
             (plugin, token) -> new SimpleFastStatsMetricsSession(token, contextToken ->
                 new BukkitContext.Factory(plugin, contextToken)));

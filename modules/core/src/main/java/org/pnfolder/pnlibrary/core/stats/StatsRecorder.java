@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.stats;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -38,9 +39,9 @@ public final class StatsRecorder implements AutoCloseable {
 
     public StatsRecorder(@NotNull StatsCollector collector, @NotNull JournalStore journal,
                          @NotNull Consumer<Throwable> onFailure) {
-        this.collector = collector;
-        this.journal = journal;
-        this.onFailure = onFailure;
+        this.collector = Objects.requireNonNull(collector, "collector");
+        this.journal = Objects.requireNonNull(journal, "journal");
+        this.onFailure = Objects.requireNonNull(onFailure, "onFailure");
     }
 
     public void start() {
@@ -65,7 +66,7 @@ public final class StatsRecorder implements AutoCloseable {
     /** The stored snapshots of the last {@code days} days, newest first. */
     public @NotNull List<StatsSnapshot> history(long days, int limit) {
         long since = System.currentTimeMillis() - Duration.ofDays(days).toMillis();
-        List<StatsSnapshot> result = new ArrayList<StatsSnapshot>();
+        List<StatsSnapshot> result = new ArrayList<>();
         for (JournalRecord record : journal.read(Collections.singleton(JournalLevel.INFO), null, since, limit,
             StatsSnapshot.RECORD_TYPE)) {
             StatsSnapshot snapshot = StatsSnapshot.fromDetails(record.getTimeMillis(), record.getDetails());

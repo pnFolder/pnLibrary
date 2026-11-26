@@ -19,10 +19,10 @@ public final class UploadLedgerEntry {
 
     public UploadLedgerEntry(@NotNull String backend, @NotNull String link, @NotNull String id, @NotNull String token,
                              long deleteAt) {
-        this.backend = backend;
-        this.link = link;
-        this.id = id;
-        this.token = token;
+        this.backend = Objects.requireNonNull(backend, "backend");
+        this.link = Objects.requireNonNull(link, "link");
+        this.id = Objects.requireNonNull(id, "id");
+        this.token = Objects.requireNonNull(token, "token");
         this.deleteAt = deleteAt;
     }
 

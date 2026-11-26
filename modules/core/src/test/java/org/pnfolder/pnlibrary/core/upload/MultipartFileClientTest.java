@@ -23,13 +23,13 @@ class MultipartFileClientTest {
     @Test
     void anInsecureEndpointIsRefusedBeforeAnyConnection(@TempDir Path dir) {
         assertThrows(IllegalArgumentException.class,
-            () -> post(dir, URI.create("http://files.example/upload"), Collections.<String, String>emptyMap(), "file",
+            () -> post(dir, URI.create("http://files.example/upload"), Collections.emptyMap(), "file",
                 "application/zip"));
     }
 
     @Test
     void unsafeFieldNamesAndHeaderValuesAreRefused(@TempDir Path dir) {
-        Map<String, String> none = Collections.<String, String>emptyMap();
+        Map<String, String> none = Collections.emptyMap();
         assertThrows(IllegalArgumentException.class, () -> post(dir, https, none, "file\"; x=\"", "application/zip"));
         assertThrows(IllegalArgumentException.class,
             () -> post(dir, https, Collections.singletonMap("a b", "1"), "file", "application/zip"));

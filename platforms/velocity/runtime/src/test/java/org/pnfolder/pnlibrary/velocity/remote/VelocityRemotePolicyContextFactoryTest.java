@@ -7,7 +7,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.util.ProxyVersion;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -52,7 +52,7 @@ class VelocityRemotePolicyContextFactoryTest {
     @Test
     void aPluginWithoutANameOrVersionStillHasAProduct() {
         RemotePolicyContext context = VelocityRemotePolicyContextFactory.create(
-                new Object(), container(Optional.<String>empty(), Optional.<String>empty()), server);
+                new Object(), container(Optional.empty(), Optional.empty()), server);
 
         assertEquals("pnshop", context.getProduct().getName());
         assertEquals("unknown", context.getProduct().getVersion());
@@ -62,7 +62,7 @@ class VelocityRemotePolicyContextFactoryTest {
     void givenValuesArePassedOnAndNativeHandlesAreReachable() {
         Object plugin = new Object();
         RemotePolicyContext context = VelocityRemotePolicyContextFactory.create(plugin,
-                container(Optional.<String>empty(), Optional.<String>empty()), server,
+                container(Optional.empty(), Optional.empty()), server,
                 Collections.singletonMap("channel", "beta"));
 
         assertEquals("beta", context.getValues().get("channel"));

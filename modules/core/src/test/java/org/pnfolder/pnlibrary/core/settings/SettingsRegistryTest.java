@@ -22,17 +22,24 @@ import org.junit.jupiter.api.Test;
 
 class SettingsRegistryTest {
     private static List<String> fields() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Field field : LibrarySettings.class.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers())) {
+            if (field.getType() == RestartSettings.class) {
+                names.addAll(restartFields());
+            } else if (!Modifier.isStatic(field.getModifiers())) {
                 names.add(field.getName());
             }
         }
         return names;
     }
 
+    /** The restart group is one field of {@link LibrarySettings}; each of its values has its own setting. */
+    private static List<String> restartFields() {
+        return Arrays.asList("restart.auto", "restart.max-players", "restart.quiet-time");
+    }
+
     private static List<String> keys() {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (SettingSpec spec : SettingsRegistry.getAll()) {
             keys.add(spec.getKey());
         }
@@ -51,16 +58,16 @@ class SettingsRegistryTest {
     void everySettingOfTheLibraryHasExactlyOneEntryInTheRegistry() {
         List<String> fields = fields();
         assertTrue(!fields.isEmpty());
-        List<String> covered = new ArrayList<String>();
+        List<String> covered = new ArrayList<>();
         for (SettingSpec spec : SettingsRegistry.getAll()) {
             covered.add(spec.getField());
         }
         Collections.sort(fields);
-        List<String> sortedCovered = new ArrayList<String>(covered);
+        List<String> sortedCovered = new ArrayList<>(covered);
         Collections.sort(sortedCovered);
         assertEquals(fields, sortedCovered, "a field without an entry (or an entry without a field)");
-        assertEquals(covered.size(), new HashSet<String>(covered).size(), "two entries for one field");
-        assertEquals(SettingsRegistry.getAll().size(), new HashSet<String>(keys()).size(), "a key is used twice");
+        assertEquals(covered.size(), new HashSet<>(covered).size(), "two entries for one field");
+        assertEquals(SettingsRegistry.getAll().size(), new HashSet<>(keys()).size(), "a key is used twice");
     }
 
     @Test
@@ -76,14 +83,14 @@ class SettingsRegistryTest {
     @Test
     void theDocsDescribeEverySettingAndEveryPermissionOfPluginYml() throws IOException {
         String docs = new String(Files.readAllBytes(Paths.get("../../docs/settings.md")), StandardCharsets.UTF_8);
-        List<String> missing = new ArrayList<String>();
+        List<String> missing = new ArrayList<>();
         for (String key : keys()) {
             if (!docs.contains("`" + key + "`")) {
                 missing.add(key);
             }
         }
         assertTrue(missing.isEmpty(), "docs/settings.md does not describe: " + missing);
-        List<String> declared = new ArrayList<String>();
+        List<String> declared = new ArrayList<>();
         Pattern node = Pattern.compile("^  (pnlibrary\\.[a-z.]+):\\s*$");
         for (String line : Files.readAllLines(Paths.get("../../platforms/bukkit/runtime/src/main/resources/plugin.yml"))) {
             Matcher matcher = node.matcher(line);
@@ -92,7 +99,7 @@ class SettingsRegistryTest {
             }
         }
         assertTrue(declared.size() >= 10, "plugin.yml permissions were not found");
-        List<String> unlisted = new ArrayList<String>();
+        List<String> unlisted = new ArrayList<>();
         for (String permission : declared) {
             if (!docs.contains(permission)) {
                 unlisted.add(permission);
@@ -129,6 +136,30 @@ class SettingsRegistryTest {
         assertThrows(SettingException.class, () -> spec.normalize("5m"));
         assertThrows(SettingException.class, () -> spec.normalize("8d"));
         assertThrows(SettingException.class, () -> spec.normalize("6"));
+    }
+
+    @Test
+    void restartSettingsDefaultAndNeverRestartingAlone() {
+        RestartSettings restart = new LibrarySettings().getRestart();
+        assertTrue(!restart.getAuto());
+        assertEquals(0, restart.getMaxPlayers());
+        assertEquals(Duration.ofMinutes(2), restart.getQuietTime());
+    }
+
+    @Test
+    void restartSettingsStayInsideTheirLimitsAndChangeOnlyTheirOwnValue() {
+        SettingSpec players = spec("updates.restart.max-players");
+        assertEquals("200", players.normalize("200"));
+        assertThrows(SettingException.class, () -> players.normalize("201"));
+        assertThrows(SettingException.class, () -> players.normalize("-1"));
+        SettingSpec quiet = spec("updates.restart.quiet-time");
+        assertEquals("10с", quiet.normalize("10s"));
+        assertEquals("1ч", quiet.normalize("1h"));
+        assertThrows(SettingException.class, () -> quiet.normalize("9s"));
+        assertThrows(SettingException.class, () -> quiet.normalize("2h"));
+        LibrarySettings changed = spec("updates.restart.auto").apply(new LibrarySettings(), "true");
+        assertTrue(changed.getRestart().getAuto());
+        assertEquals(Duration.ofMinutes(2), changed.getRestart().getQuietTime());
     }
 
     @Test

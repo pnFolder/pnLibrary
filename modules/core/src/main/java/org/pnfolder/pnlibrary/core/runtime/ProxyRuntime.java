@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,7 @@ import org.pnfolder.pnlibrary.core.link.LinkReceiver;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink;
-import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateReminder;
+import org.pnfolder.pnlibrary.core.updates.catalog.proxy.ProxyUpdateReminder;
 import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle;
 
@@ -34,9 +35,9 @@ public final class ProxyRuntime implements AutoCloseable {
 
     public ProxyRuntime(@NotNull ProxyPlatformAdapter adapter, @NotNull Function<LinkReceiver, AutoCloseable> registerLinkReceiver,
                         @NotNull Function<Object, OwnerInfo> describe) {
-        this.adapter = adapter;
-        this.registerLinkReceiver = registerLinkReceiver;
-        this.describe = describe;
+        this.adapter = Objects.requireNonNull(adapter, "adapter");
+        this.registerLinkReceiver = Objects.requireNonNull(registerLinkReceiver, "registerLinkReceiver");
+        this.describe = Objects.requireNonNull(describe, "describe");
     }
 
     private NetworkProxy proxy() {
@@ -81,6 +82,10 @@ public final class ProxyRuntime implements AutoCloseable {
                     for (NetworkServer server : proxy().getServers()) {
                         Failures.runCatchingNonFatal(() -> server.send(LinkCodec.CHANNEL, bytes));
                     }
+                },
+                name -> {
+                    NetworkServer server = proxy().server(name);
+                    return server == null ? null : server.getAddress().getHostString() + ":" + server.getAddress().getPort();
                 });
     }
 

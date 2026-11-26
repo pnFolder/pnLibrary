@@ -28,7 +28,7 @@ class StatsCollectorTest {
     private final long now = System.currentTimeMillis();
 
     private JournalStore journal() {
-        Map<JournalLevel, Duration> retention = new EnumMap<JournalLevel, Duration>(JournalLevel.class);
+        Map<JournalLevel, Duration> retention = new EnumMap<>(JournalLevel.class);
         for (JournalLevel level : JournalLevel.values()) {
             retention.put(level, Duration.ofDays(30));
         }
@@ -37,11 +37,11 @@ class StatsCollectorTest {
 
     private JournalRecord record(JournalLevel level, String source, long ageHours) {
         return new JournalRecord(now - Duration.ofHours(ageHours).toMillis(), level, source, "LOG", source + " " + level,
-            new HashMap<String, String>());
+            new HashMap<>());
     }
 
     private StatsCollector collector(JournalStore journal, List<EventInfo> events) {
-        return new StatsCollector(() -> Collections.<TaskSnapshot>emptyList(), () -> events, journal, () -> now);
+        return new StatsCollector(() -> Collections.emptyList(), () -> events, journal, () -> now);
     }
 
     @Test
@@ -54,11 +54,11 @@ class StatsCollectorTest {
         journal.append(record(JournalLevel.ERROR, "pnclans", 48));
         journal.append(record(JournalLevel.WARNING, "pnmarket", 0));
 
-        StatsSnapshot snapshot = collector(journal, Collections.<EventInfo>emptyList()).collect();
+        StatsSnapshot snapshot = collector(journal, Collections.emptyList()).collect();
 
         assertEquals(4, snapshot.getErrors24h());
         assertEquals(1, snapshot.getWarnings24h());
-        assertEquals(Arrays.asList(new Pair<String, Integer>("pnmarket", 3), new Pair<String, Integer>("pnclans", 1)),
+        assertEquals(Arrays.asList(new Pair<>("pnmarket", 3), new Pair<>("pnclans", 1)),
             snapshot.getErrorSources());
     }
 
@@ -76,7 +76,7 @@ class StatsCollectorTest {
     void aStoredSnapshotIsReadBackAndDoesNotShowUpAsAJournalEvent() {
         JournalStore journal = journal();
         journal.append(record(JournalLevel.ERROR, "pnmarket", 0));
-        StatsRecorder recorder = new StatsRecorder(collector(journal, Collections.<EventInfo>emptyList()), journal);
+        StatsRecorder recorder = new StatsRecorder(collector(journal, Collections.emptyList()), journal);
 
         recorder.record();
 
@@ -91,10 +91,10 @@ class StatsCollectorTest {
     @Test
     void aSnapshotThatCannotBeTakenIsReportedAndDoesNotReachTheCaller() {
         JournalStore journal = journal();
-        List<Throwable> failures = new ArrayList<Throwable>();
+        List<Throwable> failures = new ArrayList<>();
         StatsCollector broken = new StatsCollector(() -> {
             throw new IllegalStateException("tasks unavailable");
-        }, () -> Collections.<EventInfo>emptyList(), journal);
+        }, () -> Collections.emptyList(), journal);
 
         new StatsRecorder(broken, journal, failures::add).record();
 

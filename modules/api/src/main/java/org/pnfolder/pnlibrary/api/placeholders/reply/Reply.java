@@ -65,13 +65,13 @@ public final class Reply<T> {
     /** An answer when {@code value} is there, otherwise {@link #none}. For values that may be missing. */
     @NotNull
     public static <T> Reply<T> of(@Nullable T value) {
-        return value == null ? new Reply<T>(ReplyKind.NONE, null, null) : new Reply<T>(ReplyKind.VALUE, value, null);
+        return value == null ? new Reply<>(ReplyKind.NONE, null, null) : new Reply<>(ReplyKind.VALUE, value, null);
     }
 
     /** An object to go on with: the address continues in its {@code @Placeholder} members. {@code null} means no value. */
     @NotNull
     public static <T> Reply<T> next(@Nullable T next) {
-        return next == null ? new Reply<T>(ReplyKind.NONE, null, null) : new Reply<T>(ReplyKind.NEXT, next, null);
+        return next == null ? new Reply<>(ReplyKind.NONE, null, null) : new Reply<>(ReplyKind.NEXT, next, null);
     }
 
     /** An answer given from a branch: the address ends here with {@code answer} and nothing below is called. */
@@ -83,7 +83,7 @@ public final class Reply<T> {
     /** Like {@link #stop(Object)}, with a {@code format} applied when the address names none. */
     @NotNull
     public static <T> Reply<T> stop(@Nullable Object answer, @Nullable String format) {
-        return answer == null ? new Reply<T>(ReplyKind.NONE, null, null) : new Reply<T>(ReplyKind.STOP, answer, format);
+        return answer == null ? new Reply<>(ReplyKind.NONE, null, null) : new Reply<>(ReplyKind.STOP, answer, format);
     }
 
     /** No value: the address stays as it was written. */

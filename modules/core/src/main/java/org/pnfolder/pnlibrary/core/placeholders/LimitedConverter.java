@@ -10,13 +10,13 @@ import org.pnfolder.pnlibrary.api.placeholders.argument.ArgumentInput;
 import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
 
 /** A converter built from the options of {@code @Argument}: it reads with {@code reader} and keeps the {@code me} of the inner one. */
-final class LimitedConverter implements ArgumentConverter<Object> {
+public final class LimitedConverter implements ArgumentConverter<Object> {
     private final ArgumentConverter<Object> inner;
     private final String label;
     private final List<String> words;
     private final Function<ArgumentInput, Object> reader;
 
-    LimitedConverter(ArgumentConverter<Object> inner, String label, List<String> words, Function<ArgumentInput, Object> reader) {
+    public LimitedConverter(ArgumentConverter<Object> inner, String label, List<String> words, Function<ArgumentInput, Object> reader) {
         this.inner = inner;
         this.label = label;
         this.words = words;
@@ -38,7 +38,7 @@ final class LimitedConverter implements ArgumentConverter<Object> {
         if (words.isEmpty()) {
             return inner.suggest(input);
         }
-        List<String> matching = new ArrayList<String>();
+        List<String> matching = new ArrayList<>();
         for (String word : words) {
             if (word.regionMatches(true, 0, input.getText(), 0, input.getText().length())) {
                 matching.add(word);

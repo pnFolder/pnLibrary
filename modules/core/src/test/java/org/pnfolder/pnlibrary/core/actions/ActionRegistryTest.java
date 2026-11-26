@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.registry.RegistryEntry;
 import org.pnfolder.pnlibrary.api.registry.Visibility;
 import org.pnfolder.pnlibrary.api.scenario.actions.Action;
 import org.pnfolder.pnlibrary.api.scenario.actions.DefinitionConflict;
-import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ScenarioDefinitions;
 
 class ActionRegistryTest {
     private final ScenarioDefinitions definitions = new ScenarioDefinitions();
@@ -46,6 +46,6 @@ class ActionRegistryTest {
             Visibility.ALL, warning -> { });
         handle.close();
 
-        assertEquals(Collections.<String>emptyList(), keys(definitions.actionEntries("shop/main")));
+        assertEquals(Collections.emptyList(), keys(definitions.actionEntries("shop/main")));
     }
 }

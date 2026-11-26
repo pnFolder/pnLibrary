@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.release;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.updates.product.ProductId;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
@@ -16,8 +17,8 @@ public final class ProductDependency {
      * @param minimumVersion oldest acceptable product version
      */
     public ProductDependency(@NotNull ProductId product, @NotNull SemanticVersion minimumVersion) {
-        this.product = product;
-        this.minimumVersion = minimumVersion;
+        this.product = Objects.requireNonNull(product, "product");
+        this.minimumVersion = Objects.requireNonNull(minimumVersion, "minimumVersion");
     }
 
     /** Required managed product. */

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleMetricsDefinition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -40,14 +41,14 @@ class ModuleMetricsTest {
     }
 
     private static ModuleMetricsDefinition definition() {
-        return definition(true, Collections.<Consumer<PluginMetrics>>emptyList());
+        return definition(true, Collections.emptyList());
     }
 
     @Test
     void addingBStatsToAFastStatsOnlyConfigurationOpensBothProviders() {
         RecordingMetricsService service = new RecordingMetricsService(null);
         ModuleMetrics controller = new ModuleMetrics(new Object(), service,
-            new ModuleMetricsDefinition(Collections.singletonList(fastStats()), false, Collections.<Consumer<PluginMetrics>>emptyList()));
+            new ModuleMetricsDefinition(Collections.singletonList(fastStats()), false, Collections.emptyList()));
 
         controller.update(bStats(10));
         controller.enable();
@@ -135,8 +136,8 @@ class ModuleMetricsTest {
     @Test
     void enablingWithoutAnEnabledProviderIsRejected() {
         ModuleMetrics controller = new ModuleMetrics(new Object(), new RecordingMetricsService(null),
-            new ModuleMetricsDefinition(Collections.<MetricsProviderConfiguration>emptyList(), false,
-                Collections.<Consumer<PluginMetrics>>emptyList()));
+            new ModuleMetricsDefinition(Collections.emptyList(), false,
+                Collections.emptyList()));
 
         assertThrows(IllegalArgumentException.class, controller::enable);
         assertFalse(controller.isEnabled());
@@ -145,7 +146,7 @@ class ModuleMetricsTest {
     @Test
     void closedControllerRejectsMutation() {
         ModuleMetrics controller = new ModuleMetrics(new Object(), new RecordingMetricsService(null),
-            definition(false, Collections.<Consumer<PluginMetrics>>emptyList()), null);
+            definition(false, Collections.emptyList()), null);
         controller.close();
 
         assertTrue(controller.isClosed());

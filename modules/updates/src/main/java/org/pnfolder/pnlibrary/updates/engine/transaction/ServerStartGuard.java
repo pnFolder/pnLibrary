@@ -8,8 +8,8 @@ import java.util.Set;
 
 /** Tells which interrupted journals only the offline installer may repair. */
 final class ServerStartGuard {
-    static final Set<String> INTERNAL_PURPOSES = new HashSet<String>(Arrays.asList("INSTALL", "RESTORE"));
-    static final Set<TransactionState> UNSAFE_STATES = new HashSet<TransactionState>(Arrays.asList(
+    static final Set<String> INTERNAL_PURPOSES = new HashSet<>(Arrays.asList("INSTALL", "RESTORE"));
+    static final Set<TransactionState> UNSAFE_STATES = new HashSet<>(Arrays.asList(
         TransactionState.PUBLISHING, TransactionState.ACTIVATING, TransactionState.ROLLING_BACK));
 
     private ServerStartGuard() {

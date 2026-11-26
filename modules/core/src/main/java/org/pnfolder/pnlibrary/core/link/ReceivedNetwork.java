@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link;
 
+import java.util.Objects;
 import java.time.Instant;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
@@ -10,8 +11,8 @@ public final class ReceivedNetwork {
     private final Instant receivedAt;
 
     public ReceivedNetwork(@NotNull NetworkReport report, @NotNull Instant receivedAt) {
-        this.report = report;
-        this.receivedAt = receivedAt;
+        this.report = Objects.requireNonNull(report, "report");
+        this.receivedAt = Objects.requireNonNull(receivedAt, "receivedAt");
     }
 
     public @NotNull NetworkReport getReport() {

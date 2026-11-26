@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class MetricsDslApiTest {
     @Test
     void pluginMetricsConfigurationExposesOnlyTheSharedDslEntryPoint() {
-        List<Method> methods = new ArrayList<Method>();
+        List<Method> methods = new ArrayList<>();
         for (Method method : PluginBuilder.class.getMethods()) {
             if (method.getName().equals("metrics")) {
                 methods.add(method);

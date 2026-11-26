@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics.redaction;
 
+import java.util.Objects;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -39,13 +40,13 @@ public final class DiagnosticValueSanitizer {
 
     /** Creates a sanitizer that redacts text with {@code redactor}. */
     public DiagnosticValueSanitizer(@NotNull DiagnosticRedactor redactor) {
-        this.redactor = redactor;
+        this.redactor = Objects.requireNonNull(redactor, "redactor");
     }
 
     /** Returns a bounded, redacted copy of {@code values}; secret-looking keys keep no value. */
     @NotNull
     public Map<String, Object> map(@Nullable Map<?, ?> values) {
-        return map(values, 0, new IdentityHashMap<Object, Boolean>());
+        return map(values, 0, new IdentityHashMap<>());
     }
 
     /** Redacts {@code value} and cuts it to {@code maximumLength} characters; {@code null} reads as empty text. */
@@ -82,7 +83,7 @@ public final class DiagnosticValueSanitizer {
     @NotNull
     public String incidentId(@NotNull String plugin, @NotNull DiagnosticLevel level, @NotNull String component,
                              @NotNull String code, @NotNull String message, @Nullable Throwable error) {
-        List<String> context = new ArrayList<String>();
+        List<String> context = new ArrayList<>();
         context.add(key(plugin));
         context.add(level.name());
         context.add(component);
@@ -97,7 +98,7 @@ public final class DiagnosticValueSanitizer {
     }
 
     private Map<String, Object> map(Map<?, ?> values, int depth, IdentityHashMap<Object, Boolean> seen) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         if (values == null) {
             return result;
         }
@@ -138,7 +139,7 @@ public final class DiagnosticValueSanitizer {
         if (seen.put(values, Boolean.TRUE) != null) {
             return "[recursive reference]";
         }
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
         for (Object item : values) {
             if (result.size() >= MAX_CONTAINER_ENTRIES) {
                 break;

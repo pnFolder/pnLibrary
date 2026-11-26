@@ -18,7 +18,7 @@ class RuntimeTaskDetailsTest {
         TaskSnapshot snapshot = TaskSnapshot.builder(new TaskId("task-1"), "DemoPlugin", TaskExecution.Kind.GLOBAL,
                 TaskStatus.FAILED, Instant.EPOCH)
             .name("refresh")
-            .tags(Collections.<String>emptySet())
+            .tags(Collections.emptySet())
             .runCount(2)
             .skippedCount(1)
             .lastStartedAt(Instant.EPOCH)

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.platform;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -39,8 +40,8 @@ public final class PlatformAudiences implements Audiences, AutoCloseable {
     }
 
     public PlatformAudiences(@NotNull PlatformAudienceAdapter adapter, @NotNull Consumer<Throwable> onDeliveryFailure) {
-        this.adapter = adapter;
-        this.onDeliveryFailure = onDeliveryFailure;
+        this.adapter = Objects.requireNonNull(adapter, "adapter");
+        this.onDeliveryFailure = Objects.requireNonNull(onDeliveryFailure, "onDeliveryFailure");
     }
 
     @Override
@@ -60,7 +61,7 @@ public final class PlatformAudiences implements Audiences, AutoCloseable {
 
     @Override
     public @NotNull List<OnlinePlayer> players() {
-        return closed.get() ? Collections.<OnlinePlayer>emptyList() : new ArrayList<OnlinePlayer>(adapter.players());
+        return closed.get() ? Collections.emptyList() : new ArrayList<>(adapter.players());
     }
 
     @Override
@@ -70,11 +71,11 @@ public final class PlatformAudiences implements Audiences, AutoCloseable {
 
     @Override
     public @NotNull Iterable<Audience> audiences() {
-        Set<Audience> seen = Collections.newSetFromMap(new IdentityHashMap<Audience, Boolean>());
-        List<Audience> members = new ArrayList<Audience>();
+        Set<Audience> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<Audience> members = new ArrayList<>();
         members.add(console());
         members.addAll(players());
-        List<Audience> isolated = new ArrayList<Audience>();
+        List<Audience> isolated = new ArrayList<>();
         for (Audience member : members) {
             if (seen.add(member)) {
                 isolated.add(new FailureIsolatedAudience(member, failureThrottle, onDeliveryFailure));

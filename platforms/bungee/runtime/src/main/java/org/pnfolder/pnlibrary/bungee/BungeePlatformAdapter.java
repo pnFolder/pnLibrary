@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee;
 
+import java.util.Objects;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import org.pnfolder.pnlibrary.bungee.commands.BungeeCommandAdapter;
 import org.pnfolder.pnlibrary.bungee.diagnostics.BungeeDiagnosticDetailsCollector;
 import org.pnfolder.pnlibrary.bungee.metrics.BungeeMetricsFactory;
@@ -50,7 +51,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
 
     BungeePlatformAdapter(@NotNull Plugin plugin, @NotNull Supplier<PnLogger> pnLogger) {
         super(plugin);
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.diagnosticDetailsCollector = new BungeeDiagnosticDetailsCollector(plugin);
         this.plugins = new PlatformPlugins<>("BungeeCord",
                 () -> plugin.getProxy().getPluginManager().getPlugins(),
@@ -71,7 +72,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
         PluginDescription description = installed.getDescription();
         String author = description.getAuthor();
         List<String> authors = author == null
-                ? Collections.<String>emptyList() : Collections.singletonList(author);
+                ? Collections.emptyList() : Collections.singletonList(author);
         return new PluginSnapshot(description.getName(), description.getName(), description.getVersion(), authors,
                 description.getMain());
     }

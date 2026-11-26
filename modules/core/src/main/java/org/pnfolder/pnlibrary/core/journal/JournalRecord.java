@@ -47,16 +47,16 @@ public final class JournalRecord {
     public JournalRecord(long timeMillis, @NotNull JournalLevel level, @NotNull String source, @NotNull String type,
                          @NotNull String message, @NotNull Map<String, String> details) {
         this.timeMillis = timeMillis;
-        this.level = level;
-        this.source = source;
-        this.type = type;
-        this.message = message;
-        this.details = details;
+        this.level = Objects.requireNonNull(level, "level");
+        this.source = Objects.requireNonNull(source, "source");
+        this.type = Objects.requireNonNull(type, "type");
+        this.message = Objects.requireNonNull(message, "message");
+        this.details = Objects.requireNonNull(details, "details");
     }
 
     public JournalRecord(long timeMillis, @NotNull JournalLevel level, @NotNull String source, @NotNull String type,
                          @NotNull String message) {
-        this(timeMillis, level, source, type, message, Collections.<String, String>emptyMap());
+        this(timeMillis, level, source, type, message, Collections.emptyMap());
     }
 
     public long getTimeMillis() {

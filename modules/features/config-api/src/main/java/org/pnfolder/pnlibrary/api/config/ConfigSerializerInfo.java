@@ -22,10 +22,10 @@ public final class ConfigSerializerInfo {
      */
     public ConfigSerializerInfo(@NotNull Class<?> type, @NotNull PluginId owner, int priority,
                                 @NotNull ConfigAddress target) {
-        this.type = type;
-        this.owner = owner;
+        this.type = Objects.requireNonNull(type, "type");
+        this.owner = Objects.requireNonNull(owner, "owner");
         this.priority = priority;
-        this.target = target;
+        this.target = Objects.requireNonNull(target, "target");
     }
 
     /** Value type the serializer converts. */

@@ -75,7 +75,7 @@ public final class NetworkScreens extends MenuScreens {
             "Проблем", view.problems() > 0 ? "✖ " + view.problems() : "✔ нет",
             "На связи", server.getOnline() ? "✔ да" : "✖ нет");
         return MenuItems.icon(Icons.OVERVIEW, view.material(), server.getName(),
-            Style.lore(Collections.<String>emptyList(), parameters, Style.left("открыть")),
+            Style.lore(Collections.emptyList(), parameters, Style.left("открыть")),
             server.getOnline() ? Tone.NORMAL : Tone.MUTED);
     }
 

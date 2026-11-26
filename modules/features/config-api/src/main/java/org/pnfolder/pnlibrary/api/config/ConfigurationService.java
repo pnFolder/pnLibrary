@@ -68,7 +68,7 @@ public interface ConfigurationService {
     /** The registered files that read into {@code model}. */
     @NotNull
     default List<ConfigInfo> byModel(@NotNull Class<?> model) {
-        List<ConfigInfo> found = new ArrayList<ConfigInfo>();
+        List<ConfigInfo> found = new ArrayList<>();
         for (ConfigInfo info : all()) {
             if (info.getModelType().equals(model)) {
                 found.add(info);

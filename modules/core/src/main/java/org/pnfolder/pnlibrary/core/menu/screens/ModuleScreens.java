@@ -135,8 +135,8 @@ public final class ModuleScreens extends MenuScreens {
 
     private static ItemSpec control(String texture, String material, String label, String description, boolean available) {
         List<String> lore = available
-            ? Style.lore(Collections.singletonList(description), Collections.<Fact>emptyList(), Style.left("выполнить"))
-            : Style.lore(Collections.singletonList(description), Collections.<Fact>emptyList());
+            ? Style.lore(Collections.singletonList(description), Collections.emptyList(), Style.left("выполнить"))
+            : Style.lore(Collections.singletonList(description), Collections.emptyList());
         return MenuItems.icon(texture, available ? material : "COAL", label, lore, available ? Tone.NORMAL : Tone.MUTED);
     }
 

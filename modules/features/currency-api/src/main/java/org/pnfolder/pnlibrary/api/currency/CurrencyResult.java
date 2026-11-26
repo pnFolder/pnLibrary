@@ -24,7 +24,7 @@ public final class CurrencyResult {
     public CurrencyResult(@NotNull CurrencyResultStatus status, @Nullable BigDecimal previousBalance,
                           @Nullable BigDecimal currentBalance, @Nullable CurrencyRejectReason reason,
                           @Nullable String message, @Nullable Throwable error) {
-        this.status = status;
+        this.status = Objects.requireNonNull(status, "status");
         this.previousBalance = previousBalance;
         this.currentBalance = currentBalance;
         this.reason = reason;

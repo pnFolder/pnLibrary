@@ -30,7 +30,7 @@ final class TextRendering {
     }
 
     CompletionStage<String> render(String text, ViewerInfo viewer, Map<String, Object> values, @Nullable String consumer) {
-        final List<CompletableFuture<String>> pieces = new ArrayList<CompletableFuture<String>>();
+        final List<CompletableFuture<String>> pieces = new ArrayList<>();
         int from = 0;
         while (true) {
             int open = text.indexOf('{', from);

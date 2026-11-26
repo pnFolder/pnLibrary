@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.placeholders.argument;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.placeholders.NoValueException;
@@ -35,7 +36,7 @@ public final class ArgumentValue<T> {
      * @param me what {@code me} means for a viewer, or {@code null} when it means nothing
      */
     public ArgumentValue(@NotNull String text, @Nullable T value, @Nullable String error, @Nullable Function<ViewerInfo, T> me) {
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text");
         this.value = value;
         this.error = error;
         this.me = me;

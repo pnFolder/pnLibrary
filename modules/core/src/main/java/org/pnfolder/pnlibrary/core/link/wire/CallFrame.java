@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.remote.DataCall;
 
@@ -8,7 +9,7 @@ public final class CallFrame implements LinkFrame {
     private final DataCall call;
 
     public CallFrame(@NotNull DataCall call) {
-        this.call = call;
+        this.call = Objects.requireNonNull(call, "call");
     }
 
     public @NotNull DataCall getCall() {

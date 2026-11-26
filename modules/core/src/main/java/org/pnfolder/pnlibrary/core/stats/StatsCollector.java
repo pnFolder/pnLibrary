@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.stats;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,9 +38,9 @@ public final class StatsCollector {
 
     public StatsCollector(@NotNull Supplier<List<TaskSnapshot>> tasks, @NotNull Supplier<List<EventInfo>> events,
                           @NotNull JournalStore journal, @NotNull LongSupplier clock) {
-        this.tasks = tasks;
-        this.events = events;
-        this.journal = journal;
+        this.tasks = Objects.requireNonNull(tasks, "tasks");
+        this.events = Objects.requireNonNull(events, "events");
+        this.journal = Objects.requireNonNull(journal, "journal");
         this.clock = clock;
     }
 

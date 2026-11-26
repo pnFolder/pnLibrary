@@ -32,13 +32,13 @@ final class BusTracePages {
     void traces(CommandContext context, String typed) {
         String name = typed == null ? null : BusChat.resolve(bus(), typed);
         ChatKit kit = CommandOutput.kit(context);
-        List<EventTrace> all = new ArrayList<EventTrace>();
+        List<EventTrace> all = new ArrayList<>();
         for (EventTrace trace : bus().traces()) {
             if (name == null || trace.getEventName().equals(name)) {
                 all.add(trace);
             }
         }
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Записанные вызовы", kit.text(String.valueOf(all.size()), ChatPalette.LABEL)));
         lines.add(kit.blank());
@@ -61,7 +61,7 @@ final class BusTracePages {
     private List<Component> traceBlock(ChatKit kit, EventTrace trace) {
         Component verdict = trace.getAllowed() ? kit.text("разрешено", ChatPalette.OK) : kit.text("отклонено", ChatPalette.DANGER);
         String result = trace.getResult() == null ? "-" : trace.getResult();
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.text(" ").append(kit.text(CoreFormatting.shortName(trace.getEventName()), ChatPalette.ACCENT))
                 .append(kit.dot()).append(verdict).append(kit.text("  результат: " + result, ChatPalette.SOFT)));
         lines.add(kit.text("   ").append(modeTag(kit, trace.getMode()))

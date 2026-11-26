@@ -26,7 +26,7 @@ class ConfigurationDocumentCodecTest {
     @ParameterizedTest(name = "renders {0}")
     @MethodSource("renderedDocuments")
     void rendersSupportedConfigurationFormats(String path, String expectedFragment) {
-        String rendered = codec.render(path, Collections.<String, Object>singletonMap("enabled", true));
+        String rendered = codec.render(path, Collections.singletonMap("enabled", true));
 
         assertTrue(rendered.contains(expectedFragment), rendered);
     }

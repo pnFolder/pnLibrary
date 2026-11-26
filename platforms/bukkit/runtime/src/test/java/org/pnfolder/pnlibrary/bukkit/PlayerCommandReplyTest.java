@@ -98,7 +98,7 @@ class PlayerCommandReplyTest {
         CommandNode root = definition.getRoot();
         CommandNode catalog = find(root, "updates");
         BukkitCommandSender sender = new BukkitCommandSender(player, new BukkitAudienceAdapter(service).of(player));
-        CommandContext context = new CommandContext(sender, Collections.<String>emptyList(), "pnlibrary:pn", "");
+        CommandContext context = new CommandContext(sender, Collections.emptyList(), "pnlibrary:pn", "");
         try {
             for (CommandNode node : Arrays.asList(root, catalog, find(catalog, "list"), find(catalog, "available"))) {
                 node.getExecution().execute(context).toCompletableFuture().join();

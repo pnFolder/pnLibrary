@@ -14,7 +14,7 @@ final class LegacyToMini {
     private static final Pattern X_HEX = Pattern.compile("(?i)&x((?:&[0-9a-f]){6})");
     private static final Pattern HEX = Pattern.compile("(?i)(?<!<)&?#([0-9a-f]{6})(?![^<]*>)");
     private static final Pattern LEGACY = Pattern.compile("&([0-9a-fk-or])", Pattern.CASE_INSENSITIVE);
-    private static final Map<String, String> LEGACY_TAGS = new HashMap<String, String>();
+    private static final Map<String, String> LEGACY_TAGS = new HashMap<>();
 
     static {
         String[] names = {"black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray",

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.store;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.common.lang.Failures;
@@ -24,7 +25,7 @@ public final class JournalFiles {
     private final AtomicInteger listings = new AtomicInteger();
 
     public JournalFiles(@NotNull Path directory) {
-        this.directory = directory;
+        this.directory = Objects.requireNonNull(directory, "directory");
     }
 
     public @NotNull AtomicInteger getListings() {
@@ -46,7 +47,7 @@ public final class JournalFiles {
 
     public @NotNull List<Path> of(@NotNull JournalLevel level, @NotNull List<Path> files) {
         String prefix = level.getFileGroup() + "-";
-        List<Path> matching = new ArrayList<Path>();
+        List<Path> matching = new ArrayList<>();
         for (Path file : files) {
             if (file.getFileName().toString().startsWith(prefix)) {
                 matching.add(file);

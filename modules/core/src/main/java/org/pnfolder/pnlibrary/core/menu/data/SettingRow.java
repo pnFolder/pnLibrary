@@ -28,17 +28,17 @@ public final class SettingRow {
     public SettingRow(@NotNull String key, @NotNull String title, @NotNull String kind, @NotNull String description,
                       @NotNull String current, @NotNull String defaultValue, boolean changed, @NotNull String range,
                       @NotNull List<String> examples, boolean live, @NotNull String choiceSource) {
-        this.key = key;
-        this.title = title;
-        this.kind = kind;
-        this.description = description;
-        this.current = current;
-        this.defaultValue = defaultValue;
+        this.key = Objects.requireNonNull(key, "key");
+        this.title = Objects.requireNonNull(title, "title");
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.description = Objects.requireNonNull(description, "description");
+        this.current = Objects.requireNonNull(current, "current");
+        this.defaultValue = Objects.requireNonNull(defaultValue, "defaultValue");
         this.changed = changed;
-        this.range = range;
-        this.examples = examples;
+        this.range = Objects.requireNonNull(range, "range");
+        this.examples = Objects.requireNonNull(examples, "examples");
         this.live = live;
-        this.choiceSource = choiceSource;
+        this.choiceSource = Objects.requireNonNull(choiceSource, "choiceSource");
     }
 
     public SettingRow(@NotNull String key, @NotNull String title, @NotNull String kind, @NotNull String description,

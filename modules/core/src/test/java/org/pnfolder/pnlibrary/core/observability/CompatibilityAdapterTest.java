@@ -46,7 +46,7 @@ class CompatibilityAdapterTest {
             Map<String, String> data = new LinkedHashMap<>(ObservationConversions.toStringValues(fields));
             data.put("code", code);
             runtime.record(new ObservationRequest(plugin, component, message,
-                    ObservationConversions.toObservationLevel(level), data, Collections.<java.nio.file.Path>emptyList(), error));
+                    ObservationConversions.toObservationLevel(level), data, Collections.emptyList(), error));
         });
 
         service.record("acceptance", DiagnosticLevel.ERROR, "database", "TIMEOUT", "Timed out");

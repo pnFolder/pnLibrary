@@ -41,7 +41,7 @@ class CommandTreeBuilderTest {
 
     @Test
     void typedContextExposesParsedValuesWithoutChangingRawArguments() {
-        Map<String, Object> values = new LinkedHashMap<String, Object>();
+        Map<String, Object> values = new LinkedHashMap<>();
         values.put("group", "builders");
         values.put("amount", new BigDecimal("12.50"));
         CommandContext context =

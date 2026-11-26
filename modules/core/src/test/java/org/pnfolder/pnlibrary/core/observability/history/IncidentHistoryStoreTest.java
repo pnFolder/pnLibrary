@@ -30,8 +30,8 @@ class IncidentHistoryStoreTest {
     void disabledEncryptionNeverPersistsPlaintextHistory() throws IOException {
         IncidentHistoryStore history = new IncidentHistoryStore(temporaryDirectory, null, 30, 1_024, clock);
 
-        history.save(Collections.singletonList(Collections.<String, Object>singletonMap("message", "secret")),
-                Collections.<String, Object>emptyMap());
+        history.save(Collections.singletonList(Collections.singletonMap("message", "secret")),
+                Collections.emptyMap());
 
         try (Stream<Path> files = Files.list(temporaryDirectory)) {
             assertFalse(files.findAny().isPresent());

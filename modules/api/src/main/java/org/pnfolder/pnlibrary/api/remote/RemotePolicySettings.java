@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.remote;
 
+import org.pnfolder.pnlibrary.api.remote.result.PolicyErrorAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
@@ -36,17 +38,17 @@ public final class RemotePolicySettings {
     public RemotePolicySettings(@NotNull String source, @NotNull Duration checkEvery, @NotNull DenyAction onDeny,
                                 @NotNull Map<String, String> values, @NotNull PolicyErrorAction onError,
                                 @NotNull Duration startupTimeout) {
-        this.source = source;
-        this.checkEvery = checkEvery;
-        this.onDeny = onDeny;
-        this.values = values;
-        this.onError = onError;
-        this.startupTimeout = startupTimeout;
+        this.source = Objects.requireNonNull(source, "source");
+        this.checkEvery = Objects.requireNonNull(checkEvery, "checkEvery");
+        this.onDeny = Objects.requireNonNull(onDeny, "onDeny");
+        this.values = Objects.requireNonNull(values, "values");
+        this.onError = Objects.requireNonNull(onError, "onError");
+        this.startupTimeout = Objects.requireNonNull(startupTimeout, "startupTimeout");
     }
 
     /** Creates a declaration with the default interval, actions and timeout and no values. */
     public RemotePolicySettings(@NotNull String source) {
-        this(source, DEFAULT_CHECK_EVERY, DenyAction.DISABLE_PLUGIN, Collections.<String, String>emptyMap(),
+        this(source, DEFAULT_CHECK_EVERY, DenyAction.DISABLE_PLUGIN, Collections.emptyMap(),
             PolicyErrorAction.DENY, DEFAULT_STARTUP_TIMEOUT);
     }
 
@@ -120,7 +122,7 @@ public final class RemotePolicySettings {
         private DenyAction onDeny = DenyAction.DISABLE_PLUGIN;
         private PolicyErrorAction onError = PolicyErrorAction.DENY;
         private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
-        private final Map<String, String> values = new LinkedHashMap<String, String>();
+        private final Map<String, String> values = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -202,7 +204,7 @@ public final class RemotePolicySettings {
                 throw new IllegalArgumentException("Remote policy source is required");
             }
             return new RemotePolicySettings(source, checkEvery, onDeny,
-                Collections.unmodifiableMap(new LinkedHashMap<String, String>(values)), onError, startupTimeout);
+                Collections.unmodifiableMap(new LinkedHashMap<>(values)), onError, startupTimeout);
         }
     }
 }

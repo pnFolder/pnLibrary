@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService;
@@ -54,7 +55,7 @@ public final class ObservabilityRuntime implements ObservabilityService {
      */
     public ObservabilityRuntime(@NotNull LibraryPaths paths, @NotNull LongSupplier clock,
                                 @Nullable Function<ObservabilityReportRequest, ObservabilityReport> reportFactory) {
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock");
         this.journal = new ObservationJournal(paths.getObservations(), clock);
         this.attachmentStore = new AttachmentStore(paths.getAttachments());
         this.reportFactory = reportFactory;

@@ -31,13 +31,13 @@ public final class JournalDetail {
     public JournalDetail(@NotNull String id, @NotNull String level, @NotNull String source, @NotNull String message,
                          @Nullable String stackTrace, @NotNull Map<String, String> details,
                          @NotNull List<Long> times) {
-        this.id = id;
-        this.level = level;
-        this.source = source;
-        this.message = message;
+        this.id = Objects.requireNonNull(id, "id");
+        this.level = Objects.requireNonNull(level, "level");
+        this.source = Objects.requireNonNull(source, "source");
+        this.message = Objects.requireNonNull(message, "message");
         this.stackTrace = stackTrace;
-        this.details = details;
-        this.times = times;
+        this.details = Objects.requireNonNull(details, "details");
+        this.times = Objects.requireNonNull(times, "times");
     }
 
     public @NotNull String getId() {

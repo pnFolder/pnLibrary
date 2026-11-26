@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service;
 
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -27,7 +26,6 @@ public final class UpdateOrchestratorHooks {
     private final Supplier<ResolutionResult> remoteResolver;
     private final StateObserver observeState;
     private final Runnable beforeCheck;
-    private final BooleanSupplier automaticOverridesActive;
     private final BiConsumer<String, Throwable> unexpectedFailure;
 
     private UpdateOrchestratorHooks(Builder builder) {
@@ -38,7 +36,6 @@ public final class UpdateOrchestratorHooks {
         this.remoteResolver = builder.remoteResolver;
         this.observeState = builder.observeState;
         this.beforeCheck = builder.beforeCheck;
-        this.automaticOverridesActive = builder.automaticOverridesActive;
         this.unexpectedFailure = builder.unexpectedFailure;
     }
 
@@ -98,12 +95,6 @@ public final class UpdateOrchestratorHooks {
         return beforeCheck;
     }
 
-    /** Whether any administrator override turns automatic download on. */
-    @NotNull
-    public BooleanSupplier getAutomaticOverridesActive() {
-        return automaticOverridesActive;
-    }
-
     /** Receives failures nobody else would see. */
     @NotNull
     public BiConsumer<String, Throwable> getUnexpectedFailure() {
@@ -119,7 +110,6 @@ public final class UpdateOrchestratorHooks {
         private Supplier<ResolutionResult> remoteResolver;
         private StateObserver observeState = (snapshot, actor, operation) -> { };
         private Runnable beforeCheck = () -> { };
-        private BooleanSupplier automaticOverridesActive = () -> false;
         private BiConsumer<String, Throwable> unexpectedFailure = (message, error) -> { };
 
         private Builder(Supplier<ResolutionResult> resolver, Consumer<UpdatePlanSnapshot> stageAction,
@@ -154,13 +144,6 @@ public final class UpdateOrchestratorHooks {
         @NotNull
         public Builder beforeCheck(@NotNull Runnable value) {
             this.beforeCheck = value;
-            return this;
-        }
-
-        /** Tells whether an administrator override turns automatic download on. */
-        @NotNull
-        public Builder automaticOverridesActive(@NotNull BooleanSupplier value) {
-            this.automaticOverridesActive = value;
             return this;
         }
 

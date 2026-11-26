@@ -15,12 +15,12 @@ public final class AllRequirement implements Requirement {
 
     /** Creates it with every setting at its default. */
     public AllRequirement() {
-        this(Collections.<Requirement>emptyList());
+        this(Collections.emptyList());
     }
 
     /** Creates it with every setting given. */
     public AllRequirement(@NotNull List<Requirement> requirements) {
-        this.requirements = requirements;
+        this.requirements = Objects.requireNonNull(requirements, "requirements");
     }
 
     /** The requirements that all must hold. */

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
@@ -36,15 +37,15 @@ public final class TransactionJournalRepository {
     }
 
     public TransactionJournalRepository(@NotNull Path root, @NotNull Path publicationRoot, @NotNull Consumer<String> warn) {
-        this.root = root;
-        this.publicationRoot = publicationRoot;
-        this.warn = warn;
+        this.root = Objects.requireNonNull(root, "root");
+        this.publicationRoot = Objects.requireNonNull(publicationRoot, "publicationRoot");
+        this.warn = Objects.requireNonNull(warn, "warn");
     }
 
     /** Lists every {@code journal.json} found in a direct child directory of the root. */
     @NotNull
     public List<Path> journals() throws IOException {
-        List<Path> result = new ArrayList<Path>();
+        List<Path> result = new ArrayList<>();
         if (!Files.isDirectory(root)) {
             return result;
         }
@@ -58,10 +59,10 @@ public final class TransactionJournalRepository {
     /** Loads every readable journal; an empty, corrupt or foreign one is reported through the warning callback and skipped. */
     @NotNull
     public List<Map.Entry<Path, TransactionJournal>> loadAll() throws IOException {
-        List<Map.Entry<Path, TransactionJournal>> loaded = new ArrayList<Map.Entry<Path, TransactionJournal>>();
+        List<Map.Entry<Path, TransactionJournal>> loaded = new ArrayList<>();
         for (Path path : journals()) {
             try {
-                loaded.add(new AbstractMap.SimpleImmutableEntry<Path, TransactionJournal>(path, load(path)));
+                loaded.add(new AbstractMap.SimpleImmutableEntry<>(path, load(path)));
             } catch (Exception error) {
                 warn.accept("Журнал обновления " + path + " нечитаем и пропущен: "
                     + (error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName()));
@@ -92,12 +93,12 @@ public final class TransactionJournalRepository {
         require(journal.getId().equals(normalized.getParent().getFileName().toString()), "Transaction ID does not match its directory");
         require(!journal.getArtifacts().isEmpty(), "Transaction has no artifacts");
         validateMetadata(journal);
-        List<Path> targets = new ArrayList<Path>();
+        List<Path> targets = new ArrayList<>();
         for (JournalArtifact record : journal.getArtifacts()) {
             validateArtifact(normalized.getParent(), record);
             targets.add(checkedPath(Paths.get(record.getTarget()), publicationRoot));
         }
-        require(new HashSet<Path>(targets).size() == targets.size(), "Transaction contains duplicate targets");
+        require(new HashSet<>(targets).size() == targets.size(), "Transaction contains duplicate targets");
     }
 
     /** Writes the journal durably. */

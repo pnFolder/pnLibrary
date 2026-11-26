@@ -23,7 +23,7 @@ class ModuleRuntimeSummaryTest {
 
     @Test
     void omitsServicesThatWereNotConfigured() {
-        assertNull(ModuleRuntimeSummary.metrics(Collections.<MetricsProviderConfiguration>emptyList(), false));
+        assertNull(ModuleRuntimeSummary.metrics(Collections.emptyList(), false));
         MetricsProviderConfiguration bStats = MetricsProviderConfiguration.bStats(123);
         MetricsProviderConfiguration fastStats = MetricsProviderConfiguration.fastStats("token");
         assertEquals("disabled · bStats #123", ModuleRuntimeSummary.metrics(Collections.singletonList(bStats), false));

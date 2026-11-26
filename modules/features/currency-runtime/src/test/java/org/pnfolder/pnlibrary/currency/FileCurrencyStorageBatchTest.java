@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Locale;
+import org.pnfolder.pnlibrary.currency.storage.FileReplacer;
+import org.pnfolder.pnlibrary.currency.storage.FileCurrencyStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,7 +79,7 @@ class FileCurrencyStorageBatchTest {
                     : type == CurrencyTransactionType.DEBIT ? null : first;
             String key = index % 7 == 0 ? "key-" + random.nextInt(20) : null;
             requests.add(new CurrencyTransactionRequest(type, amount, source, target, CurrencyActor.system("test"), "batch-test",
-                    null, Collections.<String, String>emptyMap(), key));
+                    null, Collections.emptyMap(), key));
         }
         return requests;
     }
@@ -116,7 +119,7 @@ class FileCurrencyStorageBatchTest {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder();
             for (byte value : digest) {
-                hex.append(String.format("%02x", value));
+                hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
         } catch (NoSuchAlgorithmException error) {
@@ -332,6 +335,6 @@ class FileCurrencyStorageBatchTest {
 
     private CurrencyTransactionRequest credit(String amount, String key) {
         return new CurrencyTransactionRequest(CurrencyTransactionType.CREDIT, new BigDecimal(amount), null, accounts.get(0),
-                CurrencyActor.system("test"), "batch-test", null, Collections.<String, String>emptyMap(), key);
+                CurrencyActor.system("test"), "batch-test", null, Collections.emptyMap(), key);
     }
 }

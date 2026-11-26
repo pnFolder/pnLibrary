@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.upload;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ public final class CatboxUploader implements UploadProvider {
      */
     public CatboxUploader(@NotNull URI endpoint) {
         UploadHttp.requireHttps(endpoint, "Catbox endpoint");
-        this.endpoint = endpoint;
+        this.endpoint = Objects.requireNonNull(endpoint, "endpoint");
     }
 
     @Override
@@ -55,17 +56,7 @@ public final class CatboxUploader implements UploadProvider {
         }
         String link = MultipartFileClient.post(endpoint, Collections.singletonMap("reqtype", "fileupload"),
             "fileToUpload", file, contentType);
-        URI uri;
-        try {
-            uri = URI.create(link);
-        } catch (IllegalArgumentException exception) {
-            throw new IOException("Invalid Catbox response", exception);
-        }
-        String path = uri.getPath();
-        if (!"https".equals(uri.getScheme()) || !"files.catbox.moe".equals(uri.getHost())
-            || path == null || path.trim().isEmpty()) {
-            throw new IOException("Catbox rejected the report: " + (link.length() > 256 ? link.substring(0, 256) : link));
-        }
-        return UploadReceipt.permanent(uri, path.substring(path.lastIndexOf('/') + 1), getBackendId());
+        URI uri = UploadedLink.parse("Catbox", link, "files.catbox.moe");
+        return UploadReceipt.permanent(uri, UploadedLink.lastSegment(uri), getBackendId());
     }
 }

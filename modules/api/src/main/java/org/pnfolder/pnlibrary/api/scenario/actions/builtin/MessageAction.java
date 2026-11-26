@@ -20,7 +20,7 @@ public final class MessageAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public MessageAction() {
-        this(Collections.<String>emptyList(), null, ActionTarget.PLAYER);
+        this(Collections.emptyList(), null, ActionTarget.PLAYER);
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
@@ -35,7 +35,7 @@ public final class MessageAction implements Action {
 
     /** Creates it with every setting given. */
     public MessageAction(@NotNull List<String> messages, @Nullable ComponentSerializerType serializerType, @NotNull ActionTarget target) {
-        this.messages = messages;
+        this.messages = Objects.requireNonNull(messages, "messages");
         this.serializerType = serializerType;
         this.target = target;
     }

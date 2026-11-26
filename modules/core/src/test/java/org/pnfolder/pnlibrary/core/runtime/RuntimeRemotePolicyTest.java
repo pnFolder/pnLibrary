@@ -26,14 +26,14 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
-import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.PolicyErrorAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.tasks.run.TaskContext;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
-import org.pnfolder.pnlibrary.core.remote.PolicyDeniedException;
-import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy;
+import org.pnfolder.pnlibrary.core.remote.report.PolicyDeniedException;
+import org.pnfolder.pnlibrary.core.remote.monitor.RuntimeRemotePolicy;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
 
 class RuntimeRemotePolicyTest {

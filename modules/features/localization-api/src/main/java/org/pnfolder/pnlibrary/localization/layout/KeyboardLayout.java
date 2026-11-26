@@ -156,7 +156,7 @@ public final class KeyboardLayout {
             }
         }
         String lowered = letters.toString().toLowerCase(Locale.ROOT);
-        List<KeyboardLayout> found = new ArrayList<KeyboardLayout>();
+        List<KeyboardLayout> found = new ArrayList<>();
         if (lowered.isEmpty()) {
             return found;
         }
@@ -180,7 +180,7 @@ public final class KeyboardLayout {
      */
     @NotNull
     public static List<String> alternatives(@NotNull String text, @NotNull Collection<KeyboardLayout> layouts) {
-        Set<String> distinct = new LinkedHashSet<String>();
+        Set<String> distinct = new LinkedHashSet<>();
         for (KeyboardLayout from : detect(text, layouts)) {
             for (KeyboardLayout to : layouts) {
                 if (to.equals(from)) {
@@ -192,7 +192,7 @@ public final class KeyboardLayout {
                 }
             }
         }
-        return new ArrayList<String>(distinct);
+        return new ArrayList<>(distinct);
     }
 
     private boolean containsAll(String letters) {
@@ -205,12 +205,12 @@ public final class KeyboardLayout {
     }
 
     private static Set<Character> repeatedKeys(String keys) {
-        Map<Character, Integer> counts = new LinkedHashMap<Character, Integer>();
+        Map<Character, Integer> counts = new LinkedHashMap<>();
         for (int i = 0; i < keys.length(); i++) {
             Integer seen = counts.get(keys.charAt(i));
             counts.put(keys.charAt(i), seen == null ? 1 : seen + 1);
         }
-        Set<Character> repeated = new LinkedHashSet<Character>();
+        Set<Character> repeated = new LinkedHashSet<>();
         for (Map.Entry<Character, Integer> entry : counts.entrySet()) {
             if (entry.getValue() > 1) {
                 repeated.add(entry.getKey());

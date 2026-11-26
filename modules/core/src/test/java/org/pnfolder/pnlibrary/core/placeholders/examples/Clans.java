@@ -12,7 +12,7 @@ public final class Clans {
     private static final Clan WOLVES = new Clan("Wolves", 12, 1_250_000, new WarInfo(340, 2),
             Arrays.asList(new Member("Alex", 47), new Member("Mia", 31)));
     private static final Clan OWLS = new Clan("Owls", 4, 80_000, new WarInfo(90, 0), Arrays.asList(new Member("Bob", 5)));
-    private static final Map<UUID, Clan> BY_PLAYER = new HashMap<UUID, Clan>();
+    private static final Map<UUID, Clan> BY_PLAYER = new HashMap<>();
 
     private Clans() {
     }
@@ -35,7 +35,7 @@ public final class Clans {
     }
 
     public static List<String> names() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         names.add(WOLVES.getName());
         names.add(OWLS.getName());
         return names;

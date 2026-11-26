@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.placeholders.info;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.placeholders.NoValueException;
@@ -34,7 +35,7 @@ public final class ViewerInfo {
      */
     public ViewerInfo(@Nullable UUID playerId, @NotNull String language, boolean viaPapi) {
         this.playerId = playerId;
-        this.language = language;
+        this.language = Objects.requireNonNull(language, "language");
         this.viaPapi = viaPapi;
     }
 

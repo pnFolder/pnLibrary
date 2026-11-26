@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -20,8 +21,8 @@ public final class StartupGate {
     private final List<Runnable> pending = new ArrayList<>();
 
     public StartupGate(@NotNull PlatformLifecycle lifecycle, @NotNull Consumer<Runnable> dispatch) {
-        this.lifecycle = lifecycle;
-        this.dispatch = dispatch;
+        this.lifecycle = Objects.requireNonNull(lifecycle, "lifecycle");
+        this.dispatch = Objects.requireNonNull(dispatch, "dispatch");
     }
 
     /** Queues {@code task} until the gate opens, or dispatches it immediately when it is already open. */

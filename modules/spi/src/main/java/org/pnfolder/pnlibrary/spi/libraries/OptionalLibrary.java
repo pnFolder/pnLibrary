@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.libraries;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,9 +17,9 @@ public final class OptionalLibrary {
      * @param probe a class of the library, used to tell whether it is already visible
      */
     public OptionalLibrary(@NotNull String id, @NotNull String probe, @NotNull ClassLoader classLoader) {
-        this.id = id;
-        this.probe = probe;
-        this.classLoader = classLoader;
+        this.id = Objects.requireNonNull(id, "id");
+        this.probe = Objects.requireNonNull(probe, "probe");
+        this.classLoader = Objects.requireNonNull(classLoader, "classLoader");
     }
 
     /** Whether the library can be used now, loading it first when it is missing. Never throws; false means it is unavailable. */

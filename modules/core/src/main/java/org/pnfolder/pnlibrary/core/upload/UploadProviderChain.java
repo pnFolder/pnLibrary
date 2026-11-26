@@ -34,7 +34,7 @@ public final class UploadProviderChain implements UploadProvider {
 
     @Override
     public @NotNull UploadReceipt upload(@NotNull String payload) throws IOException {
-        List<String> failures = new ArrayList<String>();
+        List<String> failures = new ArrayList<>();
         for (UploadProvider provider : providers) {
             try {
                 return provider.upload(payload);
@@ -47,7 +47,7 @@ public final class UploadProviderChain implements UploadProvider {
 
     @Override
     public @NotNull UploadReceipt uploadFile(@NotNull Path file, @NotNull String contentType) throws IOException {
-        List<String> failures = new ArrayList<String>();
+        List<String> failures = new ArrayList<>();
         for (UploadProvider provider : providers) {
             try {
                 return provider.uploadFile(file, contentType);

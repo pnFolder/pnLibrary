@@ -43,7 +43,7 @@ class EventBusCommandTest {
     }
 
     private List<String> run(String... args) {
-        final List<Component> sent = new ArrayList<Component>();
+        final List<Component> sent = new ArrayList<>();
         CommandSender sender = new CommandSender() {
             @NotNull
             @Override
@@ -59,7 +59,7 @@ class EventBusCommandTest {
         ExecutableRoute route = (ExecutableRoute) new CommandTreeRouter().route(definition,
                 new CommandContext(sender, Arrays.asList(args), "bus", String.join(" ", args)));
         route.getNode().getExecution().execute(route.getContext()).toCompletableFuture().join();
-        List<String> texts = new ArrayList<String>();
+        List<String> texts = new ArrayList<>();
         for (Component message : sent) {
             texts.add(PlainTextComponentSerializer.plainText().serialize(message));
         }

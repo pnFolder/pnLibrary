@@ -26,7 +26,7 @@ public final class UpdateAnnouncementRenderer {
     /** Builds the announcement shown to administrators, without the latest versions of each registration. */
     @NotNull
     public static List<String> render(@NotNull UpdatePlanSnapshot snapshot, @NotNull ConsoleTheme theme) {
-        return render(snapshot, theme, Collections.<UpdateSnapshot>emptyList());
+        return render(snapshot, theme, Collections.emptyList());
     }
 
     /** Builds the announcement shown to administrators. */
@@ -43,7 +43,7 @@ public final class UpdateAnnouncementRenderer {
                 .mascot("^.^", PnLibraryIdentity.NAME, subtitle)
                 .blank();
         List<ProductChange> changes = snapshot.getPlan() == null
-                ? Collections.<ProductChange>emptyList() : snapshot.getPlan().getChanges();
+                ? Collections.emptyList() : snapshot.getPlan().getChanges();
         if (!changes.isEmpty()) {
             changesSection(card, snapshot, changes);
             latestSection(card, registrations);

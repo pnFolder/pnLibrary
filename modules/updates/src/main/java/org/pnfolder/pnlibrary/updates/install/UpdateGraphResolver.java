@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.install;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog;
 import org.pnfolder.pnlibrary.updates.engine.catalog.CatalogRelease;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides;
-import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 
 /** Loads release catalogs and resolves one coherent update plan for all registered products. */
 public final class UpdateGraphResolver {
@@ -49,13 +50,13 @@ public final class UpdateGraphResolver {
                                @NotNull UpdateConfiguration configuration, @NotNull ReleaseCatalogGateway catalogs,
                                @NotNull FreezeStore freezes, @Nullable UpdatePolicyOverrides overrides,
                                @NotNull BiConsumer<String, Throwable> failure) {
-        this.inventory = inventory;
-        this.identity = identity;
-        this.configuration = configuration;
-        this.catalogs = catalogs;
-        this.freezes = freezes;
+        this.inventory = Objects.requireNonNull(inventory, "inventory");
+        this.identity = Objects.requireNonNull(identity, "identity");
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.catalogs = Objects.requireNonNull(catalogs, "catalogs");
+        this.freezes = Objects.requireNonNull(freezes, "freezes");
         this.overrides = overrides;
-        this.failure = failure;
+        this.failure = Objects.requireNonNull(failure, "failure");
     }
 
     /** Creates a resolver that drops non-fatal problems. */
@@ -83,8 +84,8 @@ public final class UpdateGraphResolver {
     public ResolutionResult resolve(@NotNull List<RegisteredUpdate> registrations, @NotNull RefreshMode refreshMode) {
         if (registrations.isEmpty()) {
             return new ResolutionResult.Ready(new UpdatePlan(PnLibraryApi.VERSION,
-                    Collections.<ProductChange>emptyList(),
-                    Collections.<ProductRelease>emptyList()));
+                    Collections.emptyList(),
+                    Collections.emptyList()));
         }
         List<ProductRelease> releases = loadReleases(registrations, refreshMode);
         observeLatestVersions(registrations, releases);
@@ -163,6 +164,6 @@ public final class UpdateGraphResolver {
         installed.onFailure(error -> failure.accept(
                 "Could not read the installed plugins; releases that need other plugins are skipped", error));
         Set<String> plugins = installed.getOrNull();
-        return new ResolverPolicy(allowManaged, plugins == null ? Collections.<String>emptySet() : plugins);
+        return new ResolverPolicy(allowManaged, plugins == null ? Collections.emptySet() : plugins);
     }
 }

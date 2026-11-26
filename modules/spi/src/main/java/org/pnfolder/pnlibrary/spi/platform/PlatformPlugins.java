@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,10 +35,10 @@ public final class PlatformPlugins<P> {
             @NotNull Supplier<Collection<P>> installed,
             @NotNull Function<Object, P> resolve,
             @NotNull Function<P, PluginSnapshot> describe) {
-        this.platformName = platformName;
-        this.installed = installed;
-        this.resolve = resolve;
-        this.describe = describe;
+        this.platformName = Objects.requireNonNull(platformName, "platformName");
+        this.installed = Objects.requireNonNull(installed, "installed");
+        this.resolve = Objects.requireNonNull(resolve, "resolve");
+        this.describe = Objects.requireNonNull(describe, "describe");
     }
 
     /** Native plugin that {@code owner} stands for, or null. */

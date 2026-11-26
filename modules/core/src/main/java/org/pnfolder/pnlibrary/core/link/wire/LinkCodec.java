@@ -26,8 +26,8 @@ public final class LinkCodec {
 
     static final int MAX_GROUPS = 30;
     static final int MAX_GROUP_ITEMS = 60;
-    private static final int VERSION = 1;
-    private static final int NETWORK_VERSION = 2;
+    private static final int VERSION = 7;
+    private static final int NETWORK_VERSION = 8;
     private static final int REQUEST_VERSION = 3;
     private static final int RESULT_VERSION = 4;
     private static final int CALL_VERSION = 5;

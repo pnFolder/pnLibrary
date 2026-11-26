@@ -19,7 +19,7 @@ class LocalizationApiTest {
                 .locales("RU-ru", "de_de")
                 .fallback("EN-us")
                 .build();
-        assertEquals(new LinkedHashSet<String>(Arrays.asList("ru_ru", "de_de")), request.getLocales());
+        assertEquals(new LinkedHashSet<>(Arrays.asList("ru_ru", "de_de")), request.getLocales());
         assertEquals("en_us", request.getFallbackLocale());
     }
 

@@ -18,7 +18,7 @@ class DiagnosticIncidentLogTest {
 
     private static void add(DiagnosticIncidentLog incidents, String code) {
         incidents.record("plugin", DiagnosticLevel.WARNING, "component", code, "m", null,
-            Collections.<String, Object>emptyMap());
+            Collections.emptyMap());
     }
 
     @Test
@@ -42,11 +42,11 @@ class DiagnosticIncidentLogTest {
         add(incidents, "B");
         add(incidents, "C");
 
-        List<Object> codes = new ArrayList<Object>();
+        List<Object> codes = new ArrayList<>();
         for (Map<String, Object> incident : incidents.snapshot()) {
             codes.add(incident.get("code"));
         }
-        assertEquals(Arrays.<Object>asList("B", "C"), codes);
+        assertEquals(Arrays.asList("B", "C"), codes);
     }
 
     @Test

@@ -33,6 +33,11 @@ class RuntimeUpdateSummaryTest {
     private static UpdateRegistration registration(ReleaseSummary... releases) {
         return new UpdateRegistration() {
             @Override
+            public boolean isClosed() {
+                return false;
+            }
+
+            @Override
             public @NotNull String getRepository() {
                 return "owner/name";
             }

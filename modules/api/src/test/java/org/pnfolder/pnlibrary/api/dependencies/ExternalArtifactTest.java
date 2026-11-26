@@ -18,12 +18,12 @@ import org.pnfolder.pnlibrary.api.platform.PlatformType;
 
 class ExternalArtifactTest {
     private static ExternalArtifact file(Set<PlatformType> platforms, String from, String before) {
-        return new ExternalArtifact(URI.create("https://example.org/x.jar"), null, Collections.<URI>emptyList(),
+        return new ExternalArtifact(URI.create("https://example.org/x.jar"), null, Collections.emptyList(),
             platforms, from, before, null, null);
     }
 
     private static ExternalArtifact file(String from, String before) {
-        return file(Collections.<PlatformType>emptySet(), from, before);
+        return file(Collections.emptySet(), from, before);
     }
 
     private static String name(ExternalArtifact artifact) {
@@ -64,8 +64,8 @@ class ExternalArtifactTest {
     @Test
     void badInputIsRefused() {
         URI https = URI.create("https://example.org/x.jar");
-        List<URI> none = Collections.<URI>emptyList();
-        Set<PlatformType> any = Collections.<PlatformType>emptySet();
+        List<URI> none = Collections.emptyList();
+        Set<PlatformType> any = Collections.emptySet();
         assertThrows(IllegalArgumentException.class,
             () -> new ExternalArtifact(URI.create("http://example.org/x.jar"), null));
         assertThrows(IllegalArgumentException.class, () -> new ExternalArtifact(https, "short"));
@@ -77,8 +77,8 @@ class ExternalArtifactTest {
 
     @Test
     void theFirstFittingVariantWinsAndTheGeneralFileIsTheFallback() {
-        Set<PlatformType> any = Collections.<PlatformType>emptySet();
-        List<String> none = Collections.<String>emptyList();
+        Set<PlatformType> any = Collections.emptySet();
+        List<String> none = Collections.emptyList();
         ExternalPluginDependency dependency = ExternalPluginDependency.builder("Vault", "1.7.0")
             .variant("https://example.org/old.jar", null, any, null, "1.20", none, null, null)
             .variant("https://example.org/new.jar", null, any, "1.20", null, none, null, null)

@@ -24,7 +24,7 @@ final class CurrencyCapabilities {
         if (provider instanceof CurrencyCapabilitySource) {
             return ((CurrencyCapabilitySource) provider).getDeclaredCapabilities();
         }
-        Set<CurrencyCapability> capabilities = new LinkedHashSet<CurrencyCapability>();
+        Set<CurrencyCapability> capabilities = new LinkedHashSet<>();
         capabilities.add(CurrencyCapability.BALANCE);
         if (provider instanceof CurrencyDeposits) {
             capabilities.add(CurrencyCapability.DEPOSIT);

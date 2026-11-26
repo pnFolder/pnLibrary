@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -69,9 +70,9 @@ public final class JulLogObserver {
             @NotNull Supplier<Logger> platformLogger,
             @NotNull Object fallbackOwner,
             @NotNull Function<String, Object> resolveOwner) {
-        this.platformLogger = platformLogger;
-        this.fallbackOwner = fallbackOwner;
-        this.resolveOwner = resolveOwner;
+        this.platformLogger = Objects.requireNonNull(platformLogger, "platformLogger");
+        this.fallbackOwner = Objects.requireNonNull(fallbackOwner, "fallbackOwner");
+        this.resolveOwner = Objects.requireNonNull(resolveOwner, "resolveOwner");
     }
 
     /** Starts forwarding to {@code value}, or stops when it is null. Repeated calls only swap the callback. */

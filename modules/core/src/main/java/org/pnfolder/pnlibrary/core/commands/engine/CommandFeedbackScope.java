@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler;
 public final class CommandFeedbackScope {
     private final CommandFeedbackScope parent;
     private final ConcurrentHashMap<Class<? extends CommandError>, CommandErrorHandler<?>> handlers =
-            new ConcurrentHashMap<Class<? extends CommandError>, CommandErrorHandler<?>>();
+            new ConcurrentHashMap<>();
 
     public CommandFeedbackScope(@Nullable CommandFeedbackScope parent) {
         this.parent = parent;

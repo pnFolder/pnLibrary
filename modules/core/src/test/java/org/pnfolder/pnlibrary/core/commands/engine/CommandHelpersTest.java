@@ -27,8 +27,8 @@ class CommandHelpersTest {
     @Test
     @DisplayName("late or failed suggestions give an empty list")
     void lateOrFailedSuggestionsGiveAnEmptyList() {
-        assertTrue(TabSuggestions.suggestionsWithin(new CompletableFuture<List<String>>(), 10).isEmpty());
-        CompletableFuture<List<String>> failed = new CompletableFuture<List<String>>();
+        assertTrue(TabSuggestions.suggestionsWithin(new CompletableFuture<>(), 10).isEmpty());
+        CompletableFuture<List<String>> failed = new CompletableFuture<>();
         failed.completeExceptionally(new IllegalStateException("x"));
         assertTrue(TabSuggestions.suggestionsWithin(failed, 10).isEmpty());
     }

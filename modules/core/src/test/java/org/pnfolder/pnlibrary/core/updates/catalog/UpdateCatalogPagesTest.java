@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupQuery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.pnfolder.pnlibrary.core.updates.catalog.ViewFixtures.BUKKIT;
@@ -58,7 +59,7 @@ class UpdateCatalogPagesTest {
             assertTrue(!action.endsWith(" confirm"));
         }
         boolean none = false;
-        for (Component line : UpdateCatalogView.backups(Collections.<UpdateBackup>emptyList(), 1, BUKKIT)) {
+        for (Component line : UpdateCatalogView.backups(Collections.emptyList(), 1, BUKKIT)) {
             none |= plain(line).contains("Резервов пока нет");
         }
         assertTrue(none);
@@ -68,8 +69,8 @@ class UpdateCatalogPagesTest {
     void everyPageStartsWithAnEmptyLineAndABoldAccentTitle() {
         List<List<Component>> pages = Arrays.asList(
             catalog(Collections.singletonList(snapshot("shop", UpdateState.UP_TO_DATE)), BUKKIT),
-            ViewFixtures.history(Collections.<UpdateHistoryEntry>emptyList()),
-            UpdateCatalogView.backups(Collections.<UpdateBackup>emptyList(), 1, BUKKIT),
+            ViewFixtures.history(Collections.emptyList()),
+            UpdateCatalogView.backups(Collections.emptyList(), 1, BUKKIT),
             UpdateCatalogView.info(snapshot("shop", UpdateState.UP_TO_DATE), BUKKIT, null),
             UpdateCatalogView.settings(snapshot("shop", UpdateState.UP_TO_DATE), BUKKIT, null),
             UpdateCatalogView.confirmation("Откат", Collections.singletonList("Вернутся JAR."), "[Да]", "/pn x", "Выполнить", BUKKIT));

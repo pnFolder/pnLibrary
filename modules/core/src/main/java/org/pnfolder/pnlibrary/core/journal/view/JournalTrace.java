@@ -99,12 +99,12 @@ public final class JournalTrace {
      * the dimmed frames of one run are folded into a single line and the list is cut; the console shows every line.
      */
     public static @NotNull TraceView traceView(@NotNull ChatKit kit, @NotNull List<String> trace, boolean full) {
-        List<TraceLine> rendered = new ArrayList<TraceLine>();
+        List<TraceLine> rendered = new ArrayList<>();
         for (String line : trace) {
             rendered.add(traceLine(kit, line));
         }
         if (full) {
-            List<Component> all = new ArrayList<Component>();
+            List<Component> all = new ArrayList<>();
             for (TraceLine line : rendered) {
                 all.add(line.getComponent());
             }
@@ -114,7 +114,7 @@ public final class JournalTrace {
     }
 
     private static TraceView fold(ChatKit kit, List<TraceLine> rendered) {
-        List<Component> out = new ArrayList<Component>();
+        List<Component> out = new ArrayList<>();
         int folded = 0;
         int cut = 0;
         boolean anyFramework = false;

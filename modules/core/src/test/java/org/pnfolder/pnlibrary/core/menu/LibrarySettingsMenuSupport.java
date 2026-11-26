@@ -37,7 +37,7 @@ abstract class LibrarySettingsMenuSupport {
     }
 
     protected static List<SettingRow> rows() {
-        return rows(Collections.<String, String>emptyMap());
+        return rows(Collections.emptyMap());
     }
 
     protected static Map<String, String> with(String key, String value) {

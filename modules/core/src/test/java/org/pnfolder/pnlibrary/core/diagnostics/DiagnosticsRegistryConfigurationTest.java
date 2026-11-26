@@ -28,14 +28,14 @@ class DiagnosticsRegistryConfigurationTest {
         List<RegisteredDiagnosticConfiguration> configurations = registry.configurations("all");
 
         assertEquals(2, configurations.size());
-        Set<String> plugins = new HashSet<String>();
-        Set<Path> directories = new HashSet<Path>();
+        Set<String> plugins = new HashSet<>();
+        Set<Path> directories = new HashSet<>();
         for (RegisteredDiagnosticConfiguration configuration : configurations) {
             plugins.add(configuration.getPlugin());
             directories.add(configuration.getDataDirectory());
         }
-        assertEquals(new HashSet<String>(Arrays.asList("pnmarket", "pnclans")), plugins);
-        assertEquals(new HashSet<Path>(Arrays.asList(first.toAbsolutePath(), second.toAbsolutePath())), directories);
+        assertEquals(new HashSet<>(Arrays.asList("pnmarket", "pnclans")), plugins);
+        assertEquals(new HashSet<>(Arrays.asList(first.toAbsolutePath(), second.toAbsolutePath())), directories);
     }
 
     @Test

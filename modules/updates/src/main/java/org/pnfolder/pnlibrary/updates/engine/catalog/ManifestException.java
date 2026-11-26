@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +16,7 @@ public final class ManifestException extends IllegalArgumentException {
 
     public ManifestException(@NotNull String field, @NotNull String message, @Nullable Throwable cause) {
         super("Invalid release catalog field '" + field + "': " + message, cause);
-        this.field = field;
+        this.field = Objects.requireNonNull(field, "field");
     }
 
     /** Logical JSON field path that failed validation. */

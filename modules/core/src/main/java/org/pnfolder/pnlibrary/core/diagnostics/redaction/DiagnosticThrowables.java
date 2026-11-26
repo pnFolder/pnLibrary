@@ -69,7 +69,7 @@ public final class DiagnosticThrowables {
         if (frame == null) {
             return null;
         }
-        Map<String, Object> data = new LinkedHashMap<String, Object>();
+        Map<String, Object> data = new LinkedHashMap<>();
         data.put("class", frame.getClassName());
         data.put("method", frame.getMethodName());
         data.put("file", frame.getFileName());
@@ -86,7 +86,7 @@ public final class DiagnosticThrowables {
     public static String fingerprint(@Nullable Throwable error, @NotNull List<String> context, @NotNull String message) {
         Throwable significant = significantCause(error);
         StackTraceElement frame = originFrame(error);
-        List<String> parts = new ArrayList<String>(context);
+        List<String> parts = new ArrayList<>(context);
         parts.add(normalize(message));
         parts.add(significant == null ? "" : significant.getClass().getName());
         parts.add(normalize(significant == null || significant.getMessage() == null ? "" : significant.getMessage()));

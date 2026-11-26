@@ -27,7 +27,7 @@ class BrigadierTreesTest {
     private final List<String> executed = new ArrayList<>();
     private final List<String> suggested = new ArrayList<>();
 
-    private final NativeInvocation<String> invocation = new NativeInvocation<String>() {
+    private final NativeInvocation<String> invocation = new NativeInvocation<>() {
         @Override
         public void execute(String source, String input) {
             executed.add(input);
@@ -106,14 +106,14 @@ class BrigadierTreesTest {
                 admin.executes(context -> { });
             });
         });
-        NativeInvocation<Set<String>> byPermission = new NativeInvocation<Set<String>>() {
+        NativeInvocation<Set<String>> byPermission = new NativeInvocation<>() {
             @Override
             public void execute(Set<String> source, String input) {
             }
 
             @Override
             public CompletionStage<List<String>> suggest(Set<String> source, String input) {
-                return CompletableFuture.completedFuture(Collections.<String>emptyList());
+                return CompletableFuture.completedFuture(Collections.emptyList());
             }
 
             @Override
@@ -125,7 +125,7 @@ class BrigadierTreesTest {
         dispatcher.getRoot().addChild(BrigadierTrees.build(guarded, byPermission));
 
         // The client tree is built from the nodes a source may use, so that is what decides what Tab offers.
-        assertEquals(Collections.singletonList("open"), offered(dispatcher, Collections.<String>emptySet()));
+        assertEquals(Collections.singletonList("open"), offered(dispatcher, Collections.emptySet()));
         assertEquals(Arrays.asList("admin", "open"), offered(dispatcher, new HashSet<>(Arrays.asList("demo.admin"))));
     }
 

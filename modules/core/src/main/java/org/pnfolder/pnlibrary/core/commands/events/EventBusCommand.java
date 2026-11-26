@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.events;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -52,7 +53,7 @@ public final class EventBusCommand {
     private final BusHistoryPages history;
 
     public EventBusCommand(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
         this.events = new BusEventPages(library);
         this.listeners = new BusListenerPages(library);
         this.traces = new BusTracePages(library);
@@ -131,15 +132,15 @@ public final class EventBusCommand {
     }
 
     private List<String> pluginIds() {
-        LinkedHashSet<String> ids = new LinkedHashSet<String>();
+        LinkedHashSet<String> ids = new LinkedHashSet<>();
         for (ListenerInfo info : bus().listeners()) {
             ids.add(info.getPlugin().toString());
         }
-        return new ArrayList<String>(ids);
+        return new ArrayList<>(ids);
     }
 
     private List<String> tracedNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (String traced : bus().tracedEvents()) {
             names.add(CoreFormatting.shortName(traced));
         }
@@ -191,11 +192,11 @@ public final class EventBusCommand {
     }
 
     private List<String> historyDates() {
-        LinkedHashSet<String> dates = new LinkedHashSet<String>();
+        LinkedHashSet<String> dates = new LinkedHashSet<>();
         for (EventDay day : bus().history()) {
             dates.add(day.getDate().toString());
         }
-        List<String> all = new ArrayList<String>(dates);
+        List<String> all = new ArrayList<>(dates);
         return all.subList(0, Math.min(MAX_SUGGESTED_DAYS, all.size()));
     }
 }

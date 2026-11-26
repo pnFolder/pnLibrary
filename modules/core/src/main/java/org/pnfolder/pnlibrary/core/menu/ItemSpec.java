@@ -23,10 +23,10 @@ public final class ItemSpec {
     public ItemSpec(@Nullable String texture, @NotNull String material, @Nullable String alternative,
                     @NotNull String name, @NotNull List<String> lore, short legacyData) {
         this.texture = texture;
-        this.material = material;
+        this.material = Objects.requireNonNull(material, "material");
         this.alternative = alternative;
-        this.name = name;
-        this.lore = lore;
+        this.name = Objects.requireNonNull(name, "name");
+        this.lore = Objects.requireNonNull(lore, "lore");
         this.legacyData = legacyData;
     }
 

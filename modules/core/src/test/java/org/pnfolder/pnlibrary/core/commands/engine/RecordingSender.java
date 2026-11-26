@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender;
 /** A sender that keeps what it was sent, for command tests. */
 public final class RecordingSender implements CommandSender {
     private final Pointers pointers;
-    private final List<Component> messages = new ArrayList<Component>();
+    private final List<Component> messages = new ArrayList<>();
 
     public RecordingSender(String name, Predicate<String> permission) {
         this.pointers = AudienceExtensions.senderPointers(name, permission);
@@ -41,7 +41,7 @@ public final class RecordingSender implements CommandSender {
 
     /** Everything sent, as plain text, one message per line. */
     public String text() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (Component message : messages) {
             lines.add(PlainTextComponentSerializer.plainText().serialize(message));
         }

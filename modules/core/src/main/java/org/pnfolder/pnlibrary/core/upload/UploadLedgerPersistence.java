@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.upload;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
@@ -35,8 +36,8 @@ public final class UploadLedgerPersistence {
     private final Clock clock;
 
     public UploadLedgerPersistence(@NotNull Path file, @NotNull Clock clock) {
-        this.file = file;
-        this.clock = clock;
+        this.file = Objects.requireNonNull(file, "file");
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     /** Reads all structurally valid entries, quarantining malformed JSON. */

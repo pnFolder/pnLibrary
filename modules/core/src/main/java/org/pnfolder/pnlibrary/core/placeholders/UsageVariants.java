@@ -22,7 +22,7 @@ public final class UsageVariants {
         int slash = owner.indexOf('/');
         String plugin = slash < 0 ? owner : owner.substring(0, slash);
         boolean shared = info.getVisibility() != Visibility.MODULE;
-        List<UsageVariant> variants = new ArrayList<UsageVariant>();
+        List<UsageVariant> variants = new ArrayList<>();
         variants.add(new UsageVariant("Как есть", "{" + address + "}", "ближайший: свой модуль, свой плагин, потом остальные"));
         variants.add(new UsageVariant("Этот модуль", "{" + owner + "@" + address + "}", "именно модуль " + owner));
         if (shared) {

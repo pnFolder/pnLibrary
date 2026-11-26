@@ -37,7 +37,7 @@ public interface ConfigScope extends AutoCloseable {
     @NotNull
     default <T> ManagedConfig<T> yaml(@NotNull String path, @NotNull Class<T> type, @NotNull Supplier<T> defaults,
                                       @NotNull ConfigOptions options) {
-        return yaml(path, type, defaults, options, value -> Collections.<ConfigProblem>emptyList());
+        return yaml(path, type, defaults, options, value -> Collections.emptyList());
     }
 
     /**
@@ -95,7 +95,7 @@ public interface ConfigScope extends AutoCloseable {
      */
     @NotNull
     default <T> ConfigSerializerBuilder<T> serializerFor(@NotNull Class<T> type, @NotNull ConfigSerializer<T> serializer) {
-        return new ConfigSerializerBuilder<T>(this, type, serializer);
+        return new ConfigSerializerBuilder<>(this, type, serializer);
     }
 
     /**
@@ -124,7 +124,7 @@ public interface ConfigScope extends AutoCloseable {
      */
     @NotNull
     default <T> ConfigTypeBuilder<T> type(@NotNull Class<T> baseType, @NotNull Class<? extends T> implementation) {
-        return new ConfigTypeBuilder<T>(this, baseType, implementation);
+        return new ConfigTypeBuilder<>(this, baseType, implementation);
     }
 
     /** Low-level publication behind {@link #type}; a clash with an existing word fails. */

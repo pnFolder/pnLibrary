@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics.factory;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics;
@@ -41,7 +42,7 @@ public final class CompositePluginMetrics implements PluginMetrics {
      */
     public CompositePluginMetrics(@NotNull List<PluginMetrics> delegates, @NotNull Runnable onClose) {
         this.delegates = new ArrayList<>(delegates);
-        this.onClose = onClose;
+        this.onClose = Objects.requireNonNull(onClose, "onClose");
         if (this.delegates.isEmpty()) {
             throw new IllegalArgumentException("At least one metrics delegate is required");
         }

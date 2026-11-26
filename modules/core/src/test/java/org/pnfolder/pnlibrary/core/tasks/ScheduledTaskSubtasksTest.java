@@ -54,7 +54,7 @@ class ScheduledTaskSubtasksTest {
     /** The examples of {@code docs/tasks.md}: if they stop compiling or working, the documentation is wrong. */
     @Test
     void aTaskBuiltWithTheDslStartsSubtasksOfEveryKind() {
-        List<String> log = new ArrayList<String>();
+        List<String> log = new ArrayList<>();
         TaskSpecBuilder.schedule(scope, b -> {
             b.setName("Ивент");
             b.setKey("event");
@@ -84,13 +84,13 @@ class ScheduledTaskSubtasksTest {
                 parent = snapshot;
             }
         }
-        java.util.Set<String> children = new HashSet<String>();
+        java.util.Set<String> children = new HashSet<>();
         for (TaskSnapshot snapshot : all) {
             if (snapshot.getParentId() != null && snapshot.getParentId().equals(parent.getId())) {
                 children.add(snapshot.getName());
             }
         }
-        assertEquals(new HashSet<String>(Arrays.asList("Таймер", "Награда", "Ивент / later", "Ивент / repeat")), children);
+        assertEquals(new HashSet<>(Arrays.asList("Таймер", "Награда", "Ивент / later", "Ивент / repeat")), children);
     }
 
     private static void spawnChildren(TaskContext ctx, List<String> log) {

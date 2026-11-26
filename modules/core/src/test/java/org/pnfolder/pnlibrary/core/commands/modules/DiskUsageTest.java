@@ -32,7 +32,7 @@ class DiskUsageTest {
         write("Shop/players.db", 200);
         write("Shop/logs/latest.log", 30);
         write("Shop/lib/hikari.jar", 400);
-        DiskReport report = DiskUsage.scan(plugins, Collections.<String>emptyList());
+        DiskReport report = DiskUsage.scan(plugins, Collections.emptyList());
         assertEquals(1, report.getRows().size());
         DiskRow row = report.getRows().get(0);
         assertEquals("Shop", row.getName());
@@ -45,8 +45,8 @@ class DiskUsageTest {
     void aJarWithoutAFolderIsAPluginOfItsOwnAndTheBiggestComesFirst() throws IOException {
         write("Small-1.0.jar", 5);
         write("Big/data.bin", 500);
-        DiskReport report = DiskUsage.scan(plugins, Collections.<String>emptyList());
-        List<String> names = new ArrayList<String>();
+        DiskReport report = DiskUsage.scan(plugins, Collections.emptyList());
+        List<String> names = new ArrayList<>();
         for (DiskRow row : report.getRows()) {
             names.add(row.getName());
         }
@@ -66,7 +66,7 @@ class DiskUsageTest {
     @Test
     @DisplayName("a missing plugins folder gives an empty report")
     void aMissingPluginsFolderGivesAnEmptyReport() {
-        DiskReport report = DiskUsage.scan(plugins.resolve("nowhere"), Collections.<String>emptyList());
+        DiskReport report = DiskUsage.scan(plugins.resolve("nowhere"), Collections.emptyList());
         assertTrue(report.getRows().isEmpty());
         assertEquals(-1L, report.getFree());
     }

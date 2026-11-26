@@ -46,7 +46,7 @@ public final class PluginUpdateRequest {
         this.repositoryName = builder.repositoryName;
         this.catalog = new CatalogSource(repositoryOwner, repositoryName, builder.branch, builder.catalogPath,
             builder.refType);
-        this.artifacts = Collections.unmodifiableList(new ArrayList<PluginUpdateArtifact>(builder.artifacts));
+        this.artifacts = Collections.unmodifiableList(new ArrayList<>(builder.artifacts));
         this.supportedApi = builder.supportedApi;
         this.configurationBackup = builder.backups.files();
         this.exports = builder.backups.exports();
@@ -142,7 +142,7 @@ public final class PluginUpdateRequest {
         private String branch = CatalogSource.DEFAULT_BRANCH;
         private String catalogPath = CatalogSource.DEFAULT_PATH;
         private CatalogSource.RefType refType = CatalogSource.RefType.BRANCH;
-        private final List<PluginUpdateArtifact> artifacts = new ArrayList<PluginUpdateArtifact>();
+        private final List<PluginUpdateArtifact> artifacts = new ArrayList<>();
         private ApiVersionRange supportedApi = new ApiVersionRange(PnLibraryApi.VERSION, PnLibraryApi.VERSION);
         private final BackupDeclarations backups = new BackupDeclarations();
 

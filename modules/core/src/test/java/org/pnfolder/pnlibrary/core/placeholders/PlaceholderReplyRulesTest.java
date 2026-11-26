@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.scan.Scanner;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

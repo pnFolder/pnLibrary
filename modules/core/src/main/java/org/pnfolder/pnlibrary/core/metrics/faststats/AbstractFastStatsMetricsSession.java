@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics.faststats;
 
+import java.util.Objects;
 import dev.faststats.Metrics;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials;
@@ -40,7 +41,7 @@ public abstract class AbstractFastStatsMetricsSession extends AbstractMetricsSes
                                               @NotNull FastStatsContextFactory contextFactory) {
         super(credentials);
         this.fastStatsCredentials = credentials;
-        this.contextFactory = contextFactory;
+        this.contextFactory = Objects.requireNonNull(contextFactory, "contextFactory");
     }
 
     @NotNull

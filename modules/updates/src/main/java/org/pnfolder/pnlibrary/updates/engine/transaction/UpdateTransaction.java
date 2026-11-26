@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.updates.engine.catalog.RollbackCatalog;
@@ -43,7 +44,7 @@ public final class UpdateTransaction {
      */
     public UpdateTransaction(@NotNull Path root, @NotNull ArtifactVerifier verifier, @NotNull Path publicationRoot,
                              @NotNull Consumer<String> warn) {
-        this.root = root;
+        this.root = Objects.requireNonNull(root, "root");
         this.publicationRoot = publicationRoot.toAbsolutePath().normalize();
         this.journals = new TransactionJournalRepository(root, this.publicationRoot, warn);
         this.health = new TransactionHealth(root, journals);
@@ -211,7 +212,7 @@ public final class UpdateTransaction {
                 throw new IllegalArgumentException("interrupted offline installation must be recovered before starting the server");
             }
         }
-        List<Path> saved = new ArrayList<Path>();
+        List<Path> saved = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : readable) {
             if (entry.getValue().isSavedSet()) {
                 saved.add(entry.getKey());
@@ -226,7 +227,7 @@ public final class UpdateTransaction {
         if (!Files.isDirectory(root)) {
             return Collections.emptyList();
         }
-        List<Path> all = new ArrayList<Path>();
+        List<Path> all = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             all.add(entry.getKey());
         }
@@ -272,7 +273,7 @@ public final class UpdateTransaction {
 
     private List<TransactionResult> recoverSorted(List<Path> paths) throws IOException {
         Collections.sort(paths);
-        List<TransactionResult> results = new ArrayList<TransactionResult>();
+        List<TransactionResult> results = new ArrayList<>();
         for (Path path : paths) {
             results.add(recover(path));
         }

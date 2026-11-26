@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +61,9 @@ public final class TransactionJournal {
     public TransactionJournal(@NotNull String id, @NotNull TransactionState state, @NotNull List<JournalArtifact> artifacts,
                               @Nullable String planId, @Nullable Integer targetApi, @Nullable String configurationSnapshot,
                               @Nullable String purpose, @Nullable String parentTransaction) {
-        this.id = id;
-        this.state = state;
-        this.artifacts = artifacts;
+        this.id = Objects.requireNonNull(id, "id");
+        this.state = Objects.requireNonNull(state, "state");
+        this.artifacts = Objects.requireNonNull(artifacts, "artifacts");
         this.createdAt = Instant.now().toString();
         this.planId = planId;
         this.targetApi = targetApi;
@@ -75,7 +76,7 @@ public final class TransactionJournal {
     private TransactionJournal(TransactionJournal source, List<JournalArtifact> artifacts, String preparedSession) {
         this.id = source.id;
         this.state = source.state;
-        this.artifacts = artifacts;
+        this.artifacts = Objects.requireNonNull(artifacts, "artifacts");
         this.createdAt = source.createdAt;
         this.planId = source.planId;
         this.targetApi = source.targetApi;
@@ -126,7 +127,7 @@ public final class TransactionJournal {
     /** A copy with other artifact records. */
     @NotNull
     public TransactionJournal withArtifacts(@NotNull List<JournalArtifact> value) {
-        return new TransactionJournal(this, new ArrayList<JournalArtifact>(value), preparedSession);
+        return new TransactionJournal(this, new ArrayList<>(value), preparedSession);
     }
 
     /** A copy prepared by another process session. */

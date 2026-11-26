@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,7 @@ public class UnknownArgument extends BadUsage {
      */
     public UnknownArgument(@NotNull String usage, @NotNull String value) {
         super(usage);
-        this.value = value;
+        this.value = Objects.requireNonNull(value, "value");
     }
 
     /** The unexpected word. */
@@ -28,7 +29,7 @@ public class UnknownArgument extends BadUsage {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        Map<String, Object> values = new LinkedHashMap<String, Object>(super.placeholders());
+        Map<String, Object> values = new LinkedHashMap<>(super.placeholders());
         values.put("value", value);
         return values;
     }

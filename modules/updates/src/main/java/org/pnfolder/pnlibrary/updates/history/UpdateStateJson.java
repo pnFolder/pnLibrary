@@ -78,7 +78,7 @@ final class UpdateStateJson {
 
     @NotNull
     static List<BlockedReason> decodeBlockers(@NotNull JsonObject root) {
-        List<BlockedReason> result = new ArrayList<BlockedReason>();
+        List<BlockedReason> result = new ArrayList<>();
         JsonArray blockers = root.getAsJsonArray("blockers");
         if (blockers == null) {
             return result;

@@ -65,9 +65,9 @@ class MiniMessageLiteTest {
         "<bold>a<!bold>b</!bold>c", "<black>k<dark_blue>b<dark_green>g<dark_aqua>a<gold>g<blue>b<aqua>a");
 
     private static List<Run> runs(Component component) {
-        List<Run> result = new ArrayList<Run>();
+        List<Run> result = new ArrayList<>();
         walk(component, Style.empty(), result);
-        List<Run> merged = new ArrayList<Run>();
+        List<Run> merged = new ArrayList<>();
         for (Run run : result) {
             Run last = merged.isEmpty() ? null : merged.get(merged.size() - 1);
             if (last != null && Objects.equals(last.color, run.color) && last.decorations.equals(run.decorations)) {
@@ -111,7 +111,7 @@ class MiniMessageLiteTest {
 
     @Test
     void gradientKeepsTheTextAndTheFirstColor() {
-        assertEquals(Collections.singletonList(new Run("go", 0xFF0000, Collections.<TextDecoration>emptySet())),
+        assertEquals(Collections.singletonList(new Run("go", 0xFF0000, Collections.emptySet())),
             runs(MiniMessageLite.deserialize("<gradient:#ff0000:#00ff00>go</gradient>")));
     }
 
@@ -121,21 +121,21 @@ class MiniMessageLiteTest {
 
     @Test
     void anOldAdventureSwitchesToLiteParsingAndWarnsOnce() {
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         CachedComponents components = components(new MiniText(() -> {
             throw new NoSuchMethodError("Component.compact()");
         }), warnings);
         Component first = components.deserialize("<red>hi", ComponentSerializerType.MINI_MESSAGE);
         components.deserialize("&aok", ComponentSerializerType.ADAPTIVE);
         components.serialize(first);
-        assertEquals(Collections.singletonList(new Run("hi", 0xFF5555, Collections.<TextDecoration>emptySet())), runs(first));
+        assertEquals(Collections.singletonList(new Run("hi", 0xFF5555, Collections.emptySet())), runs(first));
         assertEquals(1, warnings.size());
     }
 
     @Test
     void adaptiveReadsTheSectionAndAmpersandHexFormOfBukkit() {
-        CachedComponents components = components(new MiniText(), new ArrayList<String>());
-        List<Run> expected = Collections.singletonList(new Run("go", 0xFC7D37, Collections.<TextDecoration>emptySet()));
+        CachedComponents components = components(new MiniText(), new ArrayList<>());
+        List<Run> expected = Collections.singletonList(new Run("go", 0xFC7D37, Collections.emptySet()));
         for (String input : Arrays.asList("&x&F&C&7&D&3&7go", "§x§F§C§7§D§3§7go", "&#FC7D37go")) {
             assertEquals(expected, runs(components.deserialize(input, ComponentSerializerType.ADAPTIVE)), input);
         }
@@ -146,7 +146,7 @@ class MiniMessageLiteTest {
         IllegalStateException boom = new IllegalStateException("boom");
         CachedComponents components = components(new MiniText(() -> {
             throw boom;
-        }), new ArrayList<String>());
+        }), new ArrayList<>());
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
             () -> components.deserialize("<red>x", ComponentSerializerType.MINI_MESSAGE));
         assertSame(boom, thrown);

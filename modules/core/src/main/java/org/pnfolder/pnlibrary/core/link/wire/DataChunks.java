@@ -44,7 +44,7 @@ public final class DataChunks {
         if (count > MAX_PIECES) {
             return null;
         }
-        List<byte[]> messages = new ArrayList<byte[]>(count);
+        List<byte[]> messages = new ArrayList<>(count);
         for (int index = 0; index < count; index++) {
             byte[] piece = Arrays.copyOfRange(bytes, index * PIECE, Math.min(bytes.length, (index + 1) * PIECE));
             messages.add(LinkCodec.encodeChunk(new DataChunk(id, to, ok, index, count, piece, now), key));

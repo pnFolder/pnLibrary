@@ -23,6 +23,7 @@ import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand;
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand;
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand;
 import org.pnfolder.pnlibrary.core.commands.modules.ModulesCommand;
+import org.pnfolder.pnlibrary.core.commands.proxy.NoticesCommand;
 import org.pnfolder.pnlibrary.core.commands.proxy.ServersCommand;
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskCommand;
 import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands;
@@ -109,6 +110,11 @@ public final class BukkitControlCommand implements AutoCloseable {
         }
     }
 
+    /** Starts the watch that asks for or performs the restart after an update is staged, as the settings say. */
+    public void watchRestarts() {
+        updates.watchRestarts();
+    }
+
     /** The command a confirmation card offers to carry out what {@code token} was issued for. */
     public static String confirmCommand(String token) {
         return "/pn update confirm " + token;
@@ -120,6 +126,7 @@ public final class BukkitControlCommand implements AutoCloseable {
         if (picker != null) {
             picker.setOpener(null);
         }
+        updates.close();
         menu.close();
     }
 
@@ -152,6 +159,7 @@ public final class BukkitControlCommand implements AutoCloseable {
         root.mount("configs", new ConfigsCommand(library).definition());
         root.mount("deps", new DepsCommand(library).definition());
         root.mount("servers", new ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition());
+        root.mount("notices", new NoticesCommand(NoticesCommand.fromNetworkMap(link)).definition());
         root.mount("money", new CurrencyCommandExecutor(currencies, scheduler).definition());
     }
 
@@ -231,6 +239,7 @@ public final class BukkitControlCommand implements AutoCloseable {
         addIfAllowed(available, sender, "pnlibrary.actions", "/pn actions");
         addIfAllowed(available, sender, "pnlibrary.settings", "/pn settings");
         addIfAllowed(available, sender, ServersCommand.PERMISSION, "/pn servers");
+        addIfAllowed(available, sender, NoticesCommand.PERMISSION, "/pn notices");
         addIfAllowed(available, sender, "pnlibrary.debug", "/pn debug");
         available.add("/pn money");
         replies.say(sender, ChatTone.INFO, "Команды pnLibrary, доступные вам:", String.join("  ", available));

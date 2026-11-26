@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.placeholders.argument;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
@@ -28,7 +29,7 @@ public final class ArgumentAdapter<T> implements ArgumentConverter<T> {
      * @param parse the conversion; returns {@code null} when the text does not fit
      */
     public ArgumentAdapter(@NotNull String label, @NotNull Function<String, T> parse) {
-        this(label, Collections.<String>emptyList(), null, parse);
+        this(label, Collections.emptyList(), null, parse);
     }
 
     /** Creates an adapter with a fixed list of allowed words. */
@@ -46,10 +47,10 @@ public final class ArgumentAdapter<T> implements ArgumentConverter<T> {
      */
     public ArgumentAdapter(@NotNull String label, @NotNull List<String> choices, @Nullable Function<ViewerInfo, T> me,
                            @NotNull Function<String, T> parse) {
-        this.label = label;
+        this.label = Objects.requireNonNull(label, "label");
         this.choices = Collections.unmodifiableList(new ArrayList<>(choices));
         this.me = me;
-        this.parse = parse;
+        this.parse = Objects.requireNonNull(parse, "parse");
     }
 
     @NotNull

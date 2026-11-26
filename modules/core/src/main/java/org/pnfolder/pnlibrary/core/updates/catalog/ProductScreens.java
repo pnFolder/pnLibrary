@@ -63,8 +63,6 @@ final class ProductScreens extends CatalogStyle {
         if (others != null) {
             result.add(others);
         }
-        result.add(field("Автозагрузка", snapshot.getAutomaticDownload() ? text("включена", ChatPalette.OK) : text("выключена", ChatPalette.DANGER))
-            .append(change(product, "Включить или выключить автоматическую загрузку")));
         boolean held = snapshot.getState() == UpdateState.FROZEN || heldUntil != null;
         result.add(field("Пауза", held ? text(holdText(heldUntil), ChatPalette.WARN) : text("нет", ChatPalette.TEXT))
             .append(change(product, "Приостановить обновления на время или снять паузу")));
@@ -133,13 +131,10 @@ final class ProductScreens extends CatalogStyle {
         if (own.isEmpty()) {
             return null;
         }
-        return Collections.max(own, new Comparator<ReleaseSummary>() {
-            @Override
-            public int compare(ReleaseSummary a, ReleaseSummary b) {
+        return Collections.max(own, (a, b) -> {
                 return (a.getPublishedAt() == null ? Instant.EPOCH : a.getPublishedAt())
                     .compareTo(b.getPublishedAt() == null ? Instant.EPOCH : b.getPublishedAt());
-            }
-        });
+            });
     }
 
     /** Java and API requirements; a Java version the server does not meet is shown in red with the actual one. */

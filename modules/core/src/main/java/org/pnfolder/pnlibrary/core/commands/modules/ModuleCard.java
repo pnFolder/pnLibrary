@@ -35,7 +35,7 @@ final class ModuleCard {
         ChatKit kit = CommandOutput.kit(context);
         ModuleContext module = found.getModule();
         ModuleControl control = module.getControl();
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(ModuleLabels.title(module),
                 kit.bracketed(ModuleLabels.label(control.getState()), ModuleLabels.color(control.getState()))));
@@ -62,7 +62,7 @@ final class ModuleCard {
 
     private void libraryLines(ChatKit kit, ModuleContext module, List<Component> lines) {
         List<ModuleLibrary> own = module.getLibraries().getLoaded();
-        List<ModuleLibrary> shared = new ArrayList<ModuleLibrary>();
+        List<ModuleLibrary> shared = new ArrayList<>();
         for (PluginRegistration plugin : library.getPlugins().all()) {
             if (plugin.all().contains(module)) {
                 shared = plugin.getLibraries().getLoaded();

@@ -31,15 +31,9 @@ final class BukkitBStats {
                 data.appendField("bukkitVersion", Bukkit.getVersion());
                 data.appendField("bukkitName", Bukkit.getName());
             },
-            ServerCapabilities.isFolia() ? null : task -> {
-                scheduler.nextTick(task);
-            },
-            () -> plugin.isEnabled(),
-            (message, error) -> {
-                pnLogger.get().warning(message, error);
-            },
-            message -> {
-                pnLogger.get().info(message);
-            });
+            ServerCapabilities.isFolia() ? null : scheduler::nextTick,
+            plugin::isEnabled,
+            (message, error) -> pnLogger.get().warning(message, error),
+            message -> pnLogger.get().info(message));
     }
 }

@@ -47,14 +47,14 @@ class UpdateProductViewTest {
         assertEquals("  Канал: [stable] [rc] [✔ beta] [alpha] [dev]", plain(channel));
         assertTrue(legacy(channel).contains("&e[✔ beta]"), legacy(channel));
         assertTrue(legacy(channel).contains("[&cdev&7]"));
-        assertEquals("  Автозагрузка: [вкл] [✔ выкл]", plain(row(lines, "Автозагрузка:")));
-        assertEquals("  Пауза: [✔ нет] [1 ч] [6 ч] [1 д] [3 д] [7 д]", plain(row(lines, "Пауза:")));
-        assertTrue(text.contains("Пауза — не дольше 7 дней."));
+        assertFalse(text.contains("Автозагрузка"));
+        assertEquals("  Пауза: [✔ нет] [1 ч] [6 ч] [1 д] [3 д] [5 д]", plain(row(lines, "Пауза:")));
+        assertTrue(text.contains("Пауза — не дольше 5 дней."));
         assertTrue(legacy(channel).startsWith("&f  Канал: "));
 
         List<String> actions = clicks(lines);
         assertTrue(actions.containsAll(Arrays.asList("/pn updates set pnlibrary channel stable", "/pn updates set pnlibrary channel alpha",
-            "/pn updates set pnlibrary auto on", "/pn updates set pnlibrary hold 3d", "/pn updates set pnlibrary hold 7d")));
+            "/pn updates set pnlibrary hold 3d", "/pn updates set pnlibrary hold 5d")));
         assertFalse(actions.contains("/pn updates set pnlibrary channel beta"));
         assertFalse(actions.contains("/pn updates set pnlibrary auto off"));
         assertFalse(actions.contains("/pn updates set pnlibrary hold off"));
@@ -82,9 +82,9 @@ class UpdateProductViewTest {
         String text = text(lines);
 
         assertTrue(text.contains("Пауза: [✔ до 20 окт. 12:00 · ещё 3 д] [Снять]") || text.contains("Пауза: [✔ до 20 окт 12:00 · ещё 3 д] [Снять]"), text);
-        assertTrue(text.contains("Продлить: [1 ч] [6 ч] [1 д] [3 д] [7 д]"));
+        assertTrue(text.contains("Продлить: [1 ч] [6 ч] [1 д] [3 д] [5 д]"));
         assertFalse(clicks(lines).contains("/pn updates set pnlibrary hold 30d"));
-        assertTrue(clicks(lines).containsAll(Arrays.asList("/pn updates set pnlibrary hold off", "/pn updates set pnlibrary hold 7d")));
+        assertTrue(clicks(lines).containsAll(Arrays.asList("/pn updates set pnlibrary hold off", "/pn updates set pnlibrary hold 5d")));
 
         String info = text(UpdateCatalogView.info(snapshot("pnlibrary", UpdateState.FROZEN), BUKKIT, until, NOW, ZoneOffset.UTC));
         assertTrue(info.contains("pnlibrary  приостановлено"));
@@ -100,7 +100,7 @@ class UpdateProductViewTest {
         assertEquals("pnlibrary  доступно обновление", plain(available.get(1)));
         assertTrue(text.contains("  Версия: v1.0.0 → v1.1.0 [Изменения]"));
         assertTrue(text.contains("  Канал: stable [изменить]"));
-        assertTrue(text.contains("  Автозагрузка: выключена [изменить]"));
+        assertFalse(text.contains("Автозагрузка"));
         assertTrue(text.contains("  Требует: Java 8+"));
         assertTrue(text.contains("  [Обновить] [Настройки] [История] [Назад]"));
         assertTrue(clicks(available).containsAll(Arrays.asList("/pn update pnlibrary", "/pn updates history plugin pnlibrary", "/pn updates list")));
@@ -116,7 +116,7 @@ class UpdateProductViewTest {
     @Test
     void theInfoCardLinksEachSettingToTheSettingsCard() {
         List<Component> lines = UpdateCatalogView.info(snapshot("shop", UpdateState.UP_TO_DATE), BUKKIT, null);
-        for (String label : Arrays.asList("Канал:", "Автозагрузка:", "Пауза:")) {
+        for (String label : Arrays.asList("Канал:", "Пауза:")) {
             Component row = row(lines, label);
             assertTrue(plain(row).endsWith("[изменить]"), plain(row));
             assertTrue(ViewFixtures.clicks(row).contains("/pn updates settings shop"));
@@ -133,7 +133,7 @@ class UpdateProductViewTest {
             new ReleaseSummary("1.0.5", UpdateChannel.STABLE, Instant.parse("2026-09-01T00:00:00Z")),
             new ReleaseSummary("1.2.0-beta.2", UpdateChannel.BETA, Instant.parse("2026-10-10T00:00:00Z")));
         UpdateSnapshot snapshot = new UpdateSnapshot("pnlibrary", "1.0.0", "1.1.0", UpdateChannel.STABLE, UpdateState.UPDATE_AVAILABLE,
-            17, 8, false, null, null, null, null, releases, Collections.<Integer>emptyList(), null, null);
+            17, 8, false, null, null, null, null, releases, Collections.emptyList(), null, null);
 
         List<Component> lines = UpdateCatalogView.info(snapshot, BUKKIT, null, NOW, ZoneOffset.UTC);
         String text = text(lines);

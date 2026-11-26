@@ -72,7 +72,7 @@ public interface PluginRegistry extends AutoCloseable {
     /** Every module of every plugin registered in the library. */
     @NotNull
     default List<ModuleContext> allModules() {
-        List<ModuleContext> modules = new ArrayList<ModuleContext>();
+        List<ModuleContext> modules = new ArrayList<>();
         for (PluginRegistration plugin : all()) {
             modules.addAll(plugin.all());
         }
@@ -82,7 +82,7 @@ public interface PluginRegistry extends AutoCloseable {
     /** Every library registered anywhere, and who registered it, so one used by many modules shows once per owner. */
     @NotNull
     default List<LibraryUsage> libraryUsage() {
-        List<LibraryUsage> usage = new ArrayList<LibraryUsage>();
+        List<LibraryUsage> usage = new ArrayList<>();
         for (PluginRegistration plugin : all()) {
             for (LibraryStatus status : plugin.getLibraries().getStatuses()) {
                 if (status.getState() != LibraryState.SKIPPED) {

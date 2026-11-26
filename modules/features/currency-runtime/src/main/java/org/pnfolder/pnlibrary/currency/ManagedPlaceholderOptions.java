@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.currency.CurrencyPlaceholderOptions;
 
@@ -10,7 +11,7 @@ final class ManagedPlaceholderOptions implements CurrencyPlaceholderOptions {
     private String namespace;
 
     ManagedPlaceholderOptions(@NotNull String defaultNamespace) {
-        this.namespace = defaultNamespace;
+        this.namespace = Objects.requireNonNull(defaultNamespace, "defaultNamespace");
     }
 
     /** Whether placeholders are registered at all. */

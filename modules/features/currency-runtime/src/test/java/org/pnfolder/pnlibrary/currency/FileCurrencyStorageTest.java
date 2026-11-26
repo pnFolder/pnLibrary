@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.FileCurrencyStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,7 +47,7 @@ class FileCurrencyStorageTest {
         Path file = directory.resolve("queued.json");
         CurrencyAccount account = new CurrencyAccount(UUID.randomUUID());
         FileCurrencyStorage storage = new FileCurrencyStorage(file, 100);
-        List<CompletableFuture<CurrencyTransaction>> operations = new ArrayList<CompletableFuture<CurrencyTransaction>>();
+        List<CompletableFuture<CurrencyTransaction>> operations = new ArrayList<>();
         for (int index = 1; index <= 20; index++) {
             operations.add(storage.transact(currency, descriptor, new CurrencyTransactionRequest(CurrencyTransactionType.CREDIT,
                     BigDecimal.ONE, null, account, CurrencyActor.system("test"), "close-test")).toCompletableFuture());
@@ -95,7 +96,7 @@ class FileCurrencyStorageTest {
     private CurrencyTransaction credit(FileCurrencyStorage storage, CurrencyAccount account, String amount, String key) {
         return storage.transact(currency, descriptor, new CurrencyTransactionRequest(CurrencyTransactionType.CREDIT,
                 new BigDecimal(amount), null, account, CurrencyActor.system("test"), "file-test", null,
-                Collections.<String, String>emptyMap(), key)).toCompletableFuture().join();
+                Collections.emptyMap(), key)).toCompletableFuture().join();
     }
 
     private CurrencyTransaction credit(FileCurrencyStorage storage, CurrencyAccount account, String amount) {
@@ -118,7 +119,7 @@ class FileCurrencyStorageTest {
         try {
             credit(storage, account, "5", "first");
             // The data folder becomes a regular file, so the next save cannot succeed.
-            List<Path> paths = new ArrayList<Path>();
+            List<Path> paths = new ArrayList<>();
             try (Stream<Path> walk = Files.walk(folder)) {
                 walk.forEach(paths::add);
             }
@@ -201,7 +202,7 @@ class FileCurrencyStorageTest {
     }
 
     private static List<String> keysOf(CurrencyHistoryPage page) {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (CurrencyTransaction transaction : page.getItems()) {
             keys.add(transaction.getIdempotencyKey());
         }

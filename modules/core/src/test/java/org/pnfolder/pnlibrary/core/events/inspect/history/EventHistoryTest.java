@@ -45,7 +45,7 @@ class EventHistoryTest {
         LocalDate recent = LocalDate.now().minusDays(2);
         Files.write(file, (old + "\ta.Buy\t5\t0\n" + recent + "\ta.Buy\t3\t1\nbroken line\n").getBytes(StandardCharsets.UTF_8));
 
-        List<LocalDate> dates = new ArrayList<LocalDate>();
+        List<LocalDate> dates = new ArrayList<>();
         for (EventDay day : new EventHistory(file, 30).entries()) {
             dates.add(day.getDate());
         }
@@ -99,7 +99,7 @@ class EventHistoryTest {
     void aHistoryThatCannotBeWrittenIsReportedOnce(@TempDir Path dir) throws IOException {
         Path blocker = dir.resolve("blocker");
         Files.write(blocker, "a file where the folder should be".getBytes(StandardCharsets.UTF_8));
-        List<Throwable> failures = new ArrayList<Throwable>();
+        List<Throwable> failures = new ArrayList<>();
         EventHistory history = new EventHistory(blocker.resolve("history.tsv"), 30,
                 java.time.ZoneId::systemDefault, failures::add);
 

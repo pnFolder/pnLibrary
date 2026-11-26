@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ public class NoPermission extends CommandError {
 
     /** @param permission missing permission; empty when an availability rule hid the command instead */
     public NoPermission(@NotNull String permission) {
-        this.permission = permission;
+        this.permission = Objects.requireNonNull(permission, "permission");
     }
 
     /** Missing permission; empty when an availability rule hid the command instead. */
@@ -22,6 +23,6 @@ public class NoPermission extends CommandError {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        return Collections.<String, Object>singletonMap("permission", permission);
+        return Collections.singletonMap("permission", permission);
     }
 }

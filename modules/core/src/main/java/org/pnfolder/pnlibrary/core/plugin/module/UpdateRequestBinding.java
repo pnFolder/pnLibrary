@@ -13,12 +13,12 @@ import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateArtifact;
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
 
 /** Rewrites a module's update request so that it carries the supported API of the module's product descriptor. */
-final class UpdateRequestBinding {
+public final class UpdateRequestBinding {
     private UpdateRequestBinding() {
     }
 
     /** The request with the supported API of {@code descriptor}; the request itself when there is nothing to bind. */
-    static @Nullable PluginUpdateRequest bind(@Nullable PluginUpdateRequest source, @Nullable ProductDescriptor descriptor) {
+    public static @Nullable PluginUpdateRequest bind(@Nullable PluginUpdateRequest source, @Nullable ProductDescriptor descriptor) {
         if (source == null || descriptor == null) {
             return source;
         }
@@ -36,11 +36,11 @@ final class UpdateRequestBinding {
     }
 
     private static void copyBackups(UpdateConfigurationBackup source, PluginUpdateRequest.Builder target) {
-        Map<BackupLabel, List<String>> byLabel = new LinkedHashMap<BackupLabel, List<String>>();
+        Map<BackupLabel, List<String>> byLabel = new LinkedHashMap<>();
         for (String file : source.getFiles()) {
             BackupLabel label = source.labelOf(file);
             if (!byLabel.containsKey(label)) {
-                byLabel.put(label, new ArrayList<String>());
+                byLabel.put(label, new ArrayList<>());
             }
             byLabel.get(label).add(file);
         }

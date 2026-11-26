@@ -12,8 +12,8 @@ public final class GroupEdit {
     private final String plugin;
 
     public GroupEdit(@NotNull GroupOp op, @NotNull String group, @Nullable String server, @Nullable String plugin) {
-        this.op = op;
-        this.group = group;
+        this.op = Objects.requireNonNull(op, "op");
+        this.group = Objects.requireNonNull(group, "group");
         this.server = server;
         this.plugin = plugin;
     }

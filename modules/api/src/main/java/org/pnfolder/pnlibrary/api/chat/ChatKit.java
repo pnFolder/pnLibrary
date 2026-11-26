@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.chat;
 
+import java.util.Objects;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ChatKit {
 
     /** @param reader the reader whose capabilities decide buttons, hover cards and characters */
     public ChatKit(@NotNull ChatReader reader) {
-        this.reader = reader;
+        this.reader = Objects.requireNonNull(reader, "reader");
     }
 
     /** The reader whose capabilities decide buttons, hover cards and characters. */
@@ -48,7 +49,7 @@ public class ChatKit {
 
     /** A page: an empty line first, so it never runs into the chat above it, such as the previous page. */
     public @NotNull List<Component> framed(@NotNull List<Component> lines) {
-        List<Component> page = new ArrayList<Component>(lines.size() + 1);
+        List<Component> page = new ArrayList<>(lines.size() + 1);
         page.add(Component.empty());
         page.addAll(lines);
         return page;
@@ -196,7 +197,7 @@ public class ChatKit {
     /** One short message: a mark in the tone's color, the text, and its detail on the next line. */
     public @NotNull List<Component> notice(@NotNull ChatNotice notice) {
         TextColor textColor = notice.getTone() == ChatTone.FAILURE ? ChatPalette.DANGER : ChatPalette.TEXT;
-        List<Component> lines = new ArrayList<Component>(2);
+        List<Component> lines = new ArrayList<>(2);
         lines.add(mark(notice.getTone()).append(text(take(notice.getText(), MAX_MESSAGE), textColor)));
         String detail = notice.getDetail();
         if (detail != null && !detail.trim().isEmpty()) {

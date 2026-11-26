@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,7 +68,7 @@ class UpdateTransactionFailureAfterPublishTest {
         byte[] bytes = Files.readAllBytes(path);
         StringBuilder digest = new StringBuilder();
         for (byte value : MessageDigest.getInstance("SHA-256").digest(bytes)) {
-            digest.append(String.format("%02x", value));
+            digest.append(String.format(Locale.ROOT, "%02x", value));
         }
         return new ArtifactSpecification(ProductId.of(id), SemanticVersion.parse("2.0.0"), new ApiVersionRange(8, 8),
             path.getFileName().toString(), (long) bytes.length, digest.toString());

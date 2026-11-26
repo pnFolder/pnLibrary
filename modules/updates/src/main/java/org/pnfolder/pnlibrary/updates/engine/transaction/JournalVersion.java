@@ -17,7 +17,7 @@ public final class JournalVersion {
     }
 
     public JournalVersion(@NotNull String version, int minimumApi, int maximumApi, @Nullable String sha256) {
-        this.version = version;
+        this.version = Objects.requireNonNull(version, "version");
         this.minimumApi = minimumApi;
         this.maximumApi = maximumApi;
         this.sha256 = sha256;

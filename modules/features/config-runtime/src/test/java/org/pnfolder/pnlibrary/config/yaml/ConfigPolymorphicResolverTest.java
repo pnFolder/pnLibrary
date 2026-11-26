@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.RuntimeConfigType;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigPolymorphicResolver;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,7 +25,7 @@ class ConfigPolymorphicResolverTest {
 
     @Test
     void resolvesBuiltInAliasesCaseInsensitively() {
-        ConfigPolymorphicResolver resolver = resolver(Collections.<RuntimeConfigType>emptyList(), "shop");
+        ConfigPolymorphicResolver resolver = resolver(Collections.emptyList(), "shop");
 
         assertTrue(resolver.supports(Payment.class, none));
         assertEquals(CardPayment.class, resolver.decodingType(Payment.class, none, "LEGACY-CARD", "payment"));
@@ -31,7 +34,7 @@ class ConfigPolymorphicResolverTest {
     @Test
     void visibleExternalTypeWorksWithItsPlainWordAndWithOwnerNamespace() {
         RuntimeConfigType external = new RuntimeConfigType("economy", Payment.class, TokenPayment.class, "token",
-                Collections.<String>emptySet(), 0);
+                Collections.emptySet(), 0);
         ConfigPolymorphicResolver resolver = resolver(Collections.singletonList(external), "shop");
 
         assertEquals(TokenPayment.class, resolver.decodingType(Payment.class, none, "token", "payment"));
@@ -41,13 +44,13 @@ class ConfigPolymorphicResolverTest {
 
     @Test
     void anUnknownWordFailsWithADedicatedExceptionThatAListCanSkip() {
-        ConfigPolymorphicResolver resolver = resolver(Collections.<RuntimeConfigType>emptyList(), "shop");
+        ConfigPolymorphicResolver resolver = resolver(Collections.emptyList(), "shop");
 
         assertThrows(UnknownConfigTypeException.class, () -> resolver.decodingType(Payment.class, none, "nope", "payment"));
     }
 
     private static RuntimeConfigType addition(String owner, Class<?> implementation) {
-        return new RuntimeConfigType(owner, Payment.class, implementation, "token", Collections.<String>emptySet(), 0);
+        return new RuntimeConfigType(owner, Payment.class, implementation, "token", Collections.emptySet(), 0);
     }
 
     @Test
@@ -62,7 +65,7 @@ class ConfigPolymorphicResolverTest {
     @Test
     void consumerOwnedRuntimeTypeCanUseAnUnqualifiedName() {
         RuntimeConfigType owned = new RuntimeConfigType("shop", Payment.class, TokenPayment.class, "token",
-                new LinkedHashSet<String>(Collections.singletonList("coins")), 10);
+                new LinkedHashSet<>(Collections.singletonList("coins")), 10);
         ConfigPolymorphicResolver resolver = resolver(Collections.singletonList(owned), "SHOP");
 
         assertEquals(TokenPayment.class, resolver.decodingType(Payment.class, none, "coins", "payment"));

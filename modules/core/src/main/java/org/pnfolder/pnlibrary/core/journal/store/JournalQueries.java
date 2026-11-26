@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.store;
 
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,10 +44,10 @@ public final class JournalQueries {
 
     public JournalQueries(@NotNull JournalStore journal, @NotNull PnLibraryConfig config, long startedAtMillis,
                           @NotNull String eventsCommand, @NotNull LongSupplier clock) {
-        this.journal = journal;
-        this.config = config;
+        this.journal = Objects.requireNonNull(journal, "journal");
+        this.config = Objects.requireNonNull(config, "config");
         this.startedAtMillis = startedAtMillis;
-        this.eventsCommand = eventsCommand;
+        this.eventsCommand = Objects.requireNonNull(eventsCommand, "eventsCommand");
         this.clock = clock;
     }
 
@@ -71,8 +72,8 @@ public final class JournalQueries {
         int hours = config.getJournalJoinNoticeHours();
         long since = now - Duration.ofHours(hours).toMillis();
         return Failures.runCatchingNonFatal(() -> JournalDigest.join(
-            journal.read(Collections.<JournalLevel>emptySet(), null, since, SCAN, null), now, hours, startedAtMillis,
-            eventsCommand)).getOrDefault(Collections.<Component>emptyList());
+            journal.read(Collections.emptySet(), null, since, SCAN, null), now, hours, startedAtMillis,
+            eventsCommand)).getOrDefault(Collections.emptyList());
     }
 
     /** Events of the last {@code sinceHours} hours, equal ones merged, newest first; {@code level} keeps one group of levels. */
@@ -85,27 +86,27 @@ public final class JournalQueries {
             }
         }
         return Failures.runCatchingNonFatal(() -> mergeEqual(journal.read(levels, null, since, SCAN, null), limit))
-            .getOrDefault(Collections.<JournalGroup>emptyList());
+            .getOrDefault(Collections.emptyList());
     }
 
     private static List<JournalGroup> mergeEqual(List<JournalRecord> records, int limit) {
-        Map<String, List<JournalRecord>> byId = new LinkedHashMap<String, List<JournalRecord>>();
+        Map<String, List<JournalRecord>> byId = new LinkedHashMap<>();
         for (JournalRecord record : records) {
             List<JournalRecord> group = byId.get(record.getFingerprint());
             if (group == null) {
-                group = new ArrayList<JournalRecord>();
+                group = new ArrayList<>();
                 byId.put(record.getFingerprint(), group);
             }
             group.add(record);
         }
-        List<JournalGroup> groups = new ArrayList<JournalGroup>();
+        List<JournalGroup> groups = new ArrayList<>();
         for (Map.Entry<String, List<JournalRecord>> entry : byId.entrySet()) {
             JournalRecord newest = newestOf(entry.getValue());
             groups.add(new JournalGroup(entry.getKey(), newest.getLevel().getFileGroup(), newest.getSource(),
                 newest.getFirstLine(), entry.getValue().size(), newest.getTimeMillis()));
         }
         groups.sort((left, right) -> Long.compare(right.getLastMillis(), left.getLastMillis()));
-        return groups.size() > limit ? new ArrayList<JournalGroup>(groups.subList(0, limit)) : groups;
+        return groups.size() > limit ? new ArrayList<>(groups.subList(0, limit)) : groups;
     }
 
     /** The newest record of the event {@code id} with every time it happened, or null when it left the journal. */
@@ -114,7 +115,7 @@ public final class JournalQueries {
     }
 
     private JournalDetail findDetail(String id) {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
+        List<JournalRecord> records = new ArrayList<>();
         for (JournalRecord record : journal.read(SCAN)) {
             if (record.getFingerprint().equals(id)) {
                 records.add(record);
@@ -124,16 +125,16 @@ public final class JournalQueries {
             return null;
         }
         JournalRecord newest = newestOf(records);
-        Map<String, String> details = new LinkedHashMap<String, String>(newest.getDetails());
+        Map<String, String> details = new LinkedHashMap<>(newest.getDetails());
         details.remove(JournalRecord.STACKTRACE);
-        List<Long> times = new ArrayList<Long>();
+        List<Long> times = new ArrayList<>();
         for (JournalRecord record : records) {
             times.add(record.getTimeMillis());
         }
-        times.sort(Collections.<Long>reverseOrder());
+        times.sort(Collections.reverseOrder());
         return new JournalDetail(id, newest.getLevel().getFileGroup(), newest.getSource(), newest.getMessage(),
             newest.getDetails().get(JournalRecord.STACKTRACE), details,
-            new ArrayList<Long>(times.subList(0, Math.min(TIMES, times.size()))));
+            new ArrayList<>(times.subList(0, Math.min(TIMES, times.size()))));
     }
 
     private static JournalRecord newestOf(List<JournalRecord> records) {

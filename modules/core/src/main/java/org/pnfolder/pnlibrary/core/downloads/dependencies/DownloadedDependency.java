@@ -10,8 +10,8 @@ public final class DownloadedDependency {
 
     /** Creates the pair. */
     public DownloadedDependency(@NotNull String name, @NotNull String version) {
-        this.name = name;
-        this.version = version;
+        this.name = Objects.requireNonNull(name, "name");
+        this.version = Objects.requireNonNull(version, "version");
     }
 
     /** The plugin name as the server reports it. */

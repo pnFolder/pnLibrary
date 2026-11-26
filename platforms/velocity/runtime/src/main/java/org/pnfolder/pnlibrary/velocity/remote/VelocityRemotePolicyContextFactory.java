@@ -6,10 +6,10 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.util.ProxyVersion;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.PlatformInfo;
-import org.pnfolder.pnlibrary.api.remote.ProductInfo;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
-import org.pnfolder.pnlibrary.api.remote.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
 
 import java.util.Collections;
@@ -24,7 +24,7 @@ public final class VelocityRemotePolicyContextFactory {
     @NotNull
     public static RemotePolicyContext create(
             @NotNull Object plugin, @NotNull PluginContainer container, @NotNull ProxyServer server) {
-        return create(plugin, container, server, Collections.<String, String>emptyMap());
+        return create(plugin, container, server, Collections.emptyMap());
     }
 
     /** Builds a context for {@code plugin} on {@code server} and appends the caller-defined policy {@code values}. */
@@ -33,7 +33,8 @@ public final class VelocityRemotePolicyContextFactory {
             @NotNull Object plugin,
             @NotNull PluginContainer container,
             @NotNull ProxyServer server,
-            @NotNull Map<String, String> values) {
+            @NotNull Map<String, String> values
+    ) {
         PluginDescription descriptor = container.getDescription();
         ProxyVersion proxy = server.getVersion();
         ProductInfo product = new ProductInfo(descriptor.getId(), descriptor.getName().orElse(descriptor.getId()),

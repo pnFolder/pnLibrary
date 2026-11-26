@@ -30,7 +30,7 @@ import org.pnfolder.pnlibrary.core.events.EventFixtures.TestEvent;
 class EventDispatcherTest {
     @Test
     void aOneTimeListenerRunsOnceAndCancellingItFirstPreventsTheRun() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventScope scope = events.scope(PluginId.of("test"));
@@ -47,7 +47,7 @@ class EventDispatcherTest {
 
     @Test
     void callReturnsOnlyAfterListenersRunInPriorityOrder() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventScope scope = events.scope(PluginId.of("test"));
@@ -143,7 +143,7 @@ class EventDispatcherTest {
 
     @Test
     void annotatedHandlersRegisterInOrderAndCloseTogether() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventListenerRegistration registration = events.scope(PluginId.of("test")).register(new AnnotatedListener(calls));
@@ -170,7 +170,7 @@ class EventDispatcherTest {
 
     @Test
     void listenerFailureIsLoggedAndIsolated() {
-        List<Throwable> errors = new ArrayList<Throwable>();
+        List<Throwable> errors = new ArrayList<>();
         AtomicBoolean completed = new AtomicBoolean();
         EventDispatcher events = new EventDispatcher((plugin, message, error) -> errors.add(error));
         try {
@@ -190,7 +190,7 @@ class EventDispatcherTest {
 
     @Test
     void aFailingListenerIsLoggedAndSkippedButADyingJvmIsNotHidden() {
-        List<Throwable> logged = new ArrayList<Throwable>();
+        List<Throwable> logged = new ArrayList<>();
         AtomicInteger after = new AtomicInteger();
         EventDispatcher events = new EventDispatcher((plugin, message, error) -> logged.add(error));
         try {
@@ -228,7 +228,7 @@ class EventDispatcherTest {
     @Test
     void dispatchUsesCallingThread() {
         Thread callingThread = Thread.currentThread();
-        AtomicReference<Thread> listenerThread = new AtomicReference<Thread>();
+        AtomicReference<Thread> listenerThread = new AtomicReference<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             events.scope(PluginId.of("test")).subscribe(TestEvent.class, event -> listenerThread.set(Thread.currentThread()));
@@ -241,7 +241,7 @@ class EventDispatcherTest {
 
     @Test
     void builderAppliesPriorityAndIgnoreDeniedThenRegistersOnListen() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventScope scope = events.scope(PluginId.of("test"));

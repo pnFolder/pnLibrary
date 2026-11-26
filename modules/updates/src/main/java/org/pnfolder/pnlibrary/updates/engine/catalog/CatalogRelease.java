@@ -40,13 +40,13 @@ public final class CatalogRelease {
     public CatalogRelease(@NotNull SemanticVersion version, @NotNull UpdateChannel channel, @NotNull String description,
                           @Nullable URI changelogUrl, @NotNull Instant publishedAt, @NotNull ApiVersionRange api,
                           @NotNull List<CatalogArtifact> artifacts) {
-        this.version = version;
-        this.channel = channel;
-        this.description = description;
+        this.version = Objects.requireNonNull(version, "version");
+        this.channel = Objects.requireNonNull(channel, "channel");
+        this.description = Objects.requireNonNull(description, "description");
         this.changelogUrl = changelogUrl;
-        this.publishedAt = publishedAt;
-        this.api = api;
-        this.artifacts = Collections.unmodifiableList(new ArrayList<CatalogArtifact>(artifacts));
+        this.publishedAt = Objects.requireNonNull(publishedAt, "publishedAt");
+        this.api = Objects.requireNonNull(api, "api");
+        this.artifacts = Collections.unmodifiableList(new ArrayList<>(artifacts));
     }
 
     @NotNull

@@ -20,7 +20,7 @@ public final class LinkReports {
     /** Describes this server from {@code library}; {@code platform} names the server software, {@code players} counts who is online. */
     public static @NotNull LinkReport build(@NotNull PnLibrary library, @NotNull String platform, int players,
                                             @NotNull Instant now) {
-        List<LinkPlugin> plugins = new ArrayList<LinkPlugin>();
+        List<LinkPlugin> plugins = new ArrayList<>();
         for (UpdateRegistration registration : library.getUpdates().getProducts().all()) {
             UpdateSnapshot snapshot = registration.getSnapshot();
             String current = snapshot.getCurrentVersion();
@@ -28,6 +28,6 @@ public final class LinkReports {
             plugins.add(new LinkPlugin(snapshot.getProduct(), current,
                 latest != null && !latest.equals(current) ? latest : null, snapshot.getState().name()));
         }
-        return new LinkReport(platform, library.getVersion(), players, plugins, now);
+        return new LinkReport(platform, library.getVersion(), players, plugins, now, StagedUpdate.waiting(library), null);
     }
 }

@@ -30,7 +30,7 @@ public final class CommandAction implements Action {
 
     /** Creates it with every setting given. */
     public CommandAction(@NotNull String command, @NotNull CommandRunner runner) {
-        this.command = command;
+        this.command = Objects.requireNonNull(command, "command");
         this.runner = runner;
     }
 

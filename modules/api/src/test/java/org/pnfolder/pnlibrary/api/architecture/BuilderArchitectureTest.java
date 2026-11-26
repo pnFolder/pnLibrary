@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.dependencies.external.ExternalPluginDependency
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticConfiguration;
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import java.util.Objects;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -14,7 +15,7 @@ public final class VelocityPlayerEvents {
 
     /** Creates a listener that publishes the events through {@code library}. */
     public VelocityPlayerEvents(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     /** Publishes the portable join event once the player is logged in. */

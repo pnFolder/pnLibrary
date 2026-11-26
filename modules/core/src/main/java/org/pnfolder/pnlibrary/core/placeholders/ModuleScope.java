@@ -1,5 +1,10 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhPart;
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
+import org.pnfolder.pnlibrary.core.placeholders.scan.Scanner;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatDef;
+import org.pnfolder.pnlibrary.core.placeholders.format.AnnotatedFormats;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,7 +72,7 @@ final class ModuleScope implements PlaceholderService {
             if (result instanceof CompletionStage) {
                 return ((CompletionStage<?>) result).thenApply(inner -> (Object) inner);
             }
-            return CompletableFuture.<Object>completedFuture(result);
+            return CompletableFuture.completedFuture(result);
         });
         last.setVisibility(visibility);
         final PlaceholderEntry entry = new PlaceholderEntry(owner, nodes.get(0), papiEnabled ? papi : null);
@@ -88,7 +93,7 @@ final class ModuleScope implements PlaceholderService {
         if (body.endsWith("}")) {
             body = body.substring(0, body.length() - 1);
         }
-        List<PhNode> nodes = new ArrayList<PhNode>();
+        List<PhNode> nodes = new ArrayList<>();
         for (String word : body.split("\\.", -1)) {
             nodes.add(new PhNode(PhPart.word(PhPart.checkWord(word.toLowerCase(Locale.ROOT))), Object.class));
         }
@@ -129,8 +134,8 @@ final class ModuleScope implements PlaceholderService {
 
     @Override
     public @NotNull Registry<PlaceholderInfo> registry() {
-        return new ListRegistry<PlaceholderInfo>("placeholders", () -> {
-            List<RegistryEntry<PlaceholderInfo>> entries = new ArrayList<RegistryEntry<PlaceholderInfo>>();
+        return new ListRegistry<>("placeholders", () -> {
+            List<RegistryEntry<PlaceholderInfo>> entries = new ArrayList<>();
             for (PlaceholderInfo info : list()) {
                 entries.add(RegistryEntries.placeholder(info));
             }
@@ -140,10 +145,10 @@ final class ModuleScope implements PlaceholderService {
 
     @Override
     public @NotNull Registry<FormatInfo> formatRegistry() {
-        return new ListRegistry<FormatInfo>("formats", () -> {
+        return new ListRegistry<>("formats", () -> {
             List<FormatDef> formats = engine.getFormats().all();
             formats.sort((a, b) -> a.getName().compareTo(b.getName()));
-            List<RegistryEntry<FormatInfo>> entries = new ArrayList<RegistryEntry<FormatInfo>>();
+            List<RegistryEntry<FormatInfo>> entries = new ArrayList<>();
             for (FormatDef format : formats) {
                 entries.add(RegistryEntries.format(format));
             }

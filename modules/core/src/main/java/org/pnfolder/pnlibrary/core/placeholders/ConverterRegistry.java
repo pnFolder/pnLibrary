@@ -23,7 +23,7 @@ final class ConverterRegistry {
     }
 
     private final ConcurrentHashMap<Class<?>, CopyOnWriteArrayList<Entry>> byType =
-            new ConcurrentHashMap<Class<?>, CopyOnWriteArrayList<Entry>>();
+            new ConcurrentHashMap<>();
     private final Consumer<String> report;
 
     ConverterRegistry(Consumer<String> report) {
@@ -53,7 +53,7 @@ final class ConverterRegistry {
     private CopyOnWriteArrayList<Entry> listOf(Class<?> type) {
         CopyOnWriteArrayList<Entry> list = byType.get(type);
         if (list == null) {
-            list = new CopyOnWriteArrayList<Entry>();
+            list = new CopyOnWriteArrayList<>();
             CopyOnWriteArrayList<Entry> raced = byType.putIfAbsent(type, list);
             if (raced != null) {
                 list = raced;

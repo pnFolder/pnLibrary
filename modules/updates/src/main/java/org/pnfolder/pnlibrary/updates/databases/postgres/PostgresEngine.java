@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.postgres;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.List;
@@ -18,7 +19,7 @@ public final class PostgresEngine implements DatabaseEngine {
     }
 
     public PostgresEngine(@NotNull JdbcConnections connections) {
-        this.connections = connections;
+        this.connections = Objects.requireNonNull(connections, "connections");
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,7 +30,7 @@ public final class ModuleServiceKey {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder();
             for (byte value : digest) {
-                hex.append(String.format("%02x", value));
+                hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
         } catch (NoSuchAlgorithmException impossible) {

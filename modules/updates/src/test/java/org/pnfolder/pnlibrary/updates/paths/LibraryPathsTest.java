@@ -18,12 +18,12 @@ class LibraryPathsTest {
     @TempDir
     Path directory;
 
-    private final Set<String> outsideData = new HashSet<String>(Arrays.asList(
+    private final Set<String> outsideData = new HashSet<>(Arrays.asList(
         "pluginFolder", "plugins", "serverUpdateFolder", "legacyConfig", "legacyDownloadsConfig", "localization",
         "data"));
 
     private Map<String, Path> locations(LibraryPaths paths) throws IllegalAccessException, InvocationTargetException {
-        Map<String, Path> result = new LinkedHashMap<String, Path>();
+        Map<String, Path> result = new LinkedHashMap<>();
         for (Method method : LibraryPaths.class.getMethods()) {
             if (method.getParameterCount() == 0 && Path.class.isAssignableFrom(method.getReturnType())
                 && method.getName().startsWith("get")) {
@@ -39,7 +39,7 @@ class LibraryPathsTest {
         Path plugin = directory.resolve("plugins/pnLibrary");
         LibraryPaths paths = new LibraryPaths(plugin);
 
-        Set<String> outside = new HashSet<String>();
+        Set<String> outside = new HashSet<>();
         int inside = 0;
         for (Map.Entry<String, Path> entry : locations(paths).entrySet()) {
             if (outsideData.contains(entry.getKey())) {
@@ -72,6 +72,6 @@ class LibraryPathsTest {
     void noTwoStateLocationsAreTheSame() throws Exception {
         Map<String, Path> inside = locations(new LibraryPaths(directory.resolve("plugins/pnLibrary")));
         inside.keySet().removeAll(outsideData);
-        assertEquals(inside.size(), new HashSet<Path>(inside.values()).size());
+        assertEquals(inside.size(), new HashSet<>(inside.values()).size());
     }
 }

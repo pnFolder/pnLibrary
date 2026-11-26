@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.tasks;
 
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
@@ -22,7 +23,7 @@ final class TaskCard {
 
     List<Component> lines(ChatKit kit, TaskSnapshot task) {
         List<TaskSnapshot> all = RuntimeBridge.taskSnapshots(library);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(TaskLabels.title(task),
                 kit.bracketed(TaskLabels.label(task.getStatus()), TaskLabels.color(task.getStatus()))));
@@ -80,7 +81,7 @@ final class TaskCard {
         if (!kit.getReader().isInteractive()) {
             return null;
         }
-        String capital = reason.isEmpty() ? reason : reason.substring(0, 1).toUpperCase() + reason.substring(1);
+        String capital = reason.isEmpty() ? reason : reason.substring(0, 1).toUpperCase(Locale.ROOT) + reason.substring(1);
         return kit.bracketed(label, ChatPalette.FAINT).hoverEvent(kit.tooltip(kit.text(capital, ChatPalette.SOFT)));
     }
 }

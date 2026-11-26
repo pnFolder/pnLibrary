@@ -17,7 +17,7 @@ final class InstallationQueries {
 
     /** Saved-set journals that were applied but not yet installed or restored. */
     List<Path> pending() throws IOException {
-        List<Path> pending = new ArrayList<Path>();
+        List<Path> pending = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             TransactionJournal journal = entry.getValue();
             boolean applied = journal.getState() == TransactionState.AWAITING_HEALTH && !"INSTALL".equals(journal.getAppliedOperation());

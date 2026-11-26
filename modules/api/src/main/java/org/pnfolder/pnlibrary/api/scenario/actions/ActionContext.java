@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.scenario.actions;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +59,7 @@ public final class ActionContext implements RequirementContext {
     public ActionContext(@NotNull OnlinePlayer player, @NotNull Audience allPlayers, @NotNull ComponentService components,
                          @NotNull PnLogger logger, @NotNull TaskScope tasks) {
         this(player, allPlayers, components, logger, tasks, ComponentSerializerType.ADAPTIVE,
-                Collections.<String, Object>emptyMap(), Collections.<Class<?>, Object>emptyMap(), type -> null,
+                Collections.emptyMap(), Collections.emptyMap(), type -> null,
                 ScenarioLookup.NONE, null);
     }
 
@@ -82,16 +83,16 @@ public final class ActionContext implements RequirementContext {
                          @NotNull Map<String, Object> values, @NotNull Map<Class<?>, Object> services,
                          @NotNull Function<Class<?>, Object> serviceLookup, @NotNull ScenarioLookup lookup,
                          @Nullable PlaceholderService placeholders) {
-        this.player = player;
-        this.allPlayers = allPlayers;
-        this.components = components;
-        this.logger = logger;
-        this.tasks = tasks;
-        this.serializerType = serializerType;
+        this.player = Objects.requireNonNull(player, "player");
+        this.allPlayers = Objects.requireNonNull(allPlayers, "allPlayers");
+        this.components = Objects.requireNonNull(components, "components");
+        this.logger = Objects.requireNonNull(logger, "logger");
+        this.tasks = Objects.requireNonNull(tasks, "tasks");
+        this.serializerType = Objects.requireNonNull(serializerType, "serializerType");
         this.values = new ScenarioValues(values);
-        this.services = services;
-        this.serviceLookup = serviceLookup;
-        this.lookup = lookup;
+        this.services = Objects.requireNonNull(services, "services");
+        this.serviceLookup = Objects.requireNonNull(serviceLookup, "serviceLookup");
+        this.lookup = Objects.requireNonNull(lookup, "lookup");
         this.placeholders = placeholders;
         this.texts = new ScenarioText(this, player, logger, placeholders, this.values.live());
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -15,15 +16,15 @@ import org.pnfolder.pnlibrary.common.lang.Failures;
 final class BatchSnapshots {
     private final List<FileDownload> files;
     private final List<Consumer<List<DownloadSnapshot>>> finishListeners =
-        new CopyOnWriteArrayList<Consumer<List<DownloadSnapshot>>>();
+        new CopyOnWriteArrayList<>();
 
     BatchSnapshots(@NotNull List<FileDownload> files) {
-        this.files = files;
+        this.files = Objects.requireNonNull(files, "files");
     }
 
     /** One snapshot per file, all in {@code state}. */
     @NotNull List<DownloadSnapshot> all(@NotNull DownloadState state, @Nullable String message) {
-        List<DownloadSnapshot> snapshots = new ArrayList<DownloadSnapshot>();
+        List<DownloadSnapshot> snapshots = new ArrayList<>();
         for (FileDownload file : files) {
             snapshots.add(new DownloadSnapshot(file.getKey(), state, message));
         }
@@ -32,7 +33,7 @@ final class BatchSnapshots {
 
     /** One snapshot per file: {@code state} for the files in {@code active}, declared for the others. */
     @NotNull List<DownloadSnapshot> marking(@NotNull List<FileDownload> active, @NotNull DownloadState state) {
-        List<DownloadSnapshot> snapshots = new ArrayList<DownloadSnapshot>();
+        List<DownloadSnapshot> snapshots = new ArrayList<>();
         for (FileDownload file : files) {
             snapshots.add(new DownloadSnapshot(file.getKey(),
                 active.contains(file) ? state : DownloadState.DECLARED));

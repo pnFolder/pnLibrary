@@ -24,7 +24,7 @@ public class BoxByName implements ArgumentConverter<TestBox> {
 
     @Override
     public List<String> suggest(ArgumentInput input) {
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         for (String word : new String[] {"alpha", "beta"}) {
             if (word.startsWith(input.getText())) {
                 words.add(word);

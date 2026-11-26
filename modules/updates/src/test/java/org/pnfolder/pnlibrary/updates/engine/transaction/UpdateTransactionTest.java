@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,7 @@ class UpdateTransactionTest {
         Path directoryOfBroken = root.resolve(UUID.randomUUID().toString());
         Files.createDirectories(directoryOfBroken);
         Files.write(directoryOfBroken.resolve("journal.json"), new byte[0]);
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         UpdateTransaction transaction = new UpdateTransaction(root, new ArtifactVerifier(1024),
             root.toAbsolutePath().normalize().getParent(), warnings::add);
 
@@ -110,7 +111,7 @@ class UpdateTransactionTest {
     @DisplayName("commits three verified components as one transaction")
     void commitsThreeVerifiedComponentsAsOneTransaction() throws Exception {
         Path targets = Files.createDirectories(directory.resolve("plugins"));
-        List<TransactionArtifact> artifacts = new ArrayList<TransactionArtifact>();
+        List<TransactionArtifact> artifacts = new ArrayList<>();
         String[] ids = {"library", "market", "auth"};
         for (int index = 0; index < ids.length; index++) {
             Path source = artifact(ids[index] + "-new.jar", new byte[] {(byte) index});
@@ -304,7 +305,7 @@ class UpdateTransactionTest {
         Path plugins = Files.createDirectories(directory.resolve("plugins"));
         Path target = write(plugins.resolve("market.jar"), new byte[] {9});
         Path root = directory.resolve("transactions");
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         UpdateTransaction transaction = new UpdateTransaction(root, new ArtifactVerifier(LIMIT), plugins, warnings::add);
         Path source = artifact("first.jar", new byte[] {1});
         TransactionResult saved = transaction.apply(Collections.singletonList(
@@ -325,12 +326,12 @@ class UpdateTransactionTest {
     @DisplayName("tampered target is rejected before any rollback file is changed")
     void tamperedTargetIsRejectedBeforeAnyRollbackFileIsChanged() throws Exception {
         Path plugins = Files.createDirectories(directory.resolve("plugins"));
-        List<Path> targets = new ArrayList<Path>();
+        List<Path> targets = new ArrayList<>();
         for (String name : new String[] {"market", "auth"}) {
             targets.add(write(plugins.resolve(name + ".jar"), new byte[] {9}));
         }
         UpdateTransaction transaction = new UpdateTransaction(directory.resolve("transactions"), new ArtifactVerifier(LIMIT), plugins);
-        List<TransactionArtifact> inputs = new ArrayList<TransactionArtifact>();
+        List<TransactionArtifact> inputs = new ArrayList<>();
         String[] names = {"market", "auth"};
         for (int index = 0; index < names.length; index++) {
             Path source = artifact(names[index] + "-new.jar", new byte[] {(byte) index});
@@ -378,7 +379,7 @@ class UpdateTransactionTest {
         }
         StringBuilder hex = new StringBuilder();
         for (byte value : digest.digest()) {
-            hex.append(String.format("%02x", value));
+            hex.append(String.format(Locale.ROOT, "%02x", value));
         }
         return hex.toString();
     }

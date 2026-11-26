@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import org.pnfolder.pnlibrary.core.guide.LibraryCommandGuide;
+import org.pnfolder.pnlibrary.core.guide.GuideEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,7 +22,7 @@ class LibraryCommandGuideTest {
     private final Set<String> declared = declaredPermissions();
 
     private static Set<String> declaredPermissions() {
-        Set<String> declared = new LinkedHashSet<String>();
+        Set<String> declared = new LinkedHashSet<>();
         Pattern node = Pattern.compile("^  (pnlibrary\\.[a-z.]+):\\s*$");
         try {
             for (String line : Files.readAllLines(Paths.get("../../platforms/bukkit/runtime/src/main/resources/plugin.yml"))) {
@@ -38,14 +40,14 @@ class LibraryCommandGuideTest {
     @Test
     void everyPermissionOfPluginYmlIsInTheGuide() {
         assertTrue(declared.size() >= 10, "plugin.yml permissions were not found");
-        Set<String> missing = new LinkedHashSet<String>(declared);
+        Set<String> missing = new LinkedHashSet<>(declared);
         missing.removeAll(LibraryCommandGuide.getPermissions());
         assertTrue(missing.isEmpty(), "Команды.txt does not list: " + missing);
     }
 
     @Test
     void everyPermissionOfTheGuideIsDeclaredInPluginYmlOrBelongsToTheProxyOnly() {
-        Set<String> unknown = new LinkedHashSet<String>(LibraryCommandGuide.getPermissions());
+        Set<String> unknown = new LinkedHashSet<>(LibraryCommandGuide.getPermissions());
         unknown.removeAll(declared);
         unknown.removeAll(LibraryCommandGuide.getProxyOnly());
         assertTrue(unknown.isEmpty(), "not in plugin.yml and not marked proxy-only: " + unknown);
@@ -56,7 +58,7 @@ class LibraryCommandGuideTest {
 
     @Test
     void everyEntryIsCompleteAndNoCommandIsListedTwice() {
-        Set<String> usages = new HashSet<String>();
+        Set<String> usages = new HashSet<>();
         for (GuideEntry entry : LibraryCommandGuide.getEntries()) {
             assertTrue(!entry.getUsage().trim().isEmpty() && !entry.getDescription().trim().isEmpty(), entry.getUsage());
             assertTrue(entry.getPermission() == null || entry.getPermission().startsWith("pnlibrary."), entry.getUsage());
@@ -76,7 +78,7 @@ class LibraryCommandGuideTest {
 
     @Test
     void theGuideNamesEveryCommandWordOfTheControlCommand() {
-        Set<String> words = new HashSet<String>();
+        Set<String> words = new HashSet<>();
         for (GuideEntry entry : LibraryCommandGuide.getEntries()) {
             String[] parts = entry.getUsage().split(" ");
             words.add(parts.length > 1 ? parts[1] : "");

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.JdbcCurrencyStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,11 +65,11 @@ class JdbcCurrencyStorageTest {
         assertEquals(0, new BigDecimal("10.25").compareTo(join(storage.balance(currency, account))));
         CurrencyHistoryPage page = join(storage.history(currency, new CurrencyHistoryQuery()));
         assertEquals(2, page.getItems().size());
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         for (CurrencyTransaction transaction : page.getItems()) {
             keys.add(transaction.getIdempotencyKey());
         }
-        assertEquals(new HashSet<String>(Arrays.asList("credit-1", "debit-1")), keys);
+        assertEquals(new HashSet<>(Arrays.asList("credit-1", "debit-1")), keys);
         assertFalse(page.getHasMore());
     }
 
@@ -104,7 +105,7 @@ class JdbcCurrencyStorageTest {
 
     @Test
     void borrowedConnectionsGoBackWithTheirOriginalTransactionSettings() throws Exception {
-        List<Connection> borrowed = new ArrayList<Connection>();
+        List<Connection> borrowed = new ArrayList<>();
         DataSource tracking = (DataSource) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {DataSource.class},
                 (proxy, method, args) -> {
                     Object result;
@@ -138,7 +139,7 @@ class JdbcCurrencyStorageTest {
         try {
             join(pooled.transact(currency, descriptor, new CurrencyTransactionRequest(CurrencyTransactionType.CREDIT,
                     new BigDecimal("1"), null, account, CurrencyActor.system("test"), "test-suite", "unit-test",
-                    Collections.<String, String>emptyMap(), "pooled-1")));
+                    Collections.emptyMap(), "pooled-1")));
             join(pooled.export(currency));
         } finally {
             pooled.close();
@@ -154,7 +155,7 @@ class JdbcCurrencyStorageTest {
     private CurrencyTransaction transact(CurrencyTransactionType type, String amount, String key) {
         return join(storage.transact(currency, descriptor, new CurrencyTransactionRequest(type, new BigDecimal(amount),
                 type == CurrencyTransactionType.DEBIT ? account : null, type == CurrencyTransactionType.CREDIT ? account : null,
-                CurrencyActor.system("test"), "test-suite", "unit-test", Collections.<String, String>emptyMap(), key)));
+                CurrencyActor.system("test"), "test-suite", "unit-test", Collections.emptyMap(), key)));
     }
 
     private static <T> T join(CompletionStage<T> stage) {

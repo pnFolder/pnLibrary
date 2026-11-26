@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.currency;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public final class CurrencyHistoryPage {
 
     /** Creates a page of {@code items} that starts at {@code offset} in the filtered result. */
     public CurrencyHistoryPage(@NotNull List<CurrencyTransaction> items, int offset, boolean hasMore) {
-        this.items = items;
+        this.items = Objects.requireNonNull(items, "items");
         this.offset = offset;
         this.hasMore = hasMore;
     }

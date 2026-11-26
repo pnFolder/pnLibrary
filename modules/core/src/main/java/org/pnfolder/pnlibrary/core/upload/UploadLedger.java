@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.upload;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -30,7 +31,7 @@ public final class UploadLedger {
     }
 
     public UploadLedger(@NotNull Path file, @NotNull Clock clock) {
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock");
         this.persistence = new UploadLedgerPersistence(file, clock);
     }
 
@@ -54,7 +55,7 @@ public final class UploadLedger {
     }
 
     public synchronized int cleanup(@NotNull UploadProvider uploader) throws IOException {
-        List<UploadLedgerEntry> remaining = new ArrayList<UploadLedgerEntry>();
+        List<UploadLedgerEntry> remaining = new ArrayList<>();
         int deleted = 0;
         long now = clock.instant().getEpochSecond();
         for (UploadLedgerEntry entry : persistence.read()) {
@@ -73,11 +74,11 @@ public final class UploadLedger {
     public synchronized @NotNull Map<String, Object> diagnosticSnapshot() {
         // Diagnostics must render even with an unreadable ledger; cleanup() surfaces the I/O error.
         Attempt<List<UploadLedgerEntry>> read = Failures.runCatchingNonFatal(persistence::read);
-        List<UploadLedgerEntry> entries = read.getOrDefault(new ArrayList<UploadLedgerEntry>());
+        List<UploadLedgerEntry> entries = read.getOrDefault(new ArrayList<>());
         long now = clock.instant().getEpochSecond();
         int due = 0;
         Long next = null;
-        Map<String, Integer> byBackend = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> byBackend = new LinkedHashMap<>();
         for (UploadLedgerEntry entry : entries) {
             if (entry.getDeleteAt() <= now) {
                 due++;
@@ -88,7 +89,7 @@ public final class UploadLedger {
             Integer count = byBackend.get(entry.getBackend());
             byBackend.put(entry.getBackend(), count == null ? 1 : count + 1);
         }
-        Map<String, Object> snapshot = new LinkedHashMap<String, Object>();
+        Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("pendingCount", entries.size());
         snapshot.put("dueCount", due);
         snapshot.put("byBackend", byBackend);

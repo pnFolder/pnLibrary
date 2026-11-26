@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupsScreen;
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupQuery;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public final class UpdateCatalogView {
     public static final List<UpdateChannel> CHANNELS = Collections.unmodifiableList(Arrays.asList(UpdateChannel.values()));
 
     /** Pause periods offered on the settings card, as accepted by {@code set <plugin> hold}; a pause lasts at most a week. */
-    public static final List<String> HOLD_PERIODS = Collections.unmodifiableList(Arrays.asList("1h", "6h", "1d", "3d", "7d"));
+    public static final List<String> HOLD_PERIODS = Collections.unmodifiableList(Arrays.asList("1h", "6h", "1d", "3d", "5d"));
 
     private UpdateCatalogView() {
     }

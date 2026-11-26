@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -34,7 +35,7 @@ public final class SettingsStore {
     private final Path file;
     private final Consumer<String> warning;
     private final com.google.gson.Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private final List<Consumer<LibrarySettings>> listeners = new CopyOnWriteArrayList<Consumer<LibrarySettings>>();
+    private final List<Consumer<LibrarySettings>> listeners = new CopyOnWriteArrayList<>();
     /** Key to the value as text, for what was set; the single source of truth together with the registry. */
     private volatile Map<String, String> overrides;
     private volatile LibrarySettings settings;
@@ -50,8 +51,8 @@ public final class SettingsStore {
      * @param warning receives the problems found while reading, in words for the administrator
      */
     public SettingsStore(@NotNull Path file, @NotNull Consumer<String> warning) {
-        this.file = file;
-        this.warning = warning;
+        this.file = Objects.requireNonNull(file, "file");
+        this.warning = Objects.requireNonNull(warning, "warning");
         this.overrides = load();
         this.settings = build(overrides);
     }
@@ -68,7 +69,7 @@ public final class SettingsStore {
 
     /** Every setting in registry order with its value now. */
     public @NotNull List<SettingValue> values() {
-        List<SettingValue> values = new ArrayList<SettingValue>();
+        List<SettingValue> values = new ArrayList<>();
         for (SettingSpec spec : SettingsRegistry.getAll()) {
             values.add(new SettingValue(spec, spec.valueIn(settings), overrides.containsKey(spec.getKey())));
         }
@@ -98,7 +99,7 @@ public final class SettingsStore {
      */
     public synchronized @NotNull SettingChange set(@NotNull String key, @NotNull String text) {
         SettingSpec spec = specOf(key);
-        Map<String, String> next = new LinkedHashMap<String, String>(overrides);
+        Map<String, String> next = new LinkedHashMap<>(overrides);
         next.put(key, spec.normalize(text));
         return commit(spec, next);
     }
@@ -110,7 +111,7 @@ public final class SettingsStore {
      */
     public synchronized @NotNull SettingChange reset(@NotNull String key) {
         SettingSpec spec = specOf(key);
-        Map<String, String> next = new LinkedHashMap<String, String>(overrides);
+        Map<String, String> next = new LinkedHashMap<>(overrides);
         next.remove(key);
         return commit(spec, next);
     }
@@ -174,7 +175,7 @@ public final class SettingsStore {
     }
 
     private Map<String, String> load() {
-        Map<String, String> accepted = new LinkedHashMap<String, String>();
+        Map<String, String> accepted = new LinkedHashMap<>();
         if (!Files.isRegularFile(file)) {
             return accepted;
         }
@@ -193,6 +194,9 @@ public final class SettingsStore {
 
     private void accept(Map<String, String> accepted, String key, JsonElement element) {
         SettingSpec spec = SettingsRegistry.get(key);
+        if (spec == null && SettingsRegistry.isRetired(key)) {
+            return;
+        }
         if (spec == null) {
             warning.accept(file.getFileName() + ": настройки «" + key + "» нет, значение пропущено.");
         } else if (!element.isJsonPrimitive()) {

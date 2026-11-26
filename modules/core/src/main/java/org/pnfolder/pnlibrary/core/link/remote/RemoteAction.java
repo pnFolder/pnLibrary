@@ -8,13 +8,7 @@ public enum RemoteAction {
     CHECK("check", false, "pnlibrary.updates.view"),
 
     /** Find and download the update of one plugin; it applies after a restart. */
-    UPDATE("update", true, "pnlibrary.updates.download"),
-
-    /** Turn automatic download on for one plugin. */
-    AUTO_ON("auto-on", true, "pnlibrary.updates.settings"),
-
-    /** Turn automatic download off for one plugin. */
-    AUTO_OFF("auto-off", true, "pnlibrary.updates.settings");
+    UPDATE("update", true, "pnlibrary.updates.download");
 
     private final String word;
     private final boolean needsProduct;

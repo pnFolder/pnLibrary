@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class TableMaskTest {
     @Test
     void anEmptyListTakesEverythingAndAStarStandsForAnyText() {
-        assertTrue(TableMask.matches(Collections.<String>emptyList(), "anything"));
+        assertTrue(TableMask.matches(Collections.emptyList(), "anything"));
         assertTrue(TableMask.matches(Arrays.asList("clans", "log_*"), "log_2026_11"));
         assertTrue(TableMask.matches(Arrays.asList("clans"), "clans"));
         assertFalse(TableMask.matches(Arrays.asList("clans"), "clans_old"));

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,7 +29,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigTypeRegistration;
 import org.pnfolder.pnlibrary.api.config.ConfigTypes;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.plugin.PluginId;
-import org.pnfolder.pnlibrary.config.yaml.RuntimeConfigType;
+import org.pnfolder.pnlibrary.config.yaml.schema.RuntimeConfigType;
 
 /**
  * The polymorphic types and serializers that plugins publish for the configuration files of others. Each addition
@@ -44,7 +45,7 @@ final class ConfigAdditions {
 
     /** @param reloadWaiting called with the address of a new type word, so files that waited for it are read again */
     ConfigAdditions(@NotNull Consumer<ConfigAddress> reloadWaiting) {
-        this.reloadWaiting = reloadWaiting;
+        this.reloadWaiting = Objects.requireNonNull(reloadWaiting, "reloadWaiting");
     }
 
     @NotNull

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,8 +20,8 @@ public final class TransactionHealth {
     private final TransactionJournalRepository journals;
 
     public TransactionHealth(@NotNull Path root, @NotNull TransactionJournalRepository journals) {
-        this.root = root;
-        this.journals = journals;
+        this.root = Objects.requireNonNull(root, "root");
+        this.journals = Objects.requireNonNull(journals, "journals");
     }
 
     /** Commits or fails the transaction at {@code journalPath} according to {@code healthy}. */
@@ -45,14 +46,14 @@ public final class TransactionHealth {
     /** Returns transactions waiting for post-restart product-version confirmation. */
     @NotNull
     public List<PendingTransaction> awaiting() throws IOException {
-        List<PendingTransaction> pending = new ArrayList<PendingTransaction>();
+        List<PendingTransaction> pending = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             TransactionJournal journal = entry.getValue();
             if (journal.getState() != TransactionState.AWAITING_HEALTH || !journal.isSavedSet()) {
                 continue;
             }
-            Map<String, String> versions = new LinkedHashMap<String, String>();
-            Set<String> unknown = new LinkedHashSet<String>();
+            Map<String, String> versions = new LinkedHashMap<>();
+            Set<String> unknown = new LinkedHashSet<>();
             for (JournalArtifact artifact : journal.getArtifacts()) {
                 if (artifact.getExpectedVersion() == null) {
                     unknown.add(artifact.getComponent());
@@ -68,15 +69,15 @@ public final class TransactionHealth {
     /** Returns requested rollbacks whose restored versions are not yet confirmed. */
     @NotNull
     public List<PendingTransaction> awaitingRollback() throws IOException {
-        List<PendingTransaction> pending = new ArrayList<PendingTransaction>();
+        List<PendingTransaction> pending = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             TransactionJournal journal = entry.getValue();
             if (!journal.isSavedSet() || journal.getState() != TransactionState.ROLLED_BACK
                 || !journal.getRollbackRequested() || journal.getRollbackHealthVerified()) {
                 continue;
             }
-            Map<String, String> versions = new LinkedHashMap<String, String>();
-            Set<String> unknown = new LinkedHashSet<String>();
+            Map<String, String> versions = new LinkedHashMap<>();
+            Set<String> unknown = new LinkedHashSet<>();
             for (JournalArtifact artifact : journal.getArtifacts()) {
                 if (artifact.getPreviousVersion() == null) {
                     unknown.add(artifact.getComponent());
@@ -111,8 +112,8 @@ public final class TransactionHealth {
 
     /** Returns whether the latest health check of every product in {@code products} succeeded. */
     public boolean automaticUpdatesHealthy(@NotNull Set<String> products) throws IOException {
-        Map<String, Instant> checked = new HashMap<String, Instant>();
-        Map<String, Boolean> failed = new HashMap<String, Boolean>();
+        Map<String, Instant> checked = new HashMap<>();
+        Map<String, Boolean> failed = new HashMap<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             TransactionJournal journal = entry.getValue();
             if (!journal.isSavedSet() || journal.getHealthCheckedAt() == null) {
@@ -139,14 +140,14 @@ public final class TransactionHealth {
     /** Returns saved component sets whose last health check failed. */
     @NotNull
     public List<PendingTransaction> failed() throws IOException {
-        List<PendingTransaction> failures = new ArrayList<PendingTransaction>();
+        List<PendingTransaction> failures = new ArrayList<>();
         for (Map.Entry<Path, TransactionJournal> entry : journals.loadAll()) {
             TransactionJournal journal = entry.getValue();
             if (!journal.isSavedSet() || journal.getState() != TransactionState.FAILED || !journal.getHealthFailure()) {
                 continue;
             }
-            Map<String, String> versions = new LinkedHashMap<String, String>();
-            Set<String> unknown = new LinkedHashSet<String>();
+            Map<String, String> versions = new LinkedHashMap<>();
+            Set<String> unknown = new LinkedHashSet<>();
             for (JournalArtifact artifact : journal.getArtifacts()) {
                 String version = journal.getRollbackRequested() ? artifact.getPreviousVersion() : artifact.getExpectedVersion();
                 if (version == null) {

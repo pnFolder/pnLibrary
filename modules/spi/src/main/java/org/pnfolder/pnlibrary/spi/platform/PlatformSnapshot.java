@@ -22,13 +22,13 @@ public final class PlatformSnapshot {
 
     /** A snapshot with only a name and a version; the JVM is the running one. */
     public PlatformSnapshot(@NotNull String name, @NotNull String version) {
-        this(name, version, null, null, Collections.<String>emptyList(), Collections.<PluginSnapshot>emptyList(),
+        this(name, version, null, null, Collections.emptyList(), Collections.emptyList(),
                 JavaSnapshot.current());
     }
 
     /** A snapshot with a vendor; the JVM is the running one. */
     public PlatformSnapshot(@NotNull String name, @NotNull String version, @Nullable String vendor) {
-        this(name, version, vendor, null, Collections.<String>emptyList(), Collections.<PluginSnapshot>emptyList(),
+        this(name, version, vendor, null, Collections.emptyList(), Collections.emptyList(),
                 JavaSnapshot.current());
     }
 
@@ -60,8 +60,8 @@ public final class PlatformSnapshot {
             @NotNull List<String> registeredServers,
             @NotNull List<PluginSnapshot> plugins,
             @NotNull JavaSnapshot java) {
-        this.name = name;
-        this.version = version;
+        this.name = Objects.requireNonNull(name, "name");
+        this.version = Objects.requireNonNull(version, "version");
         this.vendor = vendor;
         this.onlinePlayers = onlinePlayers;
         this.registeredServers = registeredServers;

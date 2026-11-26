@@ -23,15 +23,15 @@ public final class CommandTreeRouter {
     @NotNull
     public CommandRoute route(@NotNull CommandDefinition command, @NotNull CommandContext context) {
         CommandNode node = command.getRoot();
-        List<CommandNode> nodes = new ArrayList<CommandNode>();
+        List<CommandNode> nodes = new ArrayList<>();
         nodes.add(node);
-        Map<String, Object> values = new LinkedHashMap<String, Object>();
-        CommandContext routed = context.withParsedValues(new LinkedHashMap<String, Object>(values));
+        Map<String, Object> values = new LinkedHashMap<>();
+        CommandContext routed = context.withParsedValues(new LinkedHashMap<>(values));
         CommandError denied = RouteRules.blocked(node, routed);
         if (denied != null) {
             return problem(denied, nodes);
         }
-        List<String> path = new ArrayList<String>();
+        List<String> path = new ArrayList<>();
         path.add(command.getName());
         List<String> arguments = context.getArguments();
         for (int index = 0; index < arguments.size(); index++) {
@@ -48,7 +48,7 @@ public final class CommandTreeRouter {
             }
             index = greedy ? arguments.size() - 1 : index;
             node = child;
-            routed = context.withParsedValues(new LinkedHashMap<String, Object>(values));
+            routed = context.withParsedValues(new LinkedHashMap<>(values));
         }
         return finish(node, routed, nodes, path);
     }
@@ -107,7 +107,7 @@ public final class CommandTreeRouter {
     }
 
     private static CommandRoute problem(CommandError error, List<CommandNode> nodes) {
-        List<CommandNode> reversed = new ArrayList<CommandNode>(nodes);
+        List<CommandNode> reversed = new ArrayList<>(nodes);
         Collections.reverse(reversed);
         return new RouteProblem(error, reversed);
     }

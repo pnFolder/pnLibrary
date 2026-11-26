@@ -55,7 +55,7 @@ final class BusChat {
 
     static List<Component> footer(ChatKit kit, Component... buttons) {
         Component actions = kit.actions(buttons);
-        return actions == null ? Collections.<Component>emptyList() : Collections.singletonList(actions);
+        return actions == null ? Collections.emptyList() : Collections.singletonList(actions);
     }
 
     static Component backToEvents(ChatKit kit) {
@@ -107,7 +107,7 @@ final class BusChat {
     /** The full name of the event the player typed: an exact name, or a short name that only one event has. */
     @NotNull
     static String resolve(EventInspector bus, String typed) {
-        List<String> known = new ArrayList<String>();
+        List<String> known = new ArrayList<>();
         for (EventInfo info : bus.events()) {
             known.add(info.getEventType());
         }

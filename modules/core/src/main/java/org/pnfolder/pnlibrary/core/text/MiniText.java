@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.text;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -24,7 +25,7 @@ public final class MiniText {
     }
 
     public MiniText(@NotNull Supplier<MiniMessage> factory) {
-        this.factory = factory;
+        this.factory = Objects.requireNonNull(factory, "factory");
     }
 
     public @NotNull Component deserialize(@NotNull String input, @NotNull Consumer<String> warn) {

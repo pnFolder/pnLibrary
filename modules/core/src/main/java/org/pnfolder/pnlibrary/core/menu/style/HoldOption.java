@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.style;
 
+import java.util.Objects;
 import java.time.Duration;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,8 +10,8 @@ public final class HoldOption {
     private final Duration duration;
 
     public HoldOption(@NotNull String label, @NotNull Duration duration) {
-        this.label = label;
-        this.duration = duration;
+        this.label = Objects.requireNonNull(label, "label");
+        this.duration = Objects.requireNonNull(duration, "duration");
     }
 
     public @NotNull String getLabel() {

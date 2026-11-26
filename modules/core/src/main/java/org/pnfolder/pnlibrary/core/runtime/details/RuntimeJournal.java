@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.details;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public final class RuntimeJournal implements AutoCloseable {
     private final ManagedWorker worker = new ManagedWorker("pnLibrary-journal");
     private final AtomicLong failures = new AtomicLong();
     private final FailureThrottle writeFailureThrottle = new FailureThrottle();
-    private final ConcurrentLinkedQueue<JournalRecord> pending = new ConcurrentLinkedQueue<JournalRecord>();
+    private final ConcurrentLinkedQueue<JournalRecord> pending = new ConcurrentLinkedQueue<>();
     private final AtomicInteger pendingCount = new AtomicInteger();
     private final AtomicBoolean drainScheduled = new AtomicBoolean();
 
@@ -54,10 +55,10 @@ public final class RuntimeJournal implements AutoCloseable {
 
     public RuntimeJournal(@NotNull Path journalFolder, @NotNull PnLibraryConfig config, @NotNull PlatformOwnership ownership,
                           long startedAtMillis, @NotNull String eventsCommand, @NotNull Consumer<Throwable> onWriteFailure) {
-        this.ownership = ownership;
-        this.eventsCommand = eventsCommand;
-        this.onWriteFailure = onWriteFailure;
-        Map<JournalLevel, Duration> retention = new EnumMap<JournalLevel, Duration>(JournalLevel.class);
+        this.ownership = Objects.requireNonNull(ownership, "ownership");
+        this.eventsCommand = Objects.requireNonNull(eventsCommand, "eventsCommand");
+        this.onWriteFailure = Objects.requireNonNull(onWriteFailure, "onWriteFailure");
+        Map<JournalLevel, Duration> retention = new EnumMap<>(JournalLevel.class);
         retention.put(JournalLevel.INFO, Duration.ofDays(config.getJournalInfoDays()));
         retention.put(JournalLevel.WARNING, Duration.ofDays(config.getJournalWarningDays()));
         retention.put(JournalLevel.ERROR, Duration.ofDays(config.getJournalErrorDays()));
@@ -75,12 +76,12 @@ public final class RuntimeJournal implements AutoCloseable {
     }
 
     public void record(@NotNull Object owner, @NotNull LogLevel level, @NotNull String message, @Nullable Throwable error) {
-        record(owner, level, message, error, Collections.<String, Object>emptyMap());
+        record(owner, level, message, error, Collections.emptyMap());
     }
 
     public void record(@NotNull Object owner, @NotNull LogLevel level, @NotNull String message, @Nullable Throwable error,
                        @NotNull Map<String, ?> context) {
-        Map<String, String> details = new LinkedHashMap<String, String>();
+        Map<String, String> details = new LinkedHashMap<>();
         if (error != null) {
             details.put("exception", error.getClass().getName());
             details.put(JournalRecord.STACKTRACE, JournalRecord.stackTraceOf(error));
@@ -136,7 +137,7 @@ public final class RuntimeJournal implements AutoCloseable {
     }
 
     private List<JournalRecord> takeBatch() {
-        List<JournalRecord> batch = new ArrayList<JournalRecord>();
+        List<JournalRecord> batch = new ArrayList<>();
         while (batch.size() < MAX_BATCH) {
             JournalRecord next = pending.poll();
             if (next == null) {
@@ -168,7 +169,7 @@ public final class RuntimeJournal implements AutoCloseable {
     }
 
     public @NotNull Map<String, Object> summary() {
-        Map<String, Object> summary = new LinkedHashMap<String, Object>(store.summary());
+        Map<String, Object> summary = new LinkedHashMap<>(store.summary());
         summary.put("failedWrites", failures.get());
         return summary;
     }

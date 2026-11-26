@@ -64,7 +64,7 @@ public final class RuntimeDiagnosticsAssembler {
         Map<String, Object> nativeLogs = support.logSummary();
         Map<String, Object> reports = support.reportSummary();
         Map<String, Object> observability = support.observabilityAnalytics();
-        Map<String, Object> report = new LinkedHashMap<String, Object>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("library", library());
         report.put("journal", journalSummary());
         report.put("tasks", RuntimeTaskDetails.entries(taskSnapshots));
@@ -109,14 +109,14 @@ public final class RuntimeDiagnosticsAssembler {
 
     private Object journalSummary() {
         return Failures.runCatchingNonFatal(journal::get).getOrElse(error -> {
-            Map<String, Object> failure = new LinkedHashMap<String, Object>();
+            Map<String, Object> failure = new LinkedHashMap<>();
             failure.put("error", error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName());
             return failure;
         });
     }
 
     private static List<Object> registrations(List<UpdateRegistration> registrations) {
-        List<Object> details = new ArrayList<Object>();
+        List<Object> details = new ArrayList<>();
         for (UpdateRegistration registration : registrations) {
             details.add(RuntimeUpdateDetails.registration(registration));
         }
@@ -124,7 +124,7 @@ public final class RuntimeDiagnosticsAssembler {
     }
 
     private Map<String, Object> library() {
-        Map<String, Object> library = new LinkedHashMap<String, Object>();
+        Map<String, Object> library = new LinkedHashMap<>();
         library.put("version", version);
         library.put("closed", closed.getAsBoolean());
         library.put("platform", identity.getId());
@@ -137,9 +137,9 @@ public final class RuntimeDiagnosticsAssembler {
     }
 
     private List<Object> configurationDeclarations() {
-        List<Object> declarations = new ArrayList<Object>();
+        List<Object> declarations = new ArrayList<>();
         for (org.pnfolder.pnlibrary.core.diagnostics.RegisteredDiagnosticConfiguration declaration : diagnostics.configurations("all")) {
-            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("plugin", declaration.getPlugin());
             entry.put("path", declaration.getConfiguration().getPath());
             entry.put("dataDirectory", config.isPrivacy() ? "[redacted]"
@@ -151,11 +151,11 @@ public final class RuntimeDiagnosticsAssembler {
 
     private Map<String, Object> updateGraph() {
         UpdatePlanSnapshot current = updates.getPlans().current().orElse(null);
-        List<Object> recent = new ArrayList<Object>();
+        List<Object> recent = new ArrayList<>();
         for (UpdatePlanSnapshot snapshot : updates.getPlans().recent()) {
             recent.add(RuntimeUpdateDetails.of(snapshot));
         }
-        Map<String, Object> graph = new LinkedHashMap<String, Object>();
+        Map<String, Object> graph = new LinkedHashMap<>();
         graph.put("current", current == null ? null : RuntimeUpdateDetails.of(current));
         graph.put("history", recent);
         return graph;

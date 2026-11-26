@@ -12,9 +12,9 @@ import org.jetbrains.annotations.NotNull;
 /** Reading and writing the values of settings as text. */
 public final class SettingTexts {
     private static final Pattern PART = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(ms|мс|сек|с|s|мин|м|m|ч|h|д|d)");
-    private static final Set<String> ON = new HashSet<String>(
+    private static final Set<String> ON = new HashSet<>(
         Arrays.asList("true", "on", "yes", "да", "вкл", "включено", "1"));
-    private static final Set<String> OFF = new HashSet<String>(
+    private static final Set<String> OFF = new HashSet<>(
         Arrays.asList("false", "off", "no", "нет", "выкл", "выключено", "0"));
     private static final long DAY = 86_400_000L;
     private static final long HOUR = 3_600_000L;

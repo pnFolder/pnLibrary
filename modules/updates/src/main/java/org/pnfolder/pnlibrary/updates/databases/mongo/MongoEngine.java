@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.mongo;
 
+import java.util.Objects;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Path;
@@ -24,7 +25,7 @@ public final class MongoEngine implements DatabaseEngine {
     }
 
     public MongoEngine(@NotNull OptionalLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     @Override

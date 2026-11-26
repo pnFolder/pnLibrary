@@ -15,7 +15,7 @@ public final class RuntimeUpdateDetails {
 
     public static @NotNull Map<String, Object> registration(@NotNull UpdateRegistration value) {
         org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot snapshot = value.getSnapshot();
-        Map<String, Object> details = new LinkedHashMap<String, Object>();
+        Map<String, Object> details = new LinkedHashMap<>();
         details.put("product", snapshot.getProduct());
         details.put("repository", value.getRepository());
         details.put("currentVersion", snapshot.getCurrentVersion());
@@ -24,12 +24,11 @@ public final class RuntimeUpdateDetails {
         details.put("state", snapshot.getState().name());
         details.put("currentJava", snapshot.getCurrentJava());
         details.put("requiredJava", snapshot.getRequiredJava());
-        details.put("automaticDownload", snapshot.getAutomaticDownload());
         details.put("releaseUrl", snapshot.getReleaseUrl());
         details.put("message", snapshot.getMessage());
-        List<Object> releases = new ArrayList<Object>();
+        List<Object> releases = new ArrayList<>();
         for (org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary release : snapshot.getAvailableReleases()) {
-            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("version", release.getVersion());
             entry.put("channel", release.getChannel().name());
             entry.put("publishedAt", release.getPublishedAt() == null ? null : release.getPublishedAt().toString());
@@ -40,11 +39,11 @@ public final class RuntimeUpdateDetails {
     }
 
     public static @NotNull Map<String, Object> of(@NotNull UpdatePlanSnapshot snapshot) {
-        List<Object> blockers = new ArrayList<Object>();
+        List<Object> blockers = new ArrayList<>();
         for (Object blocker : snapshot.getBlockers()) {
             blockers.add(blocker.getClass().getSimpleName());
         }
-        Map<String, Object> details = new LinkedHashMap<String, Object>();
+        Map<String, Object> details = new LinkedHashMap<>();
         details.put("id", snapshot.getId().toString());
         details.put("revision", snapshot.getRevision());
         details.put("state", snapshot.getState().name());

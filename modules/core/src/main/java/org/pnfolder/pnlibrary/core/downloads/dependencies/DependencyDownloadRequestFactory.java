@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -29,9 +30,9 @@ public final class DependencyDownloadRequestFactory {
     /** The platform and the Minecraft version of this server pick the file of each dependency. */
     public DependencyDownloadRequestFactory(@NotNull Path serverUpdateFolder, @NotNull PlatformType platform,
                                             @NotNull Supplier<String> minecraft) {
-        this.serverUpdateFolder = serverUpdateFolder;
-        this.platform = platform;
-        this.minecraft = minecraft;
+        this.serverUpdateFolder = Objects.requireNonNull(serverUpdateFolder, "serverUpdateFolder");
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.minecraft = Objects.requireNonNull(minecraft, "minecraft");
     }
 
     /** The file of {@code dependency} meant for this server, or null when it has none (only a page, or no variant fits). */
@@ -42,7 +43,7 @@ public final class DependencyDownloadRequestFactory {
     /** The external dependencies that are not installed at a fitting version. */
     public @NotNull List<ExternalPluginDependency> missing(@NotNull List<? extends PluginDependency> dependencies,
                                                            @NotNull Map<String, String> installedPlugins) {
-        List<ExternalPluginDependency> missing = new ArrayList<ExternalPluginDependency>();
+        List<ExternalPluginDependency> missing = new ArrayList<>();
         for (PluginDependency dependency : dependencies) {
             ExternalPluginDependency external = dependency.getExternal();
             if (external != null && !isAlreadyCompatible(external, installedPlugins)) {
@@ -56,7 +57,7 @@ public final class DependencyDownloadRequestFactory {
     public @Nullable DependencyDownloadRequest create(@NotNull List<? extends PluginDependency> dependencies,
                                                       @NotNull Map<String, String> installedPlugins) {
         FileDownloads.Builder builder = FileDownloads.builder().dataDirectory(serverUpdateFolder);
-        Map<String, ExternalPluginDependency> requirements = new LinkedHashMap<String, ExternalPluginDependency>();
+        Map<String, ExternalPluginDependency> requirements = new LinkedHashMap<>();
         for (PluginDependency dependency : dependencies) {
             ExternalPluginDependency external = dependency.getExternal();
             if (external == null || isAlreadyCompatible(external, installedPlugins)) {

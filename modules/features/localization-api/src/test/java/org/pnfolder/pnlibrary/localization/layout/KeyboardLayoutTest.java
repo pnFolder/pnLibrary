@@ -34,7 +34,7 @@ class KeyboardLayoutTest {
     private final Map<KeyboardLayout, String> letters = letters();
 
     private static Map<KeyboardLayout, String> letters() {
-        Map<KeyboardLayout, String> map = new LinkedHashMap<KeyboardLayout, String>();
+        Map<KeyboardLayout, String> map = new LinkedHashMap<>();
         map.put(EN_US, "qwertyuiopasdfghjklzxcvbnm");
         map.put(RU, "йцукенгшщзхъфывапролджэячсмитьбюё");
         map.put(UK, "йцукенгшщзхїґфівапролджєячсмитьбю");
@@ -126,7 +126,7 @@ class KeyboardLayoutTest {
         List<String> alternatives = KeyboardLayout.alternatives("z,kjrj");
         assertEquals("яблоко", alternatives.get(0));
         assertFalse(alternatives.contains("z,kjrj"));
-        assertEquals(new ArrayList<String>(new LinkedHashSet<String>(alternatives)), alternatives);
+        assertEquals(new ArrayList<>(new LinkedHashSet<>(alternatives)), alternatives);
         assertEquals(alternatives, KeyboardLayout.alternatives("z,kjrj"));
         assertTrue(KeyboardLayout.alternatives("123").isEmpty());
     }
@@ -141,7 +141,7 @@ class KeyboardLayoutTest {
     @Test
     @DisplayName("built-in layouts keep a stable order")
     void builtInLayoutsKeepAStableOrder() {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
         for (KeyboardLayout layout : KeyboardLayout.builtIn) {
             ids.add(layout.getId());
         }
@@ -179,13 +179,13 @@ class KeyboardLayoutTest {
     @DisplayName("a custom layout converts and extends the set of a call")
     void aCustomLayoutConvertsAndExtendsTheSetOfACall() {
         String sample = letters.get(EN_US);
-        List<KeyboardLayout> withDvorak = new ArrayList<KeyboardLayout>(KeyboardLayout.builtIn);
+        List<KeyboardLayout> withDvorak = new ArrayList<>(KeyboardLayout.builtIn);
         withDvorak.add(dvorak);
         assertEquals(sample, KeyboardLayout.convert(KeyboardLayout.convert(sample, EN_US, dvorak), dvorak, EN_US));
         assertEquals("apple", KeyboardLayout.convert("arrpd", EN_US, dvorak));
         assertFalse(KeyboardLayout.alternatives("arrpd").contains("apple"));
         assertTrue(KeyboardLayout.alternatives("arrpd", withDvorak).contains("apple"));
         assertEquals("apple", KeyboardLayout.alternatives("arrpd", list(EN_US, dvorak)).get(0));
-        assertTrue(KeyboardLayout.alternatives("arrpd", Collections.<KeyboardLayout>emptyList()).isEmpty());
+        assertTrue(KeyboardLayout.alternatives("arrpd", Collections.emptyList()).isEmpty());
     }
 }

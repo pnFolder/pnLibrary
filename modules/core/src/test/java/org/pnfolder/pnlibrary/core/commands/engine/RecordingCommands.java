@@ -17,7 +17,7 @@ final class RecordingCommands implements PlatformCommandAdapter {
     int closeCalls;
     boolean failNextRegistration;
     String failingCloseName;
-    final Set<String> unregisteredNames = new LinkedHashSet<String>();
+    final Set<String> unregisteredNames = new LinkedHashSet<>();
 
     @NotNull
     @Override

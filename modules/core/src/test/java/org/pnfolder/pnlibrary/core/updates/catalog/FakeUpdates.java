@@ -30,14 +30,12 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 /** An update service that remembers what it was asked to change. */
     final class FakeUpdates implements UpdateService {
     final UpdatePlanSnapshot current = new UpdatePlanSnapshot(UUID.randomUUID(), 1, UpdateState.UPDATE_AVAILABLE, null,
-        Collections.<org.pnfolder.pnlibrary.api.updates.state.BlockedReason>emptyList(), null);
+        Collections.emptyList(), null);
     UUID rolledBack;
     Boolean restoreConfigurations;
     UpdateActor actor;
     String channelProduct;
     UpdateChannel channelSet;
-    String automaticProduct;
-    Boolean automaticSet;
     String heldProduct;
     Duration heldSet;
 
@@ -104,18 +102,6 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
             }
 
             @Override
-            public @NotNull CompletionStage<UpdateSnapshot> automaticDownload(@NotNull String product, boolean enabled, @NotNull UpdateActor who) {
-                automaticProduct = product;
-                automaticSet = enabled;
-                return CompletableFuture.completedFuture(snapshot());
-            }
-
-            @Override
-            public @NotNull CompletionStage<List<UpdateSnapshot>> automaticDownloadForAll(boolean enabled, @NotNull UpdateActor who) {
-                return CompletableFuture.completedFuture(Collections.singletonList(snapshot()));
-            }
-
-            @Override
             public @NotNull CompletionStage<UpdateSnapshot> hold(@NotNull String product, @NotNull Duration duration, @NotNull UpdateActor who) {
                 heldProduct = product;
                 heldSet = duration;
@@ -146,7 +132,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
         return new UpdateHistory() {
             @Override
             public @NotNull CompletionStage<List<UpdateHistoryEntry>> page(int page, String product) {
-                return CompletableFuture.completedFuture(Collections.<UpdateHistoryEntry>emptyList());
+                return CompletableFuture.completedFuture(Collections.emptyList());
             }
 
             @Override
@@ -161,7 +147,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
         return new UpdateBackups() {
             @Override
             public @NotNull CompletionStage<List<UpdateBackup>> list() {
-                return CompletableFuture.completedFuture(Collections.<UpdateBackup>emptyList());
+                return CompletableFuture.completedFuture(Collections.emptyList());
             }
 
             @Override
@@ -179,13 +165,13 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 
             @Override
             public @NotNull CompletionStage<Void> delete(@NotNull UUID transactionId, @NotNull UpdateActor who) {
-                return CompletableFuture.<Void>completedFuture(null);
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override
             public @NotNull CompletionStage<Void> restoreDatabase(@NotNull UUID transactionId, @NotNull String product,
                                                                   @NotNull String name, @NotNull UpdateActor who) {
-                return CompletableFuture.<Void>completedFuture(null);
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override

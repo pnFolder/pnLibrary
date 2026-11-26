@@ -32,7 +32,7 @@ public class ClanByName implements ArgumentConverter<Clan> {
     /** For commands and lists: the words that fit what is typed so far. */
     @Override
     public List<String> suggest(ArgumentInput input) {
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         for (String name : Clans.names()) {
             if (name.regionMatches(true, 0, input.getText(), 0, input.getText().length())) {
                 words.add(name);

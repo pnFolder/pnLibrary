@@ -45,7 +45,7 @@ class SourceFetcherTest {
 
     @Test
     void withoutAChecksumTheFirstAddressThatAnswersIsUsedAndNothingIsCompared() throws Exception {
-        Map<String, byte[]> answers = new HashMap<String, byte[]>();
+        Map<String, byte[]> answers = new HashMap<>();
         answers.put(first, bytes("jar1"));
         answers.put(second, bytes("other"));
 
@@ -54,7 +54,7 @@ class SourceFetcherTest {
 
     @Test
     void aMirrorAnswersWhenTheFirstAddressIsDown() throws Exception {
-        Map<String, byte[]> answers = new HashMap<String, byte[]>();
+        Map<String, byte[]> answers = new HashMap<>();
         answers.put(second, bytes("jar1"));
 
         byte[] result = new SourceFetcher(client(answers)).fetch(source(second, null), 100);
@@ -65,7 +65,7 @@ class SourceFetcherTest {
     @Test
     void withAChecksumOnlyTheFileThatMatchesIsTaken() throws Exception {
         byte[] good = bytes("jar1");
-        Map<String, byte[]> answers = new HashMap<String, byte[]>();
+        Map<String, byte[]> answers = new HashMap<>();
         answers.put(first, bytes("evil"));
         answers.put(second, good);
 
@@ -76,7 +76,7 @@ class SourceFetcherTest {
 
     @Test
     void withAChecksumNothingIsTakenWhenNoFileMatches() {
-        Map<String, byte[]> answers = new HashMap<String, byte[]>();
+        Map<String, byte[]> answers = new HashMap<>();
         answers.put(first, bytes("evil"));
         answers.put(second, bytes("worse"));
 

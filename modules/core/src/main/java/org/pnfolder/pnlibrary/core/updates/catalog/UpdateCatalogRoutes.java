@@ -27,9 +27,9 @@ public final class UpdateCatalogRoutes {
      */
     public UpdateCatalogRoutes(@NotNull String root, @Nullable Function<String, String> update, @NotNull String check,
                                boolean interactive, boolean ascii, boolean editable) {
-        this.root = root;
+        this.root = Objects.requireNonNull(root, "root");
         this.update = update;
-        this.check = check;
+        this.check = Objects.requireNonNull(check, "check");
         this.interactive = interactive;
         this.ascii = ascii;
         this.editable = editable;

@@ -13,9 +13,9 @@ public final class RuntimeTaskDetails {
     }
 
     public static @NotNull List<Map<String, Object>> entries(@NotNull List<TaskSnapshot> snapshots) {
-        List<Map<String, Object>> entries = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> entries = new ArrayList<>();
         for (TaskSnapshot task : snapshots) {
-            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("id", task.getId().getValue());
             entry.put("name", task.getName());
             entry.put("owner", task.getOwnerName());
@@ -30,10 +30,10 @@ public final class RuntimeTaskDetails {
     }
 
     public static @NotNull Map<String, Object> summary(@NotNull List<TaskSnapshot> snapshots) {
-        Map<String, Integer> byStatus = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> byExecution = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> failuresByOwner = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> failureMessages = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> byStatus = new LinkedHashMap<>();
+        Map<String, Integer> byExecution = new LinkedHashMap<>();
+        Map<String, Integer> failuresByOwner = new LinkedHashMap<>();
+        Map<String, Integer> failureMessages = new LinkedHashMap<>();
         long runCount = 0, skippedCount = 0;
         int failed = 0;
         for (TaskSnapshot task : snapshots) {
@@ -48,7 +48,7 @@ public final class RuntimeTaskDetails {
                 count(failureMessages, message.length() > 256 ? message.substring(0, 256) : message);
             }
         }
-        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("count", snapshots.size());
         summary.put("byStatus", byStatus);
         summary.put("byExecution", byExecution);

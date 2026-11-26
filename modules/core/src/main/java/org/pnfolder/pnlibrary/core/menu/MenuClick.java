@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /** A click a viewer made on a menu slot. */
@@ -9,9 +10,9 @@ public final class MenuClick {
     private final ClickType click;
 
     public MenuClick(@NotNull MenuViewer player, int slot, @NotNull ClickType click) {
-        this.player = player;
+        this.player = Objects.requireNonNull(player, "player");
         this.slot = slot;
-        this.click = click;
+        this.click = Objects.requireNonNull(click, "click");
     }
 
     public @NotNull MenuViewer getPlayer() {

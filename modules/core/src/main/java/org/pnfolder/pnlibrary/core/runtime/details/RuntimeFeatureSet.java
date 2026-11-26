@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.details;
 
+import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.jetbrains.annotations.NotNull;
@@ -60,8 +61,8 @@ public final class RuntimeFeatureSet {
         try {
             return new PluginUpdates(logging, platform.getOwnership(), platform.getOwnership(), platform.getIdentity(),
                     platform.getReadiness(), paths, ConsoleStyle.THEME,
-                    new UpdateTiming(settings.current().getUpdateCheckInterval(), settings.current().getUpdateConnectTimeout(),
-                            settings.current().getUpdateReadTimeout()));
+                    new UpdateTiming(settings.current().getUpdateCheckInterval(), UpdateDefaults.CONNECT_TIMEOUT,
+                            UpdateDefaults.READ_TIMEOUT));
         } catch (IOException failure) {
             throw new UncheckedIOException(failure);
         }

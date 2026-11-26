@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.report;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
@@ -56,13 +57,13 @@ public final class SupportReportAssembler {
                                   @NotNull Supplier<List<Map.Entry<String, byte[]>>> diagnosticHistory,
                                   @NotNull Supplier<ObservabilityReportSnapshot> observabilitySnapshot,
                                   @NotNull Supplier<Map<String, Object>> runtimeDiagnostics) {
-        this.config = config;
-        this.diagnostics = diagnostics;
-        this.identity = identity;
-        this.diagnosticsPlatform = diagnosticsPlatform;
-        this.diagnosticLogs = diagnosticLogs;
-        this.diagnosticHistory = diagnosticHistory;
-        this.observabilitySnapshot = observabilitySnapshot;
+        this.config = Objects.requireNonNull(config, "config");
+        this.diagnostics = Objects.requireNonNull(diagnostics, "diagnostics");
+        this.identity = Objects.requireNonNull(identity, "identity");
+        this.diagnosticsPlatform = Objects.requireNonNull(diagnosticsPlatform, "diagnosticsPlatform");
+        this.diagnosticLogs = Objects.requireNonNull(diagnosticLogs, "diagnosticLogs");
+        this.diagnosticHistory = Objects.requireNonNull(diagnosticHistory, "diagnosticHistory");
+        this.observabilitySnapshot = Objects.requireNonNull(observabilitySnapshot, "observabilitySnapshot");
         this.runtimeDiagnostics = runtimeDiagnostics;
         this.configurations = new ConfigurationArchiveSection(dataFolder, diagnostics, new ConfigReader(dataFolder, config));
     }

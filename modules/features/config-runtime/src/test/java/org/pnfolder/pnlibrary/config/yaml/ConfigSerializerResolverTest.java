@@ -21,7 +21,7 @@ class ConfigSerializerResolverTest {
     void annotationSerializerTakesPrecedenceAndIsReused() {
         instances = 0;
         Map<Class<?>, ConfigSerializer<?>> registered =
-                Collections.<Class<?>, ConfigSerializer<?>>singletonMap(AnnotatedValue.class, new TextSerializer("registered"));
+                Collections.singletonMap(AnnotatedValue.class, new TextSerializer("registered"));
         ConfigSerializerResolver resolver = new ConfigSerializerResolver(registered);
 
         ConfigSerializer<Object> first = resolver.forType(AnnotatedValue.class);
@@ -35,7 +35,7 @@ class ConfigSerializerResolverTest {
     @Test
     void fieldAnnotationOverridesTheSerializerSelectedForItsType() throws NoSuchFieldException {
         Map<Class<?>, ConfigSerializer<?>> registered =
-                Collections.<Class<?>, ConfigSerializer<?>>singletonMap(AnnotatedValue.class, new TextSerializer("registered"));
+                Collections.singletonMap(AnnotatedValue.class, new TextSerializer("registered"));
         ConfigSerializerResolver resolver = new ConfigSerializerResolver(registered);
         Field field = FieldOwner.class.getDeclaredField("value");
 
@@ -46,7 +46,7 @@ class ConfigSerializerResolverTest {
 
     private static ConfigSerializationContext context() {
         return new ConfigSerializationContext("value", AnnotatedValue.class, AnnotatedValue.class,
-                Collections.<java.lang.annotation.Annotation>emptyList(), null);
+                Collections.emptyList(), null);
     }
 
     @ConfigSerializeWith(CountingSerializer.class)

@@ -43,7 +43,7 @@ public interface EventInspector {
     /** Lists the listeners of one {@code plugin}, optionally only those of one {@code module}. */
     @NotNull
     default List<ListenerInfo> listeners(@NotNull PluginId plugin, @Nullable ModuleId module) {
-        List<ListenerInfo> found = new ArrayList<ListenerInfo>();
+        List<ListenerInfo> found = new ArrayList<>();
         for (ListenerInfo info : listeners()) {
             if (info.getPlugin().equals(plugin) && (module == null || module.equals(info.getModule()))) {
                 found.add(info);
@@ -64,7 +64,7 @@ public interface EventInspector {
     /** Plugins that have at least one listener for {@code eventType}, in dispatch order without repeats. */
     @NotNull
     default List<PluginId> plugins(@NotNull Class<? extends Event> eventType) {
-        List<PluginId> found = new ArrayList<PluginId>();
+        List<PluginId> found = new ArrayList<>();
         for (ListenerInfo info : listeners(eventType)) {
             if (!found.contains(info.getPlugin())) {
                 found.add(info.getPlugin());

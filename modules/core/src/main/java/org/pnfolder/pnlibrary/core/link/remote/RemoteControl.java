@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.remote;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -13,7 +14,7 @@ public final class RemoteControl {
     private final Link link;
 
     public RemoteControl(@NotNull Link link) {
-        this.link = link;
+        this.link = Objects.requireNonNull(link, "link");
     }
 
     /**

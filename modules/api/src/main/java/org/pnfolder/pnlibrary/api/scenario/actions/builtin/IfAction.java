@@ -34,23 +34,23 @@ public final class IfAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public IfAction() {
-        this(null, Collections.<Action>emptyList(), Collections.<Action>emptyList());
+        this(null, Collections.emptyList(), Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public IfAction(@Nullable Requirement requirement) {
-        this(requirement, Collections.<Action>emptyList(), Collections.<Action>emptyList());
+        this(requirement, Collections.emptyList(), Collections.emptyList());
     }
 
     /** Creates it with the first 2 settings; the rest keep their defaults. */
     public IfAction(@Nullable Requirement requirement, @NotNull List<Action> thenActions) {
-        this(requirement, thenActions, Collections.<Action>emptyList());
+        this(requirement, thenActions, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */
     public IfAction(@Nullable Requirement requirement, @NotNull List<Action> thenActions, @NotNull List<Action> elseActions) {
         this.requirement = requirement;
-        this.thenActions = thenActions;
+        this.thenActions = Objects.requireNonNull(thenActions, "thenActions");
         this.elseActions = elseActions;
     }
 

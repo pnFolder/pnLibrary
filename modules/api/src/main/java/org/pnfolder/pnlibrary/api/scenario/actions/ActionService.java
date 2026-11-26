@@ -47,7 +47,7 @@ public interface ActionService {
     /** Creates a context for {@code player} alone, with no values and the adaptive text format. */
     @NotNull
     default ActionContext context(@NotNull OnlinePlayer player) {
-        return context(player, player, Collections.<String, Object>emptyMap());
+        return context(player, player, Collections.emptyMap());
     }
 
     /** Creates a context with the adaptive text format. */
@@ -66,7 +66,7 @@ public interface ActionService {
     /** Runs {@code actions} for {@code player} alone, with no values. */
     @NotNull
     default ActionResult execute(@NotNull List<Action> actions, @NotNull OnlinePlayer player) {
-        return execute(actions, player, player, Collections.<String, Object>emptyMap());
+        return execute(actions, player, player, Collections.emptyMap());
     }
 
     /**

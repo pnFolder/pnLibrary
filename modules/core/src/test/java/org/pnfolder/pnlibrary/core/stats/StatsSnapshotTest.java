@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 class StatsSnapshotTest {
     private final StatsSnapshot snapshot = new StatsSnapshot(1_000, 4, 1, 120, 3, 9_000, 7, 12, 5,
-        Arrays.asList(new Pair<String, Integer>("pnmarket", 3), new Pair<String, Integer>("pnclans", 2)));
+        Arrays.asList(new Pair<>("pnmarket", 3), new Pair<>("pnclans", 2)));
 
     @Test
     void aStoredSnapshotReadsBackTheSame() {
@@ -23,7 +23,7 @@ class StatsSnapshotTest {
 
     @Test
     void aRecordWithAMissingNumberIsIgnored() {
-        Map<String, String> details = new HashMap<String, String>(snapshot.toDetails());
+        Map<String, String> details = new HashMap<>(snapshot.toDetails());
         details.remove("taskRuns");
         assertNull(StatsSnapshot.fromDetails(1_000, details));
     }
@@ -31,13 +31,13 @@ class StatsSnapshotTest {
     @Test
     void storedDetailsHoldOnlyNumbersAndPluginIds() {
         Map<String, String> details = snapshot.toDetails();
-        Set<String> nonNumbers = new HashSet<String>();
+        Set<String> nonNumbers = new HashSet<>();
         for (Map.Entry<String, String> entry : details.entrySet()) {
             if (!entry.getValue().matches("\\d+")) {
                 nonNumbers.add(entry.getKey());
             }
         }
-        assertEquals(new HashSet<String>(Arrays.asList("errorSources")), nonNumbers);
+        assertEquals(new HashSet<>(Arrays.asList("errorSources")), nonNumbers);
         assertTrue(details.get("errorSources").matches("[a-z0-9_]+:\\d+(,[a-z0-9_]+:\\d+)*"));
     }
 }

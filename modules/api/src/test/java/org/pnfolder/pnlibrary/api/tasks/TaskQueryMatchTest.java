@@ -21,7 +21,7 @@ class TaskQueryMatchTest {
                     new TaskId("task-1"), "ExamplePlugin", TaskExecution.Kind.ASYNC, TaskStatus.RUNNING, Instant.EPOCH)
             .name("Refresh player cache")
             .key("cache-refresh")
-            .tags(new LinkedHashSet<String>(Arrays.asList("cache", "players")))
+            .tags(new LinkedHashSet<>(Arrays.asList("cache", "players")))
             .runCount(2)
             .lastStartedAt(Instant.EPOCH)
             .build();

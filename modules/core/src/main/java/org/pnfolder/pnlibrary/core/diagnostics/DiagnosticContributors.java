@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,18 +29,15 @@ public final class DiagnosticContributors {
 
     /** Creates a registry that ignores failures of contributors. */
     public DiagnosticContributors(@NotNull DiagnosticValueSanitizer sanitizer) {
-        this(sanitizer, new BiConsumer<String, Throwable>() {
-            @Override
-            public void accept(String what, Throwable error) {
-            }
-        });
+        this(sanitizer, (what, error) -> {
+            });
     }
 
     /** Creates a registry that tells {@code onFailure} what failed when a contributor breaks. */
     public DiagnosticContributors(@NotNull DiagnosticValueSanitizer sanitizer,
                                   @NotNull BiConsumer<String, Throwable> onFailure) {
-        this.sanitizer = sanitizer;
-        this.onFailure = onFailure;
+        this.sanitizer = Objects.requireNonNull(sanitizer, "sanitizer");
+        this.onFailure = Objects.requireNonNull(onFailure, "onFailure");
     }
 
     /** Registers {@code contributor}; {@code dataDirectory} is where its configuration files are read from. */

@@ -25,14 +25,14 @@ public final class UpdateEvent {
     public UpdateEvent(@NotNull UUID id, @NotNull Instant occurredAt, @NotNull UUID planId, long revision,
                        @NotNull String state, @NotNull List<UpdateEventChange> changes, @NotNull UpdateActor actor,
                        @NotNull String operation, @Nullable String message) {
-        this.id = id;
-        this.occurredAt = occurredAt;
-        this.planId = planId;
+        this.id = Objects.requireNonNull(id, "id");
+        this.occurredAt = Objects.requireNonNull(occurredAt, "occurredAt");
+        this.planId = Objects.requireNonNull(planId, "planId");
         this.revision = revision;
-        this.state = state;
-        this.changes = changes;
-        this.actor = actor;
-        this.operation = operation;
+        this.state = Objects.requireNonNull(state, "state");
+        this.changes = Objects.requireNonNull(changes, "changes");
+        this.actor = Objects.requireNonNull(actor, "actor");
+        this.operation = Objects.requireNonNull(operation, "operation");
         this.message = message;
     }
 

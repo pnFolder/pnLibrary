@@ -54,7 +54,7 @@ class ErrorPipelineTest {
         ErrorPipeline pipeline = new ErrorPipeline(delegate, failures::add);
 
         for (int index = 0; index < 2; index++) {
-            pipeline.capture(new TelemetryError("a.Error", "failure " + index, Collections.<String>emptyList(), true));
+            pipeline.capture(new TelemetryError("a.Error", "failure " + index, Collections.emptyList(), true));
         }
 
         List<String> messages = new ArrayList<>();

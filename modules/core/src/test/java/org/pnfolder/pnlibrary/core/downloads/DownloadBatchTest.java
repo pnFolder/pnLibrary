@@ -55,7 +55,7 @@ class DownloadBatchTest {
 
     @Test
     void futureContinuationCanImmediatelyStartAFreshDownload() throws Exception {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         DownloadBatch registration = registration(queue::add);
         CompletableFuture<List<DownloadSnapshot>> first = registration.downloadNow().toCompletableFuture();
         CompletableFuture<CompletableFuture<List<DownloadSnapshot>>> next =
@@ -71,9 +71,9 @@ class DownloadBatchTest {
 
     @Test
     void whenFinishedHearsTheResultOfADownloadHoweverItStarted() {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         DownloadBatch registration = registration(queue::add);
-        List<DownloadState> heard = new ArrayList<DownloadState>();
+        List<DownloadState> heard = new ArrayList<>();
         registration.whenFinished(snapshots -> {
             for (DownloadSnapshot snapshot : snapshots) {
                 heard.add(snapshot.getState());
@@ -89,7 +89,7 @@ class DownloadBatchTest {
 
     @Test
     void aListenerThatThrowsDoesNotStopTheOthers() {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         DownloadBatch registration = registration(queue::add);
         AtomicInteger second = new AtomicInteger();
         registration.whenFinished(snapshots -> {
@@ -106,9 +106,9 @@ class DownloadBatchTest {
 
     @Test
     void closeBetweenInitialValidationAndJobReservationCannotReopenRegistration() {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         AtomicInteger checks = new AtomicInteger();
-        AtomicReference<DownloadBatch> holder = new AtomicReference<DownloadBatch>();
+        AtomicReference<DownloadBatch> holder = new AtomicReference<>();
         DownloadBatch registration = registration("manual", queue::add, NOTHING, IGNORE_FAILURE, declarations -> { },
             () -> {
                 if (checks.getAndIncrement() == 0) {
@@ -141,7 +141,7 @@ class DownloadBatchTest {
 
     @Test
     void notificationFailureCannotStrandAFailedDownload() throws Exception {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         IllegalStateException original = new IllegalStateException("download failed");
         IllegalArgumentException notification = new IllegalArgumentException("notification failed");
         DownloadBatch registration = registration("manual", queue::add, (declarations, beforePublish) -> {
@@ -162,7 +162,7 @@ class DownloadBatchTest {
 
     @Test
     void stagingNotificationFailureDoesNotBlockLaterDownloads() throws Exception {
-        List<Runnable> queue = new ArrayList<Runnable>();
+        List<Runnable> queue = new ArrayList<>();
         DownloadBatch registration = registration("dependency:example", queue::add, NOTHING, IGNORE_FAILURE,
             declarations -> {
                 throw new IllegalStateException("notification failed");
@@ -184,7 +184,7 @@ class DownloadBatchTest {
         FileDownloads request = FileDownloads.builder().file("manual", file -> file
             .url("https://example.org/manual.bin")
             .destination(DownloadDestination.DATA_FOLDER, "manual.bin")).build();
-        List<String> installed = new ArrayList<String>();
+        List<String> installed = new ArrayList<>();
         AtomicBoolean removed = new AtomicBoolean();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {

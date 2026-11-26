@@ -10,14 +10,14 @@ import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandService;
-import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher;
+import org.pnfolder.pnlibrary.core.plugin.module.library.LibraryFetcher;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleMetadataFactory;
 import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory;
-import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions;
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ScenarioDefinitions;
+import org.pnfolder.pnlibrary.core.remote.monitor.RemotePolicyMonitor;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
 
 /**
@@ -38,8 +38,8 @@ final class ModuleHost {
     final ModuleMetadataFactory metadataFactory;
     final ModuleResourceFactory resourceFactory;
     final ModuleDependencyValidator dependencyValidator;
-    final Map<Object, LoadedPlugin> plugins = new IdentityHashMap<Object, LoadedPlugin>();
-    final Map<String, ProductDescriptor> productDescriptors = new LinkedHashMap<String, ProductDescriptor>();
+    final Map<Object, LoadedPlugin> plugins = new IdentityHashMap<>();
+    final Map<String, ProductDescriptor> productDescriptors = new LinkedHashMap<>();
     final AtomicBoolean closed = new AtomicBoolean(false);
     final AtomicLong registrationSequence = new AtomicLong();
 

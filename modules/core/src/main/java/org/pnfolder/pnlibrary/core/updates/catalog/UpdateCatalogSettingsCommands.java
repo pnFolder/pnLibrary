@@ -33,11 +33,10 @@ import org.pnfolder.pnlibrary.updates.engine.FreezeDuration;
  * then shows the refreshed settings card with a confirmation.
  */
 final class UpdateCatalogSettingsCommands {
-    static final List<String> SWITCH_SUGGESTIONS = Collections.unmodifiableList(Arrays.asList("on", "off"));
     static final String DEFAULT_CHANNEL = "default";
     private static final Set<String> ON = new HashSet<>(Arrays.asList("on", "true", "yes", "1", "вкл"));
     private static final Set<String> OFF = new HashSet<>(Arrays.asList("off", "false", "no", "0", "выкл"));
-    private static final Duration DEFAULT_HOLD = Duration.ofDays(7);
+    private static final Duration DEFAULT_HOLD = Duration.ofDays(5);
     /** Whether only the {@code dev} channel can be chosen; set to false when more channels are published. */
     private static final boolean ONLY_DEV = true;
 
@@ -120,36 +119,7 @@ final class UpdateCatalogSettingsCommands {
             (product, actor) -> library.getUpdates().getSettings().javaBuild(product, build, actor));
     }
 
-    /** Toggles automatic downloads. */
-    void setAutomatic(CommandContext context) {
-        Boolean enabled = switchOf(context);
-        if (enabled == null) {
-            return;
-        }
-        change(context, "Автозагрузка", snapshot -> snapshot.getAutomaticDownload() ? "включена" : "выключена",
-            enabled ? "включена" : "выключена", (product, actor) -> library.getUpdates().getSettings().automaticDownload(product, enabled, actor));
-    }
-
-    /** Turns automatic download on or off for all plugins at once, whatever was chosen for single ones. */
-    void setAllAutomatic(CommandContext context) {
-        Boolean enabled = switchOf(context);
-        if (enabled == null || !ready.test(context)) {
-            return;
-        }
-        CommandSender sender = context.getSender();
-        UpdateActor actor = UpdateCatalogSupport.actorOf(sender);
-        library.getUpdates().getSettings().automaticDownloadForAll(enabled, actor).whenComplete((done, failure) -> deliver.accept(() -> {
-            if (failure != null) {
-                String reason = Throwables.rootCause(failure).getMessage();
-                sender.sendMessage(CatalogErrors.line(reason != null ? reason : "Не удалось изменить настройку."));
-            } else {
-                sender.sendMessage(Component.text("Сохранено. Автозагрузка для всех плагинов: " + (enabled ? "включена" : "выключена") + ".",
-                    ChatPalette.OK));
-            }
-        }));
-    }
-
-    /** Pauses updates for a period such as {@code 3d} ({@code on} means seven days), or lifts the pause with {@code off}. */
+    /** Pauses updates for a period such as {@code 3d} ({@code on} means five days), or lifts the pause with {@code off}. */
     void setHeld(CommandContext context) {
         String value = ((String) context.get("value")).toLowerCase(Locale.ROOT);
         Duration duration;
@@ -161,7 +131,7 @@ final class UpdateCatalogSettingsCommands {
             try {
                 duration = FreezeDuration.parse(value);
             } catch (RuntimeException invalid) {
-                context.getSender().sendMessage(CatalogErrors.line("Пауза — от 1m до 7d (например 3d) или off, получено: " + value + "."));
+                context.getSender().sendMessage(CatalogErrors.line("Пауза — от 1m до 5d (например 3d) или off, получено: " + value + "."));
                 return;
             }
         }
@@ -170,19 +140,6 @@ final class UpdateCatalogSettingsCommands {
             period == null ? "нет" : RussianText.period(period), (product, actor) -> period == null
                 ? library.getUpdates().getSettings().release(product, actor)
                 : library.getUpdates().getSettings().hold(product, period, actor));
-    }
-
-    private Boolean switchOf(CommandContext context) {
-        String value = context.get("value");
-        String lower = value.toLowerCase(Locale.ROOT);
-        if (ON.contains(lower)) {
-            return true;
-        }
-        if (OFF.contains(lower)) {
-            return false;
-        }
-        context.getSender().sendMessage(CatalogErrors.line("Укажите on или off, получено: " + value + "."));
-        return null;
     }
 
     /** Applies a setting, then confirms it below the refreshed settings card, or shows why it was refused. */

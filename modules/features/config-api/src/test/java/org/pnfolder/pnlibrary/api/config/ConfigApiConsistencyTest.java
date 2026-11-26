@@ -16,8 +16,8 @@ class ConfigApiConsistencyTest {
     @DisplayName("configuration document returns a deeply immutable snapshot")
     @SuppressWarnings("unchecked")
     void configurationDocumentReturnsADeeplyImmutableSnapshot() {
-        Map<String, Object> nested = Collections.<String, Object>singletonMap("items", Collections.singletonList("one"));
-        Map<String, Object> snapshot = new ConfigDocument(Collections.<String, Object>singletonMap("nested", nested)).toMap();
+        Map<String, Object> nested = Collections.singletonMap("items", Collections.singletonList("one"));
+        Map<String, Object> snapshot = new ConfigDocument(Collections.singletonMap("nested", nested)).toMap();
 
         assertThrows(UnsupportedOperationException.class, snapshot::clear);
         Map<Object, Object> inner = (Map<Object, Object>) snapshot.get("nested");

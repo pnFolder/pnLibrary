@@ -23,24 +23,24 @@ class FreezePolicyTest {
     Path directory;
 
     @Test
-    @DisplayName("accepts only durations from one minute through seven days")
-    void acceptsOnlyDurationsFromOneMinuteThroughSevenDays() {
+    @DisplayName("accepts only durations from one minute through five days")
+    void acceptsOnlyDurationsFromOneMinuteThroughFiveDays() {
         assertEquals(Duration.ofMinutes(1), FreezeDuration.parse("1m"));
         assertEquals(Duration.ofHours(2), FreezeDuration.parse("2h"));
-        assertEquals(Duration.ofDays(7), FreezeDuration.parse("7d"));
-        for (String value : new String[] {"0m", "8d", "30d", "forever", "permanent", "1s"}) {
+        assertEquals(Duration.ofDays(5), FreezeDuration.parse("5d"));
+        for (String value : new String[] {"0m", "6d", "30d", "forever", "permanent", "1s"}) {
             assertThrows(IllegalArgumentException.class, () -> FreezeDuration.parse(value), value);
         }
     }
 
     @Test
-    @DisplayName("a pause saved under the older thirty day limit ends within seven days")
-    void aPauseSavedUnderTheOlderThirtyDayLimitEndsWithinSevenDays() throws Exception {
+    @DisplayName("a pause saved under the older thirty day limit ends within five days")
+    void aPauseSavedUnderTheOlderThirtyDayLimitEndsWithinFiveDays() throws Exception {
         MutableClock clock = new MutableClock(Instant.parse("2026-09-17T10:00:00Z"));
         Path file = directory.resolve("preferences.json");
         String json = "{\"freezes\":{\"pnmarket\":" + clock.instant().plus(Duration.ofDays(30)).toEpochMilli() + "}}";
         Files.write(file, json.getBytes(StandardCharsets.UTF_8));
-        assertEquals(Duration.ofDays(7), new FreezeStore(new UpdatePreferencesStore(file), clock).remaining(ProductId.of("pnmarket")));
+        assertEquals(Duration.ofDays(5), new FreezeStore(new UpdatePreferencesStore(file), clock).remaining(ProductId.of("pnmarket")));
     }
 
     @Test

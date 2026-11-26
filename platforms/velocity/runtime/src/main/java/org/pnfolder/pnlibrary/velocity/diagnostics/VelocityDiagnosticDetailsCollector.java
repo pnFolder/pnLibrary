@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.diagnostics;
 
+import java.util.Objects;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.meta.PluginDependency;
 import com.velocitypowered.api.proxy.Player;
@@ -26,7 +27,7 @@ public final class VelocityDiagnosticDetailsCollector {
 
     /** Creates a collector that reads {@code server}. */
     public VelocityDiagnosticDetailsCollector(@NotNull ProxyServer server) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
     }
 
     /** Adds proxy plugins, backend servers and player pings to {@code snapshot}; sensitive values only when asked. */

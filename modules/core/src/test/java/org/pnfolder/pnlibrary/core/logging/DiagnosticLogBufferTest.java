@@ -37,7 +37,7 @@ class DiagnosticLogBufferTest {
         buffer.record(platform, this, LogLevel.ERROR, "new failure", null);
 
         assertEquals(1, buffer.expireOlderThan(cutoff));
-        List<Object> messages = new ArrayList<Object>();
+        List<Object> messages = new ArrayList<>();
         for (Map<String, Object> entry : buffer.snapshot()) {
             messages.add(entry.get("message"));
         }

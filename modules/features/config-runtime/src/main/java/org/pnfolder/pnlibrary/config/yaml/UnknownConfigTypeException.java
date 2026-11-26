@@ -4,7 +4,7 @@ package org.pnfolder.pnlibrary.config.yaml;
 public final class UnknownConfigTypeException extends IllegalArgumentException {
     private static final long serialVersionUID = 1L;
 
-    UnknownConfigTypeException(String message) {
+    public UnknownConfigTypeException(String message) {
         super(message);
     }
 }

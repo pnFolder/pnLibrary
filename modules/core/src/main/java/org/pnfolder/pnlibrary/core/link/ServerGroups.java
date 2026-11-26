@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +42,7 @@ public final class ServerGroups {
 
     /** @param file where the groups are kept, or null while the proxy has no folder yet */
     public ServerGroups(@NotNull Supplier<Path> file) {
-        this.file = file;
+        this.file = Objects.requireNonNull(file, "file");
     }
 
     /** How {@code server} is shown to people: the proxy by a word, a server by its name. */
@@ -83,7 +84,7 @@ public final class ServerGroups {
 
     /** The groups that {@code server} belongs to, ignoring case. */
     public @NotNull List<ServerGroup> of(@NotNull String server) {
-        List<ServerGroup> result = new ArrayList<ServerGroup>();
+        List<ServerGroup> result = new ArrayList<>();
         for (ServerGroup group : all()) {
             for (String member : group.getServers()) {
                 if (member.equalsIgnoreCase(server)) {
@@ -105,7 +106,7 @@ public final class ServerGroups {
                 return false;
             }
             List<ServerGroup> groups = all();
-            groups.add(new ServerGroup(name, Collections.<String>emptySet(), Collections.<String>emptySet()));
+            groups.add(new ServerGroup(name, Collections.emptySet(), Collections.emptySet()));
             return write(groups);
         }
     }
@@ -131,7 +132,7 @@ public final class ServerGroups {
             if (group == null) {
                 return false;
             }
-            List<ServerGroup> next = new ArrayList<ServerGroup>();
+            List<ServerGroup> next = new ArrayList<>();
             for (ServerGroup each : groups) {
                 next.add(each == group ? change.apply(group).withName(group.getName()) : each);
             }
@@ -141,9 +142,9 @@ public final class ServerGroups {
 
     /** Compares each server of {@code group} with its report in {@code servers}. */
     public @NotNull List<ServerGroupState> compare(@NotNull ServerGroup group, @NotNull List<NetworkServer> servers) {
-        List<String> names = new ArrayList<String>(group.getServers());
+        List<String> names = new ArrayList<>(group.getServers());
         Collections.sort(names, new LowerCaseOrder());
-        List<ServerGroupState> states = new ArrayList<ServerGroupState>();
+        List<ServerGroupState> states = new ArrayList<>();
         for (String name : names) {
             states.add(stateOf(group, name, servers));
         }
@@ -158,10 +159,10 @@ public final class ServerGroups {
                 break;
             }
         }
-        List<LinkPlugin> have = known == null ? Collections.<LinkPlugin>emptyList() : known.getReport().getPlugins();
+        List<LinkPlugin> have = known == null ? Collections.emptyList() : known.getReport().getPlugins();
         Set<String> wanted = group.wanted(name);
-        List<String> missing = new ArrayList<String>();
-        List<String> outdated = new ArrayList<String>();
+        List<String> missing = new ArrayList<>();
+        List<String> outdated = new ArrayList<>();
         if (known != null) {
             for (String plugin : wanted) {
                 if (!hasProduct(have, plugin)) {
@@ -206,7 +207,7 @@ public final class ServerGroups {
 
     private List<List<String>> read() {
         Path path = file.get();
-        return path == null ? Collections.<List<String>>emptyList() : TsvRecords.read(path);
+        return path == null ? Collections.emptyList() : TsvRecords.read(path);
     }
 
     private boolean write(List<ServerGroup> groups) {
@@ -214,7 +215,7 @@ public final class ServerGroups {
         if (path == null) {
             return false;
         }
-        List<List<String>> records = new ArrayList<List<String>>();
+        List<List<String>> records = new ArrayList<>();
         for (ServerGroup group : groups) {
             records.add(row(group.getName(), GROUP, ""));
             for (String server : group.getServers()) {

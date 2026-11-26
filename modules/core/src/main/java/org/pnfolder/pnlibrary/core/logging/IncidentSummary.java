@@ -12,9 +12,9 @@ final class IncidentSummary {
     static Map<String, Object> of(Collection<LoggedIncident> incidents) {
         long occurrences = 0;
         long omitted = 0;
-        Map<String, Integer> byLevel = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> byPlugin = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> exceptionTypes = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> byLevel = new LinkedHashMap<>();
+        Map<String, Integer> byPlugin = new LinkedHashMap<>();
+        Map<String, Integer> exceptionTypes = new LinkedHashMap<>();
         LoggedIncident newest = null;
         for (LoggedIncident incident : incidents) {
             occurrences += incident.count;
@@ -28,7 +28,7 @@ final class IncidentSummary {
                 newest = incident;
             }
         }
-        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("incidentCount", incidents.size());
         summary.put("occurrenceCount", occurrences);
         summary.put("omittedOccurrenceCount", omitted);

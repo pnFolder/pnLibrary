@@ -44,7 +44,7 @@ final class MenuList {
             }
         }
         if (total == 0) {
-            builder.slot(EMPTY_SLOT, MenuItems.icon(Icons.PROBLEMS, "BARRIER", emptyText, Collections.<String>emptyList(), Tone.MUTED));
+            builder.slot(EMPTY_SLOT, MenuItems.icon(Icons.PROBLEMS, "BARRIER", emptyText, Collections.emptyList(), Tone.MUTED));
         }
         MenuItems.footerCorners(builder);
         builder.fill(MenuItems.pane(), 0, MenuConstants.FOOTER_END);
@@ -75,7 +75,7 @@ final class MenuList {
         } else if (pages > 1) {
             builder.slot(MenuConstants.NEXT, MenuItems.icon(null, "GRAY_DYE", "Это последняя страница", none, Tone.MUTED));
         }
-        List<String> refresh = Style.lore(Collections.singletonList("Показано " + range + "."), Collections.<Fact>emptyList(),
+        List<String> refresh = Style.lore(Collections.singletonList("Показано " + range + "."), Collections.emptyList(),
             Style.left("обновить список"));
         builder.button(REFRESH, MenuItems.icon(Icons.CHECK, "COMPASS", "Страница " + (current + 1) + " из " + pages, refresh),
             session.go(who -> reopen.accept(who, current)));

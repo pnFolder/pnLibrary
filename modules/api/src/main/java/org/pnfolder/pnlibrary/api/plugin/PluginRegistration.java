@@ -70,11 +70,8 @@ public interface PluginRegistration extends AutoCloseable, MinecraftSupportDecla
     /** Registers a logical module identified by {@code id} with no extra setup. */
     @NotNull
     default ModuleContext registerModule(@NotNull ModuleId id) {
-        return registerModule(id, new Consumer<PluginBuilder>() {
-            @Override
-            public void accept(PluginBuilder builder) {
-            }
-        });
+        return registerModule(id, builder -> {
+            });
     }
 
     /** Registers a logical module identified by {@code id}, set up by {@code configure}. */
@@ -84,11 +81,8 @@ public interface PluginRegistration extends AutoCloseable, MinecraftSupportDecla
     /** Registers a module that the library can switch, with no extra setup; see the longer form. */
     @NotNull
     default ModuleContext registerModule(@NotNull ModuleId id, @NotNull PluginModule module) {
-        return registerModule(id, module, new Consumer<PluginBuilder>() {
-            @Override
-            public void accept(PluginBuilder builder) {
-            }
-        });
+        return registerModule(id, module, builder -> {
+            });
     }
 
     /**

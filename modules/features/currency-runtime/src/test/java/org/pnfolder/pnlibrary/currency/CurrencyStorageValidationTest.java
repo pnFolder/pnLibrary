@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.JdbcCurrencyStorage;
+import org.pnfolder.pnlibrary.currency.storage.FileCurrencyStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 

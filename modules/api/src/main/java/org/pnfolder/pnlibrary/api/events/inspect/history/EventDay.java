@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.inspect.history;
 
+import java.util.Objects;
 import java.time.LocalDate;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,8 +20,8 @@ public final class EventDay {
      * @param denied how many of those calls ended with {@code Event.isAllowed()} equal to {@code false}
      */
     public EventDay(@NotNull LocalDate date, @NotNull String eventType, long calls, long denied) {
-        this.date = date;
-        this.eventType = eventType;
+        this.date = Objects.requireNonNull(date, "date");
+        this.eventType = Objects.requireNonNull(eventType, "eventType");
         this.calls = calls;
         this.denied = denied;
     }

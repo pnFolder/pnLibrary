@@ -33,10 +33,10 @@ import org.pnfolder.pnlibrary.core.observability.SupportRuntime;
 import org.pnfolder.pnlibrary.core.plugin.LibraryWords;
 import org.pnfolder.pnlibrary.core.plugin.LoadedPlugins;
 import org.pnfolder.pnlibrary.core.plugin.SharedFeatures;
-import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher;
+import org.pnfolder.pnlibrary.core.plugin.module.library.LibraryFetcher;
 import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences;
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor;
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyNoticeRenderer;
+import org.pnfolder.pnlibrary.core.remote.monitor.RemotePolicyMonitor;
+import org.pnfolder.pnlibrary.core.remote.report.RemotePolicyNoticeRenderer;
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeDiagnosticsAssembler;
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeFeatureSet;
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeJournal;
@@ -82,7 +82,7 @@ final class RuntimeParts {
     final LoadedPlugins plugins;
     final StatsRuntime stats;
     final SettingPickerHook settingPicker = new SettingPickerHook();
-    final Map<String, CommandDefinition> mountable = new LinkedHashMap<String, CommandDefinition>();
+    final Map<String, CommandDefinition> mountable = new LinkedHashMap<>();
     private volatile PluginMetrics libraryMetrics;
     private RuntimeDiagnosticsAssembler runtimeDiagnostics;
 
@@ -152,7 +152,7 @@ final class RuntimeParts {
     private RuntimeFeatureSet createFeatures() {
         RuntimeFeatureSet set = new RuntimeFeatureSet(owner, platform, paths, support.getCapture(), settings);
         set.getConfigurations().setFileListener(file -> {
-            final List<AutoCloseable> handles = new ArrayList<AutoCloseable>();
+            final List<AutoCloseable> handles = new ArrayList<>();
             addIfPresent(handles, ConfigFileDiagnostics.reportConfigFile(diagnostics, file));
             addIfPresent(handles, set.getUpdates().getDatabaseSources().register(file));
             return () -> {
@@ -202,7 +202,7 @@ final class RuntimeParts {
     }
 
     @NotNull List<TaskSnapshot> taskSnapshots() {
-        List<TaskSnapshot> visible = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> visible = new ArrayList<>();
         for (TaskSnapshot task : tasks.query()) {
             if (!task.getHidden()) {
                 visible.add(task);
@@ -230,7 +230,7 @@ final class RuntimeParts {
         PluginMetrics metrics = libraryMetrics;
         if (metrics != null && metrics.getErrorReporter() != null) {
             metrics.getErrorReporter().capture(error, "pnlibrary.runtime", true,
-                    Collections.<String, Object>singletonMap("source", logOwner.getClass().getName()));
+                    Collections.singletonMap("source", logOwner.getClass().getName()));
         }
     }
 }

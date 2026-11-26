@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -14,7 +15,7 @@ public final class CatalogCacheHit {
      * @param fresh whether the cache age is within the requested TTL
      */
     public CatalogCacheHit(@NotNull byte[] bytes, boolean fresh) {
-        this.bytes = bytes;
+        this.bytes = Objects.requireNonNull(bytes, "bytes");
         this.fresh = fresh;
     }
 

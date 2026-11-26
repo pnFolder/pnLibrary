@@ -33,7 +33,7 @@ public final class ExternalArtifact {
 
     /** Creates a file that fits every server, with no mirrors and the library-wide size limit. */
     public ExternalArtifact(@NotNull URI uri, @Nullable String sha256) {
-        this(uri, sha256, Collections.<URI>emptyList(), Collections.<PlatformType>emptySet(), null, null, null, null);
+        this(uri, sha256, Collections.emptyList(), Collections.emptySet(), null, null, null, null);
     }
 
     /**
@@ -68,7 +68,7 @@ public final class ExternalArtifact {
         this.uri = uri;
         this.sha256 = sha256;
         this.mirrors = UpdateValidation.frozen(mirrors);
-        this.platforms = Collections.unmodifiableSet(new LinkedHashSet<PlatformType>(platforms));
+        this.platforms = Collections.unmodifiableSet(new LinkedHashSet<>(platforms));
         this.minecraftFrom = minecraftFrom;
         this.minecraftBefore = minecraftBefore;
         this.label = label;
@@ -87,14 +87,14 @@ public final class ExternalArtifact {
 
     /** A file with the same address and checksum, now the general one: the given mirrors and size limit. */
     ExternalArtifact withMirrorsAndLimit(List<URI> mirrors, Long maxBytes) {
-        return new ExternalArtifact(uri, sha256, mirrors, Collections.<PlatformType>emptySet(), null, null, null,
+        return new ExternalArtifact(uri, sha256, mirrors, Collections.emptySet(), null, null, null,
             maxBytes);
     }
 
     /** A variant described with plain text addresses; every mirror must be HTTPS. */
     static ExternalArtifact variant(String url, String sha256, Set<PlatformType> platforms, String minecraftFrom,
                                     String minecraftBefore, List<String> mirrors, String label, Long maxBytes) {
-        List<URI> mirrorUris = new ArrayList<URI>();
+        List<URI> mirrorUris = new ArrayList<>();
         for (String mirror : mirrors) {
             mirrorUris.add(UpdateValidation.requireHttpsUri(mirror, "Mirror must use HTTPS"));
         }
@@ -179,7 +179,7 @@ public final class ExternalArtifact {
         if (!matcher.find()) {
             return null;
         }
-        List<Integer> result = new ArrayList<Integer>();
+        List<Integer> result = new ArrayList<>();
         for (String part : matcher.group().split("\\.")) {
             try {
                 result.add(Integer.parseInt(part));

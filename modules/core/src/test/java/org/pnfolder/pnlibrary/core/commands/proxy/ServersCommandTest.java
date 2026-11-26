@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands.proxy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
@@ -50,7 +51,7 @@ class ServersCommandTest {
     @Test
     @DisplayName("an empty list explains what to do about the key")
     void anEmptyListExplainsWhatToDoAboutTheKey() {
-        assertTrue(run(Collections.<NetworkServer>emptyList()).contains("link.key"));
+        assertTrue(run(Collections.emptyList()).contains("link.key"));
     }
 
     @Test
@@ -83,10 +84,11 @@ class ServersCommandTest {
         CommandDefinition definition = new ServersCommand(Link.OFF, () -> servers).definition();
 
         assertEquals("servers", definition.getName());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (CommandNode child : definition.getRoot().getChildren().get(0).getChildren()) {
             names.add(child.getName());
         }
-        assertTrue(names.containsAll(Arrays.asList("check", "update", "auto")));
+        assertTrue(names.containsAll(Arrays.asList("check", "update")));
+        assertFalse(names.contains("auto"));
     }
 }

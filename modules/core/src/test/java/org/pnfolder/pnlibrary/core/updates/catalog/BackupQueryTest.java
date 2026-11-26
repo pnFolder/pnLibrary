@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupQuery;
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.backup;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +31,7 @@ public final class UpdateBackup {
     public UpdateBackup(@NotNull UUID id, @Nullable Instant createdAt, @Nullable UUID planId,
                         @NotNull List<UpdateBackupComponent> components, int configurationFiles,
                         @NotNull List<UpdateBackupItem> items) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id, "id");
         this.createdAt = createdAt;
         this.planId = planId;
         this.components = UpdateValidation.frozen(components);
@@ -47,7 +48,7 @@ public final class UpdateBackup {
     /** A backup that does not describe its files one by one. */
     public UpdateBackup(@NotNull UUID id, @Nullable Instant createdAt, @Nullable UUID planId,
                         @NotNull List<UpdateBackupComponent> components, int configurationFiles) {
-        this(id, createdAt, planId, components, configurationFiles, Collections.<UpdateBackupItem>emptyList());
+        this(id, createdAt, planId, components, configurationFiles, Collections.emptyList());
     }
 
     /** Exact transaction identity required for rollback. */

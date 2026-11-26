@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -17,7 +18,7 @@ public final class ChoiceOrder {
      * @param sort puts the values in order as they are at the given moment (an offset changes with summer time)
      */
     public ChoiceOrder(@NotNull String label, @NotNull BiFunction<List<String>, Instant, List<String>> sort) {
-        this.label = label;
+        this.label = Objects.requireNonNull(label, "label");
         this.sort = sort;
     }
 

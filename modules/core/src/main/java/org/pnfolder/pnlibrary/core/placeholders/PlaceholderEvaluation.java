@@ -1,5 +1,13 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhPart;
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
+import org.pnfolder.pnlibrary.core.placeholders.address.ParsedArgument;
+import org.pnfolder.pnlibrary.core.placeholders.address.ParsedAddress;
+import org.pnfolder.pnlibrary.core.placeholders.format.Formatted;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatRegistry;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatDef;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatCall;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -50,7 +58,7 @@ final class PlaceholderEvaluation {
     }
 
     private static List<PhNode> extend(List<PhNode> path, PhNode child) {
-        List<PhNode> longer = new ArrayList<PhNode>(path);
+        List<PhNode> longer = new ArrayList<>(path);
         longer.add(child);
         return longer;
     }
@@ -63,7 +71,7 @@ final class PlaceholderEvaluation {
                 lastWord = i;
             }
         }
-        List<RoutePart> parts = new ArrayList<RoutePart>();
+        List<RoutePart> parts = new ArrayList<>();
         for (int index = 0; index < match.getPath().size(); index++) {
             PhPart part = match.getPath().get(index).getPart();
             String text = address.getWords().get(index);
@@ -81,7 +89,7 @@ final class PlaceholderEvaluation {
 
     /** Reads the arguments of the path one after another, left to right; each converter sees the ones before it. */
     private CompletionStage<Map<String, ParsedArgument>> readSlots(Match match, ParsedAddress address, RouteInfo route, ViewerInfo viewer) {
-        CompletionStage<Map<String, ParsedArgument>> chain = CompletableFuture.completedFuture(Collections.<String, ParsedArgument>emptyMap());
+        CompletionStage<Map<String, ParsedArgument>> chain = CompletableFuture.completedFuture(Collections.emptyMap());
         int position = 0;
         for (int index = 0; index < match.getPath().size(); index++) {
             final PhPart part = match.getPath().get(index).getPart();
@@ -91,13 +99,13 @@ final class PlaceholderEvaluation {
             final String text = address.getWords().get(index);
             final int here = position++;
             chain = chain.thenCompose(done -> {
-                List<ArgumentValue<?>> previous = new ArrayList<ArgumentValue<?>>();
+                List<ArgumentValue<?>> previous = new ArrayList<>();
                 for (ParsedArgument argument : done.values()) {
                     previous.add(argument.getArgument());
                 }
                 ArgumentInput input = new ArgumentInput(text, viewer, route, part.getName(), here, previous);
                 return part.getType().convert(input).thenApply(parsed -> {
-                    Map<String, ParsedArgument> next = new LinkedHashMap<String, ParsedArgument>(done);
+                    Map<String, ParsedArgument> next = new LinkedHashMap<>(done);
                     next.put(part.getName(), parsed);
                     return next;
                 });
@@ -114,7 +122,7 @@ final class PlaceholderEvaluation {
                 stage = match.getNode().getValue().apply(new Call(viewer, slots, route));
             } catch (Throwable failure) {
                 report.accept("Placeholder " + original + " failed: " + Failures.describe(failure));
-                return CompletableFuture.<Object>completedFuture(null);
+                return CompletableFuture.completedFuture(null);
             }
             return stage.handle((value, failure) -> {
                 if (failure != null) {
@@ -163,7 +171,7 @@ final class PlaceholderEvaluation {
     }
 
     private static List<FormatCall> chainOf(PhNode node, List<FormatCall> written, String own) {
-        List<FormatCall> explicit = new ArrayList<FormatCall>();
+        List<FormatCall> explicit = new ArrayList<>();
         for (FormatCall call : written) {
             if (!call.getName().equals("raw")) {
                 explicit.add(call);
@@ -176,10 +184,10 @@ final class PlaceholderEvaluation {
             return Collections.emptyList();
         }
         if (own != null) {
-            return Collections.singletonList(new FormatCall(own, Collections.<String>emptyList()));
+            return Collections.singletonList(new FormatCall(own, Collections.emptyList()));
         }
         if (node != null && node.getFormat() != null) {
-            return Collections.singletonList(new FormatCall(node.getFormat(), Collections.<String>emptyList()));
+            return Collections.singletonList(new FormatCall(node.getFormat(), Collections.emptyList()));
         }
         return Collections.emptyList();
     }

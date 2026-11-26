@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleMetadataFactory;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Proxy;

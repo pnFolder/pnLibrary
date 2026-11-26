@@ -142,7 +142,7 @@ public final class BStatsSettings {
 
     private static Map<String, String> parse(String content) {
         Map<String, String> values = new LinkedHashMap<>();
-        for (String raw : content.split("\r\n|\n|\r")) {
+        for (String raw : content.split("\r\n|\n|\r", -1)) {
             String line = raw.trim();
             int colon = line.indexOf(':');
             if (line.isEmpty() || line.startsWith("#") || colon < 0) {

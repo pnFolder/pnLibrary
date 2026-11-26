@@ -30,8 +30,8 @@ class JournalStoreTest {
     @TempDir Path directory;
 
     private final Instant day = Instant.parse("2026-10-19T10:00:00Z");
-    private final Map<JournalLevel, Duration> retention = new EnumMap<JournalLevel, Duration>(JournalLevel.class);
-    private static final Set<JournalLevel> NONE = Collections.<JournalLevel>emptySet();
+    private final Map<JournalLevel, Duration> retention = new EnumMap<>(JournalLevel.class);
+    private static final Set<JournalLevel> NONE = Collections.emptySet();
 
     JournalStoreTest() {
         retention.put(JournalLevel.INFO, Duration.ofDays(7));
@@ -54,7 +54,7 @@ class JournalStoreTest {
     }
 
     private static List<String> messages(List<JournalRecord> records) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (JournalRecord record : records) {
             result.add(record.getMessage());
         }
@@ -165,7 +165,7 @@ class JournalStoreTest {
     void aWholeStackTraceWithItsCausesSurvivesStorage() {
         JournalStore journal = store(day);
         String trace = JournalRecord.stackTraceOf(new IllegalStateException("outer", new RuntimeException("inner cause")));
-        Map<String, String> details = new LinkedHashMap<String, String>();
+        Map<String, String> details = new LinkedHashMap<>();
         details.put("exception", "IllegalStateException");
         details.put(JournalRecord.STACKTRACE, trace);
         journal.append(new JournalRecord(day.toEpochMilli(), JournalLevel.ERROR, "shop", "ERROR", "failed", details));

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.screens;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -26,11 +27,13 @@ import org.pnfolder.pnlibrary.core.menu.style.MenuText;
 import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.restart.ImportantNotices;
 
 /** Menu home page with the main sections. */
 public final class HomeScreens extends MenuScreens {
     private static final int NETWORK_SLOT = 37;
     private static final int SUPPORT_SLOT = 38;
+    private static final int NOTICES_SLOT = 39;
     private static final int RESTART_SLOT = 41;
     private static final int ROLLBACK_SLOT = 42;
 
@@ -53,6 +56,7 @@ public final class HomeScreens extends MenuScreens {
         summary(builder, pending, problems);
         sections(builder, pending, problems, errors);
         network(builder);
+        notices(builder);
         builder.button(MenuConstants.HOME_CLOSE, MenuItems.closeItem(), go(MenuViewer::close));
         planButtons(builder, data().plan());
         show(player, builder.build());
@@ -114,14 +118,14 @@ public final class HomeScreens extends MenuScreens {
         builder.button(33, MenuItems.section(Icons.BACKUPS, "CHEST", "Резервные копии", "Откат к сохранённым версиям плагинов."),
             go(who -> routes.backups(who, 0)));
         builder.button(24, MenuItems.icon(Icons.CHECK, "COMPASS", "Проверить всё", Style.lore(
-            Collections.singletonList("Спросить каталоги релизов прямо сейчас."), Collections.<Fact>emptyList(), Style.left("проверить"))),
+            Collections.singletonList("Спросить каталоги релизов прямо сейчас."), Collections.emptyList(), Style.left("проверить"))),
             go(routes::checkAll));
-        builder.button(20, MenuItems.section(Icons.SETTINGS, "REDSTONE", "Настройки", "Автозагрузка и пауза для всех плагинов сразу."),
+        builder.button(20, MenuItems.section(Icons.SETTINGS, "REDSTONE", "Настройки", "Пауза обновлений для всех плагинов сразу."),
             go(routes::settings));
         builder.button(22, MenuItems.section(Icons.TOOLS, "ANVIL", "Инструменты", "Статус сервера, отчёт для поддержки, валюты."),
             go(routes::tools));
         builder.button(SUPPORT_SLOT, MenuItems.icon(Icons.SUPPORT, "PAPER", "Поддержка", Style.lore(
-            Collections.singletonList("Если возникла проблема, мы поможем."), Collections.<Fact>emptyList(),
+            Collections.singletonList("Если возникла проблема, мы поможем."), Collections.emptyList(),
             Style.left("получить ссылку"))), go(routes::support));
     }
 
@@ -139,10 +143,22 @@ public final class HomeScreens extends MenuScreens {
         builder.button(NETWORK_SLOT, item, go(who -> routes.network(who, 0)));
     }
 
+    private void notices(MenuBuilder builder) {
+        if (remote()) {
+            return;
+        }
+        int count = ImportantNotices.from(host().getLink().getNetwork(), Instant.now()).size();
+        ItemSpec item = MenuItems.icon(Icons.RESTART, "BELL", "Важные объявления", Style.lore(
+            Collections.singletonList("Что нужно сделать на прокси и серверах сети, например перезапустить."),
+            Fact.list("Сейчас", count > 0 ? "✦ " + count : "✔ ничего"), Style.left("открыть")),
+            count > 0 ? Tone.WARN : Tone.NORMAL);
+        builder.button(NOTICES_SLOT, item, go(who -> allowed(who, MenuPermissions.UPDATES_RESTART, () -> routes.notices(who, 0))));
+    }
+
     private void planButtons(MenuBuilder builder, PlanInfo plan) {
         if (plan != null && plan.getState() == UpdateState.UPDATE_STAGED) {
             ItemSpec restart = MenuItems.icon(Icons.RESTART, "DIAMOND", "Перезапуск", Style.lore(
-                Collections.singletonList("Обновления подготовлены."), Collections.<Fact>emptyList(), Style.left("подтвердить в чате")));
+                Collections.singletonList("Обновления подготовлены."), Collections.emptyList(), Style.left("подтвердить в чате")));
             builder.button(RESTART_SLOT, restart, go(who -> {
                 who.close();
                 runCommand(who, "pn update restart");
@@ -150,7 +166,7 @@ public final class HomeScreens extends MenuScreens {
         }
         if (plan != null && plan.hasChanges()) {
             ItemSpec rollback = MenuItems.icon(Icons.ROLLBACK, "TNT", "Откатить план", Style.lore(
-                Collections.singletonList("Откатит все связанные плагины плана."), Collections.<Fact>emptyList(),
+                Collections.singletonList("Откатит все связанные плагины плана."), Collections.emptyList(),
                 Style.left("подтвердить в чате")), Tone.DANGER);
             builder.button(ROLLBACK_SLOT, rollback, go(who -> {
                 who.close();

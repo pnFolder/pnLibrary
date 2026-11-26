@@ -13,10 +13,10 @@ public final class DownloadFailureDetails {
     /** Creates the explanation. */
     public DownloadFailureDetails(@NotNull String headline, @NotNull String reason, @NotNull String userAction,
                                   @NotNull String developerAction) {
-        this.headline = headline;
-        this.reason = reason;
-        this.userAction = userAction;
-        this.developerAction = developerAction;
+        this.headline = Objects.requireNonNull(headline, "headline");
+        this.reason = Objects.requireNonNull(reason, "reason");
+        this.userAction = Objects.requireNonNull(userAction, "userAction");
+        this.developerAction = Objects.requireNonNull(developerAction, "developerAction");
     }
 
     /** One line saying what went wrong. */

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -180,7 +181,7 @@ class UpdatePlanStagerTest {
         try {
             StringBuilder hex = new StringBuilder();
             for (byte value : MessageDigest.getInstance("SHA-256").digest(bytes)) {
-                hex.append(String.format("%02x", value));
+                hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
         } catch (java.security.NoSuchAlgorithmException error) {

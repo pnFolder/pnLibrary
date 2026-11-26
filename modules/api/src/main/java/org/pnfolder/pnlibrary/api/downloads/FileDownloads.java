@@ -16,7 +16,7 @@ public final class FileDownloads {
 
     private FileDownloads(Builder builder) {
         this.dataDirectory = builder.dataDirectory == null ? null : builder.dataDirectory.toAbsolutePath().normalize();
-        this.files = Collections.unmodifiableList(new ArrayList<FileDownload>(builder.files));
+        this.files = Collections.unmodifiableList(new ArrayList<>(builder.files));
     }
 
     /** The optional plugin data-directory override. */
@@ -37,7 +37,7 @@ public final class FileDownloads {
     /** Fluent builder for a {@link FileDownloads} declaration. */
     public static final class Builder {
         private Path dataDirectory;
-        private final List<FileDownload> files = new ArrayList<FileDownload>();
+        private final List<FileDownload> files = new ArrayList<>();
 
         private Builder() {
         }

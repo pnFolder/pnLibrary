@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -21,12 +22,12 @@ public final class DatabaseSource {
 
     public DatabaseSource(@NotNull String plugin, @NotNull DatabaseKind kind, @NotNull String name, @NotNull Path file,
                           @NotNull String path) {
-        this(plugin, kind, name, file, path, Collections.<DatabaseRole, String>emptyMap());
+        this(plugin, kind, name, file, path, Collections.emptyMap());
     }
 
     public DatabaseSource(@NotNull String plugin, @NotNull DatabaseKind kind, @NotNull String name, @NotNull Path file,
                           @NotNull String path, @NotNull Map<DatabaseRole, String> keys) {
-        this(plugin, kind, name, file, path, keys, Collections.<String>emptyList(), Collections.<String>emptyList());
+        this(plugin, kind, name, file, path, keys, Collections.emptyList(), Collections.emptyList());
     }
 
     /**
@@ -42,11 +43,11 @@ public final class DatabaseSource {
     public DatabaseSource(@NotNull String plugin, @NotNull DatabaseKind kind, @NotNull String name, @NotNull Path file,
                           @NotNull String path, @NotNull Map<DatabaseRole, String> keys, @NotNull List<String> tables,
                           @NotNull List<String> tableKeys) {
-        this.plugin = plugin;
-        this.kind = kind;
-        this.name = name;
-        this.file = file;
-        this.path = path;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.name = Objects.requireNonNull(name, "name");
+        this.file = Objects.requireNonNull(file, "file");
+        this.path = Objects.requireNonNull(path, "path");
         this.keys = keys;
         this.tables = tables;
         this.tableKeys = tableKeys;

@@ -29,7 +29,7 @@ class TaskCommandTest {
     private final TaskSnapshot snapshot = TaskSnapshot.builder(TaskId.random(), "pnTest", TaskExecution.Kind.GLOBAL,
             TaskStatus.SCHEDULED, Instant.now())
             .name("cleanup")
-            .tags(Collections.<String>emptySet())
+            .tags(Collections.emptySet())
             .nextRunAt(Instant.now())
             .runCount(0)
             .skippedCount(0)
@@ -51,7 +51,7 @@ class TaskCommandTest {
     @DisplayName("command is named tasks and has the basic subcommands")
     void commandIsNamedTasksAndHasTheBasicSubcommands() {
         assertEquals("tasks", definition.getName());
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         for (CommandNode child : definition.getRoot().getChildren()) {
             words.add(child.getName());
         }

@@ -32,11 +32,11 @@ public final class TaskLag {
             @NotNull Instant planned,
             @NotNull Instant started,
             @Nullable Duration interval) {
-        this.taskId = taskId;
+        this.taskId = Objects.requireNonNull(taskId, "taskId");
         this.taskName = taskName;
         this.runNumber = runNumber;
-        this.planned = planned;
-        this.started = started;
+        this.planned = Objects.requireNonNull(planned, "planned");
+        this.started = Objects.requireNonNull(started, "started");
         this.interval = interval;
     }
 

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.configs;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -45,7 +46,7 @@ public final class ConfigsCommand {
     private final ConfigSettingsPages settings;
 
     public ConfigsCommand(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
         this.settings = new ConfigSettingsPages(library);
     }
 
@@ -85,7 +86,7 @@ public final class ConfigsCommand {
     }
 
     private List<String> ids(boolean writableOnly) {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
         for (ConfigInfo info : library.getConfigurations().all()) {
             if (!writableOnly || !info.getReadOnly()) {
                 ids.add(info.getId().toString());
@@ -95,7 +96,7 @@ public final class ConfigsCommand {
     }
 
     private List<String> typeNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Class<?> base : PolymorphicTypes.in(library.getConfigurations().all())) {
             names.add(base.getSimpleName());
         }

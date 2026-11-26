@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -12,27 +13,28 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod;
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
-import org.pnfolder.pnlibrary.core.menu.data.EventAbout;
+import org.pnfolder.pnlibrary.core.menu.data.question.EventAbout;
 import org.pnfolder.pnlibrary.core.menu.screens.ActionScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.BackupScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.BusHistoryScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.BusScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.ConfigScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.update.BackupScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.bus.BusHistoryScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.bus.BusScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.Filter;
-import org.pnfolder.pnlibrary.core.menu.screens.GroupScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.group.GroupScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.HistoryScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.HomeScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.DiskScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.JournalScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.LibraryScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.LibrarySettingsScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.config.LibrarySettingsScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.ModuleScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.NoticeScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.SettingsScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.config.SettingsScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.TaskScreens;
-import org.pnfolder.pnlibrary.core.menu.screens.UpdateScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.task.TaskScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.update.UpdateScreens;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Row;
 
@@ -50,6 +52,7 @@ public final class MenuRouter implements MenuRoutes {
     private final LibraryScreens libraryScreens;
     private final DiskScreens diskScreens;
     private final NetworkScreens networkScreens;
+    private final NoticeScreens noticeScreens;
     private final GroupScreens groupScreens;
     private final StatsScreens statsScreens;
     private final PlaceholderScreens placeholderScreens;
@@ -60,7 +63,7 @@ public final class MenuRouter implements MenuRoutes {
     private final LibrarySettingsScreens librarySettingsScreens;
 
     public MenuRouter(@NotNull MenuSession session) {
-        this.session = session;
+        this.session = Objects.requireNonNull(session, "session");
         this.homeScreens = new HomeScreens(session, this);
         this.updateScreens = new UpdateScreens(session, this);
         this.historyScreens = new HistoryScreens(session, this);
@@ -72,6 +75,7 @@ public final class MenuRouter implements MenuRoutes {
         this.libraryScreens = new LibraryScreens(session, this);
         this.diskScreens = new DiskScreens(session, this);
         this.networkScreens = new NetworkScreens(session, this);
+        this.noticeScreens = new NoticeScreens(session, this);
         this.groupScreens = new GroupScreens(session, this);
         this.statsScreens = new StatsScreens(session, this);
         this.placeholderScreens = new PlaceholderScreens(session, this);
@@ -203,6 +207,11 @@ public final class MenuRouter implements MenuRoutes {
     }
 
     @Override
+    public void notices(@NotNull MenuViewer player, int page) {
+        noticeScreens.notices(player, page);
+    }
+
+    @Override
     public @NotNull String ownerLine(@NotNull String name) {
         return taskScreens.ownerLine(name);
     }
@@ -225,11 +234,6 @@ public final class MenuRouter implements MenuRoutes {
     @Override
     public void plugins(@NotNull MenuViewer player, @NotNull Filter filter, int page) {
         updateScreens.plugins(player, filter, page);
-    }
-
-    @Override
-    public @NotNull CompletionStage<?> setAutomatic(@NotNull UpdateSnapshot snapshot, boolean enable, @NotNull MenuViewer player) {
-        return updateScreens.setAutomatic(snapshot, enable, player);
     }
 
     @Override

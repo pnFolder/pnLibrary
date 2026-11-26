@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.net;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -23,8 +24,8 @@ public class TrustedHttpClient {
     private final Duration readTimeout;
 
     public TrustedHttpClient(@NotNull Duration connectTimeout, @NotNull Duration readTimeout) {
-        this.connectTimeout = connectTimeout;
-        this.readTimeout = readTimeout;
+        this.connectTimeout = Objects.requireNonNull(connectTimeout, "connectTimeout");
+        this.readTimeout = Objects.requireNonNull(readTimeout, "readTimeout");
     }
 
     /** Checks that {@code uri} is an allowed download address and returns it. */

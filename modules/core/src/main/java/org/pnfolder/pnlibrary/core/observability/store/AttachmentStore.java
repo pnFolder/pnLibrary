@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.store;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -37,7 +38,7 @@ public final class AttachmentStore {
 
     /** Opens the store in {@code directory}, creating it and reading the manifest of earlier runs. */
     public AttachmentStore(@NotNull Path directory) {
-        this.directory = directory;
+        this.directory = Objects.requireNonNull(directory, "directory");
         this.manifest = directory.resolve("manifest.json");
         try {
             Files.createDirectories(directory);
@@ -112,7 +113,7 @@ public final class AttachmentStore {
 
     /** Deletes every attachment. */
     public void clear() throws IOException {
-        removeOrphans(Collections.<String>emptySet());
+        removeOrphans(Collections.emptySet());
     }
 
     private void validate(Path source) {

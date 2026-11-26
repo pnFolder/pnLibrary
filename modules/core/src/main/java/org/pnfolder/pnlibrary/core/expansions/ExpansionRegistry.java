@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.expansions;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +26,7 @@ public final class ExpansionRegistry implements ExpansionManager, AutoCloseable 
     private boolean closed;
 
     public ExpansionRegistry(@NotNull BiConsumer<Expansion, Exception> onFailure) {
-        this.onFailure = onFailure;
+        this.onFailure = Objects.requireNonNull(onFailure, "onFailure");
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.deps;
 
+import java.util.Objects;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ public final class DepsCommand {
     private final PnLibrary library;
 
     public DepsCommand(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     @NotNull

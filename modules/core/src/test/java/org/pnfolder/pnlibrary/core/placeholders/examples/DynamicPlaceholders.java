@@ -12,7 +12,7 @@ public final class DynamicPlaceholders {
     }
 
     public static List<AutoCloseable> register(PlaceholderService placeholders, List<String> currencies) {
-        List<AutoCloseable> handles = new ArrayList<AutoCloseable>();
+        List<AutoCloseable> handles = new ArrayList<>();
         for (final String name : currencies) {
             // {wallet.gold}; with papi set it is also %pn_wallet_gold%. The returned handle removes it.
             handles.add(placeholders.value("wallet." + name, "Balance in " + name, "pn", Visibility.ALL, viewer -> balanceOf(viewer, name)));

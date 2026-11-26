@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,7 +29,7 @@ public final class ChoiceSource {
     public static final String ZONE_ID = "zones";
 
     private static final ChoiceOrder ALPHABET = new ChoiceOrder("по алфавиту", (values, at) -> {
-        List<String> sorted = new ArrayList<String>(values);
+        List<String> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
         return sorted;
     });
@@ -49,7 +50,7 @@ public final class ChoiceSource {
         for (String value : values) {
             offsets.put(value, offsetSeconds(value, at));
         }
-        List<String> sorted = new ArrayList<String>(values);
+        List<String> sorted = new ArrayList<>(values);
         Collections.sort(sorted, Comparator.<String, Integer>comparing(offsets::get).thenComparing(Comparator.<String>naturalOrder()));
         return sorted;
     });
@@ -94,12 +95,12 @@ public final class ChoiceSource {
     public ChoiceSource(@NotNull String id, @NotNull List<String> all, @NotNull List<ChoiceOrder> orders,
                         @NotNull List<String> curated, @NotNull List<String> cycled,
                         @NotNull BiFunction<String, Instant, List<Pair<String, String>>> details) {
-        this.id = id;
-        this.all = Collections.unmodifiableList(new ArrayList<String>(all));
-        this.orders = Collections.unmodifiableList(new ArrayList<ChoiceOrder>(orders));
+        this.id = Objects.requireNonNull(id, "id");
+        this.all = Collections.unmodifiableList(new ArrayList<>(all));
+        this.orders = Collections.unmodifiableList(new ArrayList<>(orders));
         this.popular = Collections.unmodifiableList(existing(curated, all));
         List<String> rolled = existing(cycled, all);
-        this.cycle = Collections.unmodifiableList(rolled.isEmpty() ? new ArrayList<String>(all) : rolled);
+        this.cycle = Collections.unmodifiableList(rolled.isEmpty() ? new ArrayList<>(all) : rolled);
         this.details = details;
     }
 
@@ -169,7 +170,7 @@ public final class ChoiceSource {
         if (cycle.contains(current)) {
             return cycle;
         }
-        List<String> shown = new ArrayList<String>();
+        List<String> shown = new ArrayList<>();
         shown.add(current);
         shown.addAll(cycle);
         return shown;
@@ -210,7 +211,7 @@ public final class ChoiceSource {
         int index = Math.max(0, Math.min(order, orders.size() - 1));
         List<String> sorted = orders.get(index).sort(all, at);
         if (!filter.trim().isEmpty()) {
-            List<String> found = new ArrayList<String>();
+            List<String> found = new ArrayList<>();
             for (String value : sorted) {
                 if (matches(value, filter)) {
                     found.add(value);
@@ -222,16 +223,16 @@ public final class ChoiceSource {
     }
 
     private static ChoiceSource zones() {
-        TreeSet<String> ids = new TreeSet<String>();
+        TreeSet<String> ids = new TreeSet<>();
         for (String zone : ZoneId.getAvailableZoneIds()) {
             if (EXTRA.contains(zone) || inRegion(zone)) {
                 ids.add(zone);
             }
         }
-        return new ChoiceSource(ZONE_ID, new ArrayList<String>(ids), Arrays.asList(BY_OFFSET, ALPHABET),
+        return new ChoiceSource(ZONE_ID, new ArrayList<>(ids), Arrays.asList(BY_OFFSET, ALPHABET),
             POPULAR_ZONES, Collections.<String>emptyList(), (zone, at) -> Arrays.asList(
-                new Pair<String, String>("Смещение", offsetText(offsetSeconds(zone, at))),
-                new Pair<String, String>("Сейчас там", localTime(zone, at))));
+                new Pair<>("Смещение", offsetText(offsetSeconds(zone, at))),
+                new Pair<>("Сейчас там", localTime(zone, at))));
     }
 
     private static boolean inRegion(String zone) {
@@ -244,7 +245,7 @@ public final class ChoiceSource {
     }
 
     private static List<String> existing(List<String> wanted, List<String> all) {
-        List<String> kept = new ArrayList<String>();
+        List<String> kept = new ArrayList<>();
         for (String value : wanted) {
             if (all.contains(value)) {
                 kept.add(value);

@@ -19,7 +19,7 @@ public final class PluginSnapshot {
 
     /** A plugin with no declared authors and no main class. */
     public PluginSnapshot(@NotNull String id, @NotNull String name, @NotNull String version) {
-        this(id, name, version, Collections.<String>emptyList(), null);
+        this(id, name, version, Collections.emptyList(), null);
     }
 
     /** A plugin with declared authors and no main class. */
@@ -41,9 +41,9 @@ public final class PluginSnapshot {
             @NotNull String version,
             @NotNull List<String> authors,
             @Nullable String mainClass) {
-        this.id = id;
-        this.name = name;
-        this.version = version;
+        this.id = Objects.requireNonNull(id, "id");
+        this.name = Objects.requireNonNull(name, "name");
+        this.version = Objects.requireNonNull(version, "version");
         this.authors = authors;
         this.mainClass = mainClass;
     }

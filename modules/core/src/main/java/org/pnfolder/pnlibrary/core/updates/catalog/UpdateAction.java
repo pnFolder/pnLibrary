@@ -8,6 +8,8 @@ public enum UpdateAction {
     RESTART_LATER,
     /** Restart the server as soon as no player is online. */
     RESTART_EMPTY,
+    /** Restart the server once the players stay at or below the limit of the settings for the quiet time. */
+    RESTART_FEW,
     /** Roll back the whole current update plan. */
     PLAN_ROLLBACK,
     /** Restore one saved backup set; the grant is bound to the backup id. */

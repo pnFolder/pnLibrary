@@ -44,7 +44,7 @@ public final class SetAction implements Action {
 
     /** Creates it with every setting given. */
     public SetAction(@NotNull String name, @NotNull String value, @Nullable String expression) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.value = value;
         this.expression = expression;
         parse();

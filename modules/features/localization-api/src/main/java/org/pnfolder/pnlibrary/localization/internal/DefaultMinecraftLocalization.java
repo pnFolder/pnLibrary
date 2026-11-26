@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization.internal;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
@@ -67,8 +68,8 @@ public final class DefaultMinecraftLocalization implements MinecraftLocalization
                                  Duration readTimeout, final int memoryEntries, int downloadConcurrency,
                                  ExecutorService suppliedExecutor, LocalizationHttpClient httpClient,
                                  KeyboardLayouts layouts) {
-        this.manifestTtl = manifestTtl;
-        this.layouts = layouts;
+        this.manifestTtl = Objects.requireNonNull(manifestTtl, "manifestTtl");
+        this.layouts = Objects.requireNonNull(layouts, "layouts");
         this.ownsExecutor = suppliedExecutor == null;
         this.executor = suppliedExecutor != null ? suppliedExecutor
                 : Executors.newFixedThreadPool(downloadConcurrency, daemonThreads());
@@ -182,12 +183,7 @@ public final class DefaultMinecraftLocalization implements MinecraftLocalization
         if (existing != null) {
             return existing;
         }
-        return submit(promise, new Runnable() {
-            @Override
-            public void run() {
-                inFlight.remove(key, promise);
-            }
-        }, new Operation<LoadedLocale>() {
+        return submit(promise, () -> inFlight.remove(key, promise), new Operation<LoadedLocale>() {
             @Override
             public LoadedLocale run() throws Exception {
                 permits.acquire();
@@ -279,11 +275,8 @@ public final class DefaultMinecraftLocalization implements MinecraftLocalization
     /** Runs {@code action} on the executor and returns its future. */
     private <T> CompletableFuture<T> async(Operation<T> action) {
         ensureOpen();
-        return submit(new CompletableFuture<T>(), new Runnable() {
-            @Override
-            public void run() {
-            }
-        }, action);
+        return submit(new CompletableFuture<T>(), () -> {
+            }, action);
     }
 
     /** Executes {@code action} on the executor and completes {@code promise}; {@code beforeCompletion} always runs first. */

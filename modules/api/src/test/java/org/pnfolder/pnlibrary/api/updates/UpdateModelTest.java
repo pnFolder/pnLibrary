@@ -51,7 +51,7 @@ class UpdateModelTest {
         ProductDependency dependency = new ProductDependency(ProductId.of("pneconomy"), SemanticVersion.parse("3.0.0"));
         ProductRelease release = new ProductRelease(ProductId.of("pnmarket"), SemanticVersion.parse("4.0.0"),
             UpdateChannel.STABLE, new ApiVersionRange(5, 5), null, Collections.singletonList(dependency), null,
-            Collections.<ArtifactDescriptor>emptyList(), Collections.<ExternalPluginDependency>emptyList(), null,
+            Collections.emptyList(), Collections.emptyList(), null,
             null, "");
 
         assertEquals(5, release.getSupportedApi().getMinimum());

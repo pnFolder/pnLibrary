@@ -28,7 +28,7 @@ public final class ComponentStatus {
 
     /** A status without data, stamped with the current time. */
     public ComponentStatus(@NotNull String plugin, @NotNull String component, @NotNull String state, @NotNull String detail) {
-        this(plugin, component, state, detail, Collections.<String, String>emptyMap());
+        this(plugin, component, state, detail, Collections.emptyMap());
     }
 
     /** A status stamped with the current time. */

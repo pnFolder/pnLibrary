@@ -47,28 +47,34 @@ public final class SettingsRegistry {
             "Разрешить загрузки, которые плагин запускает сам, без команды администратора "
                 + "(в том числе недостающие плагины).",
             LibrarySettings::getDownloadsAutomatic, LibrarySettings::withDownloadsAutomatic),
-        flag("downloads.destinations.data-folder", "Загрузки в папку плагина", "downloadsToDataFolder",
-            SettingApply.LIVE,
-            "Разрешить сохранять скачанные файлы в папку данных плагина, который их запросил.",
-            LibrarySettings::getDownloadsToDataFolder, LibrarySettings::withDownloadsToDataFolder),
-        flag("downloads.destinations.cache", "Загрузки в кэш", "downloadsToCache", SettingApply.LIVE,
-            "Разрешить сохранять скачанные файлы в общий кэш pnLibrary.",
-            LibrarySettings::getDownloadsToCache, LibrarySettings::withDownloadsToCache),
         time("updates.check-interval", "Проверка обновлений", "updateCheckInterval", SettingApply.RESTART,
             15 * MINUTE, 7 * DAY,
             "Как часто опрашивать каталоги релизов о новых версиях; первая проверка идёт при запуске.",
             Arrays.asList("6h", "30m"),
             LibrarySettings::getUpdateCheckInterval, LibrarySettings::withUpdateCheckInterval),
-        time("updates.connect-timeout", "Ожидание соединения", "updateConnectTimeout", SettingApply.RESTART,
-            SECOND, 2 * MINUTE,
-            "Сколько ждать соединения при скачивании файла обновления.",
-            Arrays.asList("10s"),
-            LibrarySettings::getUpdateConnectTimeout, LibrarySettings::withUpdateConnectTimeout),
-        time("updates.read-timeout", "Ожидание данных", "updateReadTimeout", SettingApply.RESTART,
-            5 * SECOND, 10 * MINUTE,
-            "Сколько ждать данных от молчащего сервера при скачивании файла обновления.",
-            Arrays.asList("30s", "2m"),
-            LibrarySettings::getUpdateReadTimeout, LibrarySettings::withUpdateReadTimeout)));
+        flag("updates.restart.auto", "Перезапускать самой", "restart.auto", SettingApply.LIVE,
+            "Перезапустить сервер самой, когда игроков не больше updates.restart.max-players столько времени, "
+                + "сколько задано в updates.restart.quiet-time. Не раньше чем через 10 минут после запуска "
+                + "и не после отката. Прокси сами не перезапускаются.",
+            settings -> settings.getRestart().getAuto(),
+            (settings, value) -> settings.withRestart(settings.getRestart().withAuto(value))),
+        number("updates.restart.max-players", "Игроков для перезапуска", "restart.max-players", SettingApply.LIVE,
+            0, 200,
+            "Сколько игроков ещё считается «мало»: для автоперезапуска и кнопки «когда игроков не больше N».",
+            settings -> settings.getRestart().getMaxPlayers(),
+            (settings, value) -> settings.withRestart(settings.getRestart().withMaxPlayers(value))),
+        time("updates.restart.quiet-time", "Тишина перед перезапуском", "restart.quiet-time", SettingApply.LIVE,
+            10 * SECOND, 60 * MINUTE,
+            "Сколько времени подряд игроков должно быть не больше updates.restart.max-players, "
+                + "чтобы сервер перезапустился.",
+            Arrays.asList("2m", "30s"),
+            settings -> settings.getRestart().getQuietTime(),
+            (settings, value) -> settings.withRestart(settings.getRestart().withQuietTime(value)))));
+
+    /** Settings that became constants in code; an old file may still carry them and that is not worth a warning. */
+    private static final List<String> RETIRED = Collections.unmodifiableList(Arrays.asList(
+        "downloads.destinations.data-folder", "downloads.destinations.cache",
+        "updates.connect-timeout", "updates.read-timeout"));
 
     private static final Map<String, SettingSpec> BY_KEY = index();
 
@@ -85,8 +91,13 @@ public final class SettingsRegistry {
         return BY_KEY.get(key);
     }
 
+    /** Whether {@code key} was a setting once and is now fixed in code, so a stored value is dropped silently. */
+    public static boolean isRetired(@NotNull String key) {
+        return RETIRED.contains(key);
+    }
+
     private static Map<String, SettingSpec> index() {
-        Map<String, SettingSpec> byKey = new LinkedHashMap<String, SettingSpec>();
+        Map<String, SettingSpec> byKey = new LinkedHashMap<>();
         for (SettingSpec spec : ALL) {
             byKey.put(spec.getKey(), spec);
         }
@@ -97,7 +108,7 @@ public final class SettingsRegistry {
                                     Function<LibrarySettings, Boolean> read,
                                     BiFunction<LibrarySettings, Boolean, LibrarySettings> write) {
         return new SettingSpec(key, title, field, SettingKind.SWITCH, description, applies, null, null,
-            Collections.<String>emptyList(), null,
+            Collections.emptyList(), null,
             settings -> read.apply(settings), (settings, value) -> write.apply(settings, (Boolean) value),
             SettingTexts::toSwitch, String::valueOf);
     }
@@ -106,7 +117,7 @@ public final class SettingsRegistry {
                                       long max, String description, Function<LibrarySettings, Integer> read,
                                       BiFunction<LibrarySettings, Integer, LibrarySettings> write) {
         return new SettingSpec(key, title, field, SettingKind.NUMBER, description, applies, min, max,
-            Collections.<String>emptyList(), null,
+            Collections.emptyList(), null,
             settings -> read.apply(settings), (settings, value) -> write.apply(settings, (Integer) value),
             text -> SettingTexts.number(text, min, max), String::valueOf);
     }
@@ -115,7 +126,7 @@ public final class SettingsRegistry {
                                     String description, Function<LibrarySettings, String> read,
                                     BiFunction<LibrarySettings, String, LibrarySettings> write) {
         return new SettingSpec(key, title, field, SettingKind.TEXT, description, applies, null, maxLength,
-            Collections.<String>emptyList(), null,
+            Collections.emptyList(), null,
             settings -> read.apply(settings), (settings, value) -> write.apply(settings, (String) value),
             typed -> {
                 String value = typed.trim();

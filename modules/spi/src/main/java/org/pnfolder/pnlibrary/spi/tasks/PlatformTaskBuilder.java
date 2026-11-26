@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.tasks;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
@@ -30,7 +31,7 @@ public final class PlatformTaskBuilder {
 
     /** @param dispatch hands the finished request to the platform scheduler */
     public PlatformTaskBuilder(@NotNull Function<PlatformTaskRequest, PlatformTaskHandle> dispatch) {
-        this.dispatch = dispatch;
+        this.dispatch = Objects.requireNonNull(dispatch, "dispatch");
     }
 
     /** Sets the {@code callback} the task runs; required. */

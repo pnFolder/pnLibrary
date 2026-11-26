@@ -11,7 +11,7 @@ import java.util.Set;
 
 /** Checks a transaction request and turns its artifacts into the durable records of the journal. */
 final class JournalRecords {
-    private static final Set<String> NEW_PURPOSES = new HashSet<String>(Arrays.asList("STAGE", "INSTALL", "RESTORE"));
+    private static final Set<String> NEW_PURPOSES = new HashSet<>(Arrays.asList("STAGE", "INSTALL", "RESTORE"));
 
     private JournalRecords() {
     }
@@ -27,8 +27,8 @@ final class JournalRecords {
         if (artifacts.isEmpty()) {
             throw new IllegalArgumentException("Transaction must contain at least one artifact");
         }
-        Set<Object> products = new HashSet<Object>();
-        Set<Path> targets = new HashSet<Path>();
+        Set<Object> products = new HashSet<>();
+        Set<Path> targets = new HashSet<>();
         for (TransactionArtifact artifact : artifacts) {
             products.add(artifact.getSpecification().getProduct());
             targets.add(artifact.getTarget().toAbsolutePath().normalize());
@@ -49,7 +49,7 @@ final class JournalRecords {
     }
 
     static List<JournalArtifact> create(List<TransactionArtifact> artifacts, Path staging, Path backups) {
-        List<JournalArtifact> records = new ArrayList<JournalArtifact>();
+        List<JournalArtifact> records = new ArrayList<>();
         for (int index = 0; index < artifacts.size(); index++) {
             TransactionArtifact artifact = artifacts.get(index);
             String version = artifact.getSpecification().getVersion().toString();

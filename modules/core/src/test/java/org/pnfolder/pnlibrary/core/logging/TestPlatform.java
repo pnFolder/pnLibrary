@@ -17,8 +17,8 @@ import java.util.Map;
 
 /** Platform that records what it was asked to print. */
 final class TestPlatform implements PlatformAdapter {
-    final List<Object[]> logged = new ArrayList<Object[]>();
-    final List<String> lines = new ArrayList<String>();
+    final List<Object[]> logged = new ArrayList<>();
+    final List<String> lines = new ArrayList<>();
     private final Path dataPath;
     private final String name;
 

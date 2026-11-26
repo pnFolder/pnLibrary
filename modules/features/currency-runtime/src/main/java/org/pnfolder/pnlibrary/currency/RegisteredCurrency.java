@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,17 +40,17 @@ final class RegisteredCurrency implements CurrencyRegistration {
     private final CurrencyKey key;
     private final CurrencyProvider provider;
     private final Set<String> registeredAliases;
-    private final List<AutoCloseable> attachments = Collections.synchronizedList(new ArrayList<AutoCloseable>());
+    private final List<AutoCloseable> attachments = Collections.synchronizedList(new ArrayList<>());
     private final AtomicBoolean enabled = new AtomicBoolean(true);
     private final AtomicBoolean entryClosed = new AtomicBoolean(false);
     private final Set<CurrencyCapability> capabilities;
 
     RegisteredCurrency(@NotNull CurrencyHub hub, @NotNull CurrencyKey key, @NotNull CurrencyProvider provider,
                        @NotNull Set<String> registeredAliases) {
-        this.hub = hub;
-        this.key = key;
-        this.provider = provider;
-        this.registeredAliases = registeredAliases;
+        this.hub = Objects.requireNonNull(hub, "hub");
+        this.key = Objects.requireNonNull(key, "key");
+        this.provider = Objects.requireNonNull(provider, "provider");
+        this.registeredAliases = Objects.requireNonNull(registeredAliases, "registeredAliases");
         this.capabilities = CurrencyCapabilities.of(provider);
     }
 
@@ -167,7 +168,7 @@ final class RegisteredCurrency implements CurrencyRegistration {
         hub.forget(this, registeredAliases);
         List<AutoCloseable> toClose;
         synchronized (attachments) {
-            toClose = new ArrayList<AutoCloseable>(attachments);
+            toClose = new ArrayList<>(attachments);
             attachments.clear();
         }
         for (AutoCloseable attachment : toClose) {
@@ -269,7 +270,7 @@ final class RegisteredCurrency implements CurrencyRegistration {
     }
 
     private static <T> CompletionStage<T> failed(String message, Throwable cause) {
-        CompletableFuture<T> future = new CompletableFuture<T>();
+        CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(new IllegalStateException(message, cause));
         return future;
     }

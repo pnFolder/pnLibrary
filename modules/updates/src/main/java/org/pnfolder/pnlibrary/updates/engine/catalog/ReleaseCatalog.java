@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,8 +17,8 @@ public final class ReleaseCatalog {
      * @param releases ordered published releases
      */
     public ReleaseCatalog(@NotNull String product, @NotNull List<CatalogRelease> releases) {
-        this.product = product;
-        this.releases = Collections.unmodifiableList(new ArrayList<CatalogRelease>(releases));
+        this.product = Objects.requireNonNull(product, "product");
+        this.releases = Collections.unmodifiableList(new ArrayList<>(releases));
     }
 
     @NotNull

@@ -49,14 +49,14 @@ final class NetworkWire {
             return null;
         }
         int count = Math.max(0, Math.min(input.readInt(), LinkCodec.MAX_SERVERS));
-        List<NetworkServer> servers = new ArrayList<NetworkServer>(count);
+        List<NetworkServer> servers = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             String name = input.readUTF();
             boolean online = input.readBoolean();
             servers.add(new NetworkServer(name, online, ReportWire.read(input)));
         }
         int groupCount = Math.max(0, Math.min(input.readInt(), LinkCodec.MAX_GROUPS));
-        List<ServerGroup> groups = new ArrayList<ServerGroup>(groupCount);
+        List<ServerGroup> groups = new ArrayList<>(groupCount);
         for (int i = 0; i < groupCount; i++) {
             String name = input.readUTF();
             Set<String> groupServers = readNames(input);
@@ -73,7 +73,7 @@ final class NetworkWire {
     }
 
     private static Set<String> pairs(Map<String, Set<String>> overrides) {
-        Set<String> result = new LinkedHashSet<String>();
+        Set<String> result = new LinkedHashSet<>();
         for (Map.Entry<String, Set<String>> entry : overrides.entrySet()) {
             for (String plugin : entry.getValue()) {
                 result.add(entry.getKey() + PAIR + plugin);
@@ -83,7 +83,7 @@ final class NetworkWire {
     }
 
     private static Map<String, Set<String>> unpair(Set<String> pairs) {
-        Map<String, Set<String>> result = new LinkedHashMap<String, Set<String>>();
+        Map<String, Set<String>> result = new LinkedHashMap<>();
         for (String pair : pairs) {
             int at = pair.indexOf(PAIR);
             if (at < 0) {
@@ -92,7 +92,7 @@ final class NetworkWire {
             String server = pair.substring(0, at);
             Set<String> plugins = result.get(server);
             if (plugins == null) {
-                plugins = new LinkedHashSet<String>();
+                plugins = new LinkedHashSet<>();
                 result.put(server, plugins);
             }
             plugins.add(pair.substring(at + 1));
@@ -101,7 +101,7 @@ final class NetworkWire {
     }
 
     private static void writeNames(DataOutputStream out, Set<String> names, int limit) throws IOException {
-        List<String> shown = head(new ArrayList<String>(names), limit);
+        List<String> shown = head(new ArrayList<>(names), limit);
         out.writeInt(shown.size());
         for (String name : shown) {
             out.writeUTF(WireText.take(name, LinkCodec.MAX_TEXT));
@@ -110,7 +110,7 @@ final class NetworkWire {
 
     private static Set<String> readNames(DataInputStream input) throws IOException {
         int count = Math.max(0, Math.min(input.readInt(), LinkCodec.MAX_GROUP_ITEMS));
-        Set<String> names = new LinkedHashSet<String>();
+        Set<String> names = new LinkedHashSet<>();
         for (int i = 0; i < count; i++) {
             names.add(input.readUTF());
         }

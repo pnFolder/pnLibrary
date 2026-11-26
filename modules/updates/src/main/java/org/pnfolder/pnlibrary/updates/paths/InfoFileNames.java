@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.paths;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,8 +16,8 @@ public final class InfoFileNames {
 
     /** Creates the pair of names. */
     public InfoFileNames(@NotNull String preferred, @NotNull String ascii) {
-        this.preferred = preferred;
-        this.ascii = ascii;
+        this.preferred = Objects.requireNonNull(preferred, "preferred");
+        this.ascii = Objects.requireNonNull(ascii, "ascii");
     }
 
     /** The Russian name. */

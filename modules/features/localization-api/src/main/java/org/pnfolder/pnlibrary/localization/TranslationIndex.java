@@ -94,6 +94,6 @@ public interface TranslationIndex<T> {
      */
     @NotNull
     static <T> TranslationIndex<T> of(@NotNull List<TranslationMatch<T>> matches, @NotNull KeyboardLayouts layouts) {
-        return new TranslationSearchIndex<T>(matches, layouts);
+        return new TranslationSearchIndex<>(matches, layouts);
     }
 }

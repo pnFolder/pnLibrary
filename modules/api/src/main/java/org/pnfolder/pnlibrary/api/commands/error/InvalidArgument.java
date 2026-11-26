@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -18,8 +19,8 @@ public class InvalidArgument extends BadUsage {
      */
     public InvalidArgument(@NotNull String usage, @NotNull String argument, @NotNull String value) {
         super(usage);
-        this.argument = argument;
-        this.value = value;
+        this.argument = Objects.requireNonNull(argument, "argument");
+        this.value = Objects.requireNonNull(value, "value");
     }
 
     /** Name of the argument. */
@@ -37,7 +38,7 @@ public class InvalidArgument extends BadUsage {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        Map<String, Object> values = new LinkedHashMap<String, Object>(super.placeholders());
+        Map<String, Object> values = new LinkedHashMap<>(super.placeholders());
         values.put("argument", argument);
         values.put("value", value);
         return values;

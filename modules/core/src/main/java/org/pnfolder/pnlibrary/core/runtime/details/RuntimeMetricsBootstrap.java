@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.details;
 
+import java.util.Objects;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Locale;
@@ -18,7 +19,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
 /** Starts the library's own metrics session and reports failure as a warning instead of failing startup. */
 public final class RuntimeMetricsBootstrap {
     // bStats keeps one project per platform.
-    private static final Map<PlatformType, Integer> BSTATS_PROJECT_IDS = new EnumMap<PlatformType, Integer>(PlatformType.class);
+    private static final Map<PlatformType, Integer> BSTATS_PROJECT_IDS = new EnumMap<>(PlatformType.class);
     private static final String FASTSTATS_TOKEN = "f42221b1c859605f4c717b427f5df910";
 
     static {
@@ -34,10 +35,10 @@ public final class RuntimeMetricsBootstrap {
 
     public RuntimeMetricsBootstrap(@NotNull MetricsSessions registry, @NotNull PlatformIdentity platform, @NotNull Object owner,
                                    @NotNull Consumer<String> warning) {
-        this.registry = registry;
-        this.platform = platform;
-        this.owner = owner;
-        this.warning = warning;
+        this.registry = Objects.requireNonNull(registry, "registry");
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.warning = Objects.requireNonNull(warning, "warning");
     }
 
     public @Nullable PluginMetrics start() {

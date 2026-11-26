@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel;
 
 class DiagnosticsRegistrationLifecycleTest {
     private static DiagnosticsContributor okContributor() {
-        return () -> Collections.<String, Object>singletonMap("ok", true);
+        return () -> Collections.singletonMap("ok", true);
     }
 
     @Test
@@ -52,12 +52,12 @@ class DiagnosticsRegistrationLifecycleTest {
     void eventSnapshotDoesNotChangeWhenTheIncidentRepeatsLater() {
         DiagnosticsRegistry registry = new DiagnosticsRegistry();
         registry.record("demo", DiagnosticLevel.WARNING, "db", "slow", "Slow query", null,
-            Collections.<String, Object>emptyMap());
+            Collections.emptyMap());
         List<Map<String, Object>> events = (List<Map<String, Object>>) registry.eventSnapshot().get("demo");
         Map<String, Object> before = events.get(0);
 
         registry.record("demo", DiagnosticLevel.WARNING, "db", "slow", "Slow query", null,
-            Collections.<String, Object>emptyMap());
+            Collections.emptyMap());
 
         assertEquals(1L, before.get("occurrenceCount"));
         assertEquals(1, ((List<?>) before.get("occurrenceTimeline")).size());
@@ -66,7 +66,7 @@ class DiagnosticsRegistrationLifecycleTest {
     @Test
     void aFailingListenerIsReportedAndDoesNotRejectTheEvent() {
         DiagnosticsRegistry registry = new DiagnosticsRegistry();
-        List<String> failures = new ArrayList<String>();
+        List<String> failures = new ArrayList<>();
         registry.onInternalFailure((what, error) -> failures.add(what));
         registry.onEventsChanged(() -> {
             throw new IllegalStateException("disk full");
@@ -76,12 +76,12 @@ class DiagnosticsRegistrationLifecycleTest {
         });
 
         registry.record("demo", DiagnosticLevel.WARNING, "db", "slow", "Slow query", null,
-            Collections.<String, Object>emptyMap());
+            Collections.emptyMap());
 
         assertEquals(1, ((List<?>) registry.eventSnapshot().get("demo")).size());
         assertEquals(
-            new HashSet<String>(Arrays.asList(
+            new HashSet<>(Arrays.asList(
                 "The diagnostic activity listener failed", "The diagnostic history callback failed")),
-            new HashSet<String>(failures));
+            new HashSet<>(failures));
     }
 }

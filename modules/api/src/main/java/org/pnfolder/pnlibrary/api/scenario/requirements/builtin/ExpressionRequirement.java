@@ -35,7 +35,7 @@ public final class ExpressionRequirement implements Requirement {
 
     /** Creates it with every setting given. */
     public ExpressionRequirement(@NotNull String expression) {
-        this.expression = expression;
+        this.expression = Objects.requireNonNull(expression, "expression");
         parsed();
     }
 

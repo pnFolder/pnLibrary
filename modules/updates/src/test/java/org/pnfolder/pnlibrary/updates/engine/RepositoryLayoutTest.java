@@ -53,7 +53,7 @@ class RepositoryLayoutTest {
     }
 
     private Map<String, Place> places() {
-        Map<String, Place> result = new LinkedHashMap<String, Place>();
+        Map<String, Place> result = new LinkedHashMap<>();
         result.put("releases.json", new Place(folder.resolve("releases.json"), "pnlibrary", "/.pnlibrary/changelogs/"));
         result.put("template releases.json", new Place(
             folder.resolveSibling("integration").resolve("template").resolve(".pnlibrary").resolve("releases.json"),

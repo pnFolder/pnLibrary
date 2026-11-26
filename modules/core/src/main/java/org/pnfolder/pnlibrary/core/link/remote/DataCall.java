@@ -26,13 +26,13 @@ public final class DataCall {
      */
     public DataCall(@NotNull UUID id, @NotNull String target, @NotNull String origin, @NotNull String viewer,
                     @NotNull String method, @NotNull String args, @NotNull Instant sentAt) {
-        this.id = id;
-        this.target = target;
-        this.origin = origin;
-        this.viewer = viewer;
-        this.method = method;
-        this.args = args;
-        this.sentAt = sentAt;
+        this.id = Objects.requireNonNull(id, "id");
+        this.target = Objects.requireNonNull(target, "target");
+        this.origin = Objects.requireNonNull(origin, "origin");
+        this.viewer = Objects.requireNonNull(viewer, "viewer");
+        this.method = Objects.requireNonNull(method, "method");
+        this.args = Objects.requireNonNull(args, "args");
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt");
     }
 
     public @NotNull UUID getId() {

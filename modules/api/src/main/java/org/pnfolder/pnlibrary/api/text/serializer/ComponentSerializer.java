@@ -21,7 +21,7 @@ public interface ComponentSerializer {
 
     /** Deserializes every input independently and preserves list boundaries. */
     default @NotNull List<Component> deserializeAll(@NotNull Iterable<String> inputs) {
-        List<Component> result = new ArrayList<Component>();
+        List<Component> result = new ArrayList<>();
         for (String input : inputs) {
             result.add(deserialize(input));
         }
@@ -43,7 +43,7 @@ public interface ComponentSerializer {
 
     /** Serializes every component independently and preserves list boundaries. */
     default @NotNull List<String> serializeAll(@NotNull Iterable<Component> components) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (Component component : components) {
             result.add(serialize(component));
         }

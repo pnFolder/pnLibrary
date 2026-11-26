@@ -8,14 +8,14 @@ import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 
 /** Ordered list of shutdown actions; all run even if some fail. */
 public final class RuntimeShutdown {
-    private final List<CleanupStep> actions = new ArrayList<CleanupStep>();
+    private final List<CleanupStep> actions = new ArrayList<>();
 
     public void add(@NotNull CleanupStep action) {
         actions.add(action);
     }
 
     public void run() {
-        List<Throwable> failures = new ArrayList<Throwable>();
+        List<Throwable> failures = new ArrayList<>();
         for (CleanupStep action : actions) {
             try {
                 action.run();

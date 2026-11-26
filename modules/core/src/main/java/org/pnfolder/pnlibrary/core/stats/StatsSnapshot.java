@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.stats;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public final class StatsSnapshot {
         this.eventsDenied = eventsDenied;
         this.warnings24h = warnings24h;
         this.errors24h = errors24h;
-        this.errorSources = errorSources;
+        this.errorSources = Objects.requireNonNull(errorSources, "errorSources");
     }
 
     public long getTimeMillis() {
@@ -99,7 +100,7 @@ public final class StatsSnapshot {
 
     /** The snapshot as journal details; {@link #fromDetails} reads it back. */
     public @NotNull Map<String, String> toDetails() {
-        Map<String, String> details = new LinkedHashMap<String, String>();
+        Map<String, String> details = new LinkedHashMap<>();
         details.put("tasksActive", String.valueOf(tasksActive));
         details.put("tasksFailed", String.valueOf(tasksFailed));
         details.put("taskRuns", String.valueOf(taskRuns));
@@ -138,7 +139,7 @@ public final class StatsSnapshot {
     }
 
     private static List<Pair<String, Integer>> parseSources(String text) {
-        List<Pair<String, Integer>> sources = new ArrayList<Pair<String, Integer>>();
+        List<Pair<String, Integer>> sources = new ArrayList<>();
         if (text == null) {
             return sources;
         }
@@ -149,7 +150,7 @@ public final class StatsSnapshot {
             int colon = part.lastIndexOf(':');
             Integer count = integer(colon < 0 ? part : part.substring(colon + 1));
             if (count != null) {
-                sources.add(new Pair<String, Integer>(colon < 0 ? part : part.substring(0, colon), count));
+                sources.add(new Pair<>(colon < 0 ? part : part.substring(0, colon), count));
             }
         }
         return sources;

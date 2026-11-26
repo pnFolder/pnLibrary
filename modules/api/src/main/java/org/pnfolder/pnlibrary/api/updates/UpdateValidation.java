@@ -46,7 +46,7 @@ public final class UpdateValidation {
     /** Returns an unmodifiable snapshot of {@code list} that later changes to the original cannot reach. */
     @NotNull
     public static <T> List<T> frozen(@NotNull List<? extends T> list) {
-        return Collections.unmodifiableList(new ArrayList<T>(list));
+        return Collections.unmodifiableList(new ArrayList<>(list));
     }
 
     /** Returns whether {@code uri} uses the HTTPS scheme and names a non-blank host. */

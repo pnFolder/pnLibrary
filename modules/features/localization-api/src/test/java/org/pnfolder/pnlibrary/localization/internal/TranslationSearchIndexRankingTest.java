@@ -81,7 +81,7 @@ class TranslationSearchIndexRankingTest {
     }
 
     private static List<String> keysOf(TranslationMatch<String> match) {
-        return match == null ? Collections.<String>singletonList(null) : Collections.singletonList(match.getKey());
+        return match == null ? Collections.singletonList(null) : Collections.singletonList(match.getKey());
     }
 
     @Test
@@ -92,13 +92,13 @@ class TranslationSearchIndexRankingTest {
         for (String text : queries()) {
             String query = TranslationSearchIndex.normalize(text);
             List<Collection<KeyboardLayout>> choices = new ArrayList<Collection<KeyboardLayout>>();
-            choices.add(Collections.<KeyboardLayout>emptyList());
+            choices.add(Collections.emptyList());
             choices.add(layouts);
             for (Collection<KeyboardLayout> chosen : choices) {
                 assertEquals(keys(reference.suggest(index, query, 10, chosen)), keys(index.suggest(text, 10, chosen)), text);
                 assertEquals(keysOf(reference.best(query, 0.7, chosen)), keysOf(index.best(text, 0.7, chosen)), text);
             }
-            List<TranslationMatch<String>> ranked = reference.ranked(query, 0.6, Collections.<KeyboardLayout>emptyList());
+            List<TranslationMatch<String>> ranked = reference.ranked(query, 0.6, Collections.emptyList());
             assertEquals(keys(ranked.subList(0, Math.min(5, ranked.size()))), keys(index.fuzzy(text, 0.6, 5)), text);
         }
     }

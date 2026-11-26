@@ -21,7 +21,7 @@ final class ResolverSearch {
                                                            Map<ProductId, List<ProductRelease>> domains,
                                                            LinkedHashMap<ProductId, ProductRelease> selected) {
         if (index == ids.size()) {
-            return dependenciesSatisfied(selected) ? new LinkedHashMap<ProductId, ProductRelease>(selected) : null;
+            return dependenciesSatisfied(selected) ? new LinkedHashMap<>(selected) : null;
         }
         ProductId id = ids.get(index);
         for (ProductRelease candidate : domains.get(id)) {
@@ -38,11 +38,11 @@ final class ResolverSearch {
     /** Keeps what is installed plus everything those releases depend on, transitively. */
     static LinkedHashMap<ProductId, ProductRelease> retainRequired(LinkedHashMap<ProductId, ProductRelease> selected,
                                                                    Set<ProductId> installed) {
-        Set<ProductId> required = new LinkedHashSet<ProductId>(installed);
+        Set<ProductId> required = new LinkedHashSet<>(installed);
         boolean changed;
         do {
             changed = false;
-            for (ProductId id : new ArrayList<ProductId>(required)) {
+            for (ProductId id : new ArrayList<>(required)) {
                 ProductRelease release = selected.get(id);
                 if (release == null) {
                     continue;
@@ -54,7 +54,7 @@ final class ResolverSearch {
                 }
             }
         } while (changed);
-        LinkedHashMap<ProductId, ProductRelease> retained = new LinkedHashMap<ProductId, ProductRelease>();
+        LinkedHashMap<ProductId, ProductRelease> retained = new LinkedHashMap<>();
         for (Map.Entry<ProductId, ProductRelease> entry : selected.entrySet()) {
             if (required.contains(entry.getKey())) {
                 retained.put(entry.getKey(), entry.getValue());

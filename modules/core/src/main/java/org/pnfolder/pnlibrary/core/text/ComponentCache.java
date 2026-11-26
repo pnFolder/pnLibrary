@@ -22,7 +22,7 @@ public final class ComponentCache {
         }
     }
 
-    private final Map<String, Value> values = Collections.synchronizedMap(new LinkedHashMap<String, Value>(16, .75f, true));
+    private final Map<String, Value> values = Collections.synchronizedMap(new LinkedHashMap<>(16, .75f, true));
     private final AtomicLong hits = new AtomicLong();
     private final AtomicLong misses = new AtomicLong();
     private final AtomicLong evictions = new AtomicLong();

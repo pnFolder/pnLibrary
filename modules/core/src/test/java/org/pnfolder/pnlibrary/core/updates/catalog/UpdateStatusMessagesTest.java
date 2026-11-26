@@ -27,7 +27,7 @@ class UpdateStatusMessagesTest {
     }
 
     private static UpdatePlanSnapshot plan(UpdateState state) {
-        return plan(state, Collections.<BlockedReason>emptyList(), null);
+        return plan(state, Collections.emptyList(), null);
     }
 
     @Test
@@ -48,7 +48,7 @@ class UpdateStatusMessagesTest {
 
     @Test
     void aBlockedPlanListsEachReasonAfterTheHeadline() {
-        List<BlockedReason> reasons = Collections.<BlockedReason>singletonList(new BlockedReason.Frozen(ProductId.of("shop")));
+        List<BlockedReason> reasons = Collections.singletonList(new BlockedReason.Frozen(ProductId.of("shop")));
         List<ChatNotice> notices = UpdateStatusMessages.status(plan(UpdateState.BLOCKED, reasons, null), plugin(UpdateState.UPDATE_AVAILABLE));
 
         assertEquals(2, notices.size());
@@ -59,7 +59,7 @@ class UpdateStatusMessagesTest {
     @Test
     void aFailureMessageEndsWithExactlyOnePeriod() {
         List<ChatNotice> notices = UpdateStatusMessages.status(
-            plan(UpdateState.FAILED, Collections.<BlockedReason>emptyList(), "нет сети."), plugin(UpdateState.UP_TO_DATE));
+            plan(UpdateState.FAILED, Collections.emptyList(), "нет сети."), plugin(UpdateState.UP_TO_DATE));
 
         assertEquals("нет сети.", notices.get(0).getDetail());
     }

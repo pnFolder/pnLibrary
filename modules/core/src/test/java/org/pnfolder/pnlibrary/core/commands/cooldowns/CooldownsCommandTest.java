@@ -32,7 +32,7 @@ class CooldownsCommandTest {
 
         List<RunningCooldown> running = CooldownsCommand.runningCooldowns(plugins, player);
 
-        List<String> shown = new ArrayList<String>();
+        List<String> shown = new ArrayList<>();
         for (RunningCooldown cooldown : running) {
             shown.add(cooldown.getOwner() + " " + cooldown.getAction());
         }
@@ -40,7 +40,7 @@ class CooldownsCommandTest {
     }
 
     private PluginRegistry registry(String[] names, CooldownService[] cooldowns) {
-        List<PluginRegistration> registrations = new ArrayList<PluginRegistration>();
+        List<PluginRegistration> registrations = new ArrayList<>();
         for (int index = 0; index < names.length; index++) {
             ModuleContext module = mock(ModuleContext.class);
             when(module.getId()).thenReturn(ModuleId.of("main"));

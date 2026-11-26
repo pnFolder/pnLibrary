@@ -45,14 +45,14 @@ class VelocityNativeOwnershipTest {
         @Override
         public CompletionStage<List<String>> suggest(@NotNull CommandDefinition command,
                                                      @NotNull CommandContext context) {
-            return CompletableFuture.completedFuture(Collections.<String>emptyList());
+            return CompletableFuture.completedFuture(Collections.emptyList());
         }
     };
 
     private static ProxyServer proxyOwnedBy(Object owner, boolean registered) {
         ProxyServer proxy = mock(ProxyServer.class, RETURNS_DEEP_STUBS);
         Optional<PluginContainer> container = registered
-                ? Optional.of(mock(PluginContainer.class)) : Optional.<PluginContainer>empty();
+                ? Optional.of(mock(PluginContainer.class)) : Optional.empty();
         when(proxy.getPluginManager().fromInstance(owner)).thenReturn(container);
         return proxy;
     }

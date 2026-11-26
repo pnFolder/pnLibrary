@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.paths;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,7 +46,7 @@ public final class LibraryPaths {
 
     /** Creates the locations under {@code pluginFolder}, the plugin data folder {@code plugins/pnLibrary}. */
     public LibraryPaths(@NotNull Path pluginFolder) {
-        this.pluginFolder = pluginFolder;
+        this.pluginFolder = Objects.requireNonNull(pluginFolder, "pluginFolder");
         this.plugins = requireParent(pluginFolder);
         this.legacyConfig = pluginFolder.resolve("config.yml");
         this.legacyDownloadsConfig = pluginFolder.resolve("downloads.yml");

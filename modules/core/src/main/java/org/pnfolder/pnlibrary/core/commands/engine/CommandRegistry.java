@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.engine;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -34,9 +35,9 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
 
     public CommandRegistry(@NotNull PlatformCommandAdapter commandAdapter, @NotNull PlatformLogging logging,
             @NotNull StandardCommandFeedback standard) {
-        this.commandAdapter = commandAdapter;
-        this.logging = logging;
-        this.standard = standard;
+        this.commandAdapter = Objects.requireNonNull(commandAdapter, "commandAdapter");
+        this.logging = Objects.requireNonNull(logging, "logging");
+        this.standard = Objects.requireNonNull(standard, "standard");
         this.answers = new CommandAnswers(standard, logging);
     }
 
@@ -48,7 +49,7 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
     @Override
     public CommandRegistration register(@NotNull Object owner, @NotNull CommandDefinition command,
             @Nullable CommandFeedbackScope feedback) {
-        Set<String> names = new LinkedHashSet<String>();
+        Set<String> names = new LinkedHashSet<>();
         names.add(command.getName());
         names.addAll(command.getAliases());
         index.reserve(names);
@@ -60,12 +61,7 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
             throw error;
         }
         RegisteredCommand registration = new RegisteredCommand(owner, command, names, nativeRegistration, feedback, index);
-        index.add(registration, names, new Runnable() {
-            @Override
-            public void run() {
-                nativeRegistration.close();
-            }
-        });
+        index.add(registration, names, () -> nativeRegistration.close());
         return registration;
     }
 
@@ -130,7 +126,7 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
             return;
         }
         List<org.pnfolder.pnlibrary.api.commands.definition.CommandNode> deepestFirst =
-                new ArrayList<org.pnfolder.pnlibrary.api.commands.definition.CommandNode>(executable.getPath());
+                new ArrayList<>(executable.getPath());
         Collections.reverse(deepestFirst);
         answers.answer(registration, executable.getContext(), failure.getError(), deepestFirst);
     }
@@ -141,7 +137,7 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
         stats.suggested();
         final RegisteredCommand registration = index.active(command);
         if (registration == null) {
-            return CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+            return CommandDefinition.completedSuggestions(Collections.emptyList());
         }
         CompletionStage<List<String>> stage;
         try {
@@ -149,14 +145,14 @@ public final class CommandRegistry implements CommandService, PlatformCommandDis
         } catch (Throwable error) {
             Failures.rethrowIfFatal(error);
             suggestionFailed(registration.getOwner(), error);
-            return CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+            return CommandDefinition.completedSuggestions(Collections.emptyList());
         }
         return stage.handle((suggestions, error) -> {
             if (error != null) {
                 suggestionFailed(registration.getOwner(), unwrap(error));
-                return Collections.<String>emptyList();
+                return Collections.emptyList();
             }
-            return suggestions == null ? Collections.<String>emptyList() : new ArrayList<String>(suggestions);
+            return suggestions == null ? Collections.emptyList() : new ArrayList<>(suggestions);
         });
     }
 

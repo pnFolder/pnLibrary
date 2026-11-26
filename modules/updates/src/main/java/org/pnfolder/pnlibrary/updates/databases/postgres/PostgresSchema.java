@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.postgres;
 
+import java.util.Objects;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +33,7 @@ public final class PostgresSchema {
     private final PostgresSequences sequences;
 
     public PostgresSchema(@NotNull Connection connection) {
-        this.connection = connection;
+        this.connection = Objects.requireNonNull(connection, "connection");
         this.sequences = new PostgresSequences(connection);
     }
 

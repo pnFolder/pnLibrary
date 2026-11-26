@@ -65,12 +65,12 @@ public final class ListenerInfo {
             long failures,
             long totalNanos,
             long maxNanos) {
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.module = module;
-        this.eventType = eventType;
+        this.eventType = Objects.requireNonNull(eventType, "eventType");
         this.priority = priority;
         this.ignoreDenied = ignoreDenied;
-        this.source = source;
+        this.source = Objects.requireNonNull(source, "source");
         this.invocations = invocations;
         this.failures = failures;
         this.totalNanos = totalNanos;

@@ -53,22 +53,22 @@ public final class CurrencyTransaction {
                                @Nullable BigDecimal sourceBalanceAfter, @Nullable BigDecimal targetBalanceBefore,
                                @Nullable BigDecimal targetBalanceAfter, @NotNull Instant createdAt,
                                @Nullable String failure, @Nullable String idempotencyKey) {
-        this.id = id;
-        this.currency = currency;
-        this.type = type;
-        this.status = status;
-        this.amount = amount;
+        this.id = Objects.requireNonNull(id, "id");
+        this.currency = Objects.requireNonNull(currency, "currency");
+        this.type = Objects.requireNonNull(type, "type");
+        this.status = Objects.requireNonNull(status, "status");
+        this.amount = Objects.requireNonNull(amount, "amount");
         this.source = source;
         this.target = target;
-        this.actor = actor;
-        this.service = service;
+        this.actor = Objects.requireNonNull(actor, "actor");
+        this.service = Objects.requireNonNull(service, "service");
         this.reason = reason;
-        this.metadata = Collections.unmodifiableMap(new LinkedHashMap<String, String>(metadata));
+        this.metadata = Collections.unmodifiableMap(new LinkedHashMap<>(metadata));
         this.sourceBalanceBefore = sourceBalanceBefore;
         this.sourceBalanceAfter = sourceBalanceAfter;
         this.targetBalanceBefore = targetBalanceBefore;
         this.targetBalanceAfter = targetBalanceAfter;
-        this.createdAt = createdAt;
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         this.failure = failure;
         this.idempotencyKey = idempotencyKey;
     }

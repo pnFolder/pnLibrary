@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleMetricsDefinition;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,11 +32,11 @@ public final class ModuleMetrics implements MetricsController {
 
     public ModuleMetrics(@NotNull Object owner, @NotNull MetricsService service, @NotNull ModuleMetricsDefinition definition,
                          @Nullable ErrorReporter errorReporter) {
-        this.owner = owner;
-        this.service = service;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.service = Objects.requireNonNull(service, "service");
         this.errorReporter = errorReporter;
-        this.configurers = new ArrayList<Consumer<PluginMetrics>>(definition.getConfigurers());
-        this.configuredProviders = new ArrayList<MetricsProviderConfiguration>(definition.getProviders());
+        this.configurers = new ArrayList<>(definition.getConfigurers());
+        this.configuredProviders = new ArrayList<>(definition.getProviders());
         if (definition.isEnabled()) {
             enable();
         }
@@ -53,7 +55,7 @@ public final class ModuleMetrics implements MetricsController {
     @Override
     public @NotNull List<MetricsProviderConfiguration> getProviderConfigurations() {
         synchronized (lock) {
-            return new ArrayList<MetricsProviderConfiguration>(configuredProviders);
+            return new ArrayList<>(configuredProviders);
         }
     }
 
@@ -153,7 +155,7 @@ public final class ModuleMetrics implements MetricsController {
     }
 
     private PluginMetrics openSession() {
-        List<MetricsProviderConfiguration> enabled = new ArrayList<MetricsProviderConfiguration>();
+        List<MetricsProviderConfiguration> enabled = new ArrayList<>();
         for (MetricsProviderConfiguration provider : configuredProviders) {
             if (provider.isEnabled()) {
                 enabled.add(provider);

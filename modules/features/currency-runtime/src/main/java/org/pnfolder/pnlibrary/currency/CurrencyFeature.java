@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.BuiltInCurrencyStorage;
 import java.util.function.BiConsumer;
 
 import org.jetbrains.annotations.NotNull;

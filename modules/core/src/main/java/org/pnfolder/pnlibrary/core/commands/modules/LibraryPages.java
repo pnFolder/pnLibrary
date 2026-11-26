@@ -96,7 +96,7 @@ final class LibraryPages {
         for (List<LibraryRow> rows : byOwner.values()) {
             count += rows.size();
         }
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Библиотеки", kit.text(String.valueOf(count), ChatPalette.LABEL)));
         if (count == 0) {
@@ -118,14 +118,14 @@ final class LibraryPages {
     }
 
     private Map<String, List<LibraryRow>> groupedByOwner(String owner) {
-        Map<String, List<LibraryRow>> byOwner = new LinkedHashMap<String, List<LibraryRow>>();
+        Map<String, List<LibraryRow>> byOwner = new LinkedHashMap<>();
         for (LibraryRow row : LibraryRow.all(library)) {
             if (owner != null && !row.belongsTo(owner)) {
                 continue;
             }
             List<LibraryRow> own = byOwner.get(row.getOwner());
             if (own == null) {
-                own = new ArrayList<LibraryRow>();
+                own = new ArrayList<>();
                 byOwner.put(row.getOwner(), own);
             }
             own.add(row);

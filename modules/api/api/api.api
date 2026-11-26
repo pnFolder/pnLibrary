@@ -86,81 +86,6 @@ public final class org/pnfolder/pnlibrary/api/audience/delivery/Receipt {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/audienceB2/AudienceExtensions {
-	public static fun displayName (Lnet/kyori/adventure/audience/Audience;)Lnet/kyori/adventure/text/Component;
-	public static fun locale (Lnet/kyori/adventure/audience/Audience;)Ljava/util/Locale;
-	public static fun name (Lnet/kyori/adventure/audience/Audience;)Ljava/lang/String;
-	public static fun uniqueId (Lnet/kyori/adventure/audience/Audience;)Ljava/util/UUID;
-}
-
-public final class org/pnfolder/pnlibrary/api/audienceB2/AudiencePointers {
-	public static fun builder ()Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder {
-	public fun build ()Lnet/kyori/adventure/pointer/Pointers;
-	public fun displayName (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-	public fun locale (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-	public fun name (Ljava/util/function/Supplier;)Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-	public fun permission (Ljava/util/function/Predicate;)Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-	public fun uniqueId (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audienceB2/AudiencePointers$Builder;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/audienceB2/Audiences : net/kyori/adventure/audience/ForwardingAudience {
-	public abstract fun console ()Lorg/pnfolder/pnlibrary/api/audienceB2/Console;
-	public abstract fun player (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audienceB2/OnlinePlayer;
-	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/audienceB2/OnlinePlayer;
-	public abstract fun players ()Ljava/util/List;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/audienceB2/Console : net/kyori/adventure/audience/Audience {
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/audienceB2/OnlinePlayer : net/kyori/adventure/audience/Audience {
-	public fun addEffect (Lorg/pnfolder/pnlibrary/api/world/StatusEffect;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public fun countItems (Lorg/pnfolder/pnlibrary/api/world/ItemMatcher;)Ljava/lang/Integer;
-	public fun experienceLevel ()Ljava/lang/Double;
-	public fun experiencePoints ()Ljava/lang/Double;
-	public abstract fun getUniqueId ()Ljava/util/UUID;
-	public fun position ()Lorg/pnfolder/pnlibrary/api/world/Position;
-	public fun runCommand (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public fun runConsoleCommand (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public fun spawnParticle (Lorg/pnfolder/pnlibrary/api/world/Particle;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-}
-
-public abstract interface class org/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery {
-	public static fun combine (Ljava/lang/Iterable;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public static fun delivered ()Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public static fun failed (Ljava/lang/Throwable;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public abstract fun getDelivered ()I
-	public abstract fun getFailure ()Ljava/lang/Throwable;
-	public abstract fun getReceipts ()Ljava/util/List;
-	public abstract fun getStatus ()Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public abstract fun orThrow ()Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public static fun to (Lnet/kyori/adventure/audience/Audience;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-	public static fun unsupported ()Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/Delivery;
-}
-
-public final class org/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus : java/lang/Enum {
-	public static final field DELIVERED Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public static final field FAILED Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public static final field PARTIAL Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public static final field UNSUPPORTED Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-}
-
-public final class org/pnfolder/pnlibrary/api/audienceB2/delivery/Receipt {
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;)V
-	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;Ljava/lang/Throwable;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getCause ()Ljava/lang/Throwable;
-	public fun getReceiver ()Ljava/lang/String;
-	public fun getStatus ()Lorg/pnfolder/pnlibrary/api/audienceB2/delivery/DeliveryStatus;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public class org/pnfolder/pnlibrary/api/chat/ChatKit {
 	public static final field MAX_LINE I
 	public static final field MAX_MESSAGE I
@@ -2251,14 +2176,37 @@ public final class org/pnfolder/pnlibrary/api/registry/Visibility : java/lang/En
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/registry/Visibility;
 }
 
-public final class org/pnfolder/pnlibrary/api/remote/DenyAction : java/lang/Enum {
-	public static final field DISABLE_MODULE Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
-	public static final field DISABLE_PLUGIN Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
+public abstract interface class org/pnfolder/pnlibrary/api/remote/RemotePolicy {
+	public abstract fun check (Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult;
 }
 
-public final class org/pnfolder/pnlibrary/api/remote/PlatformInfo {
+public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;Ljava/time/Duration;)V
+	public static fun builder ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCheckEvery ()Ljava/time/Duration;
+	public fun getOnDeny ()Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;
+	public fun getOnError ()Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+	public fun getSource ()Ljava/lang/String;
+	public fun getStartupTimeout ()Ljava/time/Duration;
+	public fun getValues ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder {
+	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
+	public fun checkEvery (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun onDeny (Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun onError (Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun startupTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+	public fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/context/PlatformInfo {
 	public fun <init> (Lorg/pnfolder/pnlibrary/api/platform/PlatformType;Ljava/lang/String;Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getKey ()Ljava/lang/String;
@@ -2270,15 +2218,7 @@ public final class org/pnfolder/pnlibrary/api/remote/PlatformInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/remote/PolicyErrorAction : java/lang/Enum {
-	public static final field DENY Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-	public static final field DENY_UNTIL_CHECKED Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-	public static final field KEEP_RUNNING Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/ProductInfo {
+public final class org/pnfolder/pnlibrary/api/remote/context/ProductInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId ()Ljava/lang/String;
@@ -2288,97 +2228,27 @@ public final class org/pnfolder/pnlibrary/api/remote/ProductInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class org/pnfolder/pnlibrary/api/remote/RemotePolicy {
-	public abstract fun check (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyContext {
-	public static fun builder ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun getPlatform ()Lorg/pnfolder/pnlibrary/api/remote/PlatformInfo;
-	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/remote/ProductInfo;
-	public fun getServer ()Lorg/pnfolder/pnlibrary/api/remote/ServerInfo;
+public final class org/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext {
+	public static fun builder ()Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun getPlatform ()Lorg/pnfolder/pnlibrary/api/remote/context/PlatformInfo;
+	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/remote/context/ProductInfo;
+	public fun getServer ()Lorg/pnfolder/pnlibrary/api/remote/context/ServerInfo;
 	public fun getValues ()Ljava/util/Map;
 	public fun nativeHandle (Ljava/lang/Class;)Ljava/lang/Object;
 	public fun requireNative (Ljava/lang/Class;)Ljava/lang/Object;
 }
 
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder {
-	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext;
-	public fun nativeHandle (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun platform (Lorg/pnfolder/pnlibrary/api/remote/PlatformInfo;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun product (Lorg/pnfolder/pnlibrary/api/remote/ProductInfo;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun server (Lorg/pnfolder/pnlibrary/api/remote/ServerInfo;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
-	public fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyContext$Builder;
+public final class org/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder {
+	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext;
+	public fun nativeHandle (Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun platform (Lorg/pnfolder/pnlibrary/api/remote/context/PlatformInfo;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun product (Lorg/pnfolder/pnlibrary/api/remote/context/ProductInfo;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun server (Lorg/pnfolder/pnlibrary/api/remote/context/ServerInfo;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
+	public fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/context/RemotePolicyContext$Builder;
 }
 
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation {
-	public static fun builder (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
-	public fun getChildren ()Ljava/util/List;
-	public fun getText ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Builder {
-	public fun branch (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
-	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;
-	public fun child (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
-	public fun child (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult {
-	public static fun allow ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
-	public static fun allowing (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public static fun deny (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
-	public static fun deny (Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
-	public static fun denying (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun getAllowed ()Z
-	public fun getDetails ()Ljava/util/Map;
-	public fun getExplanation ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyExplanation;
-	public fun getHeadline ()Ljava/lang/String;
-	public fun getLinks ()Ljava/util/Map;
-	public fun getMessage ()Ljava/lang/String;
-	public fun getStatus ()Ljava/lang/String;
-	public fun getSteps ()Ljava/util/List;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder {
-	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult;
-	public fun detail (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun headline (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun link (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun reason (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun reason (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun status (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-	public fun step (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicyResult$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings {
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Lorg/pnfolder/pnlibrary/api/remote/DenyAction;Ljava/util/Map;Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;Ljava/time/Duration;)V
-	public static fun builder ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getCheckEvery ()Ljava/time/Duration;
-	public fun getOnDeny ()Lorg/pnfolder/pnlibrary/api/remote/DenyAction;
-	public fun getOnError ()Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;
-	public fun getSource ()Ljava/lang/String;
-	public fun getStartupTimeout ()Ljava/time/Duration;
-	public fun getValues ()Ljava/util/Map;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder {
-	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings;
-	public fun checkEvery (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun onDeny (Lorg/pnfolder/pnlibrary/api/remote/DenyAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun onError (Lorg/pnfolder/pnlibrary/api/remote/PolicyErrorAction;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun source (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun startupTimeout (Ljava/time/Duration;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun value (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-	public fun values (Ljava/util/Map;)Lorg/pnfolder/pnlibrary/api/remote/RemotePolicySettings$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/remote/ServerInfo {
+public final class org/pnfolder/pnlibrary/api/remote/context/ServerInfo {
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getMinecraft ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
@@ -2386,6 +2256,61 @@ public final class org/pnfolder/pnlibrary/api/remote/ServerInfo {
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/DenyAction : java/lang/Enum {
+	public static final field DISABLE_MODULE Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;
+	public static final field DISABLE_PLUGIN Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/remote/result/DenyAction;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction : java/lang/Enum {
+	public static final field DENY Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+	public static final field DENY_UNTIL_CHECKED Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+	public static final field KEEP_RUNNING Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/remote/result/PolicyErrorAction;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation {
+	public static fun builder (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation$Builder;
+	public fun getChildren ()Ljava/util/List;
+	public fun getText ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation$Builder {
+	public fun branch (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation$Builder;
+	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation;
+	public fun child (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation$Builder;
+	public fun child (Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation$Builder;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult {
+	public static fun allow ()Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult;
+	public static fun allowing (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public static fun deny (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult;
+	public static fun deny (Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult;
+	public static fun denying (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun getAllowed ()Z
+	public fun getDetails ()Ljava/util/Map;
+	public fun getExplanation ()Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyExplanation;
+	public fun getHeadline ()Ljava/lang/String;
+	public fun getLinks ()Ljava/util/Map;
+	public fun getMessage ()Ljava/lang/String;
+	public fun getStatus ()Ljava/lang/String;
+	public fun getSteps ()Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder {
+	public fun build ()Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult;
+	public fun detail (Ljava/lang/String;Ljava/lang/Object;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun headline (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun link (Ljava/lang/String;Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun reason (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun reason (Ljava/lang/String;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun status (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
+	public fun step (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/remote/result/RemotePolicyResult$Builder;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/runtime/PnLibrary : java/io/Closeable {
@@ -3636,7 +3561,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateRegistr
 	public abstract fun downloadNow ()V
 	public abstract fun getRepository ()Ljava/lang/String;
 	public abstract fun getSnapshot ()Lorg/pnfolder/pnlibrary/api/updates/state/UpdateSnapshot;
-	public fun isClosed ()Z
+	public abstract fun isClosed ()Z
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService {
@@ -3650,10 +3575,6 @@ public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateService
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/updates/UpdateSettings {
-	public fun automaticDownload (Ljava/lang/String;Z)Ljava/util/concurrent/CompletionStage;
-	public abstract fun automaticDownload (Ljava/lang/String;ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
-	public fun automaticDownloadForAll (Z)Ljava/util/concurrent/CompletionStage;
-	public abstract fun automaticDownloadForAll (ZLorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public fun channel (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun channel (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Lorg/pnfolder/pnlibrary/api/updates/state/UpdateActor;)Ljava/util/concurrent/CompletionStage;
 	public abstract fun heldUntil (Ljava/lang/String;)Ljava/time/Instant;

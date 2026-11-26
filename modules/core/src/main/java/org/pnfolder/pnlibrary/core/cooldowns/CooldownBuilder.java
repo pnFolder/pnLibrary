@@ -19,9 +19,9 @@ import org.pnfolder.pnlibrary.api.cooldowns.builder.TierPick;
 /** Collects what a plugin asks of one cooldown and builds the {@link NamedCooldown}. */
 public final class CooldownBuilder implements Cooldown.Builder {
     private Duration duration;
-    private final List<String> bypassPermissions = new ArrayList<String>();
-    private final List<Predicate<Audience>> bypassConditions = new ArrayList<Predicate<Audience>>();
-    private final List<CooldownTier> tiers = new ArrayList<CooldownTier>();
+    private final List<String> bypassPermissions = new ArrayList<>();
+    private final List<Predicate<Audience>> bypassConditions = new ArrayList<>();
+    private final List<CooldownTier> tiers = new ArrayList<>();
     private TierPick pick = TierPick.FIRST;
     private boolean shared;
     private Consumer<CooldownDenied> denied;
@@ -52,7 +52,7 @@ public final class CooldownBuilder implements Cooldown.Builder {
 
     @Override
     public @NotNull Cooldown.Builder tier(@NotNull Collection<String> permissions, @NotNull Duration value) {
-        tiers.add(new CooldownTier(new ArrayList<String>(permissions), value, null));
+        tiers.add(new CooldownTier(new ArrayList<>(permissions), value, null));
         return this;
     }
 
@@ -63,7 +63,7 @@ public final class CooldownBuilder implements Cooldown.Builder {
 
     @Override
     public @NotNull Cooldown.Builder tier(@NotNull Collection<String> permissions, double factor) {
-        tiers.add(new CooldownTier(new ArrayList<String>(permissions), null, factor));
+        tiers.add(new CooldownTier(new ArrayList<>(permissions), null, factor));
         return this;
     }
 
@@ -98,8 +98,8 @@ public final class CooldownBuilder implements Cooldown.Builder {
         if (duration.isNegative()) {
             throw new IllegalArgumentException("Cooldown duration cannot be negative");
         }
-        CooldownSettings settings = new CooldownSettings(duration, new ArrayList<String>(bypassPermissions),
-            new ArrayList<Predicate<Audience>>(bypassConditions), new ArrayList<CooldownTier>(tiers), pick, shared,
+        CooldownSettings settings = new CooldownSettings(duration, new ArrayList<>(bypassPermissions),
+            new ArrayList<>(bypassConditions), new ArrayList<>(tiers), pick, shared,
             denied, started);
         return new NamedCooldown(service, action, settings);
     }

@@ -18,21 +18,21 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler;
 /** Mutable construction DSL that produces an immutable {@link CommandDefinition}. */
 public final class CommandBuilder {
     private final String name;
-    private final Set<String> aliases = new LinkedHashSet<String>();
+    private final Set<String> aliases = new LinkedHashSet<>();
     private String permission;
     private List<String> alsoPermissions = Collections.emptyList();
     private boolean consoleBypassesPermission;
     private String noPermissionMessage;
     private final Map<Class<? extends CommandError>, CommandErrorHandler<?>> errorHandlers =
-            new LinkedHashMap<Class<? extends CommandError>, CommandErrorHandler<?>>();
+            new LinkedHashMap<>();
     private SenderRule senderRule = SenderRule.ANY;
     private CommandHandler execution = context -> CommandDefinition.completedExecution();
     private boolean executable;
     private boolean acceptsExtraArguments;
-    private SuggestionHandler suggestions = context -> CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+    private SuggestionHandler suggestions = context -> CommandDefinition.completedSuggestions(Collections.emptyList());
     private CommandAvailability availability = context -> true;
-    private final List<CommandNodeBuilder> children = new ArrayList<CommandNodeBuilder>();
-    private final List<CommandNode> mounted = new ArrayList<CommandNode>();
+    private final List<CommandNodeBuilder> children = new ArrayList<>();
+    private final List<CommandNode> mounted = new ArrayList<>();
 
     CommandBuilder(String name) {
         this.name = CommandDefinition.normalizeCommandName(name, "command name");
@@ -69,7 +69,7 @@ public final class CommandBuilder {
     @NotNull
     public CommandBuilder permission(@NotNull String value, @NotNull String... others) {
         permission = nonBlank(value, "Command permission must not be blank");
-        List<String> also = new ArrayList<String>();
+        List<String> also = new ArrayList<>();
         for (String other : others) {
             also.add(nonBlank(other, "Command permission must not be blank"));
         }

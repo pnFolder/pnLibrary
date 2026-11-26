@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,14 +18,14 @@ public final class ModuleCommands {
     private final CommandService commands;
     private final CommandFeedbackScope feedback;
     private final BooleanSupplier closed;
-    private final List<CommandRegistration> registrations = new ArrayList<CommandRegistration>();
+    private final List<CommandRegistration> registrations = new ArrayList<>();
 
     public ModuleCommands(@NotNull Object owner, @Nullable CommandService commands, @NotNull CommandFeedbackScope feedback,
                           @NotNull BooleanSupplier closed) {
-        this.owner = owner;
+        this.owner = Objects.requireNonNull(owner, "owner");
         this.commands = commands;
-        this.feedback = feedback;
-        this.closed = closed;
+        this.feedback = Objects.requireNonNull(feedback, "feedback");
+        this.closed = Objects.requireNonNull(closed, "closed");
     }
 
     public @NotNull CommandRegistration register(@NotNull CommandDefinition command) {
@@ -53,7 +54,7 @@ public final class ModuleCommands {
     /** Hands over every registration still held and forgets them. */
     public @NotNull List<CommandRegistration> drain() {
         synchronized (registrations) {
-            List<CommandRegistration> held = new ArrayList<CommandRegistration>(registrations);
+            List<CommandRegistration> held = new ArrayList<>(registrations);
             registrations.clear();
             return held;
         }

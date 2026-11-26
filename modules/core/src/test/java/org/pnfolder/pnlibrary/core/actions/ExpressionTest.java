@@ -37,7 +37,7 @@ import org.pnfolder.pnlibrary.api.scenario.requirements.builtin.RefRequirement;
 import org.pnfolder.pnlibrary.api.tasks.TaskScope;
 import org.pnfolder.pnlibrary.api.text.ComponentService;
 import org.pnfolder.pnlibrary.api.text.serializer.ComponentSerializerType;
-import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ScenarioDefinitions;
 
 /** The calculator, named definitions, calls and typed error handlers. */
 class ExpressionTest {
@@ -55,7 +55,7 @@ class ExpressionTest {
             values.put((String) namesAndValues[index], namesAndValues[index + 1]);
         }
         return new ActionContext(player, player, mock(ComponentService.class), mock(PnLogger.class), mock(TaskScope.class),
-            ComponentSerializerType.ADAPTIVE, values, Collections.<Class<?>, Object>emptyMap(), type -> null,
+            ComponentSerializerType.ADAPTIVE, values, Collections.emptyMap(), type -> null,
             definitions.view("shop/main"), null);
     }
 
@@ -160,12 +160,12 @@ class ExpressionTest {
 
         Map<String, String> first = Collections.singletonMap("who", "{= 1 + 1}");
         Map<String, String> second = Collections.singletonMap("who", "Bob");
-        ActionResult result = ctx.execute(Arrays.<Action>asList(new CallAction("greet", first), new CallAction("greet", second)));
+        ActionResult result = ctx.execute(Arrays.asList(new CallAction("greet", first), new CallAction("greet", second)));
 
         assertEquals(ActionResult.Done.INSTANCE, result);
         assertEquals(Arrays.asList("hello 2", "hello Bob"), log);
         assertNull(ctx.value("who"));
-        assertTrue(ctx.execute(Collections.<Action>singletonList(new CallAction("nope"))) instanceof ActionResult.Failed);
+        assertTrue(ctx.execute(Collections.singletonList(new CallAction("nope"))) instanceof ActionResult.Failed);
     }
 
     @Test
@@ -241,9 +241,9 @@ class ExpressionTest {
             new ErrorHandler(Collections.singletonList("currency.*"), Collections.singletonList(say("money: {error_code}")))),
             Collections.singletonList(say("other")));
 
-        context().execute(Collections.<Action>singletonList(attempt));
+        context().execute(Collections.singletonList(attempt));
         Action boom = context -> new ActionResult.Failed("x.y", "boom");
-        context().execute(Collections.<Action>singletonList(new AttemptAction(Collections.singletonList(boom),
+        context().execute(Collections.singletonList(new AttemptAction(Collections.singletonList(boom),
             attempt.getHandlers(), attempt.getFail())));
 
         assertEquals(Arrays.asList("money: currency.insufficient-funds", "other"), log);
@@ -263,7 +263,7 @@ class ExpressionTest {
         RandomAction only = new RandomAction(Arrays.asList(rare, common));
 
         for (int index = 0; index < 20; index++) {
-            ctx.execute(Collections.<Action>singletonList(only));
+            ctx.execute(Collections.singletonList(only));
         }
 
         int commons = 0;

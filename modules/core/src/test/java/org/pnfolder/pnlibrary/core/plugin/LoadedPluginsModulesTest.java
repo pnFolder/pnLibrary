@@ -47,7 +47,7 @@ class LoadedPluginsModulesTest {
                 case "ownerDetails":
                     return details;
                 case "installedPlugins":
-                    return new HashMap<String, String>();
+                    return new HashMap<>();
                 default:
                     return null;
             }

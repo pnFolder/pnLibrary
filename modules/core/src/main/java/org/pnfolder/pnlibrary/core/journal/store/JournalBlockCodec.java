@@ -78,7 +78,7 @@ public final class JournalBlockCodec {
 
     /** Decodes every complete block; stops at the first incomplete one, which is what an interrupted write leaves. */
     public static @NotNull List<JournalRecord> decodeAll(@NotNull byte[] bytes) {
-        List<JournalRecord> result = new ArrayList<JournalRecord>();
+        List<JournalRecord> result = new ArrayList<>();
         visit(new ByteArrayInputStream(bytes), bytes.length, result::add);
         return result;
     }
@@ -114,7 +114,7 @@ public final class JournalBlockCodec {
                     continue;
                 }
                 for (JournalRecord decoded : Failures.runCatchingNonFatal(() -> decodePayload(payload))
-                    .getOrDefault(Collections.<JournalRecord>emptyList())) {
+                    .getOrDefault(Collections.emptyList())) {
                     record.accept(decoded);
                 }
             }
@@ -129,7 +129,7 @@ public final class JournalBlockCodec {
             if (count < 0 || count > 10_000) {
                 throw new IllegalArgumentException("Invalid journal record count");
             }
-            List<JournalRecord> records = new ArrayList<JournalRecord>(count);
+            List<JournalRecord> records = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 records.add(readRecord(input));
             }
@@ -143,7 +143,7 @@ public final class JournalBlockCodec {
         out.writeUTF(take(record.getSource(), JournalRecord.MAX_DETAIL_CHARS));
         out.writeUTF(take(record.getType(), JournalRecord.MAX_DETAIL_CHARS));
         out.writeUTF(take(record.getMessage(), JournalRecord.MAX_MESSAGE_CHARS));
-        List<Map.Entry<String, String>> details = new ArrayList<Map.Entry<String, String>>();
+        List<Map.Entry<String, String>> details = new ArrayList<>();
         for (Map.Entry<String, String> entry : record.getDetails().entrySet()) {
             if (details.size() == MAX_DETAILS) {
                 break;
@@ -165,7 +165,7 @@ public final class JournalBlockCodec {
         String source = input.readUTF();
         String type = input.readUTF();
         String message = input.readUTF();
-        Map<String, String> details = new LinkedHashMap<String, String>();
+        Map<String, String> details = new LinkedHashMap<>();
         int count = input.readUnsignedShort();
         for (int i = 0; i < count; i++) {
             String key = input.readUTF();

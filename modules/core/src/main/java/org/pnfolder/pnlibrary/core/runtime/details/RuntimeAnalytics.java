@@ -17,7 +17,7 @@ public final class RuntimeAnalytics {
                                                   @NotNull Map<String, Object> observability) {
         Object occurrences = history.get("occurrenceCount");
         int incidentCount = occurrences instanceof Number ? ((Number) occurrences).intValue() : 0;
-        Map<String, Object> analytics = new LinkedHashMap<String, Object>();
+        Map<String, Object> analytics = new LinkedHashMap<>();
         analytics.put("status", status(taskFailures, failedUpdates, incidentCount));
         analytics.put("signals", signals(taskFailures, failedUpdates, incidentCount, occurrences));
         analytics.put("resources", resources(taskCount, updateCount, diagnosticSummary, nativeLogs, reports));
@@ -33,7 +33,7 @@ public final class RuntimeAnalytics {
     }
 
     private static List<Object> signals(int taskFailures, int failedUpdates, int incidentCount, Object occurrences) {
-        List<Object> signals = new ArrayList<Object>();
+        List<Object> signals = new ArrayList<>();
         if (taskFailures > 0) {
             signals.add(signal("taskFailures", "critical", taskFailures));
         }
@@ -47,7 +47,7 @@ public final class RuntimeAnalytics {
     }
 
     private static Map<String, Object> signal(String code, String severity, Object count) {
-        Map<String, Object> signal = new LinkedHashMap<String, Object>();
+        Map<String, Object> signal = new LinkedHashMap<>();
         signal.put("code", code);
         signal.put("severity", severity);
         signal.put("count", count);
@@ -56,7 +56,7 @@ public final class RuntimeAnalytics {
 
     private static Map<String, Object> resources(int taskCount, int updateCount, Map<String, Object> diagnosticSummary,
                                                  Map<String, Object> nativeLogs, Map<String, Object> reports) {
-        Map<String, Object> resources = new LinkedHashMap<String, Object>();
+        Map<String, Object> resources = new LinkedHashMap<>();
         resources.put("registeredTasks", taskCount);
         resources.put("registeredUpdates", updateCount);
         resources.put("diagnosticEntries",
@@ -69,7 +69,7 @@ public final class RuntimeAnalytics {
 
     private static Map<String, Object> counts(int taskFailures, int failedUpdates, Map<String, Object> history,
                                               Map<String, Object> observability, Map<String, Object> reports) {
-        Map<String, Object> counts = new LinkedHashMap<String, Object>();
+        Map<String, Object> counts = new LinkedHashMap<>();
         counts.put("taskFailures", taskFailures);
         counts.put("updateFailures", failedUpdates);
         counts.put("diagnosticIncidents", history.get("incidentCount"));

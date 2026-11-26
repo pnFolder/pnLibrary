@@ -109,7 +109,7 @@ Velocity требует 17, Paper Brigadier и FastStats для Velocity тре�
 
 ```
 data/
-  updates/        каталог, события, транзакции, копии, preferences.json (каналы, автозагрузка, паузы), install.lock
+  updates/        каталог, события, транзакции, копии, preferences.json (каналы, паузы), install.lock
   journal/        журнал сервера
   history/        task-history.tsv, event-history.tsv
   reports/        отчёты поддержки
@@ -119,7 +119,7 @@ data/
   upload-ledger.json
 ```
 
-Каналы, автозагрузку и паузы хранит один файл `preferences.json` (`UpdatePreferencesStore`): одна блокировка и одна модель
+Каналы и паузы хранит один файл `preferences.json` (`UpdatePreferencesStore`): одна блокировка и одна модель
 в памяти, каждый владелец (`UpdatePolicyOverrides`, `FreezeStore`) меняет только свой раздел. `LegacyLayoutMigration` при старте
 (и перед офлайн-установщиком) переносит состояние старых версий в `data/`, ничего не перезаписывая, и сливает старые
 `settings.json` и `freezes.json` в `preferences.json`.
@@ -138,7 +138,7 @@ data/
 | `core.journal` (модуль `journal`) | журнал событий `/pn events` и сводка ошибок при входе |
 | `core.observability`, `core.diagnostics`, `core.logging` | «чёрный ящик», отчёты для поддержки, логи |
 | `core.upload` | загрузка зашифрованных отчётов |
-| `updates.*` (модуль `updates`; `layout` пути и перенос старой папки) и `core.updates.catalog` (в `core`) | `core.updates.catalog` команды и страницы; `service` сервис обновлений, `policy` каналы и автозагрузка, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
+| `updates.*` (модуль `updates`; `layout` пути и перенос старой папки) и `core.updates.catalog` (в `core`) | `core.updates.catalog` команды и страницы; `service` сервис обновлений, `policy` каналы, `install` подбор версий и установка, `history` журнал и снимки, `engine` каталоги, загрузка, проверка, транзакции, `databases` копии баз данных |
 | `core.downloads` | загрузка зависимостей плагинов |
 | `core.metrics` | bStats и FastStats за одним `MetricsService` |
 | `core.plugin` | регистрация плагинов и модулей |

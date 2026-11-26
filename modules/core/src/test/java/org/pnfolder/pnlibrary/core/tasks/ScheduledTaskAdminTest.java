@@ -60,7 +60,7 @@ class ScheduledTaskAdminTest {
         scope.schedule(TaskSpec.builder().name("shown").action(context -> { }).build());
         scope.schedule(TaskSpec.builder().name("secret").hidden(true).action(context -> { }).build());
 
-        Map<String, Boolean> hidden = new HashMap<String, Boolean>();
+        Map<String, Boolean> hidden = new HashMap<>();
         for (TaskSnapshot snapshot : service.query()) {
             hidden.put(snapshot.getName(), snapshot.getHidden());
         }

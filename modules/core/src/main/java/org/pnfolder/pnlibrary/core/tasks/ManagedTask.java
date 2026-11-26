@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.tasks;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle;
@@ -33,10 +34,10 @@ public final class ManagedTask implements TaskHandle {
     private final BiFunction<TaskSpec, TaskId, TaskHandle> spawn;
     private final TaskId parentId;
     private final TaskId id = TaskId.random();
-    private final AtomicReference<TaskStatus> state = new AtomicReference<TaskStatus>(TaskStatus.SCHEDULED);
+    private final AtomicReference<TaskStatus> state = new AtomicReference<>(TaskStatus.SCHEDULED);
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-    private final AtomicReference<PlatformTaskHandle> platformHandle = new AtomicReference<PlatformTaskHandle>();
-    private final ConcurrentLinkedQueue<TaskHandle> linkedChildren = new ConcurrentLinkedQueue<TaskHandle>();
+    private final AtomicReference<PlatformTaskHandle> platformHandle = new AtomicReference<>();
+    private final ConcurrentLinkedQueue<TaskHandle> linkedChildren = new ConcurrentLinkedQueue<>();
     private final TaskRunStats stats = new TaskRunStats();
     private final Instant created = Instant.now();
     private volatile Instant nextRun;
@@ -64,11 +65,11 @@ public final class ManagedTask implements TaskHandle {
             @NotNull Consumer<ManagedTask> onTerminal,
             @NotNull BiFunction<TaskSpec, TaskId, TaskHandle> spawn,
             @Nullable TaskId parentId) {
-        this.owner = owner;
-        this.scopeToken = scopeToken;
-        this.spec = spec;
-        this.errorLogger = errorLogger;
-        this.onTerminal = onTerminal;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.scopeToken = Objects.requireNonNull(scopeToken, "scopeToken");
+        this.spec = Objects.requireNonNull(spec, "spec");
+        this.errorLogger = Objects.requireNonNull(errorLogger, "errorLogger");
+        this.onTerminal = Objects.requireNonNull(onTerminal, "onTerminal");
         this.spawn = spawn;
         this.parentId = parentId;
         this.nextRun = created.plus(spec.getDelay());

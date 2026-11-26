@@ -14,18 +14,18 @@ import java.util.Map;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.PlatformInfo;
-import org.pnfolder.pnlibrary.api.remote.ProductInfo;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
-import org.pnfolder.pnlibrary.api.remote.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.tasks.TaskHandle;
 import org.pnfolder.pnlibrary.api.tasks.TaskScope;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeResources;
-import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy;
+import org.pnfolder.pnlibrary.core.remote.monitor.RuntimeRemotePolicy;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
 
 /** A library, a platform and a task scope that record what the library's own remote policy does with them. */

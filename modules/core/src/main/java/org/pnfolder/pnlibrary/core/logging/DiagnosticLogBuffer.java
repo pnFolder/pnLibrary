@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.logging;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -80,8 +81,8 @@ public final class DiagnosticLogBuffer {
     public DiagnosticLogBuffer(int capacity, @NotNull Function<String, String> redact,
                                @NotNull IncidentFingerprint fingerprintOf) {
         this.capacity = capacity;
-        this.redact = redact;
-        this.fingerprintOf = fingerprintOf;
+        this.redact = Objects.requireNonNull(redact, "redact");
+        this.fingerprintOf = Objects.requireNonNull(fingerprintOf, "fingerprintOf");
     }
 
     public void onChange(@NotNull Consumer<List<Map<String, Object>>> listener) {

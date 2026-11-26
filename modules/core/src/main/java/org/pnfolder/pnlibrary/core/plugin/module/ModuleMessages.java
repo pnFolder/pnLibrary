@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.logging.MessageBox;
@@ -11,8 +12,8 @@ public final class ModuleMessages implements PluginMessages {
     private final LoggingService logging;
 
     public ModuleMessages(@NotNull Object owner, @NotNull LoggingService logging) {
-        this.owner = owner;
-        this.logging = logging;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.logging = Objects.requireNonNull(logging, "logging");
     }
 
     @Override

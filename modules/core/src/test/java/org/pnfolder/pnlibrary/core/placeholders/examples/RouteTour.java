@@ -21,7 +21,7 @@ public class RouteTour {
     /** All parts in the order written, each with its kind: {@code {route.show.x}} gives the whole list. */
     @Placeholder
     public Reply<String> show(@Route RouteInfo route, @Argument ArgumentValue<String> text) {
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         for (RoutePart part : route.getParts()) {
             parts.add(part.getKind() + ":" + part.getText());
         }
@@ -56,7 +56,7 @@ public class RouteTour {
     /** Formats written after the bar, with their arguments: {@code {route.formats|pad0:4|upper}}. */
     @Placeholder
     public Reply<String> formats(@Route RouteInfo route) {
-        List<String> formats = new ArrayList<String>();
+        List<String> formats = new ArrayList<>();
         for (RoutePart format : route.of(RouteKind.FORMAT)) {
             formats.add(format.getName() + "(" + String.join(",", format.getArguments()) + ")");
         }
@@ -67,7 +67,7 @@ public class RouteTour {
     /** What lies below a branch: the parts after the first part called {@code deep}. */
     @Placeholder
     public Reply<DeepBranch> deep(@Route RouteInfo route) {
-        List<String> below = new ArrayList<String>();
+        List<String> below = new ArrayList<>();
         for (RoutePart part : route.after("deep")) {
             below.add(part.getText());
         }

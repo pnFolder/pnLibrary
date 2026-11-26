@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.policy;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,17 +25,14 @@ public final class UpdatePolicyOverrides {
 
     /** Creates the overrides over {@code store} and reports unusable stored values to nobody. */
     public UpdatePolicyOverrides(@NotNull UpdatePreferencesStore store) {
-        this(store, new Consumer<String>() {
-            @Override
-            public void accept(String message) {
-            }
-        });
+        this(store, message -> {
+            });
     }
 
     /** Creates the overrides over {@code store}; unusable stored values go to {@code warning}. */
     public UpdatePolicyOverrides(@NotNull UpdatePreferencesStore store, @NotNull Consumer<String> warning) {
-        this.store = store;
-        this.warning = warning;
+        this.store = Objects.requireNonNull(store, "store");
+        this.warning = Objects.requireNonNull(warning, "warning");
         this.state = load();
     }
 
@@ -57,49 +55,10 @@ public final class UpdatePolicyOverrides {
         save();
     }
 
-    /** The automatic-download choice for {@code product} at runtime, or null when the default decides. */
-    @Nullable
-    public Boolean automatic(@NotNull String product) {
-        return state.automatic.get(product);
-    }
-
-    /** The automatic-download choice for all plugins together, or null when none was made. */
-    @Nullable
-    public Boolean allPlugins() {
-        return state.allPlugins;
-    }
-
-    /** Whether any component was switched to automatic download at runtime. */
-    public boolean anyAutomaticEnabled() {
-        State current = state;
-        return Boolean.TRUE.equals(current.allPlugins) || current.automatic.containsValue(Boolean.TRUE);
-    }
-
     /** Remembers {@code channel} for {@code product}, or forgets the choice when {@code channel} is null. */
     public synchronized void setChannel(@NotNull String product, @Nullable UpdateChannel channel) {
         State old = state;
         state = new State(with(old.channels, product, channel), old.automatic, old.allPlugins, old.javaBuilds);
-        save();
-    }
-
-    /** Remembers the automatic-download choice for {@code product}. */
-    public synchronized void setAutomatic(@NotNull String product, boolean enabled) {
-        State old = state;
-        state = new State(old.channels, with(old.automatic, product, enabled), old.allPlugins, old.javaBuilds);
-        save();
-    }
-
-    /**
-     * Sets automatic download for every plugin and forgets the choices made for single ones; {@code libraryProduct}
-     * keeps its own.
-     */
-    public synchronized void setAllPlugins(boolean enabled, @NotNull String libraryProduct) {
-        State old = state;
-        Map<String, Boolean> kept = new LinkedHashMap<String, Boolean>();
-        if (old.automatic.containsKey(libraryProduct)) {
-            kept.put(libraryProduct, old.automatic.get(libraryProduct));
-        }
-        state = new State(old.channels, kept, enabled, old.javaBuilds);
         save();
     }
 

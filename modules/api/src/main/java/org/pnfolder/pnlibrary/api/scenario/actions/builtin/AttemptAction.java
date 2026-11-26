@@ -40,17 +40,17 @@ public final class AttemptAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public AttemptAction() {
-        this(Collections.<Action>emptyList(), Collections.<ErrorHandler>emptyList(), Collections.<Action>emptyList(), false, true);
+        this(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), false, true);
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public AttemptAction(@NotNull List<Action> steps) {
-        this(steps, Collections.<ErrorHandler>emptyList(), Collections.<Action>emptyList(), false, true);
+        this(steps, Collections.emptyList(), Collections.emptyList(), false, true);
     }
 
     /** Creates it with the first 2 settings; the rest keep their defaults. */
     public AttemptAction(@NotNull List<Action> steps, @NotNull List<ErrorHandler> handlers) {
-        this(steps, handlers, Collections.<Action>emptyList(), false, true);
+        this(steps, handlers, Collections.emptyList(), false, true);
     }
 
     /** Creates it with the first 3 settings; the rest keep their defaults. */
@@ -65,7 +65,7 @@ public final class AttemptAction implements Action {
 
     /** Creates it with every setting given. */
     public AttemptAction(@NotNull List<Action> steps, @NotNull List<ErrorHandler> handlers, @NotNull List<Action> fail, boolean resume, boolean undo) {
-        this.steps = steps;
+        this.steps = Objects.requireNonNull(steps, "steps");
         this.handlers = handlers;
         this.fail = fail;
         this.resume = resume;

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.remote;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -25,13 +26,13 @@ public final class DataChunk {
      */
     public DataChunk(@NotNull UUID id, @NotNull String to, boolean ok, int index, int count, @NotNull byte[] bytes,
                      @NotNull Instant sentAt) {
-        this.id = id;
-        this.to = to;
+        this.id = Objects.requireNonNull(id, "id");
+        this.to = Objects.requireNonNull(to, "to");
         this.ok = ok;
         this.index = index;
         this.count = count;
-        this.bytes = bytes;
-        this.sentAt = sentAt;
+        this.bytes = Objects.requireNonNull(bytes, "bytes");
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt");
     }
 
     public @NotNull UUID getId() {

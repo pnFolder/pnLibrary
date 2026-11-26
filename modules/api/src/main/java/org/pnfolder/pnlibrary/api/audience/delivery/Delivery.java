@@ -37,7 +37,7 @@ public final class Delivery {
     private final DeliveryStatus status;
 
     private Delivery(List<Receipt> receipts) {
-        this.receipts = Collections.unmodifiableList(new ArrayList<Receipt>(receipts));
+        this.receipts = Collections.unmodifiableList(new ArrayList<>(receipts));
         this.status = summarize(this.receipts);
     }
 
@@ -91,7 +91,7 @@ public final class Delivery {
 
     /** Every failure the platform reported, in order. */
     public @NotNull List<Throwable> getFailures() {
-        List<Throwable> failures = new ArrayList<Throwable>();
+        List<Throwable> failures = new ArrayList<>();
         for (Receipt receipt : receipts) {
             if (receipt.getCause() != null) {
                 failures.add(receipt.getCause());
@@ -152,14 +152,14 @@ public final class Delivery {
 
     /** Joins several deliveries into one that keeps every receipt. */
     public static @NotNull Delivery combine(@NotNull Iterable<Delivery> deliveries) {
-        List<Delivery> all = new ArrayList<Delivery>();
+        List<Delivery> all = new ArrayList<>();
         for (Delivery delivery : deliveries) {
             all.add(delivery);
         }
         if (all.size() == 1) {
             return all.get(0);
         }
-        List<Receipt> receipts = new ArrayList<Receipt>();
+        List<Receipt> receipts = new ArrayList<>();
         for (Delivery delivery : all) {
             receipts.addAll(delivery.receipts);
         }
@@ -172,7 +172,7 @@ public final class Delivery {
      */
     public static @NotNull Delivery to(@NotNull Audience audience, @NotNull Consumer<Audience> operation) {
         if (audience instanceof ForwardingAudience) {
-            List<Delivery> each = new ArrayList<Delivery>();
+            List<Delivery> each = new ArrayList<>();
             for (Audience member : ((ForwardingAudience) audience).audiences()) {
                 each.add(to(member, operation));
             }

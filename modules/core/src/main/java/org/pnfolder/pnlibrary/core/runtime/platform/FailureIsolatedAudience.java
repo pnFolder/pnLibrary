@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime.platform;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
@@ -23,9 +24,9 @@ public final class FailureIsolatedAudience implements ForwardingAudience.Single 
     private final Consumer<Throwable> report;
 
     public FailureIsolatedAudience(@NotNull Audience receiver, @NotNull FailureThrottle throttle, @NotNull Consumer<Throwable> report) {
-        this.receiver = receiver;
-        this.throttle = throttle;
-        this.report = report;
+        this.receiver = Objects.requireNonNull(receiver, "receiver");
+        this.throttle = Objects.requireNonNull(throttle, "throttle");
+        this.report = Objects.requireNonNull(report, "report");
     }
 
     @Override

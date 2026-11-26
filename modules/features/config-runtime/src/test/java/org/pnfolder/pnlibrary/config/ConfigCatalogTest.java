@@ -77,7 +77,7 @@ class ConfigCatalogTest {
     }
 
     private static List<String> ids(List<ConfigInfo> infos) {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
         for (ConfigInfo info : infos) {
             ids.add(info.getId().toString());
         }
@@ -118,7 +118,7 @@ class ConfigCatalogTest {
             awards(scope(service, "quests", "extra"), "other.yml");
             awards(main, "awards.yml");
 
-            List<String> paths = new ArrayList<String>();
+            List<String> paths = new ArrayList<>();
             for (ConfigInfo info : main.list()) {
                 paths.add(info.getPath());
             }
@@ -171,7 +171,7 @@ class ConfigCatalogTest {
             ManagedConfig<AwardsFile> awards = awards(scope(service, "quests"), "awards.yml");
             scope(service, "questitems").type(Award.class, ItemAward.class).name("item").into("quests/main:awards.yml").register();
 
-            assertEquals(Arrays.<Award>asList(new MoneyAward(7), new ItemAward("DIAMOND", 3)), awards.load().getValue().awards);
+            assertEquals(Arrays.asList(new MoneyAward(7), new ItemAward("DIAMOND", 3)), awards.load().getValue().awards);
         }
     }
 
@@ -193,7 +193,7 @@ class ConfigCatalogTest {
         try (YamlConfigurations service = newService()) {
             ManagedConfig<AwardsFile> awards = awards(scope(service, "quests"), "awards.yml", skipping);
 
-            assertEquals(Collections.<Award>singletonList(new MoneyAward(7)), awards.load().getValue().awards);
+            assertEquals(Collections.singletonList(new MoneyAward(7)), awards.load().getValue().awards);
             assertEquals(1, awards.getInfo().getSkippedUnknownTypes().size());
             assertTrue(read(plugins().resolve("quests").resolve("awards.yml")).contains("DIAMOND"), "the element stays in the file");
             // Saving would drop the skipped element from the file, so it is refused.
@@ -203,7 +203,7 @@ class ConfigCatalogTest {
             scope(service, "questitems").type(Award.class, ItemAward.class).name("item").into("quests/main:awards.yml").register();
 
             // Registering the word read the file again by itself.
-            assertEquals(Arrays.<Award>asList(new MoneyAward(7), new ItemAward("DIAMOND", 3)), awards.get().awards);
+            assertEquals(Arrays.asList(new MoneyAward(7), new ItemAward("DIAMOND", 3)), awards.get().awards);
             assertTrue(awards.getInfo().getSkippedUnknownTypes().isEmpty());
             awards.save();
             assertTrue(read(plugins().resolve("quests").resolve("awards.yml")).contains("DIAMOND"));
@@ -298,14 +298,14 @@ class ConfigCatalogTest {
                     .into("quests").register();
 
             List<ConfigTypeInfo> words = service.types(Award.class);
-            List<String> names = new ArrayList<String>();
+            List<String> names = new ArrayList<>();
             for (ConfigTypeInfo word : words) {
                 names.add(word.getName());
             }
             assertEquals(Arrays.asList("money", "item"), names);
             assertNull(words.get(0).getOwner());
             assertEquals("questitems", words.get(1).getOwner().getValue());
-            assertEquals(new HashSet<String>(Collections.singletonList("stack")), words.get(1).getAliases());
+            assertEquals(new HashSet<>(Collections.singletonList("stack")), words.get(1).getAliases());
             assertEquals(4, words.get(1).getPriority());
             assertEquals("quests", words.get(1).getTarget().toString());
         }
@@ -436,7 +436,7 @@ class ConfigCatalogTest {
                     ConfigOptions.builder().root(ConfigRoot.PLUGINS).backups(false).build());
 
             assertEquals(new MoneyAward(3), config.loadValue().awards.get(0));
-            List<String> backups = new ArrayList<String>();
+            List<String> backups = new ArrayList<>();
             try (Stream<Path> files = Files.list(plugins().resolve("essentials"))) {
                 files.forEach(file -> backups.add(file.getFileName().toString()));
             }
@@ -476,7 +476,7 @@ class ConfigCatalogTest {
     void filesOfOtherPluginsAreNotAnnouncedToDiagnostics() throws IOException {
         write("essentials", "config.yml", "awards: []\n");
         try (YamlConfigurations service = newService()) {
-            List<String> announced = new ArrayList<String>();
+            List<String> announced = new ArrayList<>();
             service.setFileListener(file -> {
                 announced.add(file.getPath());
                 return null;

@@ -43,7 +43,7 @@ class TaskLabelsTest {
     @Test
     @DisplayName("every status has its own words")
     void everyStatusHasItsOwnWords() {
-        Set<String> words = new HashSet<String>();
+        Set<String> words = new HashSet<>();
         for (TaskStatus status : TaskStatus.values()) {
             words.add(TaskLabels.label(status));
         }
@@ -101,7 +101,7 @@ class TaskLabelsTest {
         return TaskSnapshot.builder(TaskId.random(), "pnTest", TaskExecution.Kind.GLOBAL, status, created)
                 .name(name)
                 .key(key)
-                .tags(Collections.<String>emptySet())
+                .tags(Collections.emptySet())
                 .runCount(0)
                 .skippedCount(0)
                 .lastCompletedAt(completed)

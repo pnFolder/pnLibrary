@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -47,15 +48,15 @@ public final class AtomicDownloadPublisher {
 
     /** Publishes with {@code mover}, so a test can fail a step. */
     public AtomicDownloadPublisher(@NotNull Path libraryData, @NotNull Mover mover) {
-        this.libraryData = libraryData;
-        this.mover = mover;
+        this.libraryData = Objects.requireNonNull(libraryData, "libraryData");
+        this.mover = Objects.requireNonNull(mover, "mover");
     }
 
     /** Moves every staged file to its target; on any failure restores the originals and rethrows. */
     public void publish(@NotNull List<PreparedDownload> downloads) throws IOException {
         Path transactionDirectory = libraryData.resolve("downloads/transactions/" + UUID.randomUUID());
-        List<Backup> backups = new ArrayList<Backup>();
-        List<Path> publishedTargets = new ArrayList<Path>();
+        List<Backup> backups = new ArrayList<>();
+        List<Path> publishedTargets = new ArrayList<>();
         try {
             for (int index = 0; index < downloads.size(); index++) {
                 PreparedDownload download = downloads.get(index);
@@ -71,7 +72,7 @@ public final class AtomicDownloadPublisher {
             rollback(error, publishedTargets, backups);
             // A backup that could not be restored is the only remaining copy of the original file.
             CleanupSteps.suppressInto(error,
-                () -> cleanTemporaryFiles(downloads, Collections.<Backup>emptyList(), transactionDirectory));
+                () -> cleanTemporaryFiles(downloads, Collections.emptyList(), transactionDirectory));
             throw error;
         }
         cleanTemporaryFiles(downloads, backups, transactionDirectory);
@@ -91,7 +92,7 @@ public final class AtomicDownloadPublisher {
     }
 
     private void rollback(Throwable primary, List<Path> publishedTargets, List<Backup> backups) {
-        List<CleanupSteps.Step> steps = new ArrayList<CleanupSteps.Step>();
+        List<CleanupSteps.Step> steps = new ArrayList<>();
         for (final Path target : reversed(publishedTargets)) {
             steps.add(() -> Files.deleteIfExists(target));
         }
@@ -106,7 +107,7 @@ public final class AtomicDownloadPublisher {
     }
 
     private void cleanTemporaryFiles(List<PreparedDownload> downloads, List<Backup> backups, Path transactionDirectory) {
-        List<CleanupSteps.Step> steps = new ArrayList<CleanupSteps.Step>();
+        List<CleanupSteps.Step> steps = new ArrayList<>();
         for (final PreparedDownload download : downloads) {
             steps.add(() -> Files.deleteIfExists(download.getStaging()));
         }
@@ -124,7 +125,7 @@ public final class AtomicDownloadPublisher {
     }
 
     private static <T> List<T> reversed(List<T> items) {
-        List<T> copy = new ArrayList<T>(items);
+        List<T> copy = new ArrayList<>(items);
         Collections.reverse(copy);
         return copy;
     }

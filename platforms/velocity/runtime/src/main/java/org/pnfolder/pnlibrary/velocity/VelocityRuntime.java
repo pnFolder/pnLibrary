@@ -38,9 +38,9 @@ public final class VelocityRuntime {
 
     /** Creates the runtime of the plugin instance {@code owner}. */
     public VelocityRuntime(@NotNull Object owner, @NotNull ProxyServer server, @NotNull Path dataDirectory) {
-        this.owner = owner;
-        this.server = server;
-        this.dataDirectory = dataDirectory;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.server = Objects.requireNonNull(server, "server");
+        this.dataDirectory = Objects.requireNonNull(dataDirectory, "dataDirectory");
     }
 
     /** Starts the shared runtime when Velocity announces proxy initialization. */
@@ -69,6 +69,7 @@ public final class VelocityRuntime {
                 .adapter(adapter)
                 .platform(VelocityPlatform.class, (VelocityPlatform) () -> server)
                 .launch(adapter::markReady);
+        
         runtimeHost = host;
         metricsLogger.set(host.getLibrary().getLogging().logger(owner, "Metrics"));
         ProxyRuntime proxy = new ProxyRuntime(adapter, this::registerLinkListener,

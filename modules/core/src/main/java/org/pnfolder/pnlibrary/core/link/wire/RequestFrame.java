@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteRequest;
 
@@ -8,7 +9,7 @@ public final class RequestFrame implements LinkFrame {
     private final RemoteRequest request;
 
     public RequestFrame(@NotNull RemoteRequest request) {
-        this.request = request;
+        this.request = Objects.requireNonNull(request, "request");
     }
 
     public @NotNull RemoteRequest getRequest() {

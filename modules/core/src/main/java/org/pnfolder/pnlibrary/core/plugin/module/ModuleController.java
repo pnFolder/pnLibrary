@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -32,11 +33,11 @@ public final class ModuleController implements ModuleControl {
      */
     public ModuleController(@NotNull String key, @Nullable PluginModule module, @NotNull ModulePreferences preferences,
                             @NotNull Supplier<String> gate, @NotNull Runnable release) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key, "key");
         this.module = module;
-        this.preferences = preferences;
-        this.gate = gate;
-        this.release = release;
+        this.preferences = Objects.requireNonNull(preferences, "preferences");
+        this.gate = Objects.requireNonNull(gate, "gate");
+        this.release = Objects.requireNonNull(release, "release");
     }
 
     public ModuleController(@NotNull String key, @Nullable PluginModule module, @NotNull ModulePreferences preferences,

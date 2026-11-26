@@ -215,7 +215,7 @@ public enum MinecraftLocale {
     }
 
     private static Map<String, MinecraftLocale> byCode() {
-        Map<String, MinecraftLocale> map = new HashMap<String, MinecraftLocale>();
+        Map<String, MinecraftLocale> map = new HashMap<>();
         for (MinecraftLocale locale : values()) {
             map.put(locale.code, locale);
         }

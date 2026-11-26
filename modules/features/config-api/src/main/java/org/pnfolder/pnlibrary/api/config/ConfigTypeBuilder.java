@@ -22,7 +22,7 @@ public final class ConfigTypeBuilder<T> {
     private final Class<T> baseType;
     private final Class<? extends T> implementation;
     private String name;
-    private final Set<String> aliases = new LinkedHashSet<String>();
+    private final Set<String> aliases = new LinkedHashSet<>();
     private int priority;
     private ConfigAddress target;
     private ConfigTypeConflict conflict = ConfigTypeConflict.FAIL;
@@ -111,7 +111,7 @@ public final class ConfigTypeBuilder<T> {
     /** Publishes the type at each of {@code addresses} and returns one handle per place; a refused place fails the whole call. */
     @NotNull
     public List<ConfigTypeRegistration> registerEach(@NotNull Collection<ConfigAddress> addresses) {
-        List<ConfigTypeRegistration> done = new ArrayList<ConfigTypeRegistration>();
+        List<ConfigTypeRegistration> done = new ArrayList<>();
         try {
             for (ConfigAddress address : addresses) {
                 done.add(into(address).register());
@@ -131,6 +131,6 @@ public final class ConfigTypeBuilder<T> {
         if (name == null) {
             throw new IllegalArgumentException("Config type name is required: call name(...) before register()");
         }
-        return scope.publishType(baseType, implementation, name, new LinkedHashSet<String>(aliases), priority, target, conflict);
+        return scope.publishType(baseType, implementation, name, new LinkedHashSet<>(aliases), priority, target, conflict);
     }
 }

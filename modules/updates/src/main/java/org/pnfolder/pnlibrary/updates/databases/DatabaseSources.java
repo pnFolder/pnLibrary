@@ -12,12 +12,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.config.ManagedConfigFile;
-import org.pnfolder.pnlibrary.config.yaml.DatabasePath;
+import org.pnfolder.pnlibrary.config.yaml.database.DatabasePath;
 
 /** The databases of all plugins, filled while plugins register their configuration files. */
 public final class DatabaseSources {
     private final ConcurrentMap<String, CopyOnWriteArrayList<DatabaseSource>> sources =
-            new ConcurrentHashMap<String, CopyOnWriteArrayList<DatabaseSource>>();
+            new ConcurrentHashMap<>();
 
     /** Remembers the databases of {@code file}; closing the result forgets them again. */
     @Nullable
@@ -27,14 +27,14 @@ public final class DatabaseSources {
         }
         final String key = file.getPluginId().getValue().toLowerCase(Locale.ROOT);
         Path path = file.getDirectory().resolve(file.getPath());
-        final List<DatabaseSource> added = new ArrayList<DatabaseSource>();
+        final List<DatabaseSource> added = new ArrayList<>();
         for (DatabasePath database : file.getDatabases()) {
             added.add(new DatabaseSource(key, database.getKind(), database.getName(), path, database.getPath(),
                     database.getKeys(), database.getTables(), database.getTableKeys()));
         }
         CopyOnWriteArrayList<DatabaseSource> list = sources.get(key);
         if (list == null) {
-            sources.putIfAbsent(key, new CopyOnWriteArrayList<DatabaseSource>());
+            sources.putIfAbsent(key, new CopyOnWriteArrayList<>());
             list = sources.get(key);
         }
         requireDistinctNames(file, added, list);
@@ -44,7 +44,7 @@ public final class DatabaseSources {
             public void close() {
                 CopyOnWriteArrayList<DatabaseSource> current = sources.get(key);
                 if (current != null) {
-                    current.removeAll(new HashSet<DatabaseSource>(added));
+                    current.removeAll(new HashSet<>(added));
                 }
             }
         };
@@ -54,18 +54,18 @@ public final class DatabaseSources {
     @NotNull
     public List<DatabaseSource> of(@NotNull String plugin) {
         List<DatabaseSource> found = sources.get(plugin.toLowerCase(Locale.ROOT));
-        return found != null ? found : Collections.<DatabaseSource>emptyList();
+        return found != null ? found : Collections.emptyList();
     }
 
     private static void requireDistinctNames(ManagedConfigFile file, List<DatabaseSource> added, List<DatabaseSource> list) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (DatabaseSource source : added) {
             names.add(source.getName());
         }
         for (DatabaseSource source : list) {
             names.add(source.getName());
         }
-        if (new HashSet<String>(names).size() != names.size()) {
+        if (new HashSet<>(names).size() != names.size()) {
             throw new IllegalArgumentException("У плагина " + file.getPluginId().getValue()
                     + " две базы с одним именем: имя в @BackupDatabase должно быть разным");
         }

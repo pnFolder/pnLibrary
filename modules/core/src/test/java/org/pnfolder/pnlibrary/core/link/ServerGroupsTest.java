@@ -27,11 +27,11 @@ class ServerGroupsTest {
     }
 
     private static Set<String> setOf(String... names) {
-        return new LinkedHashSet<String>(Arrays.asList(names));
+        return new LinkedHashSet<>(Arrays.asList(names));
     }
 
     private static Map<String, ServerGroupState> byServer(List<ServerGroupState> states) {
-        Map<String, ServerGroupState> map = new HashMap<String, ServerGroupState>();
+        Map<String, ServerGroupState> map = new HashMap<>();
         for (ServerGroupState state : states) {
             map.put(state.getServer(), state);
         }
@@ -39,7 +39,7 @@ class ServerGroupsTest {
     }
 
     private static List<String> names(List<ServerGroup> groups) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (ServerGroup group : groups) {
             names.add(group.getName());
         }

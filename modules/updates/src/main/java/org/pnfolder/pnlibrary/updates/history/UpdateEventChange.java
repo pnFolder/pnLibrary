@@ -12,9 +12,9 @@ public final class UpdateEventChange {
 
     /** Creates a change. */
     public UpdateEventChange(@NotNull String product, @Nullable String from, @NotNull String to) {
-        this.product = product;
+        this.product = Objects.requireNonNull(product, "product");
         this.from = from;
-        this.to = to;
+        this.to = Objects.requireNonNull(to, "to");
     }
 
     /** The product that changed. */

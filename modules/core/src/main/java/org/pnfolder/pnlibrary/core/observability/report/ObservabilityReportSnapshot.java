@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.report;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -29,14 +30,14 @@ public final class ObservabilityReportSnapshot {
     /** A snapshot without statuses or analytics. */
     public ObservabilityReportSnapshot(@NotNull byte[] journal, @NotNull byte[] attachmentManifest,
                                        @NotNull Map<String, byte[]> attachments) {
-        this(journal, attachmentManifest, attachments, Collections.<Map<String, Object>>emptyList());
+        this(journal, attachmentManifest, attachments, Collections.emptyList());
     }
 
     /** A snapshot without analytics. */
     public ObservabilityReportSnapshot(@NotNull byte[] journal, @NotNull byte[] attachmentManifest,
                                        @NotNull Map<String, byte[]> attachments,
                                        @NotNull List<Map<String, Object>> statuses) {
-        this(journal, attachmentManifest, attachments, statuses, Collections.<String, Object>emptyMap());
+        this(journal, attachmentManifest, attachments, statuses, Collections.emptyMap());
     }
 
     /**
@@ -50,9 +51,9 @@ public final class ObservabilityReportSnapshot {
                                        @NotNull Map<String, byte[]> attachments,
                                        @NotNull List<Map<String, Object>> statuses,
                                        @NotNull Map<String, Object> analytics) {
-        this.journal = journal;
-        this.attachmentManifest = attachmentManifest;
-        this.attachments = attachments;
+        this.journal = Objects.requireNonNull(journal, "journal");
+        this.attachmentManifest = Objects.requireNonNull(attachmentManifest, "attachmentManifest");
+        this.attachments = Objects.requireNonNull(attachments, "attachments");
         this.statuses = statuses;
         this.analytics = analytics;
     }
@@ -60,7 +61,7 @@ public final class ObservabilityReportSnapshot {
     /** A snapshot with nothing in it. */
     @NotNull
     public static ObservabilityReportSnapshot empty() {
-        return new ObservabilityReportSnapshot(new byte[0], new byte[0], Collections.<String, byte[]>emptyMap());
+        return new ObservabilityReportSnapshot(new byte[0], new byte[0], Collections.emptyMap());
     }
 
     /** Captures the journal, attachments, statuses and analytics of {@code runtime} now. */

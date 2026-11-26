@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -53,7 +54,7 @@ public final class DownloadService implements AutoCloseable {
         thread.setDaemon(true);
         return thread;
     });
-    private final List<DownloadBatch> registrations = new CopyOnWriteArrayList<DownloadBatch>();
+    private final List<DownloadBatch> registrations = new CopyOnWriteArrayList<>();
     private final AtomicDownloadPublisher filePublisher;
     private final DownloadArtifactPreparer artifactPreparer;
     private final DependencyDownloads dependencies;
@@ -90,8 +91,8 @@ public final class DownloadService implements AutoCloseable {
                            @NotNull PlatformLogging logging, @NotNull LibraryPaths paths,
                            @NotNull Supplier<DownloadConfiguration> configuration,
                            @NotNull Consumer<Boolean> saveAutomatic, @NotNull TrustedHttpClient http) {
-        this.configuration = configuration;
-        this.saveAutomatic = saveAutomatic;
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.saveAutomatic = Objects.requireNonNull(saveAutomatic, "saveAutomatic");
         PlatformType type = identity.getType();
         this.filePublisher = new AtomicDownloadPublisher(paths.getData());
         this.artifactPreparer = new DownloadArtifactPreparer(type, paths.getData(), configuration, http, MAX_BYTES);
@@ -100,7 +101,7 @@ public final class DownloadService implements AutoCloseable {
             new DependencyDownloadRequestFactory(paths.getServerUpdateFolder(), type, identity::getMinecraftVersion),
             new DependencyDownloadReporter(logging, ownership, proxy ? "pnproxy" : "pn"),
             new DownloadedDependencyStore(paths.getData()), new PluginJarVerifier(identity), this::isAutomatic);
-        this.logging = logging;
+        this.logging = Objects.requireNonNull(logging, "logging");
     }
 
     /** Registers the files of {@code request} for {@code owner} and starts those that may start by themselves. */
@@ -155,7 +156,7 @@ public final class DownloadService implements AutoCloseable {
     public void installBatch(@NotNull FileDownloads request, @NotNull List<FileDownload> declarations,
                              @NotNull Runnable beforePublish, @Nullable DownloadVerifier verifier) throws Exception {
         checkOpen();
-        List<PreparedDownload> prepared = new ArrayList<PreparedDownload>();
+        List<PreparedDownload> prepared = new ArrayList<>();
         try {
             for (FileDownload declaration : declarations) {
                 prepared.add(artifactPreparer.prepare(request, declaration, verifier));
@@ -182,7 +183,7 @@ public final class DownloadService implements AutoCloseable {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        for (DownloadBatch batch : new ArrayList<DownloadBatch>(registrations)) {
+        for (DownloadBatch batch : new ArrayList<>(registrations)) {
             batch.close();
         }
         registrations.clear();

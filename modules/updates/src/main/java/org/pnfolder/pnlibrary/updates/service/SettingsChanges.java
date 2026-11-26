@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.registration.UpdateRegistrationStore;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -95,33 +97,6 @@ final class SettingsChanges implements UpdateSettings {
             }
             return "сборка Java: " + (before == null ? "подбор" : before) + " → " + java;
         });
-    }
-
-    @NotNull
-    @Override
-    public CompletionStage<UpdateSnapshot> automaticDownload(@NotNull String product, boolean enabled,
-                                                             @NotNull UpdateActor actor) {
-        return change(product, actor, false, registration -> {
-            boolean before = registration.getSnapshot().getAutomaticDownload();
-            if (before == enabled) {
-                return null;
-            }
-            overrides.setAutomatic(registration.getProduct(), enabled);
-            return "автозагрузка: " + (before ? "вкл" : "выкл") + " → " + (enabled ? "вкл" : "выкл");
-        });
-    }
-
-    @NotNull
-    @Override
-    public CompletionStage<List<UpdateSnapshot>> automaticDownloadForAll(boolean enabled, @NotNull UpdateActor actor) {
-        overrides.setAllPlugins(enabled, PnLibraryIdentity.PRODUCT_ID);
-        logging.log(owner, LogLevel.INFO, "Автозагрузка обновлений плагинов: " + (enabled ? "включена" : "выключена")
-                + " для всех (" + actor.getName() + ")");
-        List<UpdateSnapshot> snapshots = new ArrayList<>();
-        for (RegisteredUpdate registration : registrations.snapshot()) {
-            snapshots.add(registration.getSnapshot());
-        }
-        return CompletableFuture.completedFuture(snapshots);
     }
 
     @NotNull

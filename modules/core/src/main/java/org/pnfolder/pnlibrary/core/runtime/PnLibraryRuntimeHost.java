@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
-import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.PolicyErrorAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.core.runtime.details.RuntimeRemotePolicy;
+import org.pnfolder.pnlibrary.core.remote.monitor.RuntimeRemotePolicy;
 import org.pnfolder.pnlibrary.core.runtime.lifecycle.RuntimeBootstrapCoordinator;
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRegistration;
 import org.pnfolder.pnlibrary.core.runtime.platform.PlatformRuntimeContext;
@@ -82,7 +82,7 @@ public final class PnLibraryRuntimeHost implements AutoCloseable {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        final List<Throwable> failures = new ArrayList<Throwable>();
+        final List<Throwable> failures = new ArrayList<>();
         Failures.runCatchingNonFatal(() -> {
             updateMonitor.close();
             return null;

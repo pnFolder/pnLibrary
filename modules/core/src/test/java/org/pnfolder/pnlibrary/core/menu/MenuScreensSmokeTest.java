@@ -23,7 +23,7 @@ class MenuScreensSmokeTest {
         return (MenuData) Proxy.newProxyInstance(MenuData.class.getClassLoader(), new Class<?>[] {MenuData.class}, (proxy, method, args) -> {
             Class<?> type = method.getReturnType();
             if (method.getName().equals("stats")) {
-                return new StatsSnapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, new ArrayList<org.pnfolder.pnlibrary.common.lang.Pair<String, Integer>>());
+                return new StatsSnapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, new ArrayList<>());
             }
             if (type == List.class) {
                 return Collections.emptyList();

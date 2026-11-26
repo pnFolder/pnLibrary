@@ -38,7 +38,7 @@ class DiagnosticCommandExecutorTest {
             new Object(),
             PlatformRuntimeContext.from(platform),
             PnLibraryConfig.builder().upload(false).uploadMode("disabled").cooldown(Duration.ZERO).build());
-        final CopyOnWriteArrayList<DiagnosticCommandEvent> events = new CopyOnWriteArrayList<DiagnosticCommandEvent>();
+        final CopyOnWriteArrayList<DiagnosticCommandEvent> events = new CopyOnWriteArrayList<>();
         final CountDownLatch completed = new CountDownLatch(1);
 
         try {

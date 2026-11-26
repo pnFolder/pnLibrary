@@ -3,11 +3,11 @@ package org.pnfolder.pnlibrary.core.menu.data;
 import org.pnfolder.pnlibrary.core.link.ServerGroups;
 
 /** Applies one {@link GroupEdit} to the server groups of a proxy. */
-final class GroupEdits {
+public final class GroupEdits {
     private GroupEdits() {
     }
 
-    static boolean apply(ServerGroups store, GroupEdit edit) {
+    public static boolean apply(ServerGroups store, GroupEdit edit) {
         final String server = edit.getServer() == null ? "" : edit.getServer();
         final String plugin = edit.getPlugin() == null ? "" : edit.getPlugin();
         String group = edit.getGroup();

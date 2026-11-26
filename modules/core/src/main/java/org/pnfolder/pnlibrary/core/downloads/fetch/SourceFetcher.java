@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -20,16 +21,16 @@ public final class SourceFetcher {
 
     /** Creates a fetcher that reads through {@code http}. */
     public SourceFetcher(@NotNull TrustedHttpClient http) {
-        this.http = http;
+        this.http = Objects.requireNonNull(http, "http");
     }
 
     /** Reads the file of {@code source}, at most {@code limit} bytes. */
     public byte[] fetch(@NotNull DirectDownloadSource source, int limit) throws IOException {
-        List<URI> addresses = new ArrayList<URI>();
+        List<URI> addresses = new ArrayList<>();
         addresses.add(source.getUri());
         addresses.addAll(source.getMirrors());
         String expected = source.getSha256();
-        List<String> failures = new ArrayList<String>();
+        List<String> failures = new ArrayList<>();
         boolean answered = false;
         for (URI address : addresses) {
             byte[] bytes;

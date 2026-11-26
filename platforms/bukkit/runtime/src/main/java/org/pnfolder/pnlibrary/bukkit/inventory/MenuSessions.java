@@ -32,7 +32,7 @@ final class MenuSessions {
     List<BukkitMenuSession> of(Plugin owner) {
         synchronized (lock) {
             Set<BukkitMenuSession> owned = byOwner.get(owner);
-            return owned == null ? new ArrayList<BukkitMenuSession>() : new ArrayList<>(owned);
+            return owned == null ? new ArrayList<>() : new ArrayList<>(owned);
         }
     }
 

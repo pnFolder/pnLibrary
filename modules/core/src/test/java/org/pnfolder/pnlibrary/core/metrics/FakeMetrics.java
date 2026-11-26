@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics;
 
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics;
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsProvider;
@@ -36,7 +37,7 @@ class FakeMetrics implements PluginMetrics {
     @Override
     public PluginMetrics simplePie(@NotNull String id, @NotNull Supplier<String> value) {
         if (calls != null) {
-            calls.add(provider.name().toLowerCase() + ":chart");
+            calls.add(provider.name().toLowerCase(Locale.ROOT) + ":chart");
         }
         return this;
     }
@@ -80,7 +81,7 @@ class FakeMetrics implements PluginMetrics {
     @Override
     public void close() {
         if (calls != null) {
-            calls.add(provider.name().toLowerCase() + ":close");
+            calls.add(provider.name().toLowerCase(Locale.ROOT) + ":close");
         }
         onClose.run();
     }

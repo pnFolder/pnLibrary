@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.cooldowns;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,9 +29,9 @@ public final class NamedCooldown implements Cooldown {
     private final CooldownSettings settings;
 
     public NamedCooldown(@NotNull CooldownService service, @NotNull String action, @NotNull CooldownSettings settings) {
-        this.service = service;
-        this.action = action;
-        this.settings = settings;
+        this.service = Objects.requireNonNull(service, "service");
+        this.action = Objects.requireNonNull(action, "action");
+        this.settings = Objects.requireNonNull(settings, "settings");
     }
 
     @Override
@@ -45,7 +46,7 @@ public final class NamedCooldown implements Cooldown {
 
     @Override
     public @NotNull Duration durationFor(@NotNull Audience who) {
-        List<Duration> held = new ArrayList<Duration>();
+        List<Duration> held = new ArrayList<>();
         for (CooldownTier tier : settings.getTiers()) {
             if (holdsAny(who, tier.getPermissions())) {
                 held.add(tier.lengthFor(settings.getDuration()));

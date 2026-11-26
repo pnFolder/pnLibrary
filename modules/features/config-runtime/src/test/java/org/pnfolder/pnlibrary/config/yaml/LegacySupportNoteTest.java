@@ -17,7 +17,7 @@ class LegacySupportNoteTest {
 
     @Test
     void theNoteIsRemovedTogetherWithAllItsLinkLinesAndNothingElse() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         lines.add("_config-version: 1");
         lines.addAll(note);
         lines.add("retries: 4");

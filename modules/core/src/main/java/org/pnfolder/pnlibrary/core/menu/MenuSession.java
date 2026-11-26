@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import java.util.Objects;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,8 +36,8 @@ public final class MenuSession {
     }
 
     public MenuSession(@NotNull MenuData data, @NotNull MenuHost host, @Nullable String remoteName) {
-        this.data = data;
-        this.host = host;
+        this.data = Objects.requireNonNull(data, "data");
+        this.host = Objects.requireNonNull(host, "host");
         this.remoteName = remoteName;
     }
 

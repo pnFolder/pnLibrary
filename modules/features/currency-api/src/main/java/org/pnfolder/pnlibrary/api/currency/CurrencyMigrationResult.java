@@ -17,11 +17,11 @@ public final class CurrencyMigrationResult {
     public CurrencyMigrationResult(@NotNull CurrencyKey sourceCurrency, @NotNull CurrencyKey targetCurrency,
                                    @NotNull CurrencyImportResult importResult, @NotNull Instant startedAt,
                                    @NotNull Instant completedAt) {
-        this.sourceCurrency = sourceCurrency;
-        this.targetCurrency = targetCurrency;
-        this.importResult = importResult;
-        this.startedAt = startedAt;
-        this.completedAt = completedAt;
+        this.sourceCurrency = Objects.requireNonNull(sourceCurrency, "sourceCurrency");
+        this.targetCurrency = Objects.requireNonNull(targetCurrency, "targetCurrency");
+        this.importResult = Objects.requireNonNull(importResult, "importResult");
+        this.startedAt = Objects.requireNonNull(startedAt, "startedAt");
+        this.completedAt = Objects.requireNonNull(completedAt, "completedAt");
     }
 
     /** Currency read from the source storage. */

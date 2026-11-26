@@ -25,7 +25,7 @@ class ObservationJournalThrottleTest {
     private static final long DAY = 24L * 60 * 60 * 1000;
 
     private static Observation observation(int index, long at, ObservationLevel level, Long keepFor) {
-        Map<String, String> data = keepFor == null ? Collections.<String, String>emptyMap()
+        Map<String, String> data = keepFor == null ? Collections.emptyMap()
                 : Collections.singletonMap(ObservationKeys.KEEP_UNTIL_MS, Long.toString(at + keepFor));
         return Observation.from(new ObservationRequest(null, null, "event " + index, level, data), at);
     }

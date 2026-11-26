@@ -45,7 +45,7 @@ public final class SoundAction implements Action {
 
     /** Creates it with every setting given. */
     public SoundAction(@NotNull String key, @NotNull Sound.Source source, float volume, float pitch, @NotNull ActionTarget target) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key, "key");
         this.source = source;
         this.volume = volume;
         this.pitch = pitch;

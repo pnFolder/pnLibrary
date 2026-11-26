@@ -102,9 +102,9 @@ public final class TaskQuery {
         private TaskId id;
         private String key;
         private String nameContains;
-        private final Set<TaskStatus> statuses = new LinkedHashSet<TaskStatus>();
-        private final Set<TaskExecution.Kind> executionKinds = new LinkedHashSet<TaskExecution.Kind>();
-        private final Set<String> tags = new LinkedHashSet<String>();
+        private final Set<TaskStatus> statuses = new LinkedHashSet<>();
+        private final Set<TaskExecution.Kind> executionKinds = new LinkedHashSet<>();
+        private final Set<String> tags = new LinkedHashSet<>();
 
         private Builder() {}
 
@@ -164,9 +164,9 @@ public final class TaskQuery {
                     id,
                     normalizedKey,
                     normalizedName,
-                    Collections.unmodifiableSet(new LinkedHashSet<TaskStatus>(statuses)),
-                    Collections.unmodifiableSet(new LinkedHashSet<TaskExecution.Kind>(executionKinds)),
-                    Collections.unmodifiableSet(new LinkedHashSet<String>(tags)));
+                    Collections.unmodifiableSet(new LinkedHashSet<>(statuses)),
+                    Collections.unmodifiableSet(new LinkedHashSet<>(executionKinds)),
+                    Collections.unmodifiableSet(new LinkedHashSet<>(tags)));
         }
 
         private static void require(boolean condition, String message) {

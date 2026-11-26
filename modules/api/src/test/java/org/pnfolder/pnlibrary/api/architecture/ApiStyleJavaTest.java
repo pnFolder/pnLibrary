@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;

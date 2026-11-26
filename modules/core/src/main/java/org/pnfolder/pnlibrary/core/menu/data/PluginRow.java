@@ -11,7 +11,7 @@ public final class PluginRow {
     private final int modules;
 
     public PluginRow(@NotNull String name, @Nullable String version, int modules) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.version = version;
         this.modules = modules;
     }

@@ -29,7 +29,7 @@ public interface UpdateService {
     @NotNull
     default UpdateRegistration register(@NotNull Object owner, @NotNull ProductDescriptor product,
                                         @NotNull PluginUpdateRequest request) {
-        return register(owner, product, request, Collections.<PluginDependency>emptyList());
+        return register(owner, product, request, Collections.emptyList());
     }
 
     /** Registers {@code owner}'s {@code product} and starts watching its releases at once. */

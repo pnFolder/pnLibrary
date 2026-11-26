@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import java.util.Objects;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -22,12 +23,12 @@ import org.pnfolder.pnlibrary.common.lang.Failures;
  */
 public final class ConfigSerializerResolver {
     private final Supplier<Map<Class<?>, ConfigSerializer<?>>> registeredNow;
-    private final Map<Class<?>, ConfigSerializer<?>> annotationInstances = new HashMap<Class<?>, ConfigSerializer<?>>();
-    private final Map<Class<?>, Object> textParsers = new HashMap<Class<?>, Object>();
+    private final Map<Class<?>, ConfigSerializer<?>> annotationInstances = new HashMap<>();
+    private final Map<Class<?>, Object> textParsers = new HashMap<>();
 
     /** @param registeredNow the registered serializers, asked again on every use so that additions count */
     public ConfigSerializerResolver(@NotNull Supplier<Map<Class<?>, ConfigSerializer<?>>> registeredNow) {
-        this.registeredNow = registeredNow;
+        this.registeredNow = Objects.requireNonNull(registeredNow, "registeredNow");
     }
 
     /** Creates a resolver over a fixed set of serializers. */

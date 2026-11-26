@@ -26,17 +26,17 @@ public final class RepeatAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public RepeatAction() {
-        this(1, Duration.ZERO, Collections.<Action>emptyList());
+        this(1, Duration.ZERO, Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public RepeatAction(int times) {
-        this(times, Duration.ZERO, Collections.<Action>emptyList());
+        this(times, Duration.ZERO, Collections.emptyList());
     }
 
     /** Creates it with the first 2 settings; the rest keep their defaults. */
     public RepeatAction(int times, @NotNull Duration every) {
-        this(times, every, Collections.<Action>emptyList());
+        this(times, every, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */

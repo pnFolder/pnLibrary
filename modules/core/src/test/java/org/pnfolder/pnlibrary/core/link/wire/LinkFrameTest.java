@@ -112,7 +112,7 @@ class LinkFrameTest {
     /** Valid frames of every kind, forged, foreign, stale, cut and extended ones. */
     private List<byte[]> corpus() {
         List<byte[]> frames = valid();
-        List<byte[]> all = new ArrayList<byte[]>(frames);
+        List<byte[]> all = new ArrayList<>(frames);
         for (byte[] message : frames) {
             all.add(bumped(message, 0));
             all.add(bumped(message, 5));
@@ -126,8 +126,8 @@ class LinkFrameTest {
         all.add(LinkCodec.encode(report, other));
         all.add(LinkCodec.encodeRequest(request, other));
         all.add(LinkCodec.encodeChunk(chunk, other));
-        all.add(LinkCodec.encodeNetwork(new NetworkReport(report, Collections.<NetworkServer>emptyList(), now,
-            Collections.<ServerGroup>emptyList()), key));
+        all.add(LinkCodec.encodeNetwork(new NetworkReport(report, Collections.emptyList(), now,
+            Collections.emptyList()), key));
         all.add(LinkCodec.encodeChunk(new DataChunk(id, "x", true, 5, 2, new byte[0], now), key));
         return all;
     }

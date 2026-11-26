@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,9 +45,9 @@ public class CatalogStyle extends ChatKit {
      */
     public CatalogStyle(@NotNull UpdateCatalogRoutes routes, @NotNull Instant now, @NotNull ZoneId zone) {
         super(new ChatReader(routes.getInteractive(), routes.getAscii()));
-        this.routes = routes;
-        this.now = now;
-        this.zone = zone;
+        this.routes = Objects.requireNonNull(routes, "routes");
+        this.now = Objects.requireNonNull(now, "now");
+        this.zone = Objects.requireNonNull(zone, "zone");
     }
 
     public @NotNull UpdateCatalogRoutes getRoutes() {

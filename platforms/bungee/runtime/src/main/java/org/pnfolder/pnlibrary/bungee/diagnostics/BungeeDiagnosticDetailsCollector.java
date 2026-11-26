@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.diagnostics;
 
+import java.util.Objects;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -25,7 +26,7 @@ public final class BungeeDiagnosticDetailsCollector {
 
     /** Creates a collector that reads the proxy of {@code plugin}. */
     public BungeeDiagnosticDetailsCollector(@NotNull Plugin plugin) {
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     /** Adds plugins, backend servers and player pings to {@code snapshot}; sensitive values only when asked. */

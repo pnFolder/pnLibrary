@@ -6,7 +6,7 @@ import net.md_5.bungee.api.plugin.PluginDescription;
 import net.md_5.bungee.api.plugin.PluginManager;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 
 import java.util.Collections;
 

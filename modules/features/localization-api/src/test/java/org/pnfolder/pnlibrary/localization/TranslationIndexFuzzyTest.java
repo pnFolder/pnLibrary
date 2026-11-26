@@ -17,15 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TranslationIndexFuzzyTest {
     /** Builds an index from alternating key and text arguments. */
     private static TranslationIndex<String> index(String... keysAndTexts) {
-        List<TranslationMatch<String>> matches = new ArrayList<TranslationMatch<String>>();
+        List<TranslationMatch<String>> matches = new ArrayList<>();
         for (int i = 0; i < keysAndTexts.length; i += 2) {
-            matches.add(new TranslationMatch<String>(keysAndTexts[i], keysAndTexts[i + 1], keysAndTexts[i]));
+            matches.add(new TranslationMatch<>(keysAndTexts[i], keysAndTexts[i + 1], keysAndTexts[i]));
         }
         return TranslationIndex.of(matches);
     }
 
     private static List<String> keys(List<TranslationMatch<String>> matches) {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (TranslationMatch<String> match : matches) {
             keys.add(match.getKey());
         }
@@ -206,8 +206,8 @@ class TranslationIndexFuzzyTest {
     @Test
     @DisplayName("an empty layout set turns the fix off and fuzzy never uses layouts")
     void anEmptyLayoutSetTurnsTheFixOffAndFuzzyNeverUsesLayouts() {
-        assertNull(food.best("z,kjrj", 0.7, Collections.<KeyboardLayout>emptyList()));
-        assertTrue(food.suggest("z,kjrj", 5, Collections.<KeyboardLayout>emptyList()).isEmpty());
+        assertNull(food.best("z,kjrj", 0.7, Collections.emptyList()));
+        assertTrue(food.suggest("z,kjrj", 5, Collections.emptyList()).isEmpty());
         assertTrue(food.fuzzy("z,kjrj").isEmpty());
         assertEquals("item.apple", food.best("z,kjrj", 0.7, KeyboardLayout.builtIn).getKey());
     }
@@ -217,7 +217,7 @@ class TranslationIndexFuzzyTest {
     void aCustomLayoutPassedToACallIsUsedAndTheDefaultsIgnoreIt() {
         KeyboardLayout dvorak = KeyboardLayout.of("dvorak", "',.pyfgcrl/=\\aoeuidhtns-;qjkxbmwv`[");
         TranslationIndex<String> apples = index("item.apple", "Apple");
-        List<KeyboardLayout> withDvorak = new ArrayList<KeyboardLayout>(KeyboardLayout.builtIn);
+        List<KeyboardLayout> withDvorak = new ArrayList<>(KeyboardLayout.builtIn);
         withDvorak.add(dvorak);
         assertTrue(apples.suggest("arrpd").isEmpty());
         assertEquals("item.apple", firstKey(apples.suggest("arrpd", 5, withDvorak)));

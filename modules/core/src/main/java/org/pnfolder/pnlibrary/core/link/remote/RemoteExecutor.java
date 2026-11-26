@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.remote;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -26,14 +27,14 @@ public final class RemoteExecutor {
 
     private final PnLibrary library;
     private final Supplier<Instant> clock;
-    private final ConcurrentHashMap<UUID, Instant> seen = new ConcurrentHashMap<UUID, Instant>();
+    private final ConcurrentHashMap<UUID, Instant> seen = new ConcurrentHashMap<>();
 
     public RemoteExecutor(@NotNull PnLibrary library) {
         this(library, Instant::now);
     }
 
     public RemoteExecutor(@NotNull PnLibrary library, @NotNull Supplier<Instant> clock) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
         this.clock = clock;
     }
 
@@ -66,9 +67,6 @@ public final class RemoteExecutor {
             case UPDATE:
                 update(request, product, actor, reply);
                 break;
-            default:
-                automatic(request, product, actor, reply);
-                break;
         }
     }
 
@@ -80,18 +78,6 @@ public final class RemoteExecutor {
             }
             int count = plan.getPlan() == null ? 0 : plan.getPlan().getChanges().size();
             reply.accept(result(request, true, count == 0 ? "Всё актуально." : "Найдено обновлений: " + count + "."));
-        });
-    }
-
-    private void automatic(RemoteRequest request, String product, UpdateActor actor, Consumer<RemoteResult> reply) {
-        boolean enabled = request.getAction() == RemoteAction.AUTO_ON;
-        library.getUpdates().getSettings().automaticDownload(product, enabled, actor).whenComplete((ignored, error) -> {
-            if (error != null) {
-                reply.accept(result(request, false, "Не удалось изменить: " + Throwables.rootMessage(error)));
-            } else {
-                reply.accept(result(request, true,
-                    "Автозагрузка " + product + ": " + (enabled ? "включена" : "выключена") + "."));
-            }
         });
     }
 

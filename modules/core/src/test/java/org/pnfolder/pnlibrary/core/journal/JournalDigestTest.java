@@ -23,7 +23,7 @@ class JournalDigestTest {
     }
 
     private List<String> lines(List<JournalRecord> records) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (Component line : JournalDigest.join(records, now, 24, started)) {
             result.add(PlainTextComponentSerializer.plainText().serialize(line));
         }
@@ -31,7 +31,7 @@ class JournalDigestTest {
     }
 
     private List<JournalRecord> warnings(String source, String message, int count) {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
+        List<JournalRecord> records = new ArrayList<>();
         for (int hour = 1; hour <= count; hour++) {
             records.add(record(JournalLevel.WARNING, source, message, now - Duration.ofHours(hour).toMillis() - 1));
         }
@@ -53,14 +53,14 @@ class JournalDigestTest {
 
     @Test
     void aQuietJournalShowsNothing() {
-        assertEquals(Collections.emptyList(), JournalDigest.join(Collections.<JournalRecord>emptyList(), now, 24, started));
+        assertEquals(Collections.emptyList(), JournalDigest.join(Collections.emptyList(), now, 24, started));
         assertEquals(Collections.emptyList(), JournalDigest.join(
             Collections.singletonList(record(JournalLevel.INFO, "shop", "opened", now)), now, 24, started));
     }
 
     @Test
     void theMostUrgentEventsLeadAndEachGetsAWordForWhy() {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
+        List<JournalRecord> records = new ArrayList<>();
         records.add(record(JournalLevel.ERROR, "pnShop", "database locked", started + 30_000));
         records.add(record(JournalLevel.ERROR, "pnAuth", "login failed", now - Duration.ofMinutes(2).toMillis()));
         records.addAll(warnings("pnCaptcha", "slow answer", 6));
@@ -89,7 +89,7 @@ class JournalDigestTest {
 
     @Test
     void aFreshEventThatRepeatsGetsTheAdviceForRepeatingProblemsAndFitsOneChatLine() {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
+        List<JournalRecord> records = new ArrayList<>();
         for (int i = 1; i <= 16; i++) {
             records.add(record(JournalLevel.ERROR, "pnLibrary",
                 "Error occurred while enabling pnLibraryAcceptance v2.2.0-beta.6 (Is it up to date?)", now - i * 30_000L));

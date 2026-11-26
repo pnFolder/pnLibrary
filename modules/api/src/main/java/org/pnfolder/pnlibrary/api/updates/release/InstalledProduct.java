@@ -26,9 +26,9 @@ public final class InstalledProduct {
     public InstalledProduct(@NotNull ProductId product, @NotNull SemanticVersion version,
                             @NotNull ApiVersionRange supportedApi, @Nullable Integer providesApi) {
         UpdateValidation.requireProvidedApi(providesApi);
-        this.product = product;
-        this.version = version;
-        this.supportedApi = supportedApi;
+        this.product = Objects.requireNonNull(product, "product");
+        this.version = Objects.requireNonNull(version, "version");
+        this.supportedApi = Objects.requireNonNull(supportedApi, "supportedApi");
         this.providesApi = providesApi;
     }
 

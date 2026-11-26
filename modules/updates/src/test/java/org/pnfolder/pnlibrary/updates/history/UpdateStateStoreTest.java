@@ -38,13 +38,13 @@ class UpdateStateStoreTest {
     @Test
     void historicalStateNamesRemainReadableAfterApiCleanup() throws IOException {
         UpdateStateStore store = new UpdateStateStore(directory);
-        Map<String, UpdateState> names = new LinkedHashMap<String, UpdateState>();
+        Map<String, UpdateState> names = new LinkedHashMap<>();
         names.put("CURRENT", UpdateState.UP_TO_DATE);
         names.put("AVAILABLE", UpdateState.UPDATE_AVAILABLE);
         names.put("DOWNLOADED", UpdateState.UPDATE_STAGED);
         for (Map.Entry<String, UpdateState> entry : names.entrySet()) {
             UpdatePlanSnapshot snapshot = new UpdatePlanSnapshot(UUID.randomUUID(), 1, entry.getValue(), null,
-                Collections.<BlockedReason>emptyList(), null);
+                Collections.emptyList(), null);
             store.save(snapshot);
             Path path = directory.resolve("state.json");
             String text = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
@@ -57,16 +57,16 @@ class UpdateStateStoreTest {
     @Test
     void persistsCurrentStateAtomicallyAndBoundsNewestFirstHistory() throws IOException {
         UpdateStateStore store = new UpdateStateStore(directory, 3, 1024 * 1024);
-        List<UpdatePlanSnapshot> snapshots = new ArrayList<UpdatePlanSnapshot>();
+        List<UpdatePlanSnapshot> snapshots = new ArrayList<>();
         for (long revision = 1; revision <= 5; revision++) {
             UpdatePlanSnapshot snapshot = new UpdatePlanSnapshot(UUID.randomUUID(), revision, UpdateState.UP_TO_DATE,
-                null, Collections.<BlockedReason>emptyList(), "revision-" + revision);
+                null, Collections.emptyList(), "revision-" + revision);
             store.save(snapshot);
             snapshots.add(snapshot);
         }
 
         assertEquals(5, store.current().getRevision());
-        List<Long> revisions = new ArrayList<Long>();
+        List<Long> revisions = new ArrayList<>();
         for (UpdatePlanSnapshot snapshot : store.history()) {
             revisions.add(snapshot.getRevision());
         }
@@ -82,7 +82,7 @@ class UpdateStateStoreTest {
     void corruptStateIsQuarantinedInsteadOfBreakingStartup() throws IOException {
         Files.createDirectories(directory);
         Files.write(directory.resolve("state.json"), "not-json".getBytes(StandardCharsets.UTF_8));
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
 
         UpdateStateStore store = new UpdateStateStore(directory, warnings::add);
 
@@ -103,7 +103,7 @@ class UpdateStateStoreTest {
                 new ApiVersionRange(1, 1), 1, Collections.emptyList(), null, Collections.emptyList(),
                 Collections.emptyList(), Instant.parse("2026-09-29T12:00:00Z"), null, "")));
         UpdatePlanSnapshot snapshot = new UpdatePlanSnapshot(UUID.randomUUID(), 9, UpdateState.UPDATE_AVAILABLE, plan,
-            Collections.<BlockedReason>emptyList(), null);
+            Collections.emptyList(), null);
 
         new UpdateStateStore(directory).save(snapshot);
         UpdatePlanSnapshot restored = new UpdateStateStore(directory).current();

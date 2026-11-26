@@ -93,9 +93,9 @@ public final class ComponentLedger {
 
     /** Creates a ledger stored in {@code file} that reports unreadable state to {@code warning}. */
     public ComponentLedger(@NotNull Path file, @NotNull UpdateEventJournal journal, @NotNull Consumer<String> warning) {
-        this.file = file;
-        this.journal = journal;
-        this.warning = warning;
+        this.file = Objects.requireNonNull(file, "file");
+        this.journal = Objects.requireNonNull(journal, "journal");
+        this.warning = Objects.requireNonNull(warning, "warning");
     }
 
     /** Creates a ledger that ignores warnings. */
@@ -105,7 +105,7 @@ public final class ComponentLedger {
 
     /** Compares {@code current} with the remembered state; see {@link #observe(Map, Set)}. */
     public void observe(@NotNull Map<String, Component> current) throws IOException {
-        observe(current, java.util.Collections.<String>emptySet());
+        observe(current, java.util.Collections.emptySet());
     }
 
     /**

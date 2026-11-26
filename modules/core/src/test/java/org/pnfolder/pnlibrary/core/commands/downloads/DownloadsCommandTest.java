@@ -39,7 +39,7 @@ class DownloadsCommandTest {
 
         List<DeclaredDownload> all = DownloadsCommand.declaredDownloads(registry);
 
-        List<String> shown = new ArrayList<String>();
+        List<String> shown = new ArrayList<>();
         for (DeclaredDownload download : all) {
             shown.add(download.getOwner() + " " + download.getSnapshot().getKey());
         }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics.session;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics;
 import org.pnfolder.pnlibrary.api.metrics.provider.MetricsCredentials;
@@ -25,7 +26,7 @@ public abstract class AbstractMetricsSession implements PluginMetrics {
 
     /** @param credentials credentials of the provider this session reports to */
     protected AbstractMetricsSession(@NotNull MetricsCredentials<?> credentials) {
-        this.credentials = credentials;
+        this.credentials = Objects.requireNonNull(credentials, "credentials");
         this.providerSet = Collections.singleton(credentials.getProvider());
     }
 

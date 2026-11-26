@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class EncryptedReportUploaderTest {
     private HttpServer server;
-    private final List<String> requests = new ArrayList<String>();
+    private final List<String> requests = new ArrayList<>();
     private int status = 200;
     private String response = "";
 

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
@@ -48,7 +49,7 @@ class DownloadServiceTest {
     }
 
     private static List<PluginDependency> only(ExternalPluginDependency dependency) {
-        return Arrays.<PluginDependency>asList(dependency);
+        return Arrays.asList(dependency);
     }
 
     private static ExternalPluginDependency vault(String url) {
@@ -70,7 +71,7 @@ class DownloadServiceTest {
         FileDownloads request = FileDownloads.builder().dataDirectory(directory.resolve("plugin-data"))
             .file("data", file -> file.url("https://example.org/data.bin")
                 .destination(DownloadDestination.DATA_FOLDER, "models/data.bin")).build();
-        try (DownloadService service = manager(payload, true, null, null, Collections.<String, String>emptyMap(),
+        try (DownloadService service = manager(payload, true, null, null, Collections.emptyMap(),
             PlatformType.BUKKIT)) {
             service.install(request, request.getFiles().get(0));
         }
@@ -82,7 +83,7 @@ class DownloadServiceTest {
     void manualDownloadWorksWhenAutomaticPolicyIsDisabled() throws Exception {
         byte[] payload = bytes("manual");
         FileDownloads request = dataRequest("manual-data", "manual", "manual.bin");
-        try (DownloadService service = manager(payload, false, null, null, Collections.<String, String>emptyMap(),
+        try (DownloadService service = manager(payload, false, null, null, Collections.emptyMap(),
             PlatformType.BUKKIT)) {
             DownloadRegistration registration = service.register(new Object(), request);
             assertFalse(Files.exists(directory.resolve("manual-data/manual.bin")));
@@ -99,7 +100,7 @@ class DownloadServiceTest {
     void automaticExternalDependencyIsStagedInServerUpdateDirectory() throws Exception {
         byte[] payload = pluginJar("Vault", "1.7.3");
 
-        try (DownloadService service = manager(payload, true, null, null, Collections.<String, String>emptyMap(),
+        try (DownloadService service = manager(payload, true, null, null, Collections.emptyMap(),
             PlatformType.BUKKIT)) {
             DownloadRegistration registration = service.registerDependencies(new Object(),
                 only(vault("https://example.org/download")));
@@ -110,12 +111,12 @@ class DownloadServiceTest {
 
     @Test
     void dependencyValidationUsesTheDescriptorOfTheActivePlatform() throws Exception {
-        Map<String, String> entries = new LinkedHashMap<String, String>();
+        Map<String, String> entries = new LinkedHashMap<>();
         entries.put("plugin.yml", "name: Vault\nversion: 1.7.3\nmain: example.Main\n");
         entries.put("bungee.yml", "name: DifferentPlugin\nversion: 1.7.3\nmain: example.Main\n");
 
         try (DownloadService service = manager(pluginJar(entries), true, null, null,
-            Collections.<String, String>emptyMap(), PlatformType.BUNGEECORD)) {
+            Collections.emptyMap(), PlatformType.BUNGEECORD)) {
             DownloadRegistration registration = service.registerDependencies(new Object(),
                 only(vault("https://example.org/Vault.jar")));
             assertEquals(DownloadState.FAILED,
@@ -126,7 +127,7 @@ class DownloadServiceTest {
     @Test
     void dependencyDownloadRejectsAJarWhoseDeclaredPluginIdentityDoesNotMatch() throws Exception {
         try (DownloadService service = manager(pluginJar("NotVault", "1.7.3"), true, null, null,
-            Collections.<String, String>emptyMap(), PlatformType.BUKKIT)) {
+            Collections.emptyMap(), PlatformType.BUKKIT)) {
             DownloadRegistration registration = service.registerDependencies(new Object(),
                 only(vault("https://example.org/Vault.jar")));
             List<DownloadSnapshot> snapshots = registration.downloadNow().toCompletableFuture().join();
@@ -154,7 +155,7 @@ class DownloadServiceTest {
             .build();
 
         try (DownloadService service = manager(bytes("not-a-jar"), true, null, null,
-            Collections.<String, String>emptyMap(), PlatformType.BUKKIT)) {
+            Collections.emptyMap(), PlatformType.BUKKIT)) {
             assertThrows(IllegalArgumentException.class, () -> service.installBatch(request, request.getFiles()));
         }
 
@@ -167,7 +168,7 @@ class DownloadServiceTest {
         CountDownLatch release = new CountDownLatch(1);
         FileDownloads request = dataRequest("plugin-data", "data", "data.bin");
         try (DownloadService service = manager(bytes("late-download"), true, entered, release,
-            Collections.<String, String>emptyMap(), PlatformType.BUKKIT)) {
+            Collections.emptyMap(), PlatformType.BUKKIT)) {
             DownloadRegistration registration = service.register(new Object(), request);
             java.util.concurrent.CompletableFuture<List<DownloadSnapshot>> future =
                 registration.downloadNow().toCompletableFuture();
@@ -194,7 +195,7 @@ class DownloadServiceTest {
                     case "getType":
                         return platformType;
                     case "getArtifactId":
-                        return platformType.name().toLowerCase();
+                        return platformType.name().toLowerCase(Locale.ROOT);
                     case "getDescriptorFileName":
                         return descriptorOf(platformType);
                     case "installedPlugins":
@@ -243,7 +244,7 @@ class DownloadServiceTest {
     }
 
     private static byte[] pluginJar(String name, String version) throws IOException {
-        Map<String, String> entries = new LinkedHashMap<String, String>();
+        Map<String, String> entries = new LinkedHashMap<>();
         entries.put("plugin.yml", "name: " + name + "\nversion: " + version + "\nmain: example.Main\n");
         return pluginJar(entries);
     }

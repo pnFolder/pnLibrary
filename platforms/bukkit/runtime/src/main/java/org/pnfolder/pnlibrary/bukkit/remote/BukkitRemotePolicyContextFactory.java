@@ -8,10 +8,10 @@ import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.PlatformInfo;
-import org.pnfolder.pnlibrary.api.remote.ProductInfo;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
-import org.pnfolder.pnlibrary.api.remote.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
 
 /** Creates remote-policy contexts from Bukkit runtime metadata. */
@@ -22,7 +22,7 @@ public final class BukkitRemotePolicyContextFactory {
     /** Builds a context for {@code plugin} without extra policy values. */
     @NotNull
     public static RemotePolicyContext create(@NotNull Plugin plugin) {
-        return create(plugin, Collections.<String, String>emptyMap());
+        return create(plugin, Collections.emptyMap());
     }
 
     /**

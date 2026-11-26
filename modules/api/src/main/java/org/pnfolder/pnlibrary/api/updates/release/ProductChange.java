@@ -20,9 +20,9 @@ public final class ProductChange {
      * @param to selected target version
      */
     public ProductChange(@NotNull ProductId product, @Nullable SemanticVersion from, @NotNull SemanticVersion to) {
-        this.product = product;
+        this.product = Objects.requireNonNull(product, "product");
         this.from = from;
-        this.to = to;
+        this.to = Objects.requireNonNull(to, "to");
     }
 
     /** Product being installed or upgraded. */

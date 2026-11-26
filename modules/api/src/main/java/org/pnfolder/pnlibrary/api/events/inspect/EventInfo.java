@@ -28,7 +28,7 @@ public final class EventInfo {
      * @param lastCalledAt when it was called last since the library started, or {@code null} when it has not been called
      */
     public EventInfo(@NotNull String eventType, int listeners, long calls, long denied, @Nullable Instant lastCalledAt) {
-        this.eventType = eventType;
+        this.eventType = Objects.requireNonNull(eventType, "eventType");
         this.listeners = listeners;
         this.calls = calls;
         this.denied = denied;

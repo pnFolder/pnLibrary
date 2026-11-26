@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.plugin.metadata;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
@@ -34,13 +35,13 @@ public final class PluginMetadata {
                           @NotNull String authors, @NotNull PlatformType platform,
                           @NotNull String platformImplementation, @NotNull String javaVersion, int javaFeature,
                           @Nullable String description) {
-        this.id = id;
-        this.name = name;
-        this.version = version;
-        this.authors = authors;
-        this.platform = platform;
-        this.platformImplementation = platformImplementation;
-        this.javaVersion = javaVersion;
+        this.id = Objects.requireNonNull(id, "id");
+        this.name = Objects.requireNonNull(name, "name");
+        this.version = Objects.requireNonNull(version, "version");
+        this.authors = Objects.requireNonNull(authors, "authors");
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.platformImplementation = Objects.requireNonNull(platformImplementation, "platformImplementation");
+        this.javaVersion = Objects.requireNonNull(javaVersion, "javaVersion");
         this.javaFeature = javaFeature;
         this.description = description;
     }

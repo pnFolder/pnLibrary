@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,7 +27,7 @@ public final class SqlScriptRestore {
 
     /** A restore that runs the file statement by statement with autocommit. */
     public SqlScriptRestore(@NotNull String header) {
-        this(header, Collections.<String>emptyList(), Collections.<String>emptyList(), false);
+        this(header, Collections.emptyList(), Collections.emptyList(), false);
     }
 
     /**
@@ -38,7 +39,7 @@ public final class SqlScriptRestore {
     }
 
     private SqlScriptRestore(String header, List<String> setup, List<String> teardown, boolean atomic) {
-        this.header = header;
+        this.header = Objects.requireNonNull(header, "header");
         this.setup = setup;
         this.teardown = teardown;
         this.atomic = atomic;
@@ -49,7 +50,7 @@ public final class SqlScriptRestore {
      * transactional DDL (PostgreSQL), since MySQL commits implicitly at every {@code DROP TABLE}.
      */
     public static SqlScriptRestore atomic(@NotNull String header) {
-        return new SqlScriptRestore(header, Collections.<String>emptyList(), Collections.<String>emptyList(), true);
+        return new SqlScriptRestore(header, Collections.emptyList(), Collections.emptyList(), true);
     }
 
     /** Runs the statements of {@code source} on {@code connection}; the teardown runs even when a statement fails. */

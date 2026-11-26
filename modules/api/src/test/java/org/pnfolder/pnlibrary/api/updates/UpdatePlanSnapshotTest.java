@@ -29,17 +29,17 @@ class UpdatePlanSnapshotTest {
     void snapshotDetachesTheGraphAndProtectsNestedCollections() {
         ProductId product = ProductId.of("example");
         SemanticVersion version = SemanticVersion.parse("2.0.0-beta.1");
-        List<ProductDependency> dependencies = new ArrayList<ProductDependency>(
+        List<ProductDependency> dependencies = new ArrayList<>(
             Collections.singletonList(new ProductDependency(ProductId.of("dependency"), version)));
-        List<ArtifactDescriptor> artifacts = new ArrayList<ArtifactDescriptor>();
-        List<ExternalPluginDependency> external = new ArrayList<ExternalPluginDependency>();
+        List<ArtifactDescriptor> artifacts = new ArrayList<>();
+        List<ExternalPluginDependency> external = new ArrayList<>();
         ProductRelease release = new ProductRelease(product, version, UpdateChannel.BETA, new ApiVersionRange(1, 1),
             null, dependencies, null, artifacts, external, null, null, "");
-        List<ProductChange> changes = new ArrayList<ProductChange>(
+        List<ProductChange> changes = new ArrayList<>(
             Collections.singletonList(new ProductChange(product, null, version)));
-        List<ProductRelease> selected = new ArrayList<ProductRelease>(Collections.singletonList(release));
+        List<ProductRelease> selected = new ArrayList<>(Collections.singletonList(release));
         UpdatePlanSnapshot snapshot = new UpdatePlanSnapshot(UUID.randomUUID(), 1, UpdateState.UPDATE_AVAILABLE,
-            new UpdatePlan(1, changes, selected), Collections.<BlockedReason>emptyList(), null);
+            new UpdatePlan(1, changes, selected), Collections.emptyList(), null);
         dependencies.clear();
         changes.clear();
         selected.clear();
@@ -49,7 +49,7 @@ class UpdatePlanSnapshotTest {
         assertEquals(1, captured.getChanges().size());
         assertEquals(1, captured.getSelected().get(0).getDependencies().size());
         ProductRelease frozenRelease = captured.getSelected().get(0);
-        List<List<?>> lists = Arrays.<List<?>>asList(captured.getChanges(), captured.getSelected(),
+        List<List<?>> lists = Arrays.asList(captured.getChanges(), captured.getSelected(),
             frozenRelease.getDependencies(), frozenRelease.getArtifacts(),
             frozenRelease.getExternalPluginDependencies(), version.getPrerelease());
         for (List<?> list : lists) {

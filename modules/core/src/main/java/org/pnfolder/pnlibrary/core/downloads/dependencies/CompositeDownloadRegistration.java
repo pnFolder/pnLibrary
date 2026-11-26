@@ -39,7 +39,7 @@ public final class CompositeDownloadRegistration implements DownloadRegistration
 
     @Override
     public @NotNull List<DownloadSnapshot> snapshots() {
-        List<DownloadSnapshot> all = new ArrayList<DownloadSnapshot>(first.snapshots());
+        List<DownloadSnapshot> all = new ArrayList<>(first.snapshots());
         all.addAll(second.snapshots());
         return all;
     }
@@ -47,7 +47,7 @@ public final class CompositeDownloadRegistration implements DownloadRegistration
     @Override
     public @NotNull CompletionStage<List<DownloadSnapshot>> downloadNow() {
         return first.downloadNow().thenCombine(second.downloadNow(), (left, right) -> {
-            List<DownloadSnapshot> all = new ArrayList<DownloadSnapshot>(left);
+            List<DownloadSnapshot> all = new ArrayList<>(left);
             all.addAll(right);
             return all;
         });

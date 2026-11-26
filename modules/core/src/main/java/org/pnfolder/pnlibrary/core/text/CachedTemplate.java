@@ -16,7 +16,7 @@ final class CachedTemplate implements ComponentTemplate {
     private final PlaceholderService placeholders;
     private final String source;
     private final ComponentSerializer serializer;
-    private final Map<String, Object> values = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> values = new LinkedHashMap<>();
     private UUID playerId;
 
     CachedTemplate(PlaceholderService placeholders, String source, ComponentSerializer serializer) {

@@ -16,8 +16,8 @@ final class CommandStats {
     private final AtomicLong executionFailureCount = new AtomicLong();
     private final AtomicLong suggestionFailureCount = new AtomicLong();
     private final Object lock = new Object();
-    private final Map<String, Long> executionsByCommand = new LinkedHashMap<String, Long>();
-    private final Map<String, Long> failuresByCommand = new LinkedHashMap<String, Long>();
+    private final Map<String, Long> executionsByCommand = new LinkedHashMap<>();
+    private final Map<String, Long> failuresByCommand = new LinkedHashMap<>();
 
     void executed(String commandName) {
         executionCount.incrementAndGet();
@@ -47,21 +47,21 @@ final class CommandStats {
     }
 
     Map<String, Object> snapshot(List<RegisteredCommand> open) {
-        TreeSet<String> names = new TreeSet<String>();
+        TreeSet<String> names = new TreeSet<>();
         for (RegisteredCommand registration : open) {
             names.addAll(registration.getCommand().getAliases());
             names.add(registration.getCommand().getName());
         }
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("registeredCount", open.size());
-        result.put("registeredNames", Collections.unmodifiableList(new ArrayList<String>(names)));
+        result.put("registeredNames", Collections.unmodifiableList(new ArrayList<>(names)));
         result.put("executionCount", executionCount.get());
         result.put("suggestionCount", suggestionCount.get());
         result.put("executionFailureCount", executionFailureCount.get());
         result.put("suggestionFailureCount", suggestionFailureCount.get());
         synchronized (lock) {
-            result.put("executionsByCommand", new TreeMap<String, Long>(executionsByCommand));
-            result.put("failuresByCommand", new TreeMap<String, Long>(failuresByCommand));
+            result.put("executionsByCommand", new TreeMap<>(executionsByCommand));
+            result.put("failuresByCommand", new TreeMap<>(failuresByCommand));
         }
         return result;
     }

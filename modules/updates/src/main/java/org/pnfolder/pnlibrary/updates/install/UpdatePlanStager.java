@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.install;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -47,14 +48,14 @@ public final class UpdatePlanStager {
                             @NotNull UpdateTransaction transaction, long maximumArtifactBytes, boolean requireSha256,
                             @NotNull Function<ProductId, Integer> javaChoice,
                             @NotNull Function<ProductId, Integer> installedJava) {
-        this.platform = platform;
-        this.paths = paths;
-        this.http = http;
-        this.transaction = transaction;
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.paths = Objects.requireNonNull(paths, "paths");
+        this.http = Objects.requireNonNull(http, "http");
+        this.transaction = Objects.requireNonNull(transaction, "transaction");
         this.maximumArtifactBytes = maximumArtifactBytes;
         this.requireSha256 = requireSha256;
-        this.javaChoice = javaChoice;
-        this.installedJava = installedJava;
+        this.javaChoice = Objects.requireNonNull(javaChoice, "javaChoice");
+        this.installedJava = Objects.requireNonNull(installedJava, "installedJava");
     }
 
     /** Creates a stager that requires a SHA-256 and has no Java build preference. */

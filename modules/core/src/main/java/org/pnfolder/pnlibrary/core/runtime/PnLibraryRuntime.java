@@ -30,7 +30,7 @@ public final class PnLibraryRuntime {
     public static final class Builder {
         private Object owner;
         private PlatformAdapter adapter;
-        private final List<Consumer<PnLibraryRuntimeHost>> registrations = new ArrayList<Consumer<PnLibraryRuntimeHost>>();
+        private final List<Consumer<PnLibraryRuntimeHost>> registrations = new ArrayList<>();
 
         private Builder() {
         }

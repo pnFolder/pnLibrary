@@ -19,7 +19,7 @@ import org.pnfolder.pnlibrary.updates.engine.transaction.PendingTransaction;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateProcessSession;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.service.RegisteredUpdate;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 import org.pnfolder.pnlibrary.updates.service.UpdateHealthReport;
 
 /** Verifies a staged transaction after the next server start by comparing the loaded versions with the expected ones. */

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.config.yaml.AnnotatedYamlCodec;
 import org.pnfolder.pnlibrary.config.yaml.CodeFirstYaml;
-import org.pnfolder.pnlibrary.config.yaml.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
 import org.pnfolder.pnlibrary.config.yaml.ConfigSettingsEditor;
 
 /** One module's view of the service: its files, serializers and published types, all released on {@link #close()}. */
@@ -49,8 +50,8 @@ final class ModuleConfigScope implements ConfigScope {
     private final Supplier<Function<ManagedConfigFile, AutoCloseable>> fileListener;
     private final Consumer<ModuleConfigScope> detach;
     private final ConfigPaths paths;
-    private final Set<OwnedConfig<?>> handles = new LinkedHashSet<OwnedConfig<?>>();
-    private final List<AutoCloseable> announcements = new ArrayList<AutoCloseable>();
+    private final Set<OwnedConfig<?>> handles = new LinkedHashSet<>();
+    private final List<AutoCloseable> announcements = new ArrayList<>();
     private final Map<Class<?>, ConfigSerializer<?>> serializers = BuiltInConfigSerializers.create();
     private final AtomicBoolean scopeClosed = new AtomicBoolean(false);
 
@@ -65,15 +66,15 @@ final class ModuleConfigScope implements ConfigScope {
     ModuleConfigScope(@NotNull PluginId key, @NotNull PluginId plugin, @NotNull ModuleId module, @NotNull Path directory,
                       @NotNull PnLogger logger, @NotNull ConfigFileRegistry files, @NotNull ConfigAdditions additions,
                       @NotNull Supplier<Function<ManagedConfigFile, AutoCloseable>> fileListener, @NotNull Consumer<ModuleConfigScope> detach) {
-        this.key = key;
-        this.plugin = plugin;
-        this.module = module;
-        this.directory = directory;
-        this.logger = logger;
-        this.files = files;
-        this.additions = additions;
-        this.fileListener = fileListener;
-        this.detach = detach;
+        this.key = Objects.requireNonNull(key, "key");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.module = Objects.requireNonNull(module, "module");
+        this.directory = Objects.requireNonNull(directory, "directory");
+        this.logger = Objects.requireNonNull(logger, "logger");
+        this.files = Objects.requireNonNull(files, "files");
+        this.additions = Objects.requireNonNull(additions, "additions");
+        this.fileListener = Objects.requireNonNull(fileListener, "fileListener");
+        this.detach = Objects.requireNonNull(detach, "detach");
         this.paths = new ConfigPaths(directory, plugin);
     }
 
@@ -118,16 +119,16 @@ final class ModuleConfigScope implements ConfigScope {
         if (defaultValue == null) {
             throw new IllegalStateException("Configuration defaults cannot be null");
         }
-        AnnotatedYamlCodec<T> codec = new AnnotatedYamlCodec<T>(type, defaults, () -> serializersFor(id),
+        AnnotatedYamlCodec<T> codec = new AnnotatedYamlCodec<>(type, defaults, () -> serializersFor(id),
                 () -> additions.visibleTypes(id), plugin.getValue(), effective, message -> logger.warning(message));
         ConfigValueValidator<T> combined = value -> {
-            List<ConfigProblem> problems = new ArrayList<ConfigProblem>(codec.validate(value));
+            List<ConfigProblem> problems = new ArrayList<>(codec.validate(value));
             problems.addAll(validator.validate(value));
             return problems;
         };
-        CodeFirstYaml<T> handle = new CodeFirstYaml<T>(target.toFile(), defaultValue, codec, logger, combined, effective);
+        CodeFirstYaml<T> handle = new CodeFirstYaml<>(target.toFile(), defaultValue, codec, logger, combined, effective);
         ConfigSettingsEditor editor = new ConfigSettingsEditor(new ConfigObjectIntrospector(effective.getNaming()), type);
-        OwnedConfig<T> owned = new OwnedConfig<T>(id, target, type, effective.getReadOnly(), handle, editor, logger);
+        OwnedConfig<T> owned = new OwnedConfig<>(id, target, type, effective.getReadOnly(), handle, editor, logger);
         register(owned);
         // Files of other plugins can hold secrets that the diagnostic report must not see, so only the plugin's own are announced.
         if (options.getRoot() == ConfigRoot.PLUGIN) {
@@ -207,7 +208,7 @@ final class ModuleConfigScope implements ConfigScope {
     private Map<Class<?>, ConfigSerializer<?>> serializersFor(ConfigId id) {
         Map<Class<?>, ConfigSerializer<?>> merged;
         synchronized (serializers) {
-            merged = new LinkedHashMap<Class<?>, ConfigSerializer<?>>(serializers);
+            merged = new LinkedHashMap<>(serializers);
         }
         for (Map.Entry<Class<?>, ConfigSerializer<?>> added : additions.visibleSerializers(id).entrySet()) {
             if (!merged.containsKey(added.getKey())) {
@@ -236,7 +237,7 @@ final class ModuleConfigScope implements ConfigScope {
     @Override
     @NotNull
     public List<ConfigInfo> list() {
-        List<ConfigInfo> result = new ArrayList<ConfigInfo>();
+        List<ConfigInfo> result = new ArrayList<>();
         for (OwnedConfig<?> handle : snapshot()) {
             result.add(handle.getInfo());
         }
@@ -271,7 +272,7 @@ final class ModuleConfigScope implements ConfigScope {
 
     @Override
     public void saveAll() {
-        List<OwnedConfig<?>> loaded = new ArrayList<OwnedConfig<?>>();
+        List<OwnedConfig<?>> loaded = new ArrayList<>();
         for (OwnedConfig<?> handle : snapshot()) {
             if (handle.isLoaded() && !handle.isReadOnly()) {
                 loaded.add(handle);
@@ -287,7 +288,7 @@ final class ModuleConfigScope implements ConfigScope {
         }
         List<OwnedConfig<?>> owned;
         synchronized (handles) {
-            owned = new ArrayList<OwnedConfig<?>>(handles);
+            owned = new ArrayList<>(handles);
             handles.clear();
         }
         ConfigRunAll.runAll(
@@ -301,10 +302,10 @@ final class ModuleConfigScope implements ConfigScope {
     private void closeAnnouncements() {
         List<AutoCloseable> pending;
         synchronized (handles) {
-            pending = new ArrayList<AutoCloseable>(announcements);
+            pending = new ArrayList<>(announcements);
             announcements.clear();
         }
-        List<Runnable> steps = new ArrayList<Runnable>();
+        List<Runnable> steps = new ArrayList<>();
         for (AutoCloseable announced : pending) {
             steps.add(() -> closeQuietly(announced));
         }
@@ -312,7 +313,7 @@ final class ModuleConfigScope implements ConfigScope {
     }
 
     private static void forEach(List<? extends ManagedConfig<?>> handles, Consumer<ManagedConfig<?>> action) {
-        List<Runnable> steps = new ArrayList<Runnable>();
+        List<Runnable> steps = new ArrayList<>();
         for (ManagedConfig<?> handle : handles) {
             steps.add(() -> action.accept(handle));
         }
@@ -321,7 +322,7 @@ final class ModuleConfigScope implements ConfigScope {
 
     private List<OwnedConfig<?>> snapshot() {
         synchronized (handles) {
-            return new ArrayList<OwnedConfig<?>>(handles);
+            return new ArrayList<>(handles);
         }
     }
 }

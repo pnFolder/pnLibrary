@@ -30,7 +30,7 @@ class TaskHistoryStoreTest {
         return TaskSnapshot.builder(new TaskId(id), "Shop", TaskExecution.Kind.ASYNC,
                         failure == null ? TaskStatus.COMPLETED : TaskStatus.FAILED, Instant.parse("2026-10-29T10:00:00Z"))
                 .name("Save\tplayers")
-                .tags(new HashSet<String>(Arrays.asList("a", "b")))
+                .tags(new HashSet<>(Arrays.asList("a", "b")))
                 .runCount(3)
                 .skippedCount(1)
                 .lastStartedAt(Instant.parse("2026-10-29T10:00:01Z"))
@@ -60,7 +60,7 @@ class TaskHistoryStoreTest {
     void aMissingOrDamagedFileGivesTheReadableLinesOnly() throws IOException {
         Path file = directory.resolve("history.tsv");
         TaskHistoryStore store = new TaskHistoryStore(file);
-        assertEquals(Collections.<TaskSnapshot>emptyList(), store.load());
+        assertEquals(Collections.emptyList(), store.load());
 
         store.save(Arrays.asList(task("one", null)));
         String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
@@ -72,7 +72,7 @@ class TaskHistoryStoreTest {
     @Test
     void aLineOfTheFirstFormatStillLoadsWithDefaultNewFields() throws IOException {
         Path file = directory.resolve("history.tsv");
-        List<String> fields = new ArrayList<String>(Arrays.asList(
+        List<String> fields = new ArrayList<>(Arrays.asList(
                 "id1", "Old", "", "Shop", "ASYNC", "COMPLETED", "", "2026-10-29T10:00:00Z", "", "2", "0", "", "", "", "", ""));
         Files.write(file, ("#pnlibrary-task-history 1\n" + String.join("\t", fields) + "\n").getBytes(StandardCharsets.UTF_8));
 

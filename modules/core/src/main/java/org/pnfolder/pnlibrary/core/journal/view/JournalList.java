@@ -34,7 +34,7 @@ final class JournalList {
             return;
         }
         List<List<JournalRecord>> everything = foldRepeats(journal.read(JournalConstants.SCAN_LIMIT));
-        List<List<JournalRecord>> groups = new ArrayList<List<JournalRecord>>();
+        List<List<JournalRecord>> groups = new ArrayList<>();
         for (List<JournalRecord> group : everything) {
             if (filter.shows(group)) {
                 groups.add(group);
@@ -46,7 +46,7 @@ final class JournalList {
         List<List<JournalRecord>> rows = groups.subList(from, Math.min(groups.size(),
             from + JournalConstants.PAGE_SIZE));
 
-        List<Component> lines = new ArrayList<Component>(head(kit, groups.size(),
+        List<Component> lines = new ArrayList<>(head(kit, groups.size(),
             tabs(kit, everything, filter.word, root)));
         if (rows.isEmpty()) {
             lines.add(kit.note("Здесь пока пусто."));
@@ -81,16 +81,16 @@ final class JournalList {
 
     /** Equal events merged into one list each, newest first, and the lists ordered by their newest record. */
     private static List<List<JournalRecord>> foldRepeats(List<JournalRecord> records) {
-        Map<String, List<JournalRecord>> byId = new LinkedHashMap<String, List<JournalRecord>>();
+        Map<String, List<JournalRecord>> byId = new LinkedHashMap<>();
         for (JournalRecord record : records) {
             List<JournalRecord> group = byId.get(record.getFingerprint());
             if (group == null) {
-                group = new ArrayList<JournalRecord>();
+                group = new ArrayList<>();
                 byId.put(record.getFingerprint(), group);
             }
             group.add(record);
         }
-        List<List<JournalRecord>> groups = new ArrayList<List<JournalRecord>>(byId.values());
+        List<List<JournalRecord>> groups = new ArrayList<>(byId.values());
         for (List<JournalRecord> group : groups) {
             group.sort((left, right) -> Long.compare(right.getTimeMillis(), left.getTimeMillis()));
         }
@@ -100,7 +100,7 @@ final class JournalList {
 
     private static List<Component> head(ChatKit kit, int count, Component tabs) {
         String records = count + " " + RussianText.plural(count, "запись", "записи", "записей");
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.blank());
         lines.add(kit.header("События", kit.text(records, ChatPalette.LABEL)));
@@ -153,7 +153,7 @@ final class JournalList {
 
     /** {@code « 1 … 4 [5] 6 … 12 »}: arrows and a window of page numbers, so a long journal is never one wall of rows. */
     private static Component pager(@NotNull ChatKit kit, String word, int page, int pages, String root) {
-        TreeSet<Integer> shown = new TreeSet<Integer>();
+        TreeSet<Integer> shown = new TreeSet<>();
         for (int number : new int[] {1, pages, page - 1, page, page + 1}) {
             if (number >= 1 && number <= pages) {
                 shown.add(number);

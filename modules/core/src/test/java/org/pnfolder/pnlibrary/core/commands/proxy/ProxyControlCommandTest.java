@@ -29,7 +29,7 @@ class ProxyControlCommandTest {
     private final CommandDefinition definition = new ProxyControlCommand(mock(PnLibrary.class), Link.OFF).definition();
 
     private static List<String> names(List<CommandNode> nodes) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (CommandNode node : nodes) {
             names.add(node.getName());
         }
@@ -74,7 +74,7 @@ class ProxyControlCommandTest {
     @Test
     @DisplayName("pn alone tells a sender without the admin permission what it may use")
     void pnAloneTellsASenderWithoutTheAdminPermissionWhatItMayUse() {
-        final List<String> sent = new ArrayList<String>();
+        final List<String> sent = new ArrayList<>();
         CommandSender sender = new CommandSender() {
             @NotNull
             @Override
@@ -89,7 +89,7 @@ class ProxyControlCommandTest {
         };
 
         ExecutableRoute route = (ExecutableRoute) new CommandTreeRouter().route(definition,
-                new CommandContext(sender, Collections.<String>emptyList(), "pn", ""));
+                new CommandContext(sender, Collections.emptyList(), "pn", ""));
         route.getNode().getExecution().execute(route.getContext()).toCompletableFuture().join();
 
         assertTrue(String.join(", ", sent).contains("/pn tasks"), sent.toString());

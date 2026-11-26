@@ -39,6 +39,6 @@ class BuiltInConfigSerializersTest {
     }
 
     private static ConfigSerializationContext context(Class<?> type) {
-        return new ConfigSerializationContext("value", type, type, Collections.<Annotation>emptyList(), null);
+        return new ConfigSerializationContext("value", type, type, Collections.emptyList(), null);
     }
 }

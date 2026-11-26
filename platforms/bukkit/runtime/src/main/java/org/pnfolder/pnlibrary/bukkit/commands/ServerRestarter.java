@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.bukkit.commands;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,9 +14,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.pnfolder.pnlibrary.api.chat.ChatPalette;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
+import org.pnfolder.pnlibrary.core.settings.RestartSettings;
+import org.pnfolder.pnlibrary.core.updates.restart.QuietClock;
 
 /**
- * Restarts the server so staged updates apply: at once, after a countdown the players see, or when nobody is online.
+ * Restarts the server so staged updates apply: at once, after a countdown the players see, when nobody is online, or when few players stay online for a while.
  *
  * <p>With {@code restart-script} in {@code spigot.yml} the server restarts itself. Without it the server is stopped
  * cleanly and comes back only if something outside starts it again (a hosting panel, a {@code start.sh} loop,
@@ -33,18 +36,20 @@ final class ServerRestarter {
     private static final Set<Integer> WARNINGS = new HashSet<>(Arrays.asList(300, 60, 30, 10, 5, 3, 2, 1));
 
     /** When the restart happens. */
-    enum Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY }
+    enum Mode { NOW, IN_FIVE_MINUTES, WHEN_EMPTY, WHEN_FEW }
 
     /** What {@link #start} set up. */
-    enum Started { COUNTDOWN, WAITING_FOR_EMPTY }
+    enum Started { COUNTDOWN, WAITING_FOR_EMPTY, WAITING_FOR_FEW }
 
     private final ServerScheduler scheduler;
     private final Supplier<PnLogger> log;
+    private final Supplier<RestartSettings> settings;
     private volatile ServerScheduler.Scheduled waiting;
 
-    ServerRestarter(ServerScheduler scheduler, Supplier<PnLogger> log) {
+    ServerRestarter(ServerScheduler scheduler, Supplier<PnLogger> log, Supplier<RestartSettings> settings) {
         this.scheduler = scheduler;
         this.log = log;
+        this.settings = settings;
     }
 
     /** Cancels any waiting restart, then begins the restart in the requested {@code mode}. */
@@ -55,9 +60,16 @@ final class ServerRestarter {
                 return countdown(Bukkit.getOnlinePlayers().isEmpty() ? QUICK_SECONDS : NOTICE_SECONDS);
             case IN_FIVE_MINUTES:
                 return countdown(LATER_SECONDS);
+            case WHEN_FEW:
+                return waitForFew();
             default:
                 return waitForEmpty();
         }
+    }
+
+    /** The restart settings in force now. */
+    RestartSettings settings() {
+        return settings.get();
     }
 
     /** Withdraws the waiting restart; false when none was waiting. */
@@ -96,6 +108,25 @@ final class ServerRestarter {
         return Started.WAITING_FOR_EMPTY;
     }
 
+    /** Waits until the players stay at or below the limit for the quiet time; the limit and time are read at each look. */
+    private Started waitForFew() {
+        QuietClock clock = new QuietClock();
+        waiting = scheduler.repeat(0L, EMPTY_CHECK_TICKS, () -> {
+            RestartSettings now = settings.get();
+            int players = Bukkit.getOnlinePlayers().size();
+            if (clock.observe(players, now.getMaxPlayers(), Instant.now()).compareTo(now.getQuietTime()) >= 0) {
+                cancel();
+                countdown(players == 0 ? QUICK_SECONDS : NOTICE_SECONDS);
+            }
+        });
+        return Started.WAITING_FOR_FEW;
+    }
+
+    /** Whether a restart is counting down or waiting for its condition. */
+    boolean busy() {
+        return waiting != null;
+    }
+
     @SuppressWarnings("deprecation")
     private void restart() {
         if (script() != null) {
@@ -103,9 +134,6 @@ final class ServerRestarter {
             Bukkit.spigot().restart();
         } else {
             announce("Сервер останавливается для применения обновлений. Если у него есть автозапуск, он включится сам.");
-            log.get().info("restart-script in spigot.yml is not set, so the server only stops: a hosting panel or a start "
-                + "script that loops starts it again. Without one, start it manually, or point restart-script at your "
-                + "start script.");
             Bukkit.shutdown();
         }
     }

@@ -41,13 +41,13 @@ import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
 import org.pnfolder.pnlibrary.core.expansions.LocalizationExpansion;
 import org.pnfolder.pnlibrary.core.commands.modules.MinecraftForcible;
-import org.pnfolder.pnlibrary.core.plugin.module.MinecraftGate;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftGate;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleActionService;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleCommands;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleController;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDiagnosticsName;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleExpansions;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleLibraryLoader;
+import org.pnfolder.pnlibrary.core.plugin.module.library.ModuleLibraryLoader;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleLifecycleReporter;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleMessages;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources;
@@ -281,7 +281,7 @@ final class LoadedModule implements ModuleContext, MinecraftForcible {
     }
 
     private static void closeCommands(List<CommandRegistration> registrations) {
-        List<CleanupStep> steps = new ArrayList<CleanupStep>();
+        List<CleanupStep> steps = new ArrayList<>();
         for (int i = registrations.size() - 1; i >= 0; i--) {
             steps.add(registrations.get(i)::close);
         }

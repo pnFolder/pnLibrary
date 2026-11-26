@@ -12,8 +12,8 @@ public final class RouteProblem extends CommandRoute {
     private final List<CommandNode> nodes;
 
     public RouteProblem(@NotNull CommandError error, @NotNull List<CommandNode> nodes) {
-        this.error = error;
-        this.nodes = nodes;
+        this.error = Objects.requireNonNull(error, "error");
+        this.nodes = Objects.requireNonNull(nodes, "nodes");
     }
 
     @NotNull

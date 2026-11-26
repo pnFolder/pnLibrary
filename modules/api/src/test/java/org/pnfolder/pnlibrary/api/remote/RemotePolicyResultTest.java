@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.remote;
 
+import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyExplanation;
+import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -41,10 +43,10 @@ class RemotePolicyResultTest {
         assertFalse(result.getAllowed());
         assertEquals("устарела", result.getStatus());
         assertEquals("нужно обновление", result.getHeadline());
-        assertEquals(Arrays.asList("Установлена", "Минимальная"), new ArrayList<String>(result.getDetails().keySet()));
+        assertEquals(Arrays.asList("Установлена", "Минимальная"), new ArrayList<>(result.getDetails().keySet()));
         assertEquals(Arrays.asList("Скачайте новую версию", "Перезапустите сервер"), result.getSteps());
         assertEquals("https://example.org/download", result.getLinks().get("Скачать"));
-        List<String> reasons = new ArrayList<String>();
+        List<String> reasons = new ArrayList<>();
         for (RemotePolicyExplanation child : result.getExplanation().getChildren()) {
             reasons.add(child.getText());
         }

@@ -19,7 +19,7 @@ final class CommandHintLines {
     }
 
     List<Component> of(CommandHint[] hints) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.section("Команды"));
         for (CommandHint hint : hints) {
             if (hint.getCommand() != null) {

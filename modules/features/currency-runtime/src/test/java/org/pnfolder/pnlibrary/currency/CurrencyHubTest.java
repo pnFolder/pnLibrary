@@ -79,7 +79,7 @@ class CurrencyHubTest {
 
     @Test
     void aProviderThatThrowsIsReportedToTheOwnerAsWellAsFailingTheCall() throws Exception {
-        List<Throwable> reported = new ArrayList<Throwable>();
+        List<Throwable> reported = new ArrayList<>();
         CurrencyHub hub = new CurrencyHub((message, error) -> reported.add(error));
         CurrencyService owner = hub.scope(PluginId.of("owner"), placeholders());
         CurrencyRegistration registration = owner.register("coins", new BrokenProvider());
@@ -87,7 +87,7 @@ class CurrencyHubTest {
         assertThrows(Exception.class, () -> registration.balance(UUID.randomUUID()).toCompletableFuture().get());
         registration.close();
 
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         for (Throwable error : reported) {
             messages.add(error.getMessage());
         }

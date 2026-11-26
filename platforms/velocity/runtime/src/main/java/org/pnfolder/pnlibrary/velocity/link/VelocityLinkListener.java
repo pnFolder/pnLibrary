@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.link;
 
+import java.util.Objects;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.proxy.ServerConnection;
@@ -17,7 +18,7 @@ public final class VelocityLinkListener {
 
     /** Creates a listener that forwards link frames to {@code receiver}. */
     public VelocityLinkListener(@NotNull LinkReceiver receiver) {
-        this.receiver = receiver;
+        this.receiver = Objects.requireNonNull(receiver, "receiver");
     }
 
     /** Handles one plugin message; frames on the link channel never reach a player or another server. */

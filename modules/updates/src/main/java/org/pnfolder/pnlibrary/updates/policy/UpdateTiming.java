@@ -24,9 +24,9 @@ public final class UpdateTiming {
      */
     public UpdateTiming(@NotNull Duration checkInterval, @NotNull Duration connectTimeout,
                         @NotNull Duration readTimeout) {
-        this.checkInterval = checkInterval;
-        this.connectTimeout = connectTimeout;
-        this.readTimeout = readTimeout;
+        this.checkInterval = Objects.requireNonNull(checkInterval, "checkInterval");
+        this.connectTimeout = Objects.requireNonNull(connectTimeout, "connectTimeout");
+        this.readTimeout = Objects.requireNonNull(readTimeout, "readTimeout");
     }
 
     /** How often the release catalogs are asked for new versions. */

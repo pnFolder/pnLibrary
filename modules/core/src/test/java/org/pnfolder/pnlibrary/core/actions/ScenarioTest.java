@@ -57,7 +57,7 @@ class ScenarioTest {
     }
 
     private ActionContext context() {
-        return context(Collections.<String>emptySet());
+        return context(Collections.emptySet());
     }
 
     private ActionContext context(Set<String> granted) {
@@ -67,7 +67,7 @@ class ScenarioTest {
         Map<Class<?>, Object> services = new HashMap<>();
         services.put(CurrencyService.class, currencies);
         return new ActionContext(player, player, mock(ComponentService.class), mock(PnLogger.class), mock(TaskScope.class),
-            ComponentSerializerType.ADAPTIVE, Collections.<String, Object>emptyMap(), services, type -> null,
+            ComponentSerializerType.ADAPTIVE, Collections.emptyMap(), services, type -> null,
             ScenarioLookup.NONE, null);
     }
 
@@ -198,8 +198,8 @@ class ScenarioTest {
 
         assertTrue(enough.test(ctx).isMet());
         assertEquals(new Verdict.Unmet("250 is not greater 1000"), rich.test(ctx));
-        assertTrue(new AllRequirement(Arrays.<Requirement>asList(enough, new PermissionRequirement("a"))).test(ctx).isMet());
-        assertTrue(new AnyRequirement(Arrays.<Requirement>asList(rich, enough)).test(ctx).isMet());
+        assertTrue(new AllRequirement(Arrays.asList(enough, new PermissionRequirement("a"))).test(ctx).isMet());
+        assertTrue(new AnyRequirement(Arrays.asList(rich, enough)).test(ctx).isMet());
         assertTrue(new NotRequirement(rich).test(ctx).isMet());
         assertEquals("'x' is not a number",
             ((Verdict.Unmet) new CompareRequirement("x", CompareOperator.LESS, "1").test(ctx)).getReason());

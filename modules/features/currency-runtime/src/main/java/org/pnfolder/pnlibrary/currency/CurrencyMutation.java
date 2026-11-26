@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +14,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest;
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus;
 
 /** Complete in-memory result of evaluating one balance mutation. */
-final class CurrencyMutation {
+public final class CurrencyMutation {
     private final CurrencyTransactionStatus status;
     private final BigDecimal sourceBefore;
     private final BigDecimal sourceAfter;
@@ -24,7 +25,7 @@ final class CurrencyMutation {
     CurrencyMutation(@NotNull CurrencyTransactionStatus status, @Nullable BigDecimal sourceBefore,
                      @Nullable BigDecimal sourceAfter, @Nullable BigDecimal targetBefore,
                      @Nullable BigDecimal targetAfter, @Nullable String failure) {
-        this.status = status;
+        this.status = Objects.requireNonNull(status, "status");
         this.sourceBefore = sourceBefore;
         this.sourceAfter = sourceAfter;
         this.targetBefore = targetBefore;
@@ -43,7 +44,7 @@ final class CurrencyMutation {
     }
 
     @Nullable
-    BigDecimal getSourceAfter() {
+    public BigDecimal getSourceAfter() {
         return sourceAfter;
     }
 
@@ -53,7 +54,7 @@ final class CurrencyMutation {
     }
 
     @Nullable
-    BigDecimal getTargetAfter() {
+    public BigDecimal getTargetAfter() {
         return targetAfter;
     }
 
@@ -63,13 +64,13 @@ final class CurrencyMutation {
     }
 
     /** True when the balances must be written. */
-    boolean isCommitted() {
+    public boolean isCommitted() {
         return status == CurrencyTransactionStatus.COMMITTED;
     }
 
     /** The ledger record of this mutation, created when the storage has applied it. */
     @NotNull
-    CurrencyTransaction transaction(@NotNull CurrencyKey currency, @NotNull CurrencyDescriptor descriptor,
+    public CurrencyTransaction transaction(@NotNull CurrencyKey currency, @NotNull CurrencyDescriptor descriptor,
                                     @NotNull CurrencyTransactionRequest request) {
         return new CurrencyTransaction(UUID.randomUUID(), currency, request.getType(), status,
                 isCommitted() ? descriptor.normalize(request.getAmount()) : request.getAmount(),

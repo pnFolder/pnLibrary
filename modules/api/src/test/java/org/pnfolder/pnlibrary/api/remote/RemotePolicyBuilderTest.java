@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.remote;
 
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

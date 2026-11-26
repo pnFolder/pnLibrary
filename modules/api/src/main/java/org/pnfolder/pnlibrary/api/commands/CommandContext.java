@@ -22,7 +22,7 @@ public final class CommandContext {
             @NotNull List<String> arguments,
             @NotNull String invokedAlias,
             @NotNull String currentInput) {
-        this(sender, arguments, invokedAlias, currentInput, Collections.<String, Object>emptyMap());
+        this(sender, arguments, invokedAlias, currentInput, Collections.emptyMap());
     }
 
     /**
@@ -40,11 +40,11 @@ public final class CommandContext {
             @NotNull String invokedAlias,
             @NotNull String currentInput,
             @NotNull Map<String, Object> parsedValues) {
-        this.sender = sender;
-        this.arguments = Collections.unmodifiableList(new ArrayList<String>(arguments));
-        this.invokedAlias = invokedAlias;
-        this.currentInput = currentInput;
-        this.parsedValues = Collections.unmodifiableMap(new LinkedHashMap<String, Object>(parsedValues));
+        this.sender = Objects.requireNonNull(sender, "sender");
+        this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
+        this.invokedAlias = Objects.requireNonNull(invokedAlias, "invokedAlias");
+        this.currentInput = Objects.requireNonNull(currentInput, "currentInput");
+        this.parsedValues = Collections.unmodifiableMap(new LinkedHashMap<>(parsedValues));
     }
 
     /** Platform-neutral command sender. */

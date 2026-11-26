@@ -24,7 +24,7 @@ public final class DiskRow {
      * @param data everything else in its folder: databases, caches, saved players
      */
     public DiskRow(@NotNull String name, long jar, long configs, long libraries, long logs, long data) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.jar = jar;
         this.configs = configs;
         this.libraries = libraries;

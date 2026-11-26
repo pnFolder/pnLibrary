@@ -26,31 +26,10 @@ public interface UpdateSettings {
     CompletionStage<UpdateSnapshot> channel(@NotNull String product, @Nullable UpdateChannel channel,
                                             @NotNull UpdateActor actor);
 
-    /** Turns automatic download of verified updates of {@code product} on or off. */
-    @NotNull
-    default CompletionStage<UpdateSnapshot> automaticDownload(@NotNull String product, boolean enabled) {
-        return automaticDownload(product, enabled, UpdateActor.UNKNOWN);
-    }
-
-    /** Turns automatic download of verified updates of {@code product} on or off, recorded for {@code actor}. */
-    @NotNull
-    CompletionStage<UpdateSnapshot> automaticDownload(@NotNull String product, boolean enabled,
-                                                      @NotNull UpdateActor actor);
-
-    /** Turns automatic download on or off for every plugin, also those registered later; single choices are dropped. */
-    @NotNull
-    default CompletionStage<List<UpdateSnapshot>> automaticDownloadForAll(boolean enabled) {
-        return automaticDownloadForAll(enabled, UpdateActor.UNKNOWN);
-    }
-
-    /** Turns automatic download on or off for every plugin, recorded for {@code actor}. */
-    @NotNull
-    CompletionStage<List<UpdateSnapshot>> automaticDownloadForAll(boolean enabled, @NotNull UpdateActor actor);
-
-    /** Holds the updates of {@code product} for seven days; see {@link #hold(String, Duration, UpdateActor)}. */
+    /** Holds the updates of {@code product} for five days; see {@link #hold(String, Duration, UpdateActor)}. */
     @NotNull
     default CompletionStage<UpdateSnapshot> hold(@NotNull String product) {
-        return hold(product, Duration.ofDays(7), UpdateActor.UNKNOWN);
+        return hold(product, Duration.ofDays(5), UpdateActor.UNKNOWN);
     }
 
     /** Holds the updates of {@code product} for {@code duration}; see {@link #hold(String, Duration, UpdateActor)}. */
@@ -60,7 +39,7 @@ public interface UpdateSettings {
     }
 
     /**
-     * Holds the updates of {@code product} for {@code duration}, from one minute to seven days, replacing an earlier
+     * Holds the updates of {@code product} for {@code duration}, from one minute to five days, replacing an earlier
      * hold: nothing is offered or downloaded until the hold ends by itself or {@link #release} is called.
      */
     @NotNull

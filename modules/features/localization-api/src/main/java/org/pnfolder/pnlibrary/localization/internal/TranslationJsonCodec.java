@@ -33,7 +33,7 @@ final class TranslationJsonCodec {
     }
 
     private static Map<String, String> parseJson(String text) {
-        Map<String, String> values = new LinkedHashMap<String, String>();
+        Map<String, String> values = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : JsonParser.parseString(text).getAsJsonObject().entrySet()) {
             values.put(entry.getKey(), entry.getValue().getAsString());
         }
@@ -41,7 +41,7 @@ final class TranslationJsonCodec {
     }
 
     private static Map<String, String> parseLines(String text) {
-        Map<String, String> values = new LinkedHashMap<String, String>();
+        Map<String, String> values = new LinkedHashMap<>();
         for (String raw : text.split("\r\n|\n|\r", -1)) {
             String line = Whitespace.strip(raw);
             int separator = line.indexOf('=');

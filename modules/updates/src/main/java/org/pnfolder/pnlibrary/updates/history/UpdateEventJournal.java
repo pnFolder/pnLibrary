@@ -43,7 +43,7 @@ public final class UpdateEventJournal {
     /** Pruning runs once per this many writes. */
     private static final int PRUNE_EVERY_WRITES = 25;
     private static final long MAX_EVENT_BYTES = 1024 * 1024;
-    private static final Set<String> COMPONENT_OPERATIONS = new HashSet<String>(Arrays.asList(
+    private static final Set<String> COMPONENT_OPERATIONS = new HashSet<>(Arrays.asList(
         ComponentOperation.ADDED, ComponentOperation.REMOVED,
         ComponentOperation.VERSION_CHANGED, ComponentOperation.SETTINGS_CHANGED));
     private static final Set<String> OPERATIONS = operations();
@@ -90,7 +90,7 @@ public final class UpdateEventJournal {
     }
 
     private static Set<String> operations() {
-        Set<String> all = new HashSet<String>(Arrays.asList(
+        Set<String> all = new HashSet<>(Arrays.asList(
             "STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK"));
         all.addAll(COMPONENT_OPERATIONS);
         return Collections.unmodifiableSet(all);
@@ -107,7 +107,7 @@ public final class UpdateEventJournal {
     public synchronized UpdateEvent record(@NotNull UpdatePlanSnapshot snapshot, @NotNull UpdateActor actor,
                                            @NotNull String operation) throws IOException {
         require(OPERATIONS.contains(operation), "Invalid update operation");
-        List<UpdateEventChange> changes = new ArrayList<UpdateEventChange>();
+        List<UpdateEventChange> changes = new ArrayList<>();
         if (snapshot.getPlan() != null) {
             for (ProductChange change : snapshot.getPlan().getChanges()) {
                 changes.add(new UpdateEventChange(change.getProduct().getValue(),
@@ -150,7 +150,7 @@ public final class UpdateEventJournal {
     public synchronized UpdateEvent recordHealth(@NotNull UpdateHealthReport report) throws IOException {
         UpdateState state = !report.getHealthy() ? UpdateState.FAILED
             : report.getRollback() ? UpdateState.ROLLED_BACK : UpdateState.UP_TO_DATE;
-        List<UpdateEventChange> changes = new ArrayList<UpdateEventChange>();
+        List<UpdateEventChange> changes = new ArrayList<>();
         for (ProductChange change : report.getChanges()) {
             changes.add(new UpdateEventChange(change.getProduct().getValue(),
                 change.getFrom() == null ? null : change.getFrom().toString(), change.getTo().toString()));
@@ -247,11 +247,11 @@ public final class UpdateEventJournal {
         long offset = Math.min((long) (page - 1) * pageSize, Integer.MAX_VALUE);
         List<UpdateEvent> all = readAll(product, includeRoutine);
         int from = (int) Math.min(offset, all.size());
-        return new ArrayList<UpdateEvent>(all.subList(from, Math.min(all.size(), from + pageSize)));
+        return new ArrayList<>(all.subList(from, Math.min(all.size(), from + pageSize)));
     }
 
     private List<UpdateEvent> readAll(@Nullable String product, boolean includeRoutine) throws IOException {
-        List<UpdateEvent> events = new ArrayList<UpdateEvent>();
+        List<UpdateEvent> events = new ArrayList<>();
         for (Path path : UpdateEventFiles.list(directory)) {
             UpdateEvent event = readEvent(path);
             if (event != null && matches(event, product) && (includeRoutine || !event.isRoutine())) {

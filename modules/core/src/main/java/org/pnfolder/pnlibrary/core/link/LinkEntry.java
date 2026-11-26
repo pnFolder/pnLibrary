@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link;
 
+import java.util.Objects;
 import java.time.Instant;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.report.LinkReport;
@@ -11,9 +12,9 @@ public final class LinkEntry {
     private final Instant receivedAt;
 
     public LinkEntry(@NotNull String name, @NotNull LinkReport report, @NotNull Instant receivedAt) {
-        this.name = name;
-        this.report = report;
-        this.receivedAt = receivedAt;
+        this.name = Objects.requireNonNull(name, "name");
+        this.report = Objects.requireNonNull(report, "report");
+        this.receivedAt = Objects.requireNonNull(receivedAt, "receivedAt");
     }
 
     public @NotNull String getName() {

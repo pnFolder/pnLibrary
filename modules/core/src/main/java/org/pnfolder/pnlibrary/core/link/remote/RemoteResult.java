@@ -21,11 +21,11 @@ public final class RemoteResult {
      * @param sentAt when the answer was made
      */
     public RemoteResult(@NotNull UUID id, @NotNull String origin, boolean ok, @NotNull String text, @NotNull Instant sentAt) {
-        this.id = id;
-        this.origin = origin;
+        this.id = Objects.requireNonNull(id, "id");
+        this.origin = Objects.requireNonNull(origin, "origin");
         this.ok = ok;
-        this.text = text;
-        this.sentAt = sentAt;
+        this.text = Objects.requireNonNull(text, "text");
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt");
     }
 
     public @NotNull UUID getId() {

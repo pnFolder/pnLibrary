@@ -53,7 +53,7 @@ public final class RuntimeBridge {
     @NotNull
     public static List<TaskSnapshot> taskSnapshots(@NotNull PnLibrary library) {
         RuntimeResources resources = resources(library);
-        return resources == null ? Collections.<TaskSnapshot>emptyList() : resources.taskSnapshots();
+        return resources == null ? Collections.emptyList() : resources.taskSnapshots();
     }
 
     @NotNull
@@ -77,7 +77,7 @@ public final class RuntimeBridge {
     @NotNull
     public static List<JournalGroup> journalGroups(@NotNull PnLibrary library, @Nullable String level, int sinceHours, int limit) {
         RuntimeResources resources = resources(library);
-        return resources == null ? Collections.<JournalGroup>emptyList() : resources.journalGroups(level, sinceHours, limit);
+        return resources == null ? Collections.emptyList() : resources.journalGroups(level, sinceHours, limit);
     }
 
     @NotNull
@@ -103,13 +103,13 @@ public final class RuntimeBridge {
     @NotNull
     public static List<PlaceholderInfo> placeholderInfos(@NotNull PnLibrary library) {
         RuntimeResources resources = resources(library);
-        return resources == null ? Collections.<PlaceholderInfo>emptyList() : resources.placeholderInfos();
+        return resources == null ? Collections.emptyList() : resources.placeholderInfos();
     }
 
     @NotNull
     public static List<ScenarioDefinitionInfo> scenarioDefinitions(@NotNull PnLibrary library) {
         RuntimeResources resources = resources(library);
-        return resources == null ? Collections.<ScenarioDefinitionInfo>emptyList() : resources.scenarioDefinitions();
+        return resources == null ? Collections.emptyList() : resources.scenarioDefinitions();
     }
 
     @NotNull

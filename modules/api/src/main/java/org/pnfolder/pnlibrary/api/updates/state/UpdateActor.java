@@ -28,8 +28,8 @@ public final class UpdateActor {
         requireText(id, "Invalid update actor ID");
         requireText(name, "Invalid update actor name");
         this.kind = Objects.requireNonNull(kind, "kind");
-        this.id = id;
-        this.name = name;
+        this.id = Objects.requireNonNull(id, "id");
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     private static void requireText(String value, String message) {

@@ -28,7 +28,7 @@ public final class BukkitIntegrations implements Listener {
 
     public void start(PnLibraryRuntimeHost runtime) {
         IntegrationContext context = new IntegrationContext(plugin, runtime);
-        integrations = new ArrayList<>(Arrays.<BukkitIntegration>asList(
+        integrations = new ArrayList<>(Arrays.asList(
             new PlaceholderApiIntegration(context),
             new CurrencyIntegration(context, "Vault", "vault", "money", BukkitCurrencyAdapters::vault),
             new CurrencyIntegration(context, "PlayerPoints", "playerpoints", "points", BukkitCurrencyAdapters::playerPoints)));

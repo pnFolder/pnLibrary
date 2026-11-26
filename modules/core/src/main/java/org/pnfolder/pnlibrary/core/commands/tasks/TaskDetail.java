@@ -19,7 +19,7 @@ final class TaskDetail {
     }
 
     static List<Component> who(ChatKit kit, TaskSnapshot task, Collection<TaskSnapshot> all) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.section("Кто и как"));
         lines.add(kit.field("Плагин", kit.text(task.getOwnerName(), ChatPalette.TEXT)));
@@ -48,7 +48,7 @@ final class TaskDetail {
     }
 
     static List<Component> who(ChatKit kit, TaskSnapshot task) {
-        return who(kit, task, Collections.<TaskSnapshot>emptyList());
+        return who(kit, task, Collections.emptyList());
     }
 
     private static void identity(ChatKit kit, TaskSnapshot task, List<Component> lines) {
@@ -64,7 +64,7 @@ final class TaskDetail {
     }
 
     static List<Component> whenLines(ChatKit kit, TaskSnapshot task) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.section("Когда"));
         lines.add(kit.field("Создана", moment(kit, task.getCreatedAt())));
@@ -93,7 +93,7 @@ final class TaskDetail {
         if (parent == null && children.isEmpty()) {
             return Collections.emptyList();
         }
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.section("Связанные задачи"));
         if (parent != null) {
@@ -111,7 +111,7 @@ final class TaskDetail {
     }
 
     static List<Component> rights(ChatKit kit, TaskSnapshot task) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.section("Права"));
         lines.add(kit.field("Остановить", answer(kit, TaskLabels.stopAnswer(task))));

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.tasks;
 
+import java.util.Objects;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.api.scheduler.TaskScheduler;
@@ -23,7 +24,7 @@ public final class BungeeTaskAdapter extends TrackingPlatformTaskAdapter {
     }
 
     BungeeTaskAdapter(@NotNull Function<PlatformTaskRequest, PlatformTaskHandle> nativeSchedule) {
-        this.nativeSchedule = nativeSchedule;
+        this.nativeSchedule = Objects.requireNonNull(nativeSchedule, "nativeSchedule");
     }
 
     private static PlatformTaskHandle schedule(Plugin plugin, PlatformTaskRequest request) {

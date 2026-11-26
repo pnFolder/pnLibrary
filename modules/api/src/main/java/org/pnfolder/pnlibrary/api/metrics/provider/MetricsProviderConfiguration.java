@@ -19,7 +19,7 @@ public final class MetricsProviderConfiguration {
 
     /** An enabled configuration without credentials. */
     public MetricsProviderConfiguration(@NotNull MetricsProvider provider) {
-        this(provider, true, null, Collections.<PlatformType, Integer>emptyMap(), null);
+        this(provider, true, null, Collections.emptyMap(), null);
     }
 
     /**
@@ -44,14 +44,14 @@ public final class MetricsProviderConfiguration {
     @NotNull
     public static MetricsProviderConfiguration bStats(int projectId) {
         return new MetricsProviderConfiguration(MetricsProvider.BSTATS, true, projectId,
-                Collections.<PlatformType, Integer>emptyMap(), null);
+                Collections.emptyMap(), null);
     }
 
     /** A FastStats configuration with a project token. */
     @NotNull
     public static MetricsProviderConfiguration fastStats(@NotNull String token) {
         return new MetricsProviderConfiguration(MetricsProvider.FASTSTATS, true, null,
-                Collections.<PlatformType, Integer>emptyMap(), token);
+                Collections.emptyMap(), token);
     }
 
     /** The metrics backend to open. */
@@ -118,7 +118,7 @@ public final class MetricsProviderConfiguration {
         if (id == null) {
             throw new IllegalArgumentException("No bStats project ID is configured for platform " + platform.getDisplayName());
         }
-        return new MetricsProviderConfiguration(provider, enabled, id, Collections.<PlatformType, Integer>emptyMap(), token);
+        return new MetricsProviderConfiguration(provider, enabled, id, Collections.emptyMap(), token);
     }
 
     /** Returns the provider credentials built from this configuration. */

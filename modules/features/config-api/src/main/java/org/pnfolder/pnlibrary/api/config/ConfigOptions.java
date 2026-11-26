@@ -53,15 +53,15 @@ public final class ConfigOptions {
                          @NotNull UnknownValuePolicy unknownValues, @NotNull CommentPolicy comments, boolean backups,
                          @Nullable ConfigSteps<?> migrations, @NotNull ConfigNamingStrategy naming,
                          @NotNull UnknownTypePolicy unknownTypes, @NotNull ConfigRoot root, boolean readOnly) {
-        this.missingFile = missingFile;
-        this.missingValues = missingValues;
-        this.unknownValues = unknownValues;
-        this.comments = comments;
+        this.missingFile = Objects.requireNonNull(missingFile, "missingFile");
+        this.missingValues = Objects.requireNonNull(missingValues, "missingValues");
+        this.unknownValues = Objects.requireNonNull(unknownValues, "unknownValues");
+        this.comments = Objects.requireNonNull(comments, "comments");
         this.backups = backups;
         this.migrations = migrations;
-        this.naming = naming;
-        this.unknownTypes = unknownTypes;
-        this.root = root;
+        this.naming = Objects.requireNonNull(naming, "naming");
+        this.unknownTypes = Objects.requireNonNull(unknownTypes, "unknownTypes");
+        this.root = Objects.requireNonNull(root, "root");
         this.readOnly = readOnly;
     }
 

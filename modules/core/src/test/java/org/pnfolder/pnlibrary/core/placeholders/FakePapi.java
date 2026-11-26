@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.placeholders.reply.PublishedAnswers;
 
 public class FakePapi implements PlaceholderAdapter {
     boolean open = true;
-    final Map<String, PublishedAnswers> shown = new HashMap<String, PublishedAnswers>();
+    final Map<String, PublishedAnswers> shown = new HashMap<>();
 
     @Override
     public String getId() {

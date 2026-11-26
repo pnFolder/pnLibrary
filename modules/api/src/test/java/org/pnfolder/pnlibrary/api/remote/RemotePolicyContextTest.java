@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.api.remote;
 
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +46,7 @@ class RemotePolicyContextTest {
 
     @Test
     void builderTrimsKeysAndSnapshotsCustomValues() {
-        Map<String, String> source = new LinkedHashMap<String, String>();
+        Map<String, String> source = new LinkedHashMap<>();
         source.put(" environment ", "production");
         RemotePolicyContext context = base().values(source).build();
 

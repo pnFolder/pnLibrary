@@ -97,7 +97,7 @@ class JournalTimeAndTraceTest {
 
     @Test
     void chatFoldsConsecutiveFrameworkFramesIntoOneLineWhileTheConsoleShowsEveryLine() {
-        List<String> trace = new ArrayList<String>(Arrays.asList("java.lang.IllegalStateException: boom",
+        List<String> trace = new ArrayList<>(Arrays.asList("java.lang.IllegalStateException: boom",
             "at org.example.shop.Checkout.pay(Checkout.java:44)"));
         for (int i = 1; i <= 5; i++) {
             trace.add("at java.base/java.util.Foo.bar" + i + "(Foo.java:" + i + ")");
@@ -116,7 +116,7 @@ class JournalTimeAndTraceTest {
 
     @Test
     void aVeryLongTraceInChatIsCutAndSaysHowManyLinesAreLeft() {
-        List<String> trace = new ArrayList<String>();
+        List<String> trace = new ArrayList<>();
         trace.add("java.lang.IllegalStateException: boom");
         for (int i = 1; i <= 20; i++) {
             trace.add("at org.example.shop.Class" + i + ".method(File.java:" + i + ")");

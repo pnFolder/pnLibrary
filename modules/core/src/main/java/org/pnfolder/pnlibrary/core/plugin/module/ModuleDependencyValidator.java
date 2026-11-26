@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,12 +22,12 @@ public final class ModuleDependencyValidator {
     private final BooleanSupplier downloadsAvailable;
 
     public ModuleDependencyValidator(@NotNull PlatformOwnership platform, @NotNull BooleanSupplier downloadsAvailable) {
-        this.platform = platform;
-        this.downloadsAvailable = downloadsAvailable;
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.downloadsAvailable = Objects.requireNonNull(downloadsAvailable, "downloadsAvailable");
     }
 
     public void validate(@NotNull List<PluginDependency> dependencies, @NotNull Map<String, ProductDescriptor> registeredProducts) {
-        List<String> problems = new ArrayList<String>();
+        List<String> problems = new ArrayList<>();
         collectManagedProblems(dependencies, registeredProducts, problems);
         collectExternalProblems(dependencies, problems);
         if (!problems.isEmpty()) {
@@ -79,7 +80,7 @@ public final class ModuleDependencyValidator {
     }
 
     private Map<String, String> installedPlugins() {
-        Map<String, String> lowered = new HashMap<String, String>();
+        Map<String, String> lowered = new HashMap<>();
         Map<String, String> installed = Failures.runCatchingNonFatal(platform::installedPlugins).getOrNull();
         if (installed == null) {
             return Collections.emptyMap();

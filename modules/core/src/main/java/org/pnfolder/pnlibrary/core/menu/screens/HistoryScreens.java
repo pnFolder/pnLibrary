@@ -57,7 +57,7 @@ public final class HistoryScreens extends MenuScreens {
                 if (!player.isOnline()) {
                     return;
                 }
-                Page shown = result == null ? new Page(0, Collections.<UpdateHistoryEntry>emptyList()) : result;
+                Page shown = result == null ? new Page(0, Collections.emptyList()) : result;
                 Consumer<MenuViewer> back = product == null ? routes::home : who -> routes.card(who, product);
                 List<Row> rows = new ArrayList<>();
                 if (error == null) {
@@ -110,6 +110,6 @@ public final class HistoryScreens extends MenuScreens {
         }
         String title = CatalogLabels.operationLabel(entry.getOperation()) + ": " + CatalogLabels.stateLabel(entry.getState());
         return MenuItems.icon(null, failed ? "BARRIER" : "PAPER", title,
-            Style.lore(Collections.<String>emptyList(), parameters, note, clicks), failed ? Tone.DANGER : Tone.NORMAL);
+            Style.lore(Collections.emptyList(), parameters, note, clicks), failed ? Tone.DANGER : Tone.NORMAL);
     }
 }

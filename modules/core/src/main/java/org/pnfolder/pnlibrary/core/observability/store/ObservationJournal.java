@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.store;
 
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public final class ObservationJournal implements AutoCloseable {
      */
     public ObservationJournal(@NotNull Path file, @NotNull LongSupplier clock,
                               @NotNull BiFunction<Collection<Observation>, Long, List<Observation>> retain) {
-        this.file = file;
+        this.file = Objects.requireNonNull(file, "file");
         this.clock = clock;
         this.retain = retain;
         try {

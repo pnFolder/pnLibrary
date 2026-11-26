@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +18,15 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
+import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand;
+import org.pnfolder.pnlibrary.bukkit.updates.UpdateViews;
+import org.pnfolder.pnlibrary.core.commands.proxy.NoticesCommand;
+import org.pnfolder.pnlibrary.core.link.Link;
+import org.pnfolder.pnlibrary.core.updates.restart.ImportantNotice;
+import org.pnfolder.pnlibrary.core.updates.restart.ImportantNotices;
 import org.pnfolder.pnlibrary.bukkit.audience.JoinNoticeDelivery;
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateReminders;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
@@ -33,10 +42,16 @@ final class BukkitLifecycleListener implements Listener, AutoCloseable {
     private final List<Runnable> readyCallbacks = new CopyOnWriteArrayList<>();
     private final AtomicBoolean serverReady = new AtomicBoolean(false);
     private final UpdateReminders reminders;
+    private final Link link;
 
     BukkitLifecycleListener(Plugin plugin, PnLibrary library) {
+        this(plugin, library, Link.OFF);
+    }
+
+    BukkitLifecycleListener(Plugin plugin, PnLibrary library, Link link) {
         this.plugin = plugin;
         this.library = library;
+        this.link = link;
         this.reminders = new UpdateReminders(plugin, () -> this.library);
     }
 
@@ -112,6 +127,26 @@ final class BukkitLifecycleListener implements Listener, AutoCloseable {
         if (canSeeJournal) {
             showJournalNotice(player);
         }
+        showImportantNotices(player);
+    }
+
+    /** Tells an administrator who may restart what the proxy or another server of the network needs. */
+    private void showImportantNotices(Player player) {
+        PnLibrary active = library;
+        if (active == null || !player.hasPermission(NoticesCommand.PERMISSION)) {
+            return;
+        }
+        List<ChatNotice> notices = new ArrayList<>();
+        for (ImportantNotice notice : ImportantNotices.from(link.getNetwork(), Instant.now())) {
+            notices.add(new ChatNotice(ChatTone.WARNING, "Важное объявление", notice.line()));
+        }
+        Audience audience = notices.isEmpty() ? null : active.getAudiences().player(player.getUniqueId());
+        if (audience == null) {
+            return;
+        }
+        for (Component line : UpdateViews.notices(notices, UpdateViews.forReader(BukkitControlCommand.ROUTES, true, false))) {
+            audience.sendMessage(line);
+        }
     }
 
     private void showJournalNotice(Player player) {
@@ -123,7 +158,7 @@ final class BukkitLifecycleListener implements Listener, AutoCloseable {
             player,
             () -> {
                 PnLibrary active = library;
-                return active == null ? new ArrayList<Component>() : RuntimeBridge.journalJoinNotice(active);
+                return active == null ? new ArrayList<>() : RuntimeBridge.journalJoinNotice(active);
             },
             lines -> {
                 PnLibrary active = library;

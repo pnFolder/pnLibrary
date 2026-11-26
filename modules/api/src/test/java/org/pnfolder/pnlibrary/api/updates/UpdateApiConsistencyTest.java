@@ -21,10 +21,10 @@ class UpdateApiConsistencyTest {
     @Test
     void releaseHistoryIsAnImmutableSnapshotOfCallerData() {
         ReleaseSummary release = new ReleaseSummary("2.0.0", UpdateChannel.STABLE);
-        List<ReleaseSummary> source = new ArrayList<ReleaseSummary>(Collections.singletonList(release));
+        List<ReleaseSummary> source = new ArrayList<>(Collections.singletonList(release));
         UpdateSnapshot snapshot = new UpdateSnapshot("product", "1.0.0", "2.0.0", UpdateChannel.STABLE,
             UpdateState.UPDATE_AVAILABLE, 17, 17, false, null, null, null, (ApiVersionRange) null, source,
-            Collections.<Integer>emptyList(), null, null);
+            Collections.emptyList(), null, null);
         source.clear();
         assertEquals(Collections.singletonList(release), snapshot.getAvailableReleases());
         assertThrows(UnsupportedOperationException.class, () -> snapshot.getAvailableReleases().clear());
@@ -35,6 +35,11 @@ class UpdateApiConsistencyTest {
         final UpdateSnapshot snapshot = new UpdateSnapshot("product", "1.0.0", null, UpdateChannel.STABLE,
             UpdateState.UP_TO_DATE, 17, 17, false, null, null);
         final UpdateRegistration registration = new UpdateRegistration() {
+            @Override
+            public boolean isClosed() {
+                return false;
+            }
+
             @Override
             public String getRepository() {
                 return "owner/repository";

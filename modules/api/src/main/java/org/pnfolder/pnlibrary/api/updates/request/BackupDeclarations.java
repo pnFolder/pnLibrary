@@ -15,14 +15,14 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateConfigurationBackup;
 /** What a plugin asked to keep before an update: labelled files of one data directory and its own exports. */
 final class BackupDeclarations {
     private UpdateConfigurationBackup files;
-    private final List<BackupExport> exports = new ArrayList<BackupExport>();
+    private final List<BackupExport> exports = new ArrayList<>();
 
     UpdateConfigurationBackup files() {
         return files;
     }
 
     List<BackupExport> exports() {
-        return Collections.unmodifiableList(new ArrayList<BackupExport>(exports));
+        return Collections.unmodifiableList(new ArrayList<>(exports));
     }
 
     void addExport(BackupKind kind, String name, String fileName, BackupExport.Writer writer) {
@@ -36,7 +36,7 @@ final class BackupDeclarations {
 
     void addFiles(BackupKind kind, String name, Path dataDirectory, String[] names) {
         BackupLabel label = new BackupLabel(kind, name);
-        Map<String, BackupLabel> labels = new LinkedHashMap<String, BackupLabel>();
+        Map<String, BackupLabel> labels = new LinkedHashMap<>();
         for (String file : names) {
             labels.put(file, label);
         }
@@ -48,9 +48,9 @@ final class BackupDeclarations {
         if (!files.getRoot().equals(added.getRoot())) {
             throw new IllegalArgumentException("All backups of one component must use the same data directory");
         }
-        List<String> merged = new ArrayList<String>(files.getFiles());
+        List<String> merged = new ArrayList<>(files.getFiles());
         merged.addAll(added.getFiles());
-        Map<String, BackupLabel> mergedLabels = new LinkedHashMap<String, BackupLabel>(files.getLabels());
+        Map<String, BackupLabel> mergedLabels = new LinkedHashMap<>(files.getLabels());
         mergedLabels.putAll(added.getLabels());
         files = new UpdateConfigurationBackup(files.getRoot(), merged, mergedLabels);
     }

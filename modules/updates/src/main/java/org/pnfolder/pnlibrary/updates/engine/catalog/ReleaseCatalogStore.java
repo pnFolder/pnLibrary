@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.common.io.AtomicFiles;
@@ -28,7 +29,7 @@ public final class ReleaseCatalogStore {
     private final Object lock = new Object();
 
     public ReleaseCatalogStore(@NotNull Path root) {
-        this.root = root;
+        this.root = Objects.requireNonNull(root, "root");
     }
 
     /** Reads and verifies the cached catalog for {@code uri}, when present. */
@@ -99,7 +100,7 @@ public final class ReleaseCatalogStore {
     private void pruneQuarantine(Path path) {
         final String prefix = path.getFileName().toString() + ".corrupt-";
         Failures.runCatchingNonFatal(() -> {
-            List<Path> copies = new ArrayList<Path>();
+            List<Path> copies = new ArrayList<>();
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(root,
                 entry -> entry.getFileName().toString().startsWith(prefix))) {
                 for (Path entry : stream) {

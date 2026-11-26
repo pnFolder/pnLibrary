@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.CurrencyTransactionJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigDecimal;
@@ -33,7 +34,7 @@ class CurrencyTransactionJsonTest {
     @Test
     void aTransactionWithoutOptionalPartsSurvivesARoundTrip() {
         CurrencyTransaction bare = full.toBuilder()
-                .source(null).target(null).reason(null).metadata(Collections.<String, String>emptyMap())
+                .source(null).target(null).reason(null).metadata(Collections.emptyMap())
                 .sourceBalance(null, null).targetBalance(null, null)
                 .idempotencyKey(null).failure("not enough")
                 .build();

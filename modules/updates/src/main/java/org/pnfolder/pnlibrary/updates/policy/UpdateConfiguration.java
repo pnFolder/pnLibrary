@@ -15,22 +15,19 @@ public final class UpdateConfiguration {
     private final Downloads downloads;
     private final Installation installation;
     private final LibraryPolicy library;
-    private final boolean pluginAutomaticDownload;
 
     /** Creates the default policy. */
     public UpdateConfiguration() {
-        this(new Checks(), new Downloads(), new Installation(), new LibraryPolicy(), true);
+        this(new Checks(), new Downloads(), new Installation(), new LibraryPolicy());
     }
 
     /** Creates a policy from its parts. */
     public UpdateConfiguration(@NotNull Checks checks, @NotNull Downloads downloads,
-                               @NotNull Installation installation, @NotNull LibraryPolicy library,
-                               boolean pluginAutomaticDownload) {
-        this.checks = checks;
-        this.downloads = downloads;
-        this.installation = installation;
-        this.library = library;
-        this.pluginAutomaticDownload = pluginAutomaticDownload;
+                               @NotNull Installation installation, @NotNull LibraryPolicy library) {
+        this.checks = Objects.requireNonNull(checks, "checks");
+        this.downloads = Objects.requireNonNull(downloads, "downloads");
+        this.installation = Objects.requireNonNull(installation, "installation");
+        this.library = Objects.requireNonNull(library, "library");
     }
 
     /** How often the release catalog is checked. */
@@ -51,32 +48,16 @@ public final class UpdateConfiguration {
         return installation;
     }
 
-    /** Channel and automatic-download choice for the library itself. */
+    /** Release channel of the library itself. */
     @NotNull
     public LibraryPolicy getLibrary() {
         return library;
     }
 
-    /** Whether plugins may be downloaded without a command. */
-    public boolean getPluginAutomaticDownload() {
-        return pluginAutomaticDownload;
-    }
-
-    /** Whether any component may be downloaded without a command. */
-    public boolean getEffectiveAutomaticDownloads() {
-        return library.getAutomaticDownload() || pluginAutomaticDownload;
-    }
-
     /** A copy with another library policy. */
     @NotNull
     public UpdateConfiguration withLibrary(@NotNull LibraryPolicy changed) {
-        return new UpdateConfiguration(checks, downloads, installation, changed, pluginAutomaticDownload);
-    }
-
-    /** A copy with another automatic-download choice for plugins. */
-    @NotNull
-    public UpdateConfiguration withPluginAutomaticDownload(boolean changed) {
-        return new UpdateConfiguration(checks, downloads, installation, library, changed);
+        return new UpdateConfiguration(checks, downloads, installation, changed);
     }
 
     @Override
@@ -85,36 +66,34 @@ public final class UpdateConfiguration {
             return false;
         }
         UpdateConfiguration that = (UpdateConfiguration) other;
-        return pluginAutomaticDownload == that.pluginAutomaticDownload && checks.equals(that.checks)
+        return checks.equals(that.checks)
             && downloads.equals(that.downloads) && installation.equals(that.installation)
             && library.equals(that.library);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(checks, downloads, installation, library, pluginAutomaticDownload);
+        return Objects.hash(checks, downloads, installation, library);
     }
 
     @Override
     public String toString() {
         return "UpdateConfiguration(checks=" + checks + ", downloads=" + downloads + ", installation=" + installation
-            + ", library=" + library + ", pluginAutomaticDownload=" + pluginAutomaticDownload + ")";
+            + ", library=" + library + ")";
     }
 
-    /** Channel and automatic-download choice for the library itself. */
+    /** Release channel of the library itself. */
     public static final class LibraryPolicy {
         private final UpdateChannel channel;
-        private final boolean automaticDownload;
 
-        /** Creates the default choice: the dev channel with automatic download. */
+        /** Creates the default choice: the dev channel. */
         public LibraryPolicy() {
-            this(UpdateChannel.DEV, true);
+            this(UpdateChannel.DEV);
         }
 
         /** Creates a choice. */
-        public LibraryPolicy(@NotNull UpdateChannel channel, boolean automaticDownload) {
+        public LibraryPolicy(@NotNull UpdateChannel channel) {
             this.channel = channel;
-            this.automaticDownload = automaticDownload;
         }
 
         /** The channel of the library. */
@@ -123,28 +102,23 @@ public final class UpdateConfiguration {
             return channel;
         }
 
-        /** Whether the library may be downloaded without a command. */
-        public boolean getAutomaticDownload() {
-            return automaticDownload;
-        }
-
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof LibraryPolicy)) {
                 return false;
             }
             LibraryPolicy that = (LibraryPolicy) other;
-            return channel == that.channel && automaticDownload == that.automaticDownload;
+            return channel == that.channel;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(channel, automaticDownload);
+            return Objects.hash(channel);
         }
 
         @Override
         public String toString() {
-            return "LibraryPolicy(channel=" + channel + ", automaticDownload=" + automaticDownload + ")";
+            return "LibraryPolicy(channel=" + channel + ")";
         }
     }
 

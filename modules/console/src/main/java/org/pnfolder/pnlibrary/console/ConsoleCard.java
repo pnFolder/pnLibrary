@@ -13,7 +13,7 @@ public final class ConsoleCard {
     private ConsoleCard(Builder builder) {
         this.theme = builder.theme;
         this.title = builder.title;
-        this.lines = Collections.unmodifiableList(new ArrayList<Object>(builder.lines));
+        this.lines = Collections.unmodifiableList(new ArrayList<>(builder.lines));
     }
 
     /**
@@ -28,7 +28,7 @@ public final class ConsoleCard {
     /** Renders this card.
      * @return immutable, fully formatted lines ready for a console sink */
     public List<String> render() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         result.add("");
         result.add(theme.border + "          ━━━━━━━━━━━ " + title + " ━━━━━━━━━━━" + theme.reset);
         for (int index = 0; index < lines.size(); index++) {
@@ -90,7 +90,7 @@ public final class ConsoleCard {
     public static final class Builder {
         private final ConsoleTheme theme;
         private final String title;
-        private final List<Object> lines = new ArrayList<Object>();
+        private final List<Object> lines = new ArrayList<>();
 
         private Builder(ConsoleTheme theme, String title) {
             if (theme == null) throw new IllegalArgumentException("theme is required");

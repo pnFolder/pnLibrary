@@ -32,7 +32,7 @@ class CommandBuilderTest {
 
     @Test
     void builderNormalizesCommandMetadataAndInvokesSynchronousHandlers() {
-        AtomicReference<List<String>> executedWith = new AtomicReference<List<String>>();
+        AtomicReference<List<String>> executedWith = new AtomicReference<>();
         CommandDefinition definition = CommandDefinition.command("  Hello ", c -> c
                 .aliases("HI", "hello-there")
                 .permission("example.hello")
@@ -41,7 +41,7 @@ class CommandBuilderTest {
                 .suggests(context -> Collections.singletonList("world")));
 
         assertEquals("hello", definition.getName());
-        assertEquals(new LinkedHashSet<String>(Arrays.asList("hi", "hello-there")), definition.getAliases());
+        assertEquals(new LinkedHashSet<>(Arrays.asList("hi", "hello-there")), definition.getAliases());
         assertEquals("example.hello", definition.getPermission());
         assertTrue(definition.getConsoleBypassesPermission());
 

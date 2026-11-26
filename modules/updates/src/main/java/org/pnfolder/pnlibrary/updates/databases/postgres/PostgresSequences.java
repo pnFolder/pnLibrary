@@ -19,13 +19,13 @@ final class PostgresSequences {
     }
 
     List<String> statements(List<String> only) throws SQLException {
-        Set<String> wanted = new HashSet<String>(owned(
+        Set<String> wanted = new HashSet<>(owned(
                 "SELECT s.relname, t.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace\n"
                         + "LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype = 'a' LEFT JOIN pg_class t ON t.oid = d.refobjid\n"
                         + "WHERE s.relkind = 'S' AND n.nspname = current_schema()\n"
                         + "  AND NOT EXISTS (SELECT 1 FROM pg_depend i WHERE i.objid = s.oid AND i.deptype = 'i') ORDER BY 1",
                 only));
-        List<String> statements = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
         try (Statement statement = connection.createStatement();
              ResultSet rows = statement.executeQuery(
                      "SELECT sequencename, data_type::text, start_value, increment_by, min_value, max_value, cycle "
@@ -41,12 +41,12 @@ final class PostgresSequences {
     }
 
     List<String> positions(List<String> only) throws SQLException {
-        Set<String> owners = new HashSet<String>(owned(
+        Set<String> owners = new HashSet<>(owned(
                 "SELECT s.relname, t.relname FROM pg_class s JOIN pg_namespace n ON n.oid = s.relnamespace\n"
                         + "LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype IN ('a', 'i') LEFT JOIN pg_class t ON t.oid = d.refobjid\n"
                         + "WHERE s.relkind = 'S' AND n.nspname = current_schema()",
                 only));
-        List<String> statements = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
         try (Statement statement = connection.createStatement();
              ResultSet rows = statement.executeQuery(
                      "SELECT sequencename, last_value FROM pg_sequences WHERE schemaname = current_schema() AND last_value IS NOT NULL")) {
@@ -63,7 +63,7 @@ final class PostgresSequences {
     }
 
     private List<String> owned(String sql, List<String> only) throws SQLException {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         try (Statement statement = connection.createStatement(); ResultSet rows = statement.executeQuery(sql)) {
             while (rows.next()) {
                 String owner = rows.getString(2);

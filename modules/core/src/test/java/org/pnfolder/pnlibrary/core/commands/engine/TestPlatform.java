@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
 
 /** A platform that runs tasks at once and keeps the errors that were logged. */
 final class TestPlatform implements PlatformAdapter {
-    final List<Throwable> errors = new ArrayList<Throwable>();
+    final List<Throwable> errors = new ArrayList<>();
     private final PlatformCommandAdapter commands;
     private final Path dataPath;
 

@@ -1,5 +1,13 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.YamlSchemaDecorator;
+import org.pnfolder.pnlibrary.config.yaml.schema.RuntimeConfigType;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigPolymorphicResolver;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigSchemaInspector;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigSchema;
+import org.pnfolder.pnlibrary.config.yaml.database.DatabasePath;
+import java.util.Objects;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -65,8 +73,8 @@ public final class AnnotatedYamlCodec<T> implements ConfigCodec<T>, ConfigSchema
                               @NotNull Supplier<Map<Class<?>, ConfigSerializer<?>>> serializers,
                               @NotNull Supplier<List<RuntimeConfigType>> runtimeTypes, @NotNull String consumer,
                               @NotNull ConfigOptions options, @NotNull Consumer<String> warning) {
-        this.type = type;
-        this.defaults = defaults;
+        this.type = Objects.requireNonNull(type, "type");
+        this.defaults = Objects.requireNonNull(defaults, "defaults");
         this.introspector = new ConfigObjectIntrospector(options.getNaming());
         this.serializerResolver = new ConfigSerializerResolver(serializers);
         this.schemaInspector = new ConfigSchemaInspector(introspector, serializerResolver);
@@ -120,7 +128,7 @@ public final class AnnotatedYamlCodec<T> implements ConfigCodec<T>, ConfigSchema
     @Override
     @NotNull
     public String encode(@NotNull T value) {
-        String raw = yaml.dump(writer.write(value, type, "", Collections.<Annotation>emptyList(), value));
+        String raw = yaml.dump(writer.write(value, type, "", Collections.emptyList(), value));
         String body = YamlSchemaDecorator.decorate(raw, schemaInspector.metadata(type, value));
         ConfigComment header = type.getAnnotation(ConfigComment.class);
         if (header == null || header.value().length == 0) {
@@ -143,11 +151,11 @@ public final class AnnotatedYamlCodec<T> implements ConfigCodec<T>, ConfigSchema
         try {
             Object loaded = this.yaml.load(yaml);
             if (loaded == null) {
-                loaded = new LinkedHashMap<String, Object>();
+                loaded = new LinkedHashMap<>();
             }
             ConfigSerializer<Object> serializer = serializerResolver.forType(type);
             if (serializer != null) {
-                return (T) serializer.deserialize(loaded, context(type, "", Collections.<Annotation>emptyList(), defaults.get()));
+                return (T) serializer.deserialize(loaded, context(type, "", Collections.emptyList(), defaults.get()));
             }
             if (!(loaded instanceof Map)) {
                 throw new IllegalArgumentException("Root value of " + type.getName() + " must be a YAML object");

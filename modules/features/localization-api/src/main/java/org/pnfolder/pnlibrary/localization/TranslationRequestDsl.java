@@ -9,7 +9,7 @@ import java.util.Set;
 
 /** Collects the settings of a {@link TranslationRequest} for {@link MinecraftLocalizationDsl#load}. */
 public final class TranslationRequestDsl {
-    private final Set<String> locales = new LinkedHashSet<String>();
+    private final Set<String> locales = new LinkedHashSet<>();
     private MinecraftVersion version;
     private String fallback;
 

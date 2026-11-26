@@ -38,15 +38,15 @@ class PlayerLifecyclePublisherTest {
         OnlinePlayer player = mock(OnlinePlayer.class);
         EventDispatcher events = new EventDispatcher((plugin, message, error) -> { });
         try {
-            List<PlayerLifecycleEvent> seen = new ArrayList<PlayerLifecycleEvent>();
+            List<PlayerLifecycleEvent> seen = new ArrayList<>();
             events.scope(PluginId.of("test")).subscribe(PlayerLifecycleEvent.class, seen::add);
             PnLibrary library = library(events, player);
 
             PlayerLifecyclePublisher.joined(library, id, "Steve");
             PlayerLifecyclePublisher.left(library, id, "Steve");
 
-            assertEquals(Arrays.<Class<?>>asList(PlayerJoinedEvent.class, PlayerLeftEvent.class),
-                    Arrays.<Class<?>>asList(seen.get(0).getClass(), seen.get(1).getClass()));
+            assertEquals(Arrays.asList(PlayerJoinedEvent.class, PlayerLeftEvent.class),
+                    Arrays.asList(seen.get(0).getClass(), seen.get(1).getClass()));
             assertEquals("Steve", seen.get(0).getName());
             assertEquals("Steve", seen.get(1).getName());
             assertEquals(id, seen.get(0).getUniqueId());
@@ -61,7 +61,7 @@ class PlayerLifecyclePublisherTest {
     void aPlayerThePlatformNoLongerKnowsIsAnnouncedWithoutAPlayerObject() {
         EventDispatcher events = new EventDispatcher((plugin, message, error) -> { });
         try {
-            AtomicReference<PlayerLeftEvent> seen = new AtomicReference<PlayerLeftEvent>();
+            AtomicReference<PlayerLeftEvent> seen = new AtomicReference<>();
             events.scope(PluginId.of("test")).subscribe(PlayerLeftEvent.class, seen::set);
             PlayerLifecyclePublisher.left(library(events, null), id, "Alex");
             assertEquals("Alex", seen.get().getName());

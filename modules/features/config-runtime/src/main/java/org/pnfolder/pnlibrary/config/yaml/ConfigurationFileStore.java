@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
+import java.util.Objects;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -33,8 +35,8 @@ final class ConfigurationFileStore {
      * @param validator accepts a document or throws; run on the temporary copy before it replaces the file
      */
     ConfigurationFileStore(@NotNull File file, @NotNull Consumer<String> validator) {
-        this.file = file;
-        this.validator = validator;
+        this.file = Objects.requireNonNull(file, "file");
+        this.validator = Objects.requireNonNull(validator, "validator");
     }
 
     /** Converts line endings to a single newline and ends the text with exactly one newline. */
@@ -79,7 +81,7 @@ final class ConfigurationFileStore {
         }
         // The new backup is kept explicitly: modification times have coarse resolution on some file systems,
         // and a tie must not make the backup just written the one that gets deleted.
-        List<File> old = new ArrayList<File>();
+        List<File> old = new ArrayList<>();
         for (File backup : existingBackups()) {
             if (!backup.equals(target)) {
                 old.add(backup);
@@ -95,7 +97,7 @@ final class ConfigurationFileStore {
     private List<File> existingBackups() {
         File[] found = file.getAbsoluteFile().getParentFile().listFiles(candidate ->
                 candidate.getName().startsWith(file.getName() + ".before-sync-") && candidate.getName().endsWith(".bak"));
-        List<File> backups = new ArrayList<File>();
+        List<File> backups = new ArrayList<>();
         if (found != null) {
             Collections.addAll(backups, found);
         }

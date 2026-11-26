@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.view;
 
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,7 +10,7 @@ public final class TraceLine {
     private final boolean framework;
 
     TraceLine(@NotNull Component component, boolean framework) {
-        this.component = component;
+        this.component = Objects.requireNonNull(component, "component");
         this.framework = framework;
     }
 

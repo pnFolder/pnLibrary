@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.fetch;
 
+import java.util.Objects;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -37,9 +38,9 @@ public final class DownloadArtifactPreparer {
     public DownloadArtifactPreparer(@NotNull PlatformType platform, @NotNull Path libraryData,
                                     @NotNull Supplier<DownloadConfiguration> configuration,
                                     @NotNull TrustedHttpClient http, long maximumBytes) {
-        this.platform = platform;
-        this.libraryData = libraryData;
-        this.configuration = configuration;
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.libraryData = Objects.requireNonNull(libraryData, "libraryData");
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.maximumBytes = maximumBytes;
         this.fetcher = new SourceFetcher(http);
     }

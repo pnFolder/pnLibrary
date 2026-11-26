@@ -11,8 +11,8 @@ public final class PreparedDownload {
 
     /** Creates the pair. */
     public PreparedDownload(@NotNull Path staging, @NotNull Path target) {
-        this.staging = staging;
-        this.target = target;
+        this.staging = Objects.requireNonNull(staging, "staging");
+        this.target = Objects.requireNonNull(target, "target");
     }
 
     /** Where the verified file waits. */

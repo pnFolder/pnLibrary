@@ -8,14 +8,14 @@ import org.jetbrains.annotations.Nullable;
 
 /** An {@link ArgumentType} made of a parsing function and a spec; the building block of the built-in types. */
 final class TypedArgument<T> implements ArgumentType<T> {
-    static final ArgumentType<String> STRING = new TypedArgument<String>(ArgumentSpec.TEXT, token -> token);
+    static final ArgumentType<String> STRING = new TypedArgument<>(ArgumentSpec.TEXT, token -> token);
     static final ArgumentType<String> GREEDY_STRING =
-            new TypedArgument<String>(ArgumentSpec.GREEDY, token -> token.trim().isEmpty() ? null : token);
-    static final ArgumentType<Integer> INTEGER = new TypedArgument<Integer>(ArgumentSpec.integer(), TypedArgument::parseInt);
-    static final ArgumentType<Long> LONG = new TypedArgument<Long>(ArgumentSpec.longInteger(), TypedArgument::parseLong);
+            new TypedArgument<>(ArgumentSpec.GREEDY, token -> token.trim().isEmpty() ? null : token);
+    static final ArgumentType<Integer> INTEGER = new TypedArgument<>(ArgumentSpec.integer(), TypedArgument::parseInt);
+    static final ArgumentType<Long> LONG = new TypedArgument<>(ArgumentSpec.longInteger(), TypedArgument::parseLong);
     static final ArgumentType<BigDecimal> DECIMAL =
-            new TypedArgument<BigDecimal>(ArgumentSpec.decimal(), TypedArgument::parseDecimal);
-    static final ArgumentType<Boolean> BOOLEAN = new TypedArgument<Boolean>(ArgumentSpec.BOOLEAN, TypedArgument::parseBoolean);
+            new TypedArgument<>(ArgumentSpec.decimal(), TypedArgument::parseDecimal);
+    static final ArgumentType<Boolean> BOOLEAN = new TypedArgument<>(ArgumentSpec.BOOLEAN, TypedArgument::parseBoolean);
 
     private final ArgumentSpec spec;
     private final Function<String, T> parser;

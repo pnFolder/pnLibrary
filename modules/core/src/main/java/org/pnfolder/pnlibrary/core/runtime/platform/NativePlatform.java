@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.platform.PlatformProvider;
 
 /** Small runtime registry for the single native platform implementation. */
 public final class NativePlatform implements PlatformProvider, AutoCloseable {
-    private final ConcurrentHashMap<Class<?>, Object> implementations = new ConcurrentHashMap<Class<?>, Object>();
+    private final ConcurrentHashMap<Class<?>, Object> implementations = new ConcurrentHashMap<>();
 
     @Override
     public <T> @Nullable T get(@NotNull Class<T> type) {

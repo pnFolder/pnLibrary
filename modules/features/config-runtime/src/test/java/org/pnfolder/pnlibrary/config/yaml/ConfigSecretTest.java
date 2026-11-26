@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;

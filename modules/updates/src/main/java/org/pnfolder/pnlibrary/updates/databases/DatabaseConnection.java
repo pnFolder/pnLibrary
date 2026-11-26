@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,7 +34,7 @@ public final class DatabaseConnection {
 
     public DatabaseConnection(@NotNull String host, int port, @NotNull String database, @NotNull String user,
                               @NotNull String password) {
-        this(host, port, database, user, password, null, Collections.<String>emptyList());
+        this(host, port, database, user, password, null, Collections.emptyList());
     }
 
     /**
@@ -47,11 +48,11 @@ public final class DatabaseConnection {
      */
     public DatabaseConnection(@NotNull String host, int port, @NotNull String database, @NotNull String user,
                               @NotNull String password, @Nullable String uri, @NotNull List<String> tables) {
-        this.host = host;
+        this.host = Objects.requireNonNull(host, "host");
         this.port = port;
-        this.database = database;
-        this.user = user;
-        this.password = password;
+        this.database = Objects.requireNonNull(database, "database");
+        this.user = Objects.requireNonNull(user, "user");
+        this.password = Objects.requireNonNull(password, "password");
         this.uri = uri;
         this.tables = tables;
     }
@@ -106,7 +107,7 @@ public final class DatabaseConnection {
         boolean mongo = source.getKind() == DatabaseKind.MONGODB;
         String uri = mongo ? text(source, section, DatabaseRole.URI) : null;
         String database = required(text(source, section, DatabaseRole.DATABASE), source, "database");
-        List<String> tables = new ArrayList<String>(source.getTables());
+        List<String> tables = new ArrayList<>(source.getTables());
         for (String key : source.getTableKeys()) {
             String table = value(section, key);
             if (table != null) {
@@ -132,7 +133,7 @@ public final class DatabaseConnection {
     private static Map<?, ?> section(DatabaseSource source) throws IOException {
         Object node = new Yaml(new SafeConstructor(new LoaderOptions()))
                 .load(TextFiles.read(source.getFile(), StandardCharsets.UTF_8));
-        for (String part : source.getPath().split("\\.")) {
+        for (String part : source.getPath().split("\\.", -1)) {
             if (!part.isEmpty()) {
                 node = node instanceof Map ? ((Map<?, ?>) node).get(part) : null;
             }
@@ -192,7 +193,7 @@ public final class DatabaseConnection {
     }
 
     private static Map<DatabaseRole, List<String>> usual() {
-        Map<DatabaseRole, List<String>> usual = new EnumMap<DatabaseRole, List<String>>(DatabaseRole.class);
+        Map<DatabaseRole, List<String>> usual = new EnumMap<>(DatabaseRole.class);
         usual.put(DatabaseRole.HOST, Arrays.asList("host", "hostname", "address"));
         usual.put(DatabaseRole.PORT, Arrays.asList("port"));
         usual.put(DatabaseRole.DATABASE, Arrays.asList("database", "db", "name"));

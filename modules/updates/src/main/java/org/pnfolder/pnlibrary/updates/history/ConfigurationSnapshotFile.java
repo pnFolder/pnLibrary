@@ -27,9 +27,9 @@ public final class ConfigurationSnapshotFile {
     public ConfigurationSnapshotFile(@NotNull String product, @NotNull String root, @NotNull String relative,
                                      boolean existed, @Nullable String blob, long size, @Nullable String sha256,
                                      @Nullable String kind, @Nullable String name) {
-        this.product = product;
-        this.root = root;
-        this.relative = relative;
+        this.product = Objects.requireNonNull(product, "product");
+        this.root = Objects.requireNonNull(root, "root");
+        this.relative = Objects.requireNonNull(relative, "relative");
         this.existed = existed;
         this.blob = blob;
         this.size = size;

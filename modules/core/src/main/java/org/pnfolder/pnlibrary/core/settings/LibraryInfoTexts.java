@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import org.pnfolder.pnlibrary.core.guide.LibraryCommandGuide;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -123,7 +124,7 @@ final class LibraryInfoTexts {
 
     private List<String> describe(SettingValue value) {
         SettingSpec spec = value.getSpec();
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         lines.add("");
         lines.add(spec.getKey() + "  (" + spec.getTitle() + ")");
         lines.add("  Сейчас: " + spec.display(value.getCurrent())
@@ -156,7 +157,7 @@ final class LibraryInfoTexts {
     }
 
     private static List<String> lines(String... text) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         java.util.Collections.addAll(lines, text);
         return lines;
     }

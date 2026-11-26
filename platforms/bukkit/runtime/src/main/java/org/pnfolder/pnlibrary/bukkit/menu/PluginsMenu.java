@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu;
 import org.pnfolder.pnlibrary.core.menu.MenuViewer;
-import org.pnfolder.pnlibrary.core.menu.data.LocalMenuData;
+import org.pnfolder.pnlibrary.core.menu.data.local.LocalMenuData;
 import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer;
 
 /**

@@ -23,7 +23,7 @@ public final class UpdateConfigurationBackup {
 
     /** Declares plain configuration files with no labels. */
     public UpdateConfigurationBackup(@NotNull Path root, @NotNull List<String> files) {
-        this(root, files, Collections.<String, BackupLabel>emptyMap());
+        this(root, files, Collections.emptyMap());
     }
 
     /**
@@ -36,12 +36,12 @@ public final class UpdateConfigurationBackup {
     public UpdateConfigurationBackup(@NotNull Path root, @NotNull List<String> files,
                                      @NotNull Map<String, BackupLabel> labels) {
         this.root = root.toAbsolutePath().normalize();
-        List<String> normalized = new ArrayList<String>();
+        List<String> normalized = new ArrayList<>();
         for (String value : files) {
             normalized.add(normalizedPath(value));
         }
         this.files = Collections.unmodifiableList(normalized);
-        Map<String, BackupLabel> normalizedLabels = new LinkedHashMap<String, BackupLabel>();
+        Map<String, BackupLabel> normalizedLabels = new LinkedHashMap<>();
         for (Map.Entry<String, BackupLabel> entry : labels.entrySet()) {
             normalizedLabels.put(Paths.get(entry.getKey()).normalize().toString(), entry.getValue());
         }
@@ -72,7 +72,7 @@ public final class UpdateConfigurationBackup {
         if (files.isEmpty() || files.size() > 100) {
             throw new IllegalArgumentException("Configuration backup must declare between 1 and 100 files");
         }
-        Set<Path> distinct = new HashSet<Path>();
+        Set<Path> distinct = new HashSet<>();
         for (String file : files) {
             distinct.add(Paths.get(file));
         }

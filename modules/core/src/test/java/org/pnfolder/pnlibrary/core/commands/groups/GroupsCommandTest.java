@@ -31,7 +31,7 @@ class GroupsCommandTest {
     private String run(String... words) {
         if (link == null) {
             link = new Link(null, directory);
-            definition = new GroupsCommand(link, () -> Collections.<NetworkServer>emptyList()).definition();
+            definition = new GroupsCommand(link, () -> Collections.emptyList()).definition();
         }
         return CommandRunner.run(definition, sender, "groups", words);
     }
@@ -60,9 +60,9 @@ class GroupsCommandTest {
         run("extra", "grief", "grief-1", "Quests");
         ServerGroup group = link.groups().get("grief");
 
-        assertEquals(new HashSet<String>(Arrays.asList("grief-1")), group.getServers());
-        assertEquals(new HashSet<String>(Arrays.asList("Shop")), group.getPlugins());
-        assertEquals(new HashSet<String>(Arrays.asList("Quests")), group.wanted("grief-1"));
+        assertEquals(new HashSet<>(Arrays.asList("grief-1")), group.getServers());
+        assertEquals(new HashSet<>(Arrays.asList("Shop")), group.getPlugins());
+        assertEquals(new HashSet<>(Arrays.asList("Quests")), group.wanted("grief-1"));
         assertTrue(group.customized("grief-1"));
     }
 
@@ -75,7 +75,7 @@ class GroupsCommandTest {
         run("skip", "grief", "grief-1", "Shop");
 
         run("reset", "grief", "grief-1");
-        assertEquals(new HashSet<String>(Arrays.asList("Shop")), link.groups().get("grief").wanted("grief-1"));
+        assertEquals(new HashSet<>(Arrays.asList("Shop")), link.groups().get("grief").wanted("grief-1"));
 
         run("leave", "grief", "grief-1");
         assertTrue(link.groups().get("grief").getServers().isEmpty());

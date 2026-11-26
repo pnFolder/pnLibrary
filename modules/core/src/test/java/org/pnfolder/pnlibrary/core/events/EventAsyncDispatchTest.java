@@ -46,7 +46,7 @@ class EventAsyncDispatchTest {
 
     @Test
     void asyncCallRunsListenersOnTheGivenExecutorAndCompletesWithTheSameEvent() throws Exception {
-        AtomicReference<Thread> listenerThread = new AtomicReference<Thread>();
+        AtomicReference<Thread> listenerThread = new AtomicReference<>();
         ExecutorService executor = Executors.newSingleThreadExecutor(task -> new Thread(task, "event-test-worker"));
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
@@ -65,7 +65,7 @@ class EventAsyncDispatchTest {
     void eventKnowsItsDispatchModeAndThread() throws Exception {
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
-            List<Boolean> seen = new CopyOnWriteArrayList<Boolean>();
+            List<Boolean> seen = new CopyOnWriteArrayList<>();
             events.scope(PluginId.of("test")).subscribe(TestEvent.class, event -> seen.add(event.isAsync()));
             TestEvent event = new TestEvent();
             assertNull(event.getDispatchMode());
@@ -73,7 +73,7 @@ class EventAsyncDispatchTest {
             assertEquals(DispatchMode.SYNC, event.getDispatchMode());
             events.callEventAsync(event).toCompletableFuture().get(5, TimeUnit.SECONDS);
             assertEquals("pnLibrary-events", event.getDispatchThread().getName());
-            assertEquals(Arrays.asList(false, true), new ArrayList<Boolean>(seen));
+            assertEquals(Arrays.asList(false, true), new ArrayList<>(seen));
         } finally {
             events.close();
         }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import java.util.Objects;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -26,7 +27,7 @@ public final class BungeeNetworkPlayer implements NetworkPlayer {
 
     /** Wraps the native {@code player}. */
     public BungeeNetworkPlayer(@NotNull ProxiedPlayer player) {
-        this.player = player;
+        this.player = Objects.requireNonNull(player, "player");
     }
 
     /** Wraps the native {@code player} as a portable network player. */

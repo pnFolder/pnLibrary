@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -42,12 +43,12 @@ final class ManagedCurrencyProvider implements CurrencyProvider, CurrencyDeposit
 
     ManagedCurrencyProvider(@NotNull CurrencyKey key, @NotNull CurrencyDescriptor descriptor, @NotNull CurrencyStorage storage,
                             @NotNull String service, boolean ownsStorage, @NotNull CurrencyCommandSettings commandSettings) {
-        this.key = key;
-        this.descriptor = descriptor;
-        this.storage = storage;
-        this.service = service;
+        this.key = Objects.requireNonNull(key, "key");
+        this.descriptor = Objects.requireNonNull(descriptor, "descriptor");
+        this.storage = Objects.requireNonNull(storage, "storage");
+        this.service = Objects.requireNonNull(service, "service");
         this.ownsStorage = ownsStorage;
-        this.commandSettings = commandSettings;
+        this.commandSettings = Objects.requireNonNull(commandSettings, "commandSettings");
     }
 
     @Override
@@ -143,7 +144,7 @@ final class ManagedCurrencyProvider implements CurrencyProvider, CurrencyDeposit
     private CompletionStage<CurrencyResult> mutate(CurrencyTransactionType type, BigDecimal amount, CurrencyAccount source,
                                                    CurrencyAccount target, String reason) {
         return transact(new CurrencyTransactionRequest(type, amount, source, target, CurrencyActor.system("currency-api"), service,
-                reason, java.util.Collections.<String, String>emptyMap(), null)).thenApply(ManagedCurrencyProvider::toResult);
+                reason, java.util.Collections.emptyMap(), null)).thenApply(ManagedCurrencyProvider::toResult);
     }
 
     /** Maps a stored transaction to the consumer-facing result. */

@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Locale;
+import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
+import org.pnfolder.pnlibrary.currency.storage.FileCurrencyStorage;
+import org.pnfolder.pnlibrary.currency.storage.CurrencyTransactionJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +47,7 @@ import org.pnfolder.pnlibrary.common.io.AtomicFiles;
 class CurrencyFileBytesTest {
     private final CurrencyKey currency = new CurrencyKey(PluginId.of("test"), "coins");
     private final CurrencyDescriptor descriptor = new CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN);
-    private final List<CurrencyAccount> accounts = new ArrayList<CurrencyAccount>();
+    private final List<CurrencyAccount> accounts = new ArrayList<>();
     private final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final List<String> reasons = Arrays.asList(null, "plain",
             "quote " + (char) 34 + " slash " + (char) 92 + " tab" + (char) 9 + " line" + (char) 10 + "break",
@@ -58,7 +62,7 @@ class CurrencyFileBytesTest {
     private List<CurrencyTransactionRequest> requests(int count) {
         Random random = new Random(7);
         CurrencyTransactionType[] types = CurrencyTransactionType.values();
-        List<CurrencyTransactionRequest> requests = new ArrayList<CurrencyTransactionRequest>();
+        List<CurrencyTransactionRequest> requests = new ArrayList<>();
         for (int index = 0; index < count; index++) {
             CurrencyTransactionType type = types[random.nextInt(types.length)];
             CurrencyAccount first = accounts.get(random.nextInt(accounts.size()));
@@ -68,7 +72,7 @@ class CurrencyFileBytesTest {
             CurrencyAccount source = type == CurrencyTransactionType.DEBIT || type == CurrencyTransactionType.TRANSFER ? first : null;
             CurrencyAccount target = type == CurrencyTransactionType.TRANSFER ? second
                     : type == CurrencyTransactionType.DEBIT ? null : first;
-            Map<String, String> metadata = new LinkedHashMap<String, String>();
+            Map<String, String> metadata = new LinkedHashMap<>();
             if (index % 3 == 0) {
                 metadata.put("k" + index, "v \"" + index + "\"");
                 metadata.put("é", "<&>");
@@ -103,7 +107,7 @@ class CurrencyFileBytesTest {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
             StringBuilder hex = new StringBuilder();
             for (byte value : digest) {
-                hex.append(String.format("%02x", value));
+                hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
         } catch (NoSuchAlgorithmException error) {
@@ -152,7 +156,7 @@ class CurrencyFileBytesTest {
                 storage.transact(currency, descriptor, request).toCompletableFuture().join();
             }
             CurrencyStorageSnapshot snapshot = storage.export(currency).toCompletableFuture().join();
-            storage.importSnapshot(snapshot.with(Collections.<UUID, BigDecimal>emptyMap(), Collections.<CurrencyTransaction>emptyList()),
+            storage.importSnapshot(snapshot.with(Collections.emptyMap(), Collections.emptyList()),
                     CurrencyImportMode.REPLACE).toCompletableFuture().join();
             assertEquals(sha(legacyBytes(storage)), sha(Files.readAllBytes(file)));
             assertTrue(new String(Files.readAllBytes(file), StandardCharsets.UTF_8).contains("\"transactions\": []"));
@@ -175,7 +179,7 @@ class CurrencyFileBytesTest {
     @Test
     void aThousandOperationsEncodeEachTransactionOnce(@TempDir Path directory) {
         AtomicLong encodings = new AtomicLong();
-        List<Integer> ledgerSizes = new ArrayList<Integer>();
+        List<Integer> ledgerSizes = new ArrayList<>();
         FileCurrencyStorage storage = new FileCurrencyStorage(directory.resolve("ledger.json"), 5000, () -> encodings.incrementAndGet(),
                 (target, fill) -> {
                     AtomicFiles.write(target, false, fill);

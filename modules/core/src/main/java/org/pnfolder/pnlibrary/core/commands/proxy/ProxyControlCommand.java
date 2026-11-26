@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.proxy;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.link.ServerGroups;
 import org.pnfolder.pnlibrary.core.link.report.LinkReports;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
-import org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand;
+import org.pnfolder.pnlibrary.core.updates.catalog.proxy.ProxyUpdateCommand;
 
 /**
  * The one command of pnLibrary on BungeeCord and Velocity, {@code /pn}, the same as the Bukkit command of the same name.
@@ -65,24 +66,25 @@ public final class ProxyControlCommand {
 
     /** What a sender without the admin permission is told about, with the permission each command needs. */
     private static final List<Pair<String, String>> OTHERS = Arrays.asList(
-            new Pair<String, String>("/pn events", "pnlibrary.events.view"),
-            new Pair<String, String>("/pn bus", "pnlibrary.events.bus"),
-            new Pair<String, String>("/pn tasks", "pnlibrary.tasks"),
-            new Pair<String, String>("/pn stats", "pnlibrary.stats"),
-            new Pair<String, String>("/pn placeholders", "pnlibrary.placeholders"),
-            new Pair<String, String>("/pn actions", "pnlibrary.actions"),
-            new Pair<String, String>("/pn settings", "pnlibrary.settings"),
-            new Pair<String, String>("/pn servers", ServersCommand.PERMISSION),
-            new Pair<String, String>("/pn groups", GroupsCommand.PERMISSION),
-            new Pair<String, String>("/pn debug", "pnlibrary.debug"));
+            new Pair<>("/pn events", "pnlibrary.events.view"),
+            new Pair<>("/pn bus", "pnlibrary.events.bus"),
+            new Pair<>("/pn tasks", "pnlibrary.tasks"),
+            new Pair<>("/pn stats", "pnlibrary.stats"),
+            new Pair<>("/pn placeholders", "pnlibrary.placeholders"),
+            new Pair<>("/pn actions", "pnlibrary.actions"),
+            new Pair<>("/pn settings", "pnlibrary.settings"),
+            new Pair<>("/pn servers", ServersCommand.PERMISSION),
+            new Pair<>("/pn notices", NoticesCommand.PERMISSION),
+            new Pair<>("/pn groups", GroupsCommand.PERMISSION),
+            new Pair<>("/pn debug", "pnlibrary.debug"));
 
     private final PnLibrary library;
     private final Link link;
     private CommandDefinition built;
 
     public ProxyControlCommand(@NotNull PnLibrary library, @NotNull Link link) {
-        this.library = library;
-        this.link = link;
+        this.library = Objects.requireNonNull(library, "library");
+        this.link = Objects.requireNonNull(link, "link");
     }
 
     @NotNull
@@ -105,7 +107,7 @@ public final class ProxyControlCommand {
     @NotNull
     public List<Component> run(@NotNull UUID viewerId, @NotNull String viewerName, @NotNull Predicate<String> holds,
             @NotNull String line) throws InterruptedException, ExecutionException, TimeoutException {
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         for (String word : line.trim().split(" ")) {
             if (!word.isEmpty()) {
                 words.add(word);
@@ -114,7 +116,7 @@ public final class ProxyControlCommand {
         if (words.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Component> printed = Collections.synchronizedList(new ArrayList<Component>());
+        final List<Component> printed = Collections.synchronizedList(new ArrayList<>());
         final Pointers pointers = AudienceExtensions.senderPointers(viewerName, viewerId, holds);
         CommandSender sender = new CommandSender() {
             @NotNull
@@ -135,11 +137,11 @@ public final class ProxyControlCommand {
             return new ChatKit(ChatReader.PLAYER).notice(new ChatNotice(ChatTone.FAILURE, "Команды прокси сейчас недоступны."));
         }
         stage.toCompletableFuture().get(RUN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        return new ArrayList<Component>(printed);
+        return new ArrayList<>(printed);
     }
 
     private CommandDefinition build() {
-        final org.pnfolder.pnlibrary.core.updates.catalog.ProxyUpdateCommand updates = new ProxyUpdateCommand(library);
+        final org.pnfolder.pnlibrary.core.updates.catalog.proxy.ProxyUpdateCommand updates = new ProxyUpdateCommand(library);
         return CommandDefinition.command(ProxyCommandNames.NAME, root -> {
             root.aliases(ProxyCommandNames.ALIASES.toArray(new String[0]));
             root.executes(context -> updates.overview(context, OTHERS));
@@ -151,6 +153,7 @@ public final class ProxyControlCommand {
             root.mount("configs", new ConfigsCommand(library).definition());
             root.mount("deps", new DepsCommand(library).definition());
             root.mount("servers", new ServersCommand(link, ServersCommand.fromReports(link)).definition());
+            root.mount("notices", new NoticesCommand(NoticesCommand.fromReports(library, link)).definition());
             root.mount("groups", new GroupsCommand(link, withProxy()).definition());
         });
     }
@@ -167,7 +170,7 @@ public final class ProxyControlCommand {
     private Supplier<List<NetworkServer>> withProxy() {
         final Supplier<List<NetworkServer>> servers = ServersCommand.fromReports(link);
         return () -> {
-            List<NetworkServer> all = new ArrayList<NetworkServer>();
+            List<NetworkServer> all = new ArrayList<>();
             all.add(new NetworkServer(ServerGroups.PROXY, true, LinkReports.build(library, "proxy", 0)));
             all.addAll(servers.get());
             return all;

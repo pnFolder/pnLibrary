@@ -14,7 +14,7 @@ public class SecondByFirst implements ArgumentConverter<String> {
 
     @Override
     public String read(ArgumentInput input) {
-        List<String> before = new ArrayList<String>();
+        List<String> before = new ArrayList<>();
         for (ArgumentValue<?> value : input.getPrevious()) {
             before.add(value.getText());
         }

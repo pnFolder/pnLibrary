@@ -79,7 +79,7 @@ class ComponentLedgerTest {
         ledger.observe(components("pnlibrary", component("2.0.0"), "currency", component("1.0.0")));
         ledger.observe(components("pnlibrary", component("2.1.0"), "shop", component("0.5.0")));
 
-        Set<Map.Entry<String, String>> expected = new HashSet<>(Arrays.<Map.Entry<String, String>>asList(
+        Set<Map.Entry<String, String>> expected = new HashSet<>(Arrays.asList(
             new AbstractMap.SimpleEntry<>(ComponentOperation.ADDED, "shop"),
             new AbstractMap.SimpleEntry<>(ComponentOperation.REMOVED, "currency"),
             new AbstractMap.SimpleEntry<>(ComponentOperation.VERSION_CHANGED, "pnlibrary")));

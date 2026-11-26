@@ -13,9 +13,9 @@ public final class ExecutableRoute extends CommandRoute {
     private final List<CommandNode> path;
 
     public ExecutableRoute(@NotNull CommandNode node, @NotNull CommandContext context, @NotNull List<CommandNode> path) {
-        this.node = node;
-        this.context = context;
-        this.path = path;
+        this.node = Objects.requireNonNull(node, "node");
+        this.context = Objects.requireNonNull(context, "context");
+        this.path = Objects.requireNonNull(path, "path");
     }
 
     @NotNull

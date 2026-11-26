@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.tasks;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.plugin.PluginId;
@@ -28,8 +29,8 @@ public final class ScheduledTasks implements TaskService {
     private final TaskHistory history;
     private final Object lock = new Object();
     private final IdentityHashMap<Object, Map<PluginId, OwnerTaskScope>> scopes =
-            new IdentityHashMap<Object, Map<PluginId, OwnerTaskScope>>();
-    private final LinkedHashMap<TaskId, ManagedTask> active = new LinkedHashMap<TaskId, ManagedTask>();
+            new IdentityHashMap<>();
+    private final LinkedHashMap<TaskId, ManagedTask> active = new LinkedHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** A scheduler with the default history size that logs nothing. */
@@ -43,8 +44,8 @@ public final class ScheduledTasks implements TaskService {
             @NotNull TaskServiceSettings settings,
             @NotNull TaskErrorLogger errorLogger,
             @Nullable TaskHistoryStore store) {
-        this.adapter = adapter;
-        this.errorLogger = errorLogger;
+        this.adapter = Objects.requireNonNull(adapter, "adapter");
+        this.errorLogger = Objects.requireNonNull(errorLogger, "errorLogger");
         this.history = new TaskHistory(settings.getHistoryCapacity(), store);
     }
 
@@ -64,7 +65,7 @@ public final class ScheduledTasks implements TaskService {
             }
             Map<PluginId, OwnerTaskScope> owned = scopes.get(owner);
             if (owned == null) {
-                owned = new LinkedHashMap<PluginId, OwnerTaskScope>();
+                owned = new LinkedHashMap<>();
                 scopes.put(owner, owned);
             }
             OwnerTaskScope scope = owned.get(scopeId);
@@ -127,7 +128,7 @@ public final class ScheduledTasks implements TaskService {
         List<OwnerTaskScope> current;
         synchronized (scopes) {
             Map<PluginId, OwnerTaskScope> removed = scopes.remove(owner);
-            current = removed == null ? Collections.<OwnerTaskScope>emptyList() : new ArrayList<OwnerTaskScope>(removed.values());
+            current = removed == null ? Collections.emptyList() : new ArrayList<>(removed.values());
         }
         TaskCleanup.closeAll(cancellations(current));
     }
@@ -137,7 +138,7 @@ public final class ScheduledTasks implements TaskService {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        List<OwnerTaskScope> current = new ArrayList<OwnerTaskScope>();
+        List<OwnerTaskScope> current = new ArrayList<>();
         synchronized (scopes) {
             for (Map<PluginId, OwnerTaskScope> owned : scopes.values()) {
                 current.addAll(owned.values());
@@ -151,7 +152,7 @@ public final class ScheduledTasks implements TaskService {
     }
 
     private static List<Runnable> cancellations(List<OwnerTaskScope> current) {
-        List<Runnable> steps = new ArrayList<Runnable>();
+        List<Runnable> steps = new ArrayList<>();
         for (final OwnerTaskScope scope : current) {
             steps.add(scope::cancelAll);
         }
@@ -166,7 +167,7 @@ public final class ScheduledTasks implements TaskService {
 
     /** Active and finished tasks matching {@code query} whose owner and scope token pass {@code belongs}. */
     List<TaskSnapshot> snapshots(TaskQuery query, BiPredicate<Object, Object> belongs) {
-        List<TaskSnapshot> all = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> all = new ArrayList<>();
         synchronized (lock) {
             for (ManagedTask task : active.values()) {
                 if (belongs.test(task.getOwner(), task.getScopeToken())) {
@@ -175,7 +176,7 @@ public final class ScheduledTasks implements TaskService {
             }
             all.addAll(history.matching(belongs));
         }
-        List<TaskSnapshot> matching = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> matching = new ArrayList<>();
         for (TaskSnapshot snapshot : all) {
             if (query.matches(snapshot)) {
                 matching.add(snapshot);

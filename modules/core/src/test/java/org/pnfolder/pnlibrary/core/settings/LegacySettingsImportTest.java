@@ -24,7 +24,7 @@ class LegacySettingsImportTest {
     @TempDir
     Path directory;
 
-    private final List<String> warnings = new ArrayList<String>();
+    private final List<String> warnings = new ArrayList<>();
     private LibraryPaths paths;
 
     private LibraryPaths paths() {
@@ -69,20 +69,20 @@ class LegacySettingsImportTest {
         assertEquals("Europe/Moscow", settings.getTimeZone());
         assertEquals("Нельзя", settings.getNoPermissionMessage());
         assertFalse(DownloadConfiguration.of(settings).isAutomatic());
-        assertEquals(Collections.singleton(DownloadDestination.DATA_FOLDER),
+        assertEquals(new HashSet<>(Arrays.asList(DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE)),
             DownloadConfiguration.of(settings).getDestinations());
         assertFalse(Files.exists(paths().getLegacyConfig()));
         assertFalse(Files.exists(paths().getLegacyDownloadsConfig()));
         assertTrue(Files.exists(paths().getLegacyConfig().resolveSibling("config.yml.old")));
         assertTrue(Files.exists(paths().getLegacyDownloadsConfig().resolveSibling("downloads.yml.old")));
-        Set<String> changed = new HashSet<String>();
+        Set<String> changed = new HashSet<>();
         for (SettingValue value : store.values()) {
             if (value.getChanged()) {
                 changed.add(value.getSpec().getKey());
             }
         }
-        assertEquals(new HashSet<String>(Arrays.asList("privacy", "history-retention-days", "time-zone",
-            "no-permission-message", "downloads.automatic", "downloads.destinations.cache")), changed);
+        assertEquals(new HashSet<>(Arrays.asList("privacy", "history-retention-days", "time-zone",
+            "no-permission-message", "downloads.automatic")), changed);
 
         SettingsStore again = new SettingsStore(paths().getSettings());
         new LegacySettingsImport(paths()).run(again);

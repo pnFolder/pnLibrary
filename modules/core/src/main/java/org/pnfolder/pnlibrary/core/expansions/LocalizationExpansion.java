@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.expansions;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -28,7 +29,7 @@ public final class LocalizationExpansion extends AbstractExpansion implements Mo
 
     public LocalizationExpansion(@NotNull Path cacheDirectory) {
         super("localization");
-        this.cacheDirectory = cacheDirectory;
+        this.cacheDirectory = Objects.requireNonNull(cacheDirectory, "cacheDirectory");
     }
 
     @Override

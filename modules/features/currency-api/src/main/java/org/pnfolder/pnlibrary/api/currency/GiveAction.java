@@ -37,8 +37,8 @@ public final class GiveAction implements Action {
      * @param undo whether a later failure takes the money back; {@code false} keeps it
      */
     public GiveAction(@NotNull String currency, @NotNull String amount, boolean undo) {
-        this.currency = currency;
-        this.amount = amount;
+        this.currency = Objects.requireNonNull(currency, "currency");
+        this.amount = Objects.requireNonNull(amount, "amount");
         this.undo = undo;
     }
 
@@ -76,9 +76,7 @@ public final class GiveAction implements Action {
             return CurrencyScenarioSupport.failure(result, money, sum);
         }
         if (undo) {
-            context.onUndo("take back " + money.format(sum), () -> {
-                money.withdraw(playerId, sum).toCompletableFuture().join();
-            });
+            context.onUndo("take back " + money.format(sum), () -> money.withdraw(playerId, sum).toCompletableFuture().join());
         }
         context.setValue("paid", money.format(sum));
         if (result.getCurrentBalance() != null) {

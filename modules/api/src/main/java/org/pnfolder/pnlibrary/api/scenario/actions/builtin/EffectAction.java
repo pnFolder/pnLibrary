@@ -51,7 +51,7 @@ public final class EffectAction implements Action {
 
     /** Creates it with every setting given. */
     public EffectAction(@NotNull String key, @NotNull Duration duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key, "key");
         this.duration = duration;
         this.amplifier = amplifier;
         this.ambient = ambient;

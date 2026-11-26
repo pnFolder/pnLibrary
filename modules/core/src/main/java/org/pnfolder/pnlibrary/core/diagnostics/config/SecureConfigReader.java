@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class SecureConfigReader {
     private static final long DEFAULT_MAXIMUM_BYTES = 1_048_576L;
-    private static final Set<String> FORBIDDEN_EXTENSIONS = new HashSet<String>(Arrays.asList(
+    private static final Set<String> FORBIDDEN_EXTENSIONS = new HashSet<>(Arrays.asList(
         ".db", ".sqlite", ".sqlite3", ".db-shm", ".db-wal", ".bin", ".dat",
         ".class", ".jar", ".zip", ".tar", ".gz", ".png", ".jpg", ".jpeg", ".ico"));
 

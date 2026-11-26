@@ -60,7 +60,7 @@ class ObservabilityDslTest {
             data.put("key-" + i, repeat('v', 3_000));
         }
         ObservationRequest request = new ObservationRequest(repeat('p', 200), repeat('s', 200), repeat('m', 2_000),
-                ObservationLevel.INFO, data, Collections.<Path>emptyList(), new IllegalStateException(repeat('e', 5_000)));
+                ObservationLevel.INFO, data, Collections.emptyList(), new IllegalStateException(repeat('e', 5_000)));
 
         Observation observation = Observation.from(request);
 

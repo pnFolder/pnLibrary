@@ -18,7 +18,7 @@ public final class NetworkReport {
     private final List<ServerGroup> groups;
 
     public NetworkReport(@NotNull LinkReport proxy, @NotNull List<NetworkServer> servers, @NotNull Instant sentAt) {
-        this(proxy, servers, sentAt, Collections.<ServerGroup>emptyList());
+        this(proxy, servers, sentAt, Collections.emptyList());
     }
 
     /**
@@ -29,9 +29,9 @@ public final class NetworkReport {
      */
     public NetworkReport(@NotNull LinkReport proxy, @NotNull List<NetworkServer> servers, @NotNull Instant sentAt,
                          @NotNull List<ServerGroup> groups) {
-        this.proxy = proxy;
-        this.servers = servers;
-        this.sentAt = sentAt;
+        this.proxy = Objects.requireNonNull(proxy, "proxy");
+        this.servers = Objects.requireNonNull(servers, "servers");
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt");
         this.groups = groups;
     }
 

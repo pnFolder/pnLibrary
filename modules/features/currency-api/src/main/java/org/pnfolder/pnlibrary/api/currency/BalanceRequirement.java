@@ -28,8 +28,8 @@ public final class BalanceRequirement implements Requirement {
      * @param atLeast the least balance; may be a placeholder
      */
     public BalanceRequirement(@NotNull String currency, @NotNull String atLeast) {
-        this.currency = currency;
-        this.atLeast = atLeast;
+        this.currency = Objects.requireNonNull(currency, "currency");
+        this.atLeast = Objects.requireNonNull(atLeast, "atLeast");
     }
 
     /** Currency reference. */

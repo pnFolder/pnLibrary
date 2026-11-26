@@ -10,9 +10,9 @@ public final class UsageVariant {
     private final String meaning;
 
     public UsageVariant(@NotNull String label, @NotNull String text, @NotNull String meaning) {
-        this.label = label;
-        this.text = text;
-        this.meaning = meaning;
+        this.label = Objects.requireNonNull(label, "label");
+        this.text = Objects.requireNonNull(text, "text");
+        this.meaning = Objects.requireNonNull(meaning, "meaning");
     }
 
     public @NotNull String getLabel() {

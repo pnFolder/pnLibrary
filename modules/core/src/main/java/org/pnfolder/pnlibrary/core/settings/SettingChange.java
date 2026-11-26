@@ -11,9 +11,9 @@ public final class SettingChange {
 
     /** Creates the record; the values are as text. */
     public SettingChange(@NotNull SettingSpec spec, @NotNull String before, @NotNull String after) {
-        this.spec = spec;
-        this.before = before;
-        this.after = after;
+        this.spec = Objects.requireNonNull(spec, "spec");
+        this.before = Objects.requireNonNull(before, "before");
+        this.after = Objects.requireNonNull(after, "after");
     }
 
     /** The setting. */

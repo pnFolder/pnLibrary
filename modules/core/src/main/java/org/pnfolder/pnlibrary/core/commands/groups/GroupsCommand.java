@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.commands.groups;
 
 import static org.pnfolder.pnlibrary.core.commands.groups.GroupsChat.ROOT;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,8 +58,8 @@ public final class GroupsCommand {
 
     /** The command over {@code servers}, which is asked again each time the servers are compared. */
     public GroupsCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers) {
-        this.link = link;
-        this.servers = servers;
+        this.link = Objects.requireNonNull(link, "link");
+        this.servers = Objects.requireNonNull(servers, "servers");
         this.groups = link.groups();
         this.pages = new GroupsPages(groups, servers);
     }
@@ -137,7 +138,7 @@ public final class GroupsCommand {
         group.argument("server", ArgumentType.string(), server -> {
             server.suggests(context -> {
                 ServerGroup found = groups.get(context.<String>get("group"));
-                return found == null ? new ArrayList<String>() : new ArrayList<String>(found.getServers());
+                return found == null ? new ArrayList<>() : new ArrayList<>(found.getServers());
             });
             inside.accept(server);
         });
@@ -169,7 +170,7 @@ public final class GroupsCommand {
     }
 
     private List<String> groupNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (ServerGroup group : groups.all()) {
             names.add(group.getName());
         }
@@ -177,7 +178,7 @@ public final class GroupsCommand {
     }
 
     private List<String> serverNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (NetworkServer server : servers.get()) {
             if (!server.getName().equals(ServerGroups.PROXY)) {
                 names.add(server.getName());
@@ -188,13 +189,13 @@ public final class GroupsCommand {
     }
 
     private List<String> pluginNames(ServerGroup group) {
-        LinkedHashSet<String> names = new LinkedHashSet<String>();
+        LinkedHashSet<String> names = new LinkedHashSet<>();
         for (NetworkServer server : servers.get()) {
             for (LinkPlugin plugin : server.getReport().getPlugins()) {
                 names.add(plugin.getProduct());
             }
         }
-        List<String> all = new ArrayList<String>(names);
+        List<String> all = new ArrayList<>(names);
         if (group != null) {
             all.addAll(group.getPlugins());
         }
@@ -247,7 +248,7 @@ public final class GroupsCommand {
 
     /** What to ask of a server: each outdated plugin for an update, one request without a plugin otherwise. */
     private static List<String> productsFor(RemoteAction action, ServerGroupState state) {
-        List<String> products = new ArrayList<String>();
+        List<String> products = new ArrayList<>();
         if (action == RemoteAction.UPDATE) {
             products.addAll(state.getOutdated());
         } else {

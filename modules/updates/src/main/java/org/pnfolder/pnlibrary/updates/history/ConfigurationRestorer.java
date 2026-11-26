@@ -36,10 +36,10 @@ import org.pnfolder.pnlibrary.updates.engine.UpdatePaths;
  * Every restore is journaled, so one interrupted by a crash is rolled back to the state kept before it.
  */
 public final class ConfigurationRestorer {
-    private static final Set<String> RECOVERABLE = new HashSet<String>(Arrays.asList("APPLYING", "RECOVERING"));
-    private static final Set<String> UNDOABLE = new HashSet<String>(Arrays.asList("APPLIED", "APPLYING", "RECOVERING"));
+    private static final Set<String> RECOVERABLE = new HashSet<>(Arrays.asList("APPLYING", "RECOVERING"));
+    private static final Set<String> UNDOABLE = new HashSet<>(Arrays.asList("APPLIED", "APPLYING", "RECOVERING"));
     private static final Set<String> STATES =
-        new HashSet<String>(Arrays.asList("PREPARED", "APPLYING", "RECOVERING", "APPLIED", "RECOVERED"));
+        new HashSet<>(Arrays.asList("PREPARED", "APPLYING", "RECOVERING", "APPLIED", "RECOVERED"));
 
     private final Gson gson = new Gson();
     private final ConfigurationSnapshots snapshots;
@@ -47,8 +47,8 @@ public final class ConfigurationRestorer {
 
     /** Creates a restorer that keeps its journals under {@code directory}. */
     public ConfigurationRestorer(@NotNull ConfigurationSnapshots snapshots, @NotNull Path directory) {
-        this.snapshots = snapshots;
-        this.directory = directory;
+        this.snapshots = Objects.requireNonNull(snapshots, "snapshots");
+        this.directory = Objects.requireNonNull(directory, "directory");
     }
 
     /** Preserves current files first, then replaces only paths explicitly recorded in the snapshot. */
@@ -95,7 +95,7 @@ public final class ConfigurationRestorer {
 
     @Nullable
     private UUID finishedRestore(UUID source, UUID operation) throws IOException {
-        List<ConfigurationRestoreJournal> previous = new ArrayList<ConfigurationRestoreJournal>();
+        List<ConfigurationRestoreJournal> previous = new ArrayList<>();
         for (Path file : journals()) {
             ConfigurationRestoreJournal journal = readJournal(file);
             if (operation.toString().equals(journal.getOperation())) {
@@ -117,19 +117,19 @@ public final class ConfigurationRestorer {
 
     private static Map<ProductId, UpdateConfigurationBackup> declarations(ConfigurationSnapshot snapshot) {
         Map<String, List<ConfigurationSnapshotFile>> byProduct =
-            new LinkedHashMap<String, List<ConfigurationSnapshotFile>>();
+            new LinkedHashMap<>();
         for (ConfigurationSnapshotFile file : snapshot.getFiles()) {
             if (!byProduct.containsKey(file.getProduct())) {
-                byProduct.put(file.getProduct(), new ArrayList<ConfigurationSnapshotFile>());
+                byProduct.put(file.getProduct(), new ArrayList<>());
             }
             byProduct.get(file.getProduct()).add(file);
         }
-        Map<ProductId, UpdateConfigurationBackup> result = new LinkedHashMap<ProductId, UpdateConfigurationBackup>();
+        Map<ProductId, UpdateConfigurationBackup> result = new LinkedHashMap<>();
         for (Map.Entry<String, List<ConfigurationSnapshotFile>> entry : byProduct.entrySet()) {
             List<ConfigurationSnapshotFile> files = entry.getValue();
-            Set<String> roots = new HashSet<String>();
-            List<String> relatives = new ArrayList<String>();
-            Map<String, BackupLabel> labels = new LinkedHashMap<String, BackupLabel>();
+            Set<String> roots = new HashSet<>();
+            List<String> relatives = new ArrayList<>();
+            Map<String, BackupLabel> labels = new LinkedHashMap<>();
             for (ConfigurationSnapshotFile file : files) {
                 roots.add(file.getRoot());
                 relatives.add(file.getRelative());
@@ -169,7 +169,7 @@ public final class ConfigurationRestorer {
     }
 
     private List<Path> journals() throws IOException {
-        List<Path> result = new ArrayList<Path>();
+        List<Path> result = new ArrayList<>();
         if (!Files.exists(directory)) {
             return result;
         }

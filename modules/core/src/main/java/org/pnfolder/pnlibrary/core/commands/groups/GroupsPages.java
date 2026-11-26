@@ -34,7 +34,7 @@ final class GroupsPages {
 
     void of(CommandContext context, String server) {
         ChatKit kit = GroupsChat.kit(context);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(ServerGroups.label(server), kit.text("в группах", ChatPalette.LABEL)));
         List<ServerGroup> member = groups.of(server);
@@ -64,10 +64,10 @@ final class GroupsPages {
         }
         List<LinkPlugin> have = installedOn(server);
         Component note = kit.text(group.customized(server) ? "свои настройки" : "как у всех", ChatPalette.LABEL);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(name + " · " + ServerGroups.label(server), note));
-        List<String> all = new ArrayList<String>(group.getPlugins());
+        List<String> all = new ArrayList<>(group.getPlugins());
         all.addAll(group.wanted(server));
         Collections.sort(all, String.CASE_INSENSITIVE_ORDER);
         if (all.isEmpty()) {
@@ -90,7 +90,7 @@ final class GroupsPages {
                 return known.getReport().getPlugins();
             }
         }
-        return new ArrayList<LinkPlugin>();
+        return new ArrayList<>();
     }
 
     private static boolean containsIgnoreCase(Set<String> names, String wanted) {
@@ -120,7 +120,7 @@ final class GroupsPages {
         ChatKit kit = GroupsChat.kit(context);
         List<ServerGroup> all = groups.all();
         String count = all.size() + " " + RussianText.plural(all.size(), "группа", "группы", "групп");
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Группы серверов", kit.text(count, ChatPalette.LABEL)));
         if (all.isEmpty()) {
@@ -171,7 +171,7 @@ final class GroupsPages {
             GroupsChat.notice(context, ChatTone.FAILURE, "Нет группы " + name + ".", "Список: " + ROOT);
             return;
         }
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(group.getName(), kit.text("группа серверов", ChatPalette.LABEL)));
         String plugins = String.join(", ", group.getPlugins());

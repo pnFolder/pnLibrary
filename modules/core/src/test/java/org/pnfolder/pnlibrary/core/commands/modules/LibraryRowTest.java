@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class LibraryRowTest {
     private static LibraryRow row(String owner) {
-        return new LibraryRow(owner, "Hikari", "g:a:1", "1", null, Collections.<String>emptyList(), true, true, false, false);
+        return new LibraryRow(owner, "Hikari", "g:a:1", "1", null, Collections.emptyList(), true, true, false, false);
     }
 
     @Test

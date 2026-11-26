@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.events.registration;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.events.listener.EventListenerRegistration;
 import org.pnfolder.pnlibrary.api.events.listener.EventSubscription;
@@ -17,8 +18,8 @@ public final class ListenerRegistration implements EventListenerRegistration {
 
     /** Groups {@code subscriptions} under the {@code listener} they were made for. */
     public ListenerRegistration(@NotNull Listener listener, @NotNull List<? extends EventSubscription> subscriptions) {
-        this.listener = listener;
-        this.subscriptions = new ArrayList<EventSubscription>(subscriptions);
+        this.listener = Objects.requireNonNull(listener, "listener");
+        this.subscriptions = new ArrayList<>(subscriptions);
     }
 
     @NotNull

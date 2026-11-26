@@ -111,7 +111,7 @@ public final class TaskSpecBuilder {
     public void setCancelWithParent(boolean value) { delegate.cancelWithParent(value); }
 
     /** Application-defined lookup tags. */
-    @NotNull public Set<String> getTags() { return new LinkedHashSet<String>(delegate.tags); }
+    @NotNull public Set<String> getTags() { return new LinkedHashSet<>(delegate.tags); }
     /** Sets the tags. */
     public void setTags(@NotNull Set<String> value) { delegate.tags.clear(); delegate.tags(value); }
 

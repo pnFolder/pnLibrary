@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.mysql;
 
+import java.util.Locale;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,7 +30,7 @@ public final class MysqlDump {
     /** First line of every copy; the restore refuses a file without it. */
     public static final String HEADER = "-- pnlibrary-db 1";
 
-    private static final Set<Integer> NUMBER_TYPES = Collections.unmodifiableSet(new HashSet<Integer>(Arrays.asList(
+    private static final Set<Integer> NUMBER_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.FLOAT, Types.REAL, Types.DOUBLE,
             Types.DECIMAL, Types.NUMERIC)));
 
@@ -73,7 +74,7 @@ public final class MysqlDump {
     }
 
     private static List<String> tables(Connection connection) throws SQLException {
-        List<String> tables = new ArrayList<String>();
+        List<String> tables = new ArrayList<>();
         try (Statement statement = connection.createStatement();
              ResultSet rows = statement.executeQuery("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")) {
             while (rows.next()) {
@@ -115,7 +116,7 @@ public final class MysqlDump {
             }
             StringBuilder hex = new StringBuilder("X'");
             for (byte b : bytes) {
-                hex.append(String.format("%02x", b));
+                hex.append(String.format(Locale.ROOT, "%02x", b));
             }
             return hex.append('\'').toString();
         }

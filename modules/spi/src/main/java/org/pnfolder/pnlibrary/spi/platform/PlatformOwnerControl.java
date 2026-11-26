@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 
 import java.util.Map;
 

@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyApi;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAdventureTransport;
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter;
@@ -196,7 +196,7 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
     @Override
     public PlatformSnapshot snapshot() {
         return new PlatformSnapshot(getImplementationName(), Bukkit.getBukkitVersion(), null,
-            Bukkit.getOnlinePlayers().size(), Collections.<String>emptyList(), plugins.snapshots());
+            Bukkit.getOnlinePlayers().size(), Collections.emptyList(), plugins.snapshots());
     }
 
     @NotNull
@@ -243,9 +243,10 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
     @Override
     public void bind(@NotNull PnLibrary library) {
         lifecycle.bind(() -> {
-            lifecycleListener = lifecycle.track(new BukkitLifecycleListener(plugin, library).start());
+            lifecycleListener = lifecycle.track(new BukkitLifecycleListener(plugin, library, link).start());
             BukkitControlCommand control = lifecycle.track(
                 new BukkitControlCommand(plugin, library, CurrencyApi.providers(library), link, scheduler));
+            control.watchRestarts();
             return lifecycle.track(RuntimeBridge.registerRuntimeCommand(library, control.definition()));
         });
     }

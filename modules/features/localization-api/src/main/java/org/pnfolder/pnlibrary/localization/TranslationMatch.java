@@ -13,8 +13,8 @@ public final class TranslationMatch<T> {
 
     /** Creates a result for {@code key}, its localized text and the local API object it represents. */
     public TranslationMatch(@NotNull String key, @NotNull String translation, @Nullable T value) {
-        this.key = key;
-        this.translation = translation;
+        this.key = Objects.requireNonNull(key, "key");
+        this.translation = Objects.requireNonNull(translation, "translation");
         this.value = value;
     }
 

@@ -15,7 +15,7 @@ import java.util.Set;
  * a hijacked catalog entry could otherwise point the automatic download at any server.
  */
 public final class TrustedHosts {
-    private static final Set<String> DOWNLOADS = Collections.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(
+    private static final Set<String> DOWNLOADS = Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(
         "github.com",
         "objects.githubusercontent.com",
         "raw.githubusercontent.com",
@@ -55,7 +55,7 @@ public final class TrustedHosts {
     }
 
     private static Set<String> redirects() {
-        Set<String> hosts = new HashSet<String>(DOWNLOADS);
+        Set<String> hosts = new HashSet<>(DOWNLOADS);
         hosts.add("api.github.com");
         return Collections.unmodifiableSet(hosts);
     }

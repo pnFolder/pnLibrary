@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
-import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow;
+import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 
 class ConfigLookTest {
     private static String plain(String text) {

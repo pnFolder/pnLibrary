@@ -24,12 +24,12 @@ public interface PnLogger {
 
     /** Writes one line at {@code level} without facts. */
     default void log(@NotNull LogLevel level, @NotNull String message) {
-        log(level, message, null, Collections.<String, Object>emptyMap());
+        log(level, message, null, Collections.emptyMap());
     }
 
     /** Writes one line at {@code level} with the failure that explains it. */
     default void log(@NotNull LogLevel level, @NotNull String message, @Nullable Throwable error) {
-        log(level, message, error, Collections.<String, Object>emptyMap());
+        log(level, message, error, Collections.emptyMap());
     }
 
     /** Writes an ordinary line. */

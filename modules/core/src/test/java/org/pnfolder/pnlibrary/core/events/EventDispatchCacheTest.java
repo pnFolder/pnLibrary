@@ -20,7 +20,7 @@ import org.pnfolder.pnlibrary.core.events.EventFixtures.TestEvent;
 class EventDispatchCacheTest {
     @Test
     void listenersAddedOrRemovedAfterAWarmCallTakeEffectOnTheNextCall() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventScope scope = events.scope(PluginId.of("test"));
@@ -70,7 +70,7 @@ class EventDispatchCacheTest {
 
     @Test
     void changingListenersOfOneEventLeavesAnotherEventsDispatchCorrect() {
-        List<String> calls = new ArrayList<String>();
+        List<String> calls = new ArrayList<>();
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         try {
             EventScope scope = events.scope(PluginId.of("test"));
@@ -95,7 +95,7 @@ class EventDispatchCacheTest {
     void aListenerAddedWhileOtherThreadsDispatchIsSeenByTheNextCall() throws Exception {
         EventDispatcher events = new EventDispatcher(ignoringErrors());
         AtomicBoolean running = new AtomicBoolean(true);
-        List<Thread> readers = new ArrayList<Thread>();
+        List<Thread> readers = new ArrayList<>();
         try {
             EventScope scope = events.scope(PluginId.of("test"));
             for (int index = 0; index < 4; index++) {

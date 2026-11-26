@@ -21,17 +21,17 @@ public final class ErrorHandler {
 
     /** Creates it with every setting at its default. */
     public ErrorHandler() {
-        this(Collections.<String>emptyList(), Collections.<Action>emptyList());
+        this(Collections.emptyList(), Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public ErrorHandler(@NotNull List<String> codes) {
-        this(codes, Collections.<Action>emptyList());
+        this(codes, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */
     public ErrorHandler(@NotNull List<String> codes, @NotNull List<Action> steps) {
-        this.codes = codes;
+        this.codes = Objects.requireNonNull(codes, "codes");
         this.steps = steps;
     }
 

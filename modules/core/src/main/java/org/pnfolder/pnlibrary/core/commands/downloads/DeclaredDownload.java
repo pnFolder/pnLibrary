@@ -10,8 +10,8 @@ public final class DeclaredDownload {
     private final DownloadSnapshot snapshot;
 
     public DeclaredDownload(@NotNull String owner, @NotNull DownloadSnapshot snapshot) {
-        this.owner = owner;
-        this.snapshot = snapshot;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
     }
 
     @NotNull

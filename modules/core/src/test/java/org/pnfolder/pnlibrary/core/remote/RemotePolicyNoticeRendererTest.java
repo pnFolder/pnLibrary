@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.remote;
 
+import org.pnfolder.pnlibrary.core.remote.report.RemotePolicyNoticeRenderer;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,9 +13,9 @@ import org.pnfolder.pnlibrary.api.chat.ChatPalette;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyExplanation;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyResult;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyExplanation;
+import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyResult;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.core.text.ConsoleStyle;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
@@ -39,7 +40,7 @@ class RemotePolicyNoticeRendererTest {
 
     @Test
     void rendersADeniedPolicyWithItsCompleteExplanationTree() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         PluginMetadata metadata = new PluginMetadata(ModuleId.of("demo"), "Demo", "2.0.0", "pnFolder",
             PlatformType.BUKKIT, "Paper", "25", 25);
         RemotePolicySettings policy = RemotePolicySettings.builder()
@@ -63,7 +64,7 @@ class RemotePolicyNoticeRendererTest {
 
     @Test
     void aDecisionCardShowsItsOwnStatusHeadlineDetailsStepsAndLinks() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         PluginMetadata metadata = new PluginMetadata(ModuleId.of("demo"), "Demo", "0.0.1", "pnFolder",
             PlatformType.BUKKIT, "Paper", "25", 25);
         RemotePolicySettings policy = RemotePolicySettings.builder().source("https://example.org/Policy.java").build();

@@ -74,8 +74,8 @@ public final class UpdateConfirmationTokens {
     }
 
     public UpdateConfirmationTokens(@NotNull SecureRandom random, @NotNull Supplier<Instant> clock) {
-        this.random = random;
-        this.clock = clock;
+        this.random = Objects.requireNonNull(random, "random");
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     public @NotNull String issue(@NotNull UUID player, @NotNull UUID plan, long revision, @NotNull UpdateAction action,

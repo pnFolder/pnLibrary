@@ -110,11 +110,11 @@ public final class TaskLabels {
     /** Tasks with no parent in {@code all}, the top level of the list. */
     @NotNull
     public static List<TaskSnapshot> roots(@NotNull List<TaskSnapshot> all) {
-        Set<TaskId> ids = new HashSet<TaskId>();
+        Set<TaskId> ids = new HashSet<>();
         for (TaskSnapshot task : all) {
             ids.add(task.getId());
         }
-        List<TaskSnapshot> roots = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> roots = new ArrayList<>();
         for (TaskSnapshot task : all) {
             if (task.getParentId() == null || !ids.contains(task.getParentId())) {
                 roots.add(task);
@@ -126,7 +126,7 @@ public final class TaskLabels {
     /** Tasks started by {@code task}. */
     @NotNull
     public static List<TaskSnapshot> childrenOf(@NotNull TaskSnapshot task, @NotNull Collection<TaskSnapshot> all) {
-        List<TaskSnapshot> children = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> children = new ArrayList<>();
         for (TaskSnapshot candidate : all) {
             if (task.getId().equals(candidate.getParentId())) {
                 children.add(candidate);

@@ -26,7 +26,7 @@ public class WarTop {
         String padWidth = padWidth(route); // "4"
         String path = route.getPath(); // "clan.war.top.3.name"
         List<String> belowWar = texts(route.after("war")); // ["top", "3", "name"]
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         for (RoutePart part : route.getParts()) {
             parts.add(part.getKind() + ":" + part.getText()); // GROUP:clan BRANCH:war BRANCH:top ARGUMENT:3 FIELD:name FORMAT:pad0 FORMAT:upper
         }
@@ -43,7 +43,7 @@ public class WarTop {
     }
 
     private static List<String> texts(List<RoutePart> parts) {
-        List<String> texts = new ArrayList<String>();
+        List<String> texts = new ArrayList<>();
         for (RoutePart part : parts) {
             texts.add(part.getText());
         }
@@ -51,7 +51,7 @@ public class WarTop {
     }
 
     private static List<String> names(List<RoutePart> parts) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (RoutePart part : parts) {
             names.add(part.getName());
         }

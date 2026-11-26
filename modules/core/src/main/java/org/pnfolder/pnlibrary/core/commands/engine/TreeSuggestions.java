@@ -25,10 +25,10 @@ final class TreeSuggestions {
     @NotNull
     static CompletionStage<List<String>> suggest(@NotNull CommandDefinition command, @NotNull CommandContext context) {
         CommandNode node = command.getRoot();
-        Map<String, Object> values = new LinkedHashMap<String, Object>();
-        CommandContext routed = context.withParsedValues(new LinkedHashMap<String, Object>(values));
+        Map<String, Object> values = new LinkedHashMap<>();
+        CommandContext routed = context.withParsedValues(new LinkedHashMap<>(values));
         if (!RouteRules.canSuggest(node, routed)) {
-            return CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+            return CommandDefinition.completedSuggestions(Collections.emptyList());
         }
         List<String> typed = context.getArguments();
         String partial = typed.isEmpty() ? context.getCurrentInput() : typed.get(typed.size() - 1);
@@ -41,13 +41,13 @@ final class TreeSuggestions {
             if (child == null) {
                 return node.getAcceptsExtraArguments()
                         ? node.getSuggestions().suggest(routed.withCurrentInput(partial))
-                        : CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+                        : CommandDefinition.completedSuggestions(Collections.emptyList());
             }
             if (!RouteRules.canSuggest(child, routed) || !remember(child, typed.get(index), values)) {
-                return CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+                return CommandDefinition.completedSuggestions(Collections.emptyList());
             }
             node = child;
-            routed = context.withParsedValues(new LinkedHashMap<String, Object>(values)).withCurrentInput(partial);
+            routed = context.withParsedValues(new LinkedHashMap<>(values)).withCurrentInput(partial);
         }
         return lastSuggestions(node, routed.withCurrentInput(partial), partial);
     }
@@ -67,7 +67,7 @@ final class TreeSuggestions {
 
 
     private static CompletionStage<List<String>> lastSuggestions(CommandNode node, CommandContext suggestionContext, final String partial) {
-        final List<String> literals = new ArrayList<String>();
+        final List<String> literals = new ArrayList<>();
         for (CommandNode child : node.getChildren()) {
             if (child.getKind() == CommandNodeKind.LITERAL && RouteRules.canSuggest(child, suggestionContext)
                     && RouteRules.startsWith(child.getName(), partial)) {
@@ -82,14 +82,14 @@ final class TreeSuggestions {
         if (argument != null) {
             final CommandNode typedArgument = argument;
             stage = argument.getSuggestions().suggest(suggestionContext).thenApply(found -> {
-                List<String> all = new ArrayList<String>(found);
+                List<String> all = new ArrayList<>(found);
                 all.addAll(builtInSuggestions(typedArgument));
                 return all;
             });
         } else if (node.getChildren().isEmpty() || node.getAcceptsExtraArguments()) {
             stage = node.getSuggestions().suggest(suggestionContext);
         } else {
-            stage = CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+            stage = CommandDefinition.completedSuggestions(Collections.emptyList());
         }
         return stage.thenApply(dynamic -> merge(literals, dynamic, partial));
     }
@@ -102,7 +102,7 @@ final class TreeSuggestions {
                 distinct.add(value);
             }
         }
-        return new ArrayList<String>(distinct);
+        return new ArrayList<>(distinct);
     }
 
 

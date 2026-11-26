@@ -15,9 +15,9 @@ class DiagnosticValueSanitizerTest {
 
     @Test
     void redactsSecretFieldsAndTerminatesRecursiveContainers() {
-        Map<String, Object> recursive = new LinkedHashMap<String, Object>();
+        Map<String, Object> recursive = new LinkedHashMap<>();
         recursive.put("self", recursive);
-        Map<String, Object> input = new LinkedHashMap<String, Object>();
+        Map<String, Object> input = new LinkedHashMap<>();
         input.put("databasePassword", "do-not-leak");
         input.put("nested", recursive);
 

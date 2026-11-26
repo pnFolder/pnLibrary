@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.HashSet;

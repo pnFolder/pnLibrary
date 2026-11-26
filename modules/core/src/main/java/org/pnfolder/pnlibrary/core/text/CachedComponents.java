@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.text;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -22,15 +23,15 @@ public final class CachedComponents implements ComponentService {
     private final PlaceholderService placeholders;
     private final ComponentCache sharedCache;
     private final Map<ComponentSerializerType, ComponentSerializer> serializers =
-        new EnumMap<ComponentSerializerType, ComponentSerializer>(ComponentSerializerType.class);
+        new EnumMap<>(ComponentSerializerType.class);
     private final ComponentCache pluginCache = new ComponentCache();
     private ComponentCachePolicy cachePolicy = new ComponentCachePolicy();
     private ComponentSerializerType defaultType = ComponentSerializerType.ADAPTIVE;
 
     public CachedComponents(@NotNull PlaceholderService placeholders, @NotNull ComponentCache sharedCache,
                             @NotNull MiniText mini, @NotNull Consumer<String> warn) {
-        this.placeholders = placeholders;
-        this.sharedCache = sharedCache;
+        this.placeholders = Objects.requireNonNull(placeholders, "placeholders");
+        this.sharedCache = Objects.requireNonNull(sharedCache, "sharedCache");
         for (ComponentSerializerType type : ComponentSerializerType.values()) {
             serializers.put(type, new TypedSerializer(type, mini, warn));
         }
@@ -78,7 +79,7 @@ public final class CachedComponents implements ComponentService {
 
     @Override
     public @NotNull List<Component> deserializeAll(@NotNull Iterable<String> inputs, @NotNull ComponentSerializerType type) {
-        List<Component> result = new ArrayList<Component>();
+        List<Component> result = new ArrayList<>();
         for (String input : inputs) {
             result.add(deserialize(input, type));
         }

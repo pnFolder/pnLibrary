@@ -16,7 +16,7 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 
 /** Mutable Java-friendly collector for all dependencies of one module. */
 public final class DependencyBuilder {
-    private final List<PluginDependency> dependencies = new ArrayList<PluginDependency>();
+    private final List<PluginDependency> dependencies = new ArrayList<>();
 
     /** Declares a dependency on another pnLibrary product. */
     @NotNull
@@ -63,7 +63,7 @@ public final class DependencyBuilder {
     /** Returns an immutable snapshot of all validated dependencies. */
     @NotNull
     public List<PluginDependency> build() {
-        return Collections.unmodifiableList(new ArrayList<PluginDependency>(dependencies));
+        return Collections.unmodifiableList(new ArrayList<>(dependencies));
     }
 
     /** Fluent builder for one managed product dependency. */
@@ -144,7 +144,7 @@ public final class DependencyBuilder {
         private final String name;
         private String minimum;
         private final List<Consumer<ExternalPluginDependency.Builder>> settings =
-            new ArrayList<Consumer<ExternalPluginDependency.Builder>>();
+            new ArrayList<>();
 
         private ExternalBuilder(String name) {
             if (name.trim().isEmpty()) {

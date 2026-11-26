@@ -56,7 +56,7 @@ class SupportReportGeneratorTest {
             registry.register(plugin, folder, DiagnosticContainer.builder(plugin).configuration("config.yml").build());
         }
         SupportReportGenerator generator = generator(registry, () -> Collections.singletonList(
-                Collections.<String, Object>singletonMap("message", "test")));
+                Collections.singletonMap("message", "test")));
 
         Set<String> names = names(generator.generateAndSave(new DebugRequest("all", true, true, true)));
 
@@ -81,5 +81,34 @@ class SupportReportGeneratorTest {
 
         assertTrue(names.contains("pn-diagnostic/plugins/pnmarket/configuration/config.yml"));
         assertTrue(names.contains("pn-diagnostic/plugins/pnmarket/configuration/config-2.yml"));
+    }
+
+    @Test
+    void uploadIsOnByDefaultAndFailureOfAllProvidersKeepsLocalFile() throws IOException {
+        org.junit.jupiter.api.Assertions.assertTrue(new org.pnfolder.pnlibrary.core.settings.LibrarySettings()
+            .toConfig().isUpload());
+        org.pnfolder.pnlibrary.core.upload.UploadProvider broken = new org.pnfolder.pnlibrary.core.upload.UploadProvider() {
+            @Override public String getBackendId() { return "broken"; }
+            @Override public org.pnfolder.pnlibrary.core.upload.UploadReceipt upload(String payload) throws IOException {
+                throw new IOException("site down");
+            }
+            @Override public org.pnfolder.pnlibrary.core.upload.UploadReceipt uploadFile(Path file, String type)
+                throws IOException {
+                throw new IOException("site down");
+            }
+        };
+        TestPlatform platform = new TestPlatform("pnlibrary-report-test");
+        PnLibraryConfig config = PnLibraryConfig.builder().upload(true).build();
+        SupportReportGenerator generator = new SupportReportGenerator(temporary, temporary.resolve("reports"), config,
+            new DiagnosticsRegistry(), platform, platform,
+            new org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory(config).encryptionCodec(),
+            new org.pnfolder.pnlibrary.core.upload.UploadProviderChain(Arrays.asList(broken, broken)), null,
+            Collections::emptyList);
+
+        DiagnosticReport report = generator.generateAndSave(new DebugRequest("all", true, true, false));
+
+        org.junit.jupiter.api.Assertions.assertNull(report.getUploadedUrl());
+        assertTrue(report.getUploadError().contains("site down"));
+        assertTrue(Files.exists(report.getLocalFile()));
     }
 }

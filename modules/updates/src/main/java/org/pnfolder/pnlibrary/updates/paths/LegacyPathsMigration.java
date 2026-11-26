@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.paths;
 
+import java.util.Objects;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -31,17 +32,14 @@ public final class LegacyPathsMigration {
 
     /** Creates a migration that reports nothing. */
     public LegacyPathsMigration(@NotNull LibraryPaths paths) {
-        this(paths, new Consumer<String>() {
-            @Override
-            public void accept(String message) {
-            }
-        });
+        this(paths, message -> {
+            });
     }
 
     /** Creates a migration that reports what it could not do to {@code warning}. */
     public LegacyPathsMigration(@NotNull LibraryPaths paths, @NotNull Consumer<String> warning) {
-        this.paths = paths;
-        this.warning = warning;
+        this.paths = Objects.requireNonNull(paths, "paths");
+        this.warning = Objects.requireNonNull(warning, "warning");
     }
 
     /** Moves every old location that exists and whose new place is still free. */

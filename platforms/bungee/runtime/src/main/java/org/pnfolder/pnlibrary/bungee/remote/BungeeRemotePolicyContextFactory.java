@@ -5,10 +5,10 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginDescription;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.PlatformInfo;
-import org.pnfolder.pnlibrary.api.remote.ProductInfo;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
-import org.pnfolder.pnlibrary.api.remote.ServerInfo;
+import org.pnfolder.pnlibrary.api.remote.context.PlatformInfo;
+import org.pnfolder.pnlibrary.api.remote.context.ProductInfo;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.ServerInfo;
 import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersion;
 
 import java.util.Collections;
@@ -23,7 +23,7 @@ public final class BungeeRemotePolicyContextFactory {
     /** Builds the context of {@code plugin} without extra policy values. */
     @NotNull
     public static RemotePolicyContext create(@NotNull Plugin plugin) {
-        return create(plugin, Collections.<String, String>emptyMap());
+        return create(plugin, Collections.emptyMap());
     }
 
     /** Builds the context of {@code plugin} and appends the caller-defined policy {@code values}. */

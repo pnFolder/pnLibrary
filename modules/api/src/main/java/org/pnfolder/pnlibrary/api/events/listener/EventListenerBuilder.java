@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.events.listener;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -27,8 +28,8 @@ public final class EventListenerBuilder<E extends Event> {
 
     /** Creates a builder for {@code eventType} in {@code scope}; prefer {@code EventScope.on(Class)}. */
     public EventListenerBuilder(@NotNull EventScope scope, @NotNull Class<E> eventType) {
-        this.scope = scope;
-        this.eventType = eventType;
+        this.scope = Objects.requireNonNull(scope, "scope");
+        this.eventType = Objects.requireNonNull(eventType, "eventType");
     }
 
     /** Sets the dispatch order; lower numbers run first. Defaults to {@link EventPriority#NORMAL}. */
@@ -58,7 +59,7 @@ public final class EventListenerBuilder<E extends Event> {
     @NotNull
     public EventSubscription listenOnce(@NotNull final Consumer<E> listener) {
         final AtomicBoolean fired = new AtomicBoolean();
-        final AtomicReference<EventSubscription> self = new AtomicReference<EventSubscription>();
+        final AtomicReference<EventSubscription> self = new AtomicReference<>();
         EventSubscription subscription = scope.subscribe(eventType, priority, ignoreDenied, event -> {
             if (fired.compareAndSet(false, true)) {
                 EventSubscription current = self.get();

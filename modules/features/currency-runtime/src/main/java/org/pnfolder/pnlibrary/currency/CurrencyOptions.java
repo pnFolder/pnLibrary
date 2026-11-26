@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyRegistrationOptions;
 
 /** Common alias configuration shared by all currency builders. */
 class CurrencyOptions implements CurrencyRegistrationOptions {
-    private final Set<String> aliases = new LinkedHashSet<String>();
+    private final Set<String> aliases = new LinkedHashSet<>();
 
     /** Extra names under which the same currency can be resolved. */
     @NotNull

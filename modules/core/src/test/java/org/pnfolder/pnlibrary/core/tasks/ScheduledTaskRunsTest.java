@@ -34,7 +34,7 @@ class ScheduledTaskRunsTest {
 
     @Test
     void theContextReportsTheRunThePlanTheSettingsAndCancelsAfterALimit() {
-        List<String> seen = new ArrayList<String>();
+        List<String> seen = new ArrayList<>();
         TaskHandle handle = scope.schedule(TaskSpec.builder().name("ctx").key("k").tag("t").interval(Duration.ofSeconds(1))
                 .action(c -> {
                     seen.add(c.getRunNumber() + ":" + c.isFirstRun() + ":" + c.every(2) + ":" + c.getKey() + ":" + c.getTags()
@@ -55,7 +55,7 @@ class ScheduledTaskRunsTest {
 
     @Test
     void aTaskStartsAFollowUpThatStaysInTheSameScope() {
-        List<String> ran = new ArrayList<String>();
+        List<String> ran = new ArrayList<>();
         scope.schedule(TaskSpec.builder().name("parent")
                 .action(c -> c.later(Duration.ofSeconds(5), later -> ran.add("later"))).build());
 
@@ -71,7 +71,7 @@ class ScheduledTaskRunsTest {
 
     @Test
     void eachRunOfARepeatingTaskIsPlannedOneIntervalAfterThePreviousStart() {
-        List<Instant> planned = new ArrayList<Instant>();
+        List<Instant> planned = new ArrayList<>();
         scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(10)).action(c -> planned.add(c.getScheduledAt())).build());
 
         adapter.fire(0);
@@ -131,7 +131,7 @@ class ScheduledTaskRunsTest {
 
     @Test
     void aLagHandlerHearsAboutALateRunAndCanSkipIt() throws Exception {
-        List<TaskLag> heard = new ArrayList<TaskLag>();
+        List<TaskLag> heard = new ArrayList<>();
         AtomicBoolean ran = new AtomicBoolean();
         TaskHandle handle = scope.schedule(TaskSpec.builder().interval(Duration.ofMillis(10))
                 .onLag(Duration.ofMillis(5), lag -> {
@@ -194,7 +194,7 @@ class ScheduledTaskRunsTest {
             assertEquals(parent.getId(), child.getParentId());
         }
         parent.cancel();
-        Map<String, TaskStatus> states = new HashMap<String, TaskStatus>();
+        Map<String, TaskStatus> states = new HashMap<>();
         for (TaskSnapshot child : scope.query(TaskQuery.builder().tag("subtask").build())) {
             states.put(child.getName(), child.getStatus());
         }
@@ -221,7 +221,7 @@ class ScheduledTaskRunsTest {
 
     @Test
     void aRepeatingTaskThatFailedDoesNotRunAgain() {
-        AtomicReference<Integer> runs = new AtomicReference<Integer>(0);
+        AtomicReference<Integer> runs = new AtomicReference<>(0);
         TaskHandle task = scope.schedule(TaskSpec.builder().interval(Duration.ofSeconds(1)).action(c -> {
             runs.set(runs.get() + 1);
             throw new IllegalStateException("broken");

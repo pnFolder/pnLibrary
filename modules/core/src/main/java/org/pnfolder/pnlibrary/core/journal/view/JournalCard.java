@@ -25,7 +25,7 @@ final class JournalCard {
     /** Prints the card of event {@code id}; with {@code repeats} set it shows the timeline instead of the details. */
     static void show(CommandSender sender, ChatKit kit, JournalStore journal, @Nullable String id, boolean repeats,
                      boolean fullTrace, String root) {
-        List<JournalRecord> group = new ArrayList<JournalRecord>();
+        List<JournalRecord> group = new ArrayList<>();
         for (JournalRecord record : journal.read(JournalConstants.SCAN_LIMIT)) {
             if (record.getFingerprint().equals(id)) {
                 group.add(record);
@@ -38,7 +38,7 @@ final class JournalCard {
             return;
         }
         JournalRecord record = group.get(0);
-        List<Component> lines = new ArrayList<Component>(head(kit, id, record));
+        List<Component> lines = new ArrayList<>(head(kit, id, record));
         lines.addAll(whenSection(kit, group));
         lines.add(kit.blank());
         boolean traceHidden = false;
@@ -71,7 +71,7 @@ final class JournalCard {
     private static List<Component> whenSection(ChatKit kit, List<JournalRecord> group) {
         long last = group.get(0).getTimeMillis();
         long first = group.get(group.size() - 1).getTimeMillis();
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.section("Когда"));
         lines.add(kit.field("Последний раз", JournalTime.moment(kit, last)
             .append(kit.text("  " + JournalTime.ago(last), JournalTime.agoColor(last)))));
@@ -114,7 +114,7 @@ final class JournalCard {
     /** The buttons under the card; a null entry is a button that does not apply. */
     private static List<Component> buttons(ChatKit kit, String root, String id, boolean repeats, boolean fullTrace,
                                            boolean traceHidden, List<JournalRecord> group) {
-        List<Component> buttons = new ArrayList<Component>();
+        List<Component> buttons = new ArrayList<>();
         buttons.add(kit.button("назад", root, "К списку событий", ChatPalette.ACCENT));
         if (repeats) {
             buttons.add(kit.button("карточка", root + " view " + id, "Вернуться к карточке", ChatPalette.ACCENT));

@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest;
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionStatus;
 
 /** Pure balance transition shared by persistent currency backends. */
-final class CurrencyMutationEngine {
+public final class CurrencyMutationEngine {
     /** Failure text of a debit or transfer the source cannot cover; providers map it to a reject reason. */
     static final String INSUFFICIENT_FUNDS = "Insufficient funds";
 
@@ -22,7 +22,7 @@ final class CurrencyMutationEngine {
      * Storage implementations are responsible for descriptor normalization before reading and after committing.
      */
     @NotNull
-    static CurrencyMutation evaluate(@NotNull CurrencyTransactionRequest request, @Nullable BigDecimal sourceBefore,
+    public static CurrencyMutation evaluate(@NotNull CurrencyTransactionRequest request, @Nullable BigDecimal sourceBefore,
                                      @Nullable BigDecimal targetBefore, @NotNull CurrencyDescriptor descriptor) {
         String failure = CurrencyRequestValidation.failure(descriptor, request);
         if (failure != null) {

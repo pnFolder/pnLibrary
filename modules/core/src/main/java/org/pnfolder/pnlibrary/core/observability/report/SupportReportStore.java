@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.report;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.common.io.AtomicFiles;
 
@@ -29,7 +30,7 @@ public final class SupportReportStore {
 
     /** @param directory directory that owns local report artifacts */
     public SupportReportStore(@NotNull Path directory) {
-        this.directory = directory;
+        this.directory = Objects.requireNonNull(directory, "directory");
     }
 
     /**

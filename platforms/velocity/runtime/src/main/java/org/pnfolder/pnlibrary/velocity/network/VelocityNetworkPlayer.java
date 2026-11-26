@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import java.util.Objects;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import net.kyori.adventure.pointer.Pointers;
@@ -22,7 +23,7 @@ public final class VelocityNetworkPlayer implements NetworkPlayer {
 
     /** Wraps the native {@code player}. */
     public VelocityNetworkPlayer(@NotNull Player player) {
-        this.player = player;
+        this.player = Objects.requireNonNull(player, "player");
     }
 
     /** Wraps the native {@code player} as a portable network player. */

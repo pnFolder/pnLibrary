@@ -25,16 +25,16 @@ public final class CommandNodeBuilder {
     private boolean consoleBypassesPermission;
     private String noPermissionMessage;
     private final Map<Class<? extends CommandError>, CommandErrorHandler<?>> errorHandlers =
-            new LinkedHashMap<Class<? extends CommandError>, CommandErrorHandler<?>>();
+            new LinkedHashMap<>();
     private SenderRule senderRule = SenderRule.ANY;
     private List<String> description = Collections.emptyList();
     private CommandAvailability availability = context -> true;
     private CommandHandler execution = context -> CommandDefinition.completedExecution();
-    private SuggestionHandler suggestions = context -> CommandDefinition.completedSuggestions(Collections.<String>emptyList());
+    private SuggestionHandler suggestions = context -> CommandDefinition.completedSuggestions(Collections.emptyList());
     private boolean executable;
     private boolean acceptsExtraArguments;
-    private final List<CommandNodeBuilder> children = new ArrayList<CommandNodeBuilder>();
-    private final List<CommandNode> mounted = new ArrayList<CommandNode>();
+    private final List<CommandNodeBuilder> children = new ArrayList<>();
+    private final List<CommandNode> mounted = new ArrayList<>();
 
     CommandNodeBuilder(CommandNodeKind kind, String name, ArgumentType<?> argumentType) {
         this.kind = kind;
@@ -66,7 +66,7 @@ public final class CommandNodeBuilder {
     @NotNull
     public CommandNodeBuilder permission(@NotNull String value, @NotNull String... others) {
         permission = CommandBuilder.nonBlank(value, "Command permission must not be blank");
-        List<String> also = new ArrayList<String>();
+        List<String> also = new ArrayList<>();
         for (String other : others) {
             also.add(CommandBuilder.nonBlank(other, "Command permission must not be blank"));
         }
@@ -101,7 +101,7 @@ public final class CommandNodeBuilder {
     /** Says in a few lines what this node does and how it works; a sender who stops here is shown them under the usage. */
     @NotNull
     public CommandNodeBuilder description(@NotNull String... lines) {
-        List<String> kept = new ArrayList<String>();
+        List<String> kept = new ArrayList<>();
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
                 kept.add(line.trim());
@@ -219,7 +219,7 @@ public final class CommandNodeBuilder {
 
     CommandNode build() {
         validateChildren();
-        List<CommandNode> built = new ArrayList<CommandNode>();
+        List<CommandNode> built = new ArrayList<>();
         for (CommandNodeBuilder child : children) {
             built.add(child.build());
         }
@@ -230,7 +230,7 @@ public final class CommandNodeBuilder {
     }
 
     private void validateChildren() {
-        Set<String> seen = new HashSet<String>();
+        Set<String> seen = new HashSet<>();
         int arguments = 0;
         for (CommandNodeBuilder child : children) {
             requireUnique(seen, child.kind, child.name);

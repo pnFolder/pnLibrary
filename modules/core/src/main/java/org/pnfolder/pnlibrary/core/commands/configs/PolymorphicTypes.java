@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigPolymorphic;
 
 /** Finds the polymorphic types that registered configuration files use, by looking through the fields of their classes. */
 final class PolymorphicTypes {
-    private final Set<Class<?>> seen = new HashSet<Class<?>>();
-    private final Set<Class<?>> found = new LinkedHashSet<Class<?>>();
+    private final Set<Class<?>> seen = new HashSet<>();
+    private final Set<Class<?>> found = new LinkedHashSet<>();
 
     private PolymorphicTypes() {
     }
@@ -27,7 +27,7 @@ final class PolymorphicTypes {
         for (ConfigInfo info : configs) {
             search.visit(info.getModelType());
         }
-        return new ArrayList<Class<?>>(search.found);
+        return new ArrayList<>(search.found);
     }
 
     private void visit(Type type) {

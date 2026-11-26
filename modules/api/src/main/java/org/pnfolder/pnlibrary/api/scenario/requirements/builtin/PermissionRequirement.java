@@ -26,12 +26,12 @@ public final class PermissionRequirement implements Requirement {
 
     /** Creates it with every setting at its default. */
     public PermissionRequirement() {
-        this("", Collections.<String>emptyList(), false);
+        this("", Collections.emptyList(), false);
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public PermissionRequirement(@NotNull String permission) {
-        this(permission, Collections.<String>emptyList(), false);
+        this(permission, Collections.emptyList(), false);
     }
 
     /** Creates it with the first 2 settings; the rest keep their defaults. */
@@ -41,7 +41,7 @@ public final class PermissionRequirement implements Requirement {
 
     /** Creates it with every setting given. */
     public PermissionRequirement(@NotNull String permission, @NotNull List<String> permissions, boolean any) {
-        this.permission = permission;
+        this.permission = Objects.requireNonNull(permission, "permission");
         this.permissions = permissions;
         this.any = any;
     }

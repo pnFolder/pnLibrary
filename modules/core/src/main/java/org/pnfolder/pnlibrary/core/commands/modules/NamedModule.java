@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.modules;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext;
 
@@ -9,8 +10,8 @@ public final class NamedModule {
     private final ModuleContext module;
 
     public NamedModule(@NotNull String name, @NotNull ModuleContext module) {
-        this.name = name;
-        this.module = module;
+        this.name = Objects.requireNonNull(name, "name");
+        this.module = Objects.requireNonNull(module, "module");
     }
 
     @NotNull

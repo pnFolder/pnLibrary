@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.remote;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ public final class DataClient {
 
     private static final class Pending {
         final CompletableFuture<String> future;
-        final ConcurrentHashMap<Integer, byte[]> pieces = new ConcurrentHashMap<Integer, byte[]>();
+        final ConcurrentHashMap<Integer, byte[]> pieces = new ConcurrentHashMap<>();
         volatile ScheduledFuture<?> timeout;
 
         Pending(CompletableFuture<String> future) {
@@ -31,7 +32,7 @@ public final class DataClient {
     private final byte[] key;
     private final long timeoutSeconds;
     private final Predicate<byte[]> uplink;
-    private final ConcurrentHashMap<UUID, Pending> waiting = new ConcurrentHashMap<UUID, Pending>();
+    private final ConcurrentHashMap<UUID, Pending> waiting = new ConcurrentHashMap<>();
     private final LinkTimeouts timeouts = new LinkTimeouts("pnlibrary-link-data");
 
     public DataClient(@Nullable byte[] key, @NotNull Predicate<byte[]> uplink) {
@@ -46,12 +47,12 @@ public final class DataClient {
     public DataClient(@Nullable byte[] key, long timeoutSeconds, @NotNull Predicate<byte[]> uplink) {
         this.key = key;
         this.timeoutSeconds = timeoutSeconds;
-        this.uplink = uplink;
+        this.uplink = Objects.requireNonNull(uplink, "uplink");
     }
 
     public @NotNull CompletableFuture<String> call(@NotNull String target, @NotNull String viewer, @NotNull String method,
                                                    @NotNull String args) {
-        CompletableFuture<String> future = new CompletableFuture<String>();
+        CompletableFuture<String> future = new CompletableFuture<>();
         if (key == null) {
             future.completeExceptionally(new DataException("Связь выключена: нет файла link.key."));
             return future;
@@ -90,7 +91,7 @@ public final class DataClient {
         if (pending.timeout != null) {
             pending.timeout.cancel(false);
         }
-        List<byte[]> pieces = new ArrayList<byte[]>();
+        List<byte[]> pieces = new ArrayList<>();
         for (int i = 0; i < chunk.getCount(); i++) {
             byte[] piece = pending.pieces.get(i);
             if (piece == null) {

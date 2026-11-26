@@ -44,11 +44,11 @@ class CommandTreeRouterTest {
     }
 
     private static CommandContext context(String... arguments) {
-        return context(Arrays.asList(arguments), Collections.<String>emptySet());
+        return context(Arrays.asList(arguments), Collections.emptySet());
     }
 
     private static Set<String> held(String... permissions) {
-        return new HashSet<String>(Arrays.asList(permissions));
+        return new HashSet<>(Arrays.asList(permissions));
     }
 
     @Test
@@ -131,7 +131,7 @@ class CommandTreeRouterTest {
     @Test
     @DisplayName("a mounted command lives under another one and sees its own arguments")
     void aMountedCommandLivesUnderAnotherOneAndSeesItsOwnArguments() {
-        final List<List<String>> seen = new ArrayList<List<String>>();
+        final List<List<String>> seen = new ArrayList<>();
         CommandDefinition events = CommandDefinition.command("events", root -> {
             root.permission("events.view");
             root.executes(context -> seen.add(context.getArguments()));
@@ -153,7 +153,7 @@ class CommandTreeRouterTest {
         rootRoute.getNode().getExecution().execute(rootRoute.getContext());
         card.getNode().getExecution().execute(card.getContext());
 
-        assertEquals(Arrays.asList(Collections.<String>emptyList(), Arrays.asList("view", "abc")), seen);
+        assertEquals(Arrays.asList(Collections.emptyList(), Arrays.asList("view", "abc")), seen);
         // The permission of the mounted command stays its own, and the control command's does not leak into it.
         CommandRoute denied = router.route(control, context(Arrays.asList("events"), held("control.admin")));
         assertTrue(((RouteProblem) denied).getError() instanceof NoPermission);

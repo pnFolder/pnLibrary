@@ -6,9 +6,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 /** Lifecycle and manual controls for one updater registration. */
 public interface UpdateRegistration extends AutoCloseable {
     /** Whether this registration has been removed and rejects new manual work. */
-    default boolean isClosed() {
-        return false;
-    }
+    boolean isClosed();
 
     /** Repository coordinate in {@code owner/name} form. */
     @NotNull

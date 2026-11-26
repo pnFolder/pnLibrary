@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization.internal;
 
+import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.common.io.AtomicFiles;
 
@@ -122,7 +123,7 @@ final class VerifiedFileStore {
     private static String hex(byte[] digest) {
         StringBuilder text = new StringBuilder(digest.length * 2);
         for (byte b : digest) {
-            text.append(String.format("%02x", b));
+            text.append(String.format(Locale.ROOT, "%02x", b));
         }
         return text.toString();
     }

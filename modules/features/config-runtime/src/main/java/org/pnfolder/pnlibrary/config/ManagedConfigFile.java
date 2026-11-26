@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.plugin.PluginId;
-import org.pnfolder.pnlibrary.config.yaml.DatabasePath;
+import org.pnfolder.pnlibrary.config.yaml.database.DatabasePath;
 
 /** A file registered through a configuration scope. */
 public final class ManagedConfigFile {
@@ -27,7 +27,7 @@ public final class ManagedConfigFile {
      */
     public ManagedConfigFile(@NotNull PluginId pluginId, @NotNull Path directory, @NotNull String path,
                              @NotNull List<String> secretPaths) {
-        this(pluginId, directory, path, secretPaths, Collections.<DatabasePath>emptyList());
+        this(pluginId, directory, path, secretPaths, Collections.emptyList());
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.log;
 
+import java.util.Objects;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
@@ -46,9 +47,9 @@ public final class VelocityLogObserver {
             @NotNull Object fallbackOwner,
             @NotNull Function<String, Object> pluginById,
             @NotNull Supplier<Collection<Object>> pluginInstances) {
-        this.fallbackOwner = fallbackOwner;
+        this.fallbackOwner = Objects.requireNonNull(fallbackOwner, "fallbackOwner");
         this.pluginById = pluginById;
-        this.pluginInstances = pluginInstances;
+        this.pluginInstances = Objects.requireNonNull(pluginInstances, "pluginInstances");
     }
 
     /** Starts forwarding to {@code observer}, or stops when it is null. */

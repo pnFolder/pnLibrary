@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.text.SettingValueParser;
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
+import java.util.Objects;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -32,13 +36,13 @@ import org.pnfolder.pnlibrary.api.config.ConfigStep;
  */
 public final class ConfigSettingsEditor {
     private static final int MAX_DEPTH = 8;
-    private static final Set<Class<?>> WHOLE = new HashSet<Class<?>>(Arrays.<Class<?>>asList(
+    private static final Set<Class<?>> WHOLE = new HashSet<>(Arrays.asList(
             int.class, Integer.class, long.class, Long.class, short.class, Short.class, byte.class, Byte.class));
-    private static final Set<Class<?>> DECIMAL = new HashSet<Class<?>>(Arrays.<Class<?>>asList(
+    private static final Set<Class<?>> DECIMAL = new HashSet<>(Arrays.asList(
             double.class, Double.class, float.class, Float.class));
 
     private final ConfigObjectIntrospector introspector;
-    private final Map<String, EditableEntry> entries = new LinkedHashMap<String, EditableEntry>();
+    private final Map<String, EditableEntry> entries = new LinkedHashMap<>();
 
     /** What {@link #set} did: the setting with its new value, the old text, and a way to put the old value back. */
     public static final class Applied {
@@ -72,9 +76,9 @@ public final class ConfigSettingsEditor {
 
     /** Collects the editable fields of {@code rootType}. */
     public ConfigSettingsEditor(@NotNull ConfigObjectIntrospector introspector, @NotNull Class<?> rootType) {
-        this.introspector = introspector;
-        List<EditableEntry> found = new ArrayList<EditableEntry>();
-        collect(rootType, "", Collections.<Field>emptyList(), 0, found);
+        this.introspector = Objects.requireNonNull(introspector, "introspector");
+        List<EditableEntry> found = new ArrayList<>();
+        collect(rootType, "", Collections.emptyList(), 0, found);
         for (EditableEntry entry : found) {
             entries.put(entry.path, entry);
         }
@@ -88,7 +92,7 @@ public final class ConfigSettingsEditor {
     /** The settings with their current values taken from {@code root}, or without values when it is {@code null}. */
     @NotNull
     public List<ConfigSetting> describe(@Nullable Object root) {
-        List<ConfigSetting> settings = new ArrayList<ConfigSetting>();
+        List<ConfigSetting> settings = new ArrayList<>();
         for (EditableEntry entry : entries.values()) {
             settings.add(setting(entry, root));
         }
@@ -161,7 +165,7 @@ public final class ConfigSettingsEditor {
                 .step(step == null ? 1.0 : step.step())
                 .duration(duration == null ? null : duration.unit())
                 .format(hint == null ? "" : hint.format())
-                .examples(hint == null ? Collections.<String>emptyList() : Arrays.asList(hint.examples()))
+                .examples(hint == null ? Collections.emptyList() : Arrays.asList(hint.examples()))
                 .build();
     }
 
@@ -187,7 +191,7 @@ public final class ConfigSettingsEditor {
             String path = prefix + introspector.key(field);
             ConfigEditable annotation = field.getAnnotation(ConfigEditable.class);
             ConfigSettingKind kind = kindOf(field);
-            List<Field> extended = new ArrayList<Field>(chain);
+            List<Field> extended = new ArrayList<>(chain);
             extended.add(field);
             if (annotation != null && kind != null && !Modifier.isFinal(field.getModifiers())) {
                 out.add(new EditableEntry(path, extended, annotation, kind));

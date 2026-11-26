@@ -21,10 +21,10 @@ public final class ConfigurationRestoreJournal {
     /** Creates a journal of the restore that belongs to {@code operation}. */
     public ConfigurationRestoreJournal(@NotNull String id, @NotNull String source, @NotNull String before,
                                        @NotNull String state, @Nullable String operation) {
-        this.id = id;
-        this.source = source;
-        this.before = before;
-        this.state = state;
+        this.id = Objects.requireNonNull(id, "id");
+        this.source = Objects.requireNonNull(source, "source");
+        this.before = Objects.requireNonNull(before, "before");
+        this.state = Objects.requireNonNull(state, "state");
         this.operation = operation;
     }
 
@@ -54,7 +54,7 @@ public final class ConfigurationRestoreJournal {
 
     /** Sets how far the restore got. */
     public void setState(@NotNull String state) {
-        this.state = state;
+        this.state = Objects.requireNonNull(state, "state");
     }
 
     /** The operation the restore belongs to, or null. */

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.metrics.error.ErrorReporter;
@@ -67,7 +68,7 @@ public final class ErrorPipeline implements ErrorReporter {
                          @NotNull Consumer<Throwable> onForwardingFailure) {
         this.delegate = delegate;
         this.maxStackFrames = maxStackFrames;
-        this.onForwardingFailure = onForwardingFailure;
+        this.onForwardingFailure = Objects.requireNonNull(onForwardingFailure, "onForwardingFailure");
     }
 
     @Override

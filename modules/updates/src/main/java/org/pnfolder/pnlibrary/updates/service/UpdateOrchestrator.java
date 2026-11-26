@@ -1,7 +1,12 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.plan.PlanState;
+import org.pnfolder.pnlibrary.updates.service.plan.PlanCheck;
+import org.pnfolder.pnlibrary.updates.service.plan.PlanChanges;
+import java.util.Objects;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -51,10 +56,10 @@ public final class UpdateOrchestrator implements AutoCloseable {
     public UpdateOrchestrator(@NotNull UpdateConfiguration configuration, @NotNull UpdateStateStore store,
                               @NotNull ScheduledExecutorService executor, @NotNull UpdateOrchestratorHooks hooks,
                               @NotNull Duration reminderInterval) throws IOException {
-        this.configuration = configuration;
-        this.executor = executor;
-        this.hooks = hooks;
-        this.reminderInterval = reminderInterval;
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.executor = Objects.requireNonNull(executor, "executor");
+        this.hooks = Objects.requireNonNull(hooks, "hooks");
+        this.reminderInterval = Objects.requireNonNull(reminderInterval, "reminderInterval");
         this.state = new PlanState(store, hooks, closed::get);
         this.changes = new PlanChanges(configuration, hooks, state, closed::get);
         this.check = new PlanCheck(hooks, state, changes, closed::get);
@@ -223,12 +228,13 @@ public final class UpdateOrchestrator implements AutoCloseable {
     public CompletionStage<UpdatePlanSnapshot> rollback(@NotNull UpdateActor actor, @NotNull Runnable action) {
         return rollbackTo(actor, () -> {
             UpdatePlanSnapshot selected = state.current();
-            if (selected == null) {
-                throw new IllegalStateException("No update plan is available for rollback");
-            }
             action.run();
-            return new UpdatePlanSnapshot(selected.getId(), selected.getRevision(), UpdateState.ROLLED_BACK,
-                    selected.getPlan(), selected.getBlockers(), "Предыдущие версии JAR подготовлены к следующему перезапуску.");
+            // A rollback needs saved files, not a plan: after a restart before any check there may be none.
+            return new UpdatePlanSnapshot(selected == null ? UUID.randomUUID() : selected.getId(),
+                    selected == null ? 0L : selected.getRevision(), UpdateState.ROLLED_BACK,
+                    selected == null ? null : selected.getPlan(),
+                    selected == null ? Collections.emptyList() : selected.getBlockers(),
+                    "Предыдущие версии JAR подготовлены к следующему перезапуску.");
         });
     }
 

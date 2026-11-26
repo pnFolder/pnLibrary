@@ -1,5 +1,12 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.registration.UpdateRegistrationStore;
+import org.pnfolder.pnlibrary.updates.service.registration.ValidatedRegistration;
+import org.pnfolder.pnlibrary.updates.service.registration.RegistrationValidator;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredProducts;
+import org.pnfolder.pnlibrary.updates.service.plan.PlanOperations;
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -41,7 +48,6 @@ import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode;
 import org.pnfolder.pnlibrary.updates.install.UpdateGraphResolver;
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
-import org.pnfolder.pnlibrary.updates.policy.UpdateAutomaticPolicy;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
 import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults;
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides;
@@ -81,21 +87,20 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
                          @NotNull PlatformPluginInventory inventory, @NotNull PlatformIdentity identity,
                          @NotNull PlatformReadiness readiness, @NotNull LibraryPaths paths,
                          @NotNull ConsoleTheme consoleTheme, @NotNull UpdateTiming timing) throws IOException {
-        this.logging = logging;
-        this.identity = identity;
-        this.paths = paths;
-        this.consoleTheme = consoleTheme;
+        this.logging = Objects.requireNonNull(logging, "logging");
+        this.identity = Objects.requireNonNull(identity, "identity");
+        this.paths = Objects.requireNonNull(paths, "paths");
+        this.consoleTheme = Objects.requireNonNull(consoleTheme, "consoleTheme");
         UpdateConfiguration configuration = new UpdateConfiguration(
                 new UpdateConfiguration.Checks(timing.getCheckInterval()),
                 new UpdateConfiguration.Downloads(UpdateDefaults.ALLOW_MANAGED_PLUGINS, timing.getConnectTimeout(),
                         timing.getReadTimeout(), UpdateDefaults.MAX_ARTIFACT_BYTES),
-                new UpdateConfiguration.Installation(), new UpdateConfiguration.LibraryPolicy(), true);
+                new UpdateConfiguration.Installation(), new UpdateConfiguration.LibraryPolicy());
         this.registrationValidator = new RegistrationValidator(ownership, identity);
         retireOldSettingsFile();
         this.resources = new UpdateRuntimeResources(paths.getCatalog(), configuration);
         UpdatePreferencesStore preferences = new UpdatePreferencesStore(paths.getPreferences(), this::warn);
         this.overrides = new UpdatePolicyOverrides(preferences, this::warn);
-        UpdateAutomaticPolicy automaticPolicy = new UpdateAutomaticPolicy(configuration, overrides, registrations::snapshot);
         this.installer = new UpdateInstaller(identity, paths, configuration, resources.getDownloadHttp(),
                 new DatabaseBackups(paths.getDatabases(), databaseSources),
                 product -> overrides.javaBuild(product.getValue()), this::installedJava, this::warn);
@@ -104,8 +109,7 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
                 freezes, overrides, (message, error) -> logging.log(this, LogLevel.ERROR, message, error));
         this.runtime = new UpdateOrchestratorRuntime(configuration, paths, logging, readiness, installer,
                 registrations::snapshot, this::resolveGraph, this::stageGraph, this::announce,
-                snapshot -> automaticPolicy.allows(snapshot) && automaticUpdatesHealthy(),
-                overrides::anyAutomaticEnabled);
+                snapshot -> automaticUpdatesHealthy());
         this.plans = new PlanOperations(runtime);
         this.history = new HistoryReader(runtime);
         this.settings = new SettingsChanges(this, logging, registrations, overrides, graphResolver, freezes, runtime,
@@ -193,18 +197,12 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
                 validated.getPluginsDirectory().resolve("update"),
                 () -> graphResolver.channelFor(product.getId(), request.getChannel()),
                 orchestrator::checkNow, snapshot -> orchestrator.stage(snapshot.getId()), this::removeRegistration,
-                () -> automaticDownload(product, request), identity.getType(),
+                () -> true, identity.getType(),
                 () -> overrides.javaBuild(product.getId().getValue()));
         requireOpen();
         registrations.add(registration);
         orchestrator.registrationsChanged();
         return registration;
-    }
-
-    private boolean automaticDownload(ProductDescriptor product, PluginUpdateRequest request) {
-        Boolean chosen = overrides.automatic(product.getId().getValue());
-        return chosen != null ? chosen
-                : request.getAutomaticDownload() && !product.getId().getValue().equals(PnLibraryIdentity.PRODUCT_ID);
     }
 
     private void requireOpen() {

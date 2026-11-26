@@ -62,12 +62,12 @@ class UpdatePreferencesStoreTest {
 
         freezes.freeze(shop, Duration.ofHours(2));
         overrides.setChannel("shop", UpdateChannel.RC);
-        overrides.setAutomatic("shop", true);
+        overrides.setJavaBuild("shop", 17);
         freezes.freeze(ProductId.of("auth"), Duration.ofHours(1));
 
         UpdatePreferencesStore reopened = new UpdatePreferencesStore(file());
         assertEquals(UpdateChannel.RC, new UpdatePolicyOverrides(reopened).channel("shop"));
-        assertEquals(Boolean.TRUE, new UpdatePolicyOverrides(reopened).automatic("shop"));
+        assertEquals(Integer.valueOf(17), new UpdatePolicyOverrides(reopened).javaBuild("shop"));
         assertEquals(new java.util.HashSet<ProductId>(java.util.Arrays.asList(shop, ProductId.of("auth"))),
             new FreezeStore(reopened, clock).active().keySet());
     }
@@ -85,7 +85,7 @@ class UpdatePreferencesStoreTest {
             Future<Object> first = workers.submit((Callable<Object>) () -> {
                 start.await();
                 for (int i = 0; i < rounds; i++) {
-                    overrides.setAutomatic("p" + i, true);
+                    overrides.setJavaBuild("p" + i, 17);
                 }
                 return null;
             });
@@ -104,7 +104,7 @@ class UpdatePreferencesStoreTest {
         }
 
         UpdatePreferencesStore reopened = new UpdatePreferencesStore(file());
-        assertEquals(rounds, reopened.current().getAutomatic().size());
+        assertEquals(rounds, reopened.current().getJavaBuilds().size());
         assertEquals(rounds, new FreezeStore(reopened, clock).active().size());
     }
 
@@ -113,7 +113,7 @@ class UpdatePreferencesStoreTest {
     void anUnreadableFileIsReportedAndReplacedByTheNextSave() throws Exception {
         Files.createDirectories(file().getParent());
         Files.write(file(), "{ not json".getBytes(StandardCharsets.UTF_8));
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         UpdatePreferencesStore store = new UpdatePreferencesStore(file(), warnings::add);
 
         assertEquals(new UpdatePreferencesStore.Preferences(), store.current());

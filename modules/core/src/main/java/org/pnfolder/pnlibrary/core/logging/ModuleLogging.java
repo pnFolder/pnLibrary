@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.logging;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -21,7 +22,7 @@ public final class ModuleLogging implements LoggingService {
     public ModuleLogging(@NotNull PlatformLogging logging, @NotNull PlatformOwnership ownership,
                          @NotNull PlatformSnapshotProvider diagnostics, @NotNull PlatformIdentity identity,
                          @NotNull DiagnosticCapture capture) {
-        this.capture = capture;
+        this.capture = Objects.requireNonNull(capture, "capture");
         this.environment = new BoxEnvironment(logging, ownership, diagnostics, identity, capture);
     }
 

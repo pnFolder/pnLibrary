@@ -26,12 +26,7 @@ final class CatalogScreen extends CatalogStyle {
 
     private static List<UpdateSnapshot> sorted(List<UpdateSnapshot> snapshots) {
         List<UpdateSnapshot> copy = new ArrayList<>(snapshots);
-        Collections.sort(copy, new Comparator<UpdateSnapshot>() {
-            @Override
-            public int compare(UpdateSnapshot a, UpdateSnapshot b) {
-                return a.getProduct().toLowerCase(Locale.ROOT).compareTo(b.getProduct().toLowerCase(Locale.ROOT));
-            }
-        });
+        Collections.sort(copy, (a, b) -> a.getProduct().toLowerCase(Locale.ROOT).compareTo(b.getProduct().toLowerCase(Locale.ROOT)));
         return copy;
     }
 
@@ -235,7 +230,6 @@ final class CatalogScreen extends CatalogStyle {
             card.add(hoverField("Выпущена", text(released(released), ChatPalette.TEXT)));
         }
         card.add(hoverField("Канал", channelTag(snapshot.getChannel())));
-        card.add(hoverField("Автозагрузка", text(snapshot.getAutomaticDownload() ? "включена" : "выключена", ChatPalette.TEXT)));
         String message = snapshot.getMessage();
         if (message != null && !message.trim().isEmpty()) {
             card.add(text(message.length() > MAX_MESSAGE ? message.substring(0, MAX_MESSAGE) : message, ChatPalette.LABEL));

@@ -65,7 +65,7 @@ public final class JournalScreens extends MenuScreens {
             words.add(levelWord(name));
         }
         ItemSpec cycle = MenuItems.icon(Icons.SETTINGS, "HOPPER", "Уровень: " + levelWord(level), Style.lore(
-            Collections.singletonList("Какие события показывать."), Collections.<Fact>emptyList(), Style.choices(words, at),
+            Collections.singletonList("Какие события показывать."), Collections.emptyList(), Style.choices(words, at),
             Style.left("переключить")));
         list(player, title, journalRows(level, who -> journal(who, level, page)), page, MenuConstants.PAGE_SIZE,
             (who, to) -> journal(who, level, to), routes::home, "За сутки событий нет",
@@ -119,7 +119,7 @@ public final class JournalScreens extends MenuScreens {
         }
         eventTimesAndFacts(builder, detail, id, back);
         builder.button(30, MenuItems.icon(Icons.CHECK, "COMPASS", "Показать в чате", Style.lore(
-            Collections.singletonList("То же самое, что команда /pn events view."), Collections.<Fact>emptyList(),
+            Collections.singletonList("То же самое, что команда /pn events view."), Collections.emptyList(),
             Style.left("открыть в чате"))), go(who -> chat(who, "pn events view " + id)));
         builder.button(MenuConstants.DETAIL_BACK, MenuItems.backItem(), go(back));
         show(player, builder.build());
@@ -140,7 +140,7 @@ public final class JournalScreens extends MenuScreens {
             danger.add(Style.danger(line));
         }
         return MenuItems.icon(Icons.PROBLEMS, "BOOK", "Текст ошибки",
-            Style.lore(Collections.<String>emptyList(), Collections.<Fact>emptyList(), danger, Style.left("весь текст в чат")), Tone.DANGER);
+            Style.lore(Collections.emptyList(), Collections.emptyList(), danger, Style.left("весь текст в чат")), Tone.DANGER);
     }
 
     private void eventTimesAndFacts(MenuBuilder builder, JournalDetail detail, String id, Consumer<MenuViewer> back) {
@@ -153,7 +153,7 @@ public final class JournalScreens extends MenuScreens {
         for (Instant moment : moments.subList(0, Math.min(TIMES_PREVIEW, moments.size()))) {
             shown.add(MenuText.clockStamp(moment));
         }
-        List<String> extra = more > 0 ? Collections.singletonList(Style.description("и ещё " + more)) : Collections.<String>emptyList();
+        List<String> extra = more > 0 ? Collections.singletonList(Style.description("и ещё " + more)) : Collections.emptyList();
         String[] hints = more > 0 ? new String[] {Style.left("все " + moments.size() + " раз")} : new String[0];
         List<String> timesLore = Style.lore(shown, Fact.list("Пояс", DisplayZone.getZone().getId()), extra, hints);
         builder.button(22, MenuItems.icon(Icons.CLOCK, "CLOCK", "Когда случалось", timesLore, "WATCH"), go(who -> {
@@ -171,7 +171,7 @@ public final class JournalScreens extends MenuScreens {
                 facts.add(new Fact(entry.getKey(), value.length() > MenuConstants.MESSAGE_PREVIEW
                     ? value.substring(0, MenuConstants.MESSAGE_PREVIEW) : value));
             }
-            builder.slot(24, MenuItems.icon(Icons.CHANGELOG, "PAPER", "Подробности", Style.lore(Collections.<String>emptyList(), facts)));
+            builder.slot(24, MenuItems.icon(Icons.CHANGELOG, "PAPER", "Подробности", Style.lore(Collections.emptyList(), facts)));
         }
     }
 
@@ -186,7 +186,7 @@ public final class JournalScreens extends MenuScreens {
         int size = detail.getTimes().size();
         for (int index = 0; index < size; index++) {
             Instant moment = Instant.ofEpochMilli(detail.getTimes().get(index));
-            List<String> lore = Style.lore(Collections.<String>emptyList(),
+            List<String> lore = Style.lore(Collections.emptyList(),
                 Fact.list("Было", MenuText.ago(moment), "Номер", (size - index) + " из " + size));
             rows.add(new Row(MenuItems.icon(Icons.CLOCK, "CLOCK", MenuText.clockStamp(moment), lore, "WATCH")));
         }

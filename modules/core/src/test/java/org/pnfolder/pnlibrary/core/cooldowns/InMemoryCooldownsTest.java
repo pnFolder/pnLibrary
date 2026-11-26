@@ -33,9 +33,7 @@ class InMemoryCooldownsTest {
         service.close();
 
         assertDoesNotThrow(() -> service.reset(player, "example"));
-        assertDoesNotThrow(() -> {
-            service.clear();
-        });
+        assertDoesNotThrow(() -> service.clear());
         assertThrows(IllegalStateException.class, () -> service.remaining(player, "example"));
     }
 
@@ -48,7 +46,7 @@ class InMemoryCooldownsTest {
         service.set(player, "home", Duration.ofMinutes(1));
         service.set(other, "kit", Duration.ofMinutes(1));
 
-        assertEquals(Arrays.asList("kit", "home"), new ArrayList<String>(service.active(player).keySet()));
+        assertEquals(Arrays.asList("kit", "home"), new ArrayList<>(service.active(player).keySet()));
         assertEquals(2, service.clear(player));
         assertTrue(service.active(player).isEmpty());
         assertTrue(service.has(other, "kit"));

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -13,7 +14,7 @@ public final class DiagnosticDetailsCollector {
     private final Supplier<PlatformSnapshot> snapshotProvider;
 
     public DiagnosticDetailsCollector(@NotNull Supplier<PlatformSnapshot> snapshotProvider) {
-        this.snapshotProvider = snapshotProvider;
+        this.snapshotProvider = Objects.requireNonNull(snapshotProvider, "snapshotProvider");
     }
 
     /** Collects common details and lets the platform add its native sections. */
@@ -23,7 +24,7 @@ public final class DiagnosticDetailsCollector {
         Map<String, Object> privacy = new LinkedHashMap<>();
         privacy.put("sensitiveDataIncluded", includeSensitive);
         privacy.put("omittedFields", includeSensitive
-                ? Collections.<String>emptyList()
+                ? Collections.emptyList()
                 : Collections.singletonList("backendAddresses"));
         details.put("privacy", privacy);
 

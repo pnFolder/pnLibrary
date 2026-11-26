@@ -46,7 +46,7 @@ public final class JournalDigest {
     public static @NotNull List<Component> join(@NotNull List<JournalRecord> records, long now, int windowHours,
                                                 long startedAtMillis, @NotNull String root) {
         ChatKit kit = new ChatKit(new ChatReader());
-        List<JournalRecord> relevant = new ArrayList<JournalRecord>();
+        List<JournalRecord> relevant = new ArrayList<>();
         for (JournalRecord record : records) {
             if (record.getLevel() != JournalLevel.INFO) {
                 relevant.add(record);
@@ -67,7 +67,7 @@ public final class JournalDigest {
         for (JournalRecord record : relevant) {
             errorCount += record.getLevel() == JournalLevel.ERROR ? 1 : 0;
         }
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Журнал", kit.text("за последние " + windowHours + " "
             + RussianText.plural(windowHours, "час", "часа", "часов"), ChatPalette.LABEL)));
@@ -84,16 +84,16 @@ public final class JournalDigest {
 
     /** Equal events merged into one list each, newest first, and the lists ordered by their newest record. */
     private static List<List<JournalRecord>> newestFirst(List<JournalRecord> records) {
-        Map<String, List<JournalRecord>> byId = new LinkedHashMap<String, List<JournalRecord>>();
+        Map<String, List<JournalRecord>> byId = new LinkedHashMap<>();
         for (JournalRecord record : records) {
             List<JournalRecord> group = byId.get(record.getFingerprint());
             if (group == null) {
-                group = new ArrayList<JournalRecord>();
+                group = new ArrayList<>();
                 byId.put(record.getFingerprint(), group);
             }
             group.add(record);
         }
-        List<List<JournalRecord>> groups = new ArrayList<List<JournalRecord>>(byId.values());
+        List<List<JournalRecord>> groups = new ArrayList<>(byId.values());
         for (List<JournalRecord> group : groups) {
             group.sort((left, right) -> Long.compare(right.getTimeMillis(), left.getTimeMillis()));
         }
@@ -116,7 +116,7 @@ public final class JournalDigest {
     /** Most urgent first; errors before warnings inside one reason. */
     private static List<List<JournalRecord>> rankByUrgency(List<List<JournalRecord>> groups, long now,
                                                            long startedAtMillis) {
-        List<List<JournalRecord>> ranked = new ArrayList<List<JournalRecord>>(groups);
+        List<List<JournalRecord>> ranked = new ArrayList<>(groups);
         ranked.sort((left, right) -> {
             int byReason = DigestReason.of(left, now, startedAtMillis)
                 .compareTo(DigestReason.of(right, now, startedAtMillis));
@@ -133,7 +133,7 @@ public final class JournalDigest {
     private static List<Component> adviceLine(ChatKit kit, List<JournalRecord> top, DigestReason topReason,
                                               boolean hasErrors) {
         if (topReason == DigestReason.PLAIN) {
-            return hasErrors ? Collections.<Component>emptyList() : Collections.singletonList(
+            return hasErrors ? Collections.emptyList() : Collections.singletonList(
                 kit.note("Ничего срочного. Загляните в журнал, когда будет время.", ChatPalette.FAINT));
         }
         // An event that keeps repeating is a repeating problem even when its last repeat was a moment ago.
@@ -144,7 +144,7 @@ public final class JournalDigest {
 
     /** {@code   ● 3 ошибки   ▲ 2 предупреждения}: only the kinds that occurred. */
     private static Component summaryLine(ChatKit kit, int errorCount, int warningCount) {
-        List<Component> summary = new ArrayList<Component>();
+        List<Component> summary = new ArrayList<>();
         if (errorCount > 0) {
             summary.add(kit.text(kit.glyph('●') + " " + errorCount + " ", ChatPalette.DANGER)
                 .append(kit.text(RussianText.plural(errorCount, "ошибка", "ошибки", "ошибок"), ChatPalette.SOFT)));

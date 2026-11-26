@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import java.util.Objects;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -19,7 +20,7 @@ public final class VelocityNetworkServer implements NetworkServer, ForwardingAud
 
     /** Wraps the native {@code server}. */
     public VelocityNetworkServer(@NotNull RegisteredServer server) {
-        this.server = server;
+        this.server = Objects.requireNonNull(server, "server");
     }
 
     @NotNull

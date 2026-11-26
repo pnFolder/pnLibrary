@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.modules;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class ModulesCommand {
     private final DiskPage disk;
 
     public ModulesCommand(@NotNull PnLibrary library) {
-        this.library = library;
+        this.library = Objects.requireNonNull(library, "library");
         this.libraries = new LibraryPages(library);
         this.card = new ModuleCard(library);
         this.disk = new DiskPage(library);
@@ -99,19 +100,19 @@ public final class ModulesCommand {
     }
 
     private List<String> owners() {
-        LinkedHashSet<String> owners = new LinkedHashSet<String>();
+        LinkedHashSet<String> owners = new LinkedHashSet<>();
         for (LibraryRow row : LibraryRow.all(library)) {
             owners.add(row.getOwner());
         }
-        return new ArrayList<String>(owners);
+        return new ArrayList<>(owners);
     }
 
     private List<String> coordinateList() {
-        LinkedHashSet<String> coordinates = new LinkedHashSet<String>();
+        LinkedHashSet<String> coordinates = new LinkedHashSet<>();
         for (LibraryRow row : LibraryRow.all(library)) {
             coordinates.add(row.getCoordinates());
         }
-        return new ArrayList<String>(coordinates);
+        return new ArrayList<>(coordinates);
     }
 
     /** {@code <module> on|off}: the words that turn a per-module switch on or off. */
@@ -131,7 +132,7 @@ public final class ModulesCommand {
     }
 
     private List<String> names() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (NamedModule module : ModuleLabels.named(library)) {
             names.add(module.getName());
         }
@@ -165,7 +166,7 @@ public final class ModulesCommand {
     private void list(CommandContext context) {
         ChatKit kit = CommandOutput.kit(context);
         List<NamedModule> all = ModuleLabels.named(library);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Модули плагинов", kit.text(String.valueOf(all.size()), ChatPalette.LABEL)));
         if (all.isEmpty()) {
@@ -226,9 +227,9 @@ public final class ModulesCommand {
 
     private void plugins(CommandContext context) {
         ChatKit kit = CommandOutput.kit(context);
-        List<PluginRegistration> all = new ArrayList<PluginRegistration>(library.getPlugins().all());
+        List<PluginRegistration> all = new ArrayList<>(library.getPlugins().all());
         java.util.Collections.sort(all, (left, right) -> left.getId().getValue().compareTo(right.getId().getValue()));
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Плагины библиотеки", kit.text(String.valueOf(all.size()), ChatPalette.LABEL)));
         for (PluginRegistration plugin : all) {

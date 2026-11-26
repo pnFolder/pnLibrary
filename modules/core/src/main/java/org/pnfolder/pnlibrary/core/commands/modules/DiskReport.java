@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /** The disk of the {@code plugins} folder; fields are named as they are written on the link. */
 public final class DiskReport {
     /** A report of nothing, for a server whose disk is not known yet. */
-    public static final DiskReport EMPTY = new DiskReport(Collections.<DiskRow>emptyList(), 0, -1, -1);
+    public static final DiskReport EMPTY = new DiskReport(Collections.emptyList(), 0, -1, -1);
 
     private final List<DiskRow> rows;
     private final long registeredLibraries;
@@ -22,7 +22,7 @@ public final class DiskReport {
      * @param capacity size of the disk, or -1 when unknown
      */
     public DiskReport(@NotNull List<DiskRow> rows, long registeredLibraries, long free, long capacity) {
-        this.rows = rows;
+        this.rows = Objects.requireNonNull(rows, "rows");
         this.registeredLibraries = registeredLibraries;
         this.free = free;
         this.capacity = capacity;

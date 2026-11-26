@@ -1,11 +1,13 @@
 package org.pnfolder.pnlibrary.core.observability.report;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
 import org.pnfolder.pnlibrary.core.upload.CatboxUploader;
 import org.pnfolder.pnlibrary.core.upload.EncryptedReportUploader;
-import org.pnfolder.pnlibrary.core.upload.FileIoUploader;
+import org.pnfolder.pnlibrary.core.upload.GofileUploader;
+import org.pnfolder.pnlibrary.core.upload.LitterboxUploader;
 import org.pnfolder.pnlibrary.core.upload.UploadProvider;
 import org.pnfolder.pnlibrary.core.upload.UploadProviderChain;
 
@@ -22,7 +24,7 @@ public final class SupportDeliveryFactory {
     private final PnLibraryConfig config;
 
     public SupportDeliveryFactory(@NotNull PnLibraryConfig config) {
-        this.config = config;
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     /** The codec for encrypted modes, or {@code null} when reports are not encrypted. */
@@ -55,8 +57,10 @@ public final class SupportDeliveryFactory {
         switch (id) {
             case "catbox":
                 return new CatboxUploader();
-            case "fileio":
-                return new FileIoUploader();
+            case "litterbox":
+                return new LitterboxUploader();
+            case "gofile":
+                return new GofileUploader();
             case "custom":
                 return new EncryptedReportUploader(URI.create(config.getUploadEndpoint()),
                         URI.create(config.getUploadPublicBase()));

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticRegistration;
@@ -28,8 +29,8 @@ public final class ObservabilityHub implements DiagnosticsService, Observability
     private final ObservabilityRuntime runtime;
 
     public ObservabilityHub(@NotNull DiagnosticsRegistry diagnostics, @NotNull ObservabilityRuntime runtime) {
-        this.diagnostics = diagnostics;
-        this.runtime = runtime;
+        this.diagnostics = Objects.requireNonNull(diagnostics, "diagnostics");
+        this.runtime = Objects.requireNonNull(runtime, "runtime");
     }
 
     @NotNull

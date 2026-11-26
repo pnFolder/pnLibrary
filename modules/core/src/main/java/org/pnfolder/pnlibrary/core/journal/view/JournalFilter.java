@@ -12,7 +12,7 @@ import java.util.Set;
 final class JournalFilter {
     /** The tabs in their order. */
     static final List<JournalFilter> ALL = Arrays.asList(
-        new JournalFilter("all", "все", Collections.<JournalLevel>emptySet()),
+        new JournalFilter("all", "все", Collections.emptySet()),
         new JournalFilter("error", "ошибки", EnumSet.of(JournalLevel.ERROR)),
         new JournalFilter("warning", "предупр.", EnumSet.of(JournalLevel.WARNING)),
         new JournalFilter("info", "инфо", EnumSet.of(JournalLevel.INFO)));

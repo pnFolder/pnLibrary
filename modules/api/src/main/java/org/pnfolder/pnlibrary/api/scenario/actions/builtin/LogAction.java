@@ -25,7 +25,7 @@ public final class LogAction implements Action {
 
     /** Creates it with every setting given. */
     public LogAction(@NotNull String text, @NotNull LogLevel level) {
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text");
         this.level = level;
     }
 

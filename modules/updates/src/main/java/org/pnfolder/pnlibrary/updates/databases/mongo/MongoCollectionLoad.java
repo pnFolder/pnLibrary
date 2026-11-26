@@ -14,8 +14,8 @@ final class MongoCollectionLoad {
 
     private final MongoDatabase database;
     private MongoCollection<BsonDocument> collection;
-    private final List<BsonDocument> indexes = new ArrayList<BsonDocument>();
-    private final List<BsonDocument> batch = new ArrayList<BsonDocument>();
+    private final List<BsonDocument> indexes = new ArrayList<>();
+    private final List<BsonDocument> batch = new ArrayList<>();
 
     MongoCollectionLoad(MongoDatabase database) {
         this.database = database;
@@ -52,7 +52,7 @@ final class MongoCollectionLoad {
             return;
         }
         if (collection != null) {
-            collection.insertMany(new ArrayList<BsonDocument>(batch));
+            collection.insertMany(new ArrayList<>(batch));
         }
         batch.clear();
     }

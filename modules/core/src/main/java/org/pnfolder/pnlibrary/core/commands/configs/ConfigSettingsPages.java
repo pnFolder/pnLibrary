@@ -63,7 +63,7 @@ final class ConfigSettingsPages {
 
 
     private String settingLine(ConfigSetting setting) {
-        List<String> limits = new ArrayList<String>();
+        List<String> limits = new ArrayList<>();
         if (setting.getMin() != null) {
             limits.add("от " + trim(setting.getMin()));
         }

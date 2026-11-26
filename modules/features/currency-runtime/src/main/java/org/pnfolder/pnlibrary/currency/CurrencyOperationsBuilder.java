@@ -26,7 +26,7 @@ final class CurrencyOperationsBuilder implements CurrencyOperations {
     private Function<CurrencyAccount, CompletionStage<CurrencyResult>> reset;
     private AsyncTransfer transfer;
     private Function<BigDecimal, String> formatter;
-    private final Map<Class<?>, Object> extensions = new LinkedHashMap<Class<?>, Object>();
+    private final Map<Class<?>, Object> extensions = new LinkedHashMap<>();
 
     @Override
     @NotNull
@@ -115,7 +115,7 @@ final class CurrencyOperationsBuilder implements CurrencyOperations {
             throw new IllegalStateException("Currency " + name + " requires a balance operation");
         }
         return new ConfiguredCurrencyProvider(descriptor, balance, deposit, withdraw, setBalance, reset, transfer, formatter,
-                new LinkedHashMap<Class<?>, Object>(extensions));
+                new LinkedHashMap<>(extensions));
     }
 
     /** Wraps a synchronous callback result, or its exception, into an already completed stage. */
@@ -123,7 +123,7 @@ final class CurrencyOperationsBuilder implements CurrencyOperations {
         try {
             return CompletableFuture.completedFuture(operation.call());
         } catch (Throwable error) {
-            CompletableFuture<T> failed = new CompletableFuture<T>();
+            CompletableFuture<T> failed = new CompletableFuture<>();
             failed.completeExceptionally(new IllegalStateException("Currency operation failed", error));
             return failed;
         }

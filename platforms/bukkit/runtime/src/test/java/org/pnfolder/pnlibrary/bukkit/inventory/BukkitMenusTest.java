@@ -79,7 +79,7 @@ class BukkitMenusTest {
     }
 
     private Menu menu(MenuRenderer renderer) {
-        return new Menu("test", 1, MenuType.CHEST, Collections.<Integer, MenuItem>emptyMap(), renderer, null, null,
+        return new Menu("test", 1, MenuType.CHEST, Collections.emptyMap(), renderer, null, null,
             null, true);
     }
 

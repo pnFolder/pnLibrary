@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics;
 
+import java.util.Objects;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,12 +19,12 @@ public final class DiagnosticIncidentLog {
 
     private final int capacity;
     private final DiagnosticValueSanitizer sanitizer;
-    private final ArrayDeque<Map<String, Object>> incidents = new ArrayDeque<Map<String, Object>>();
+    private final ArrayDeque<Map<String, Object>> incidents = new ArrayDeque<>();
 
     /** Creates a log that keeps at most {@code capacity} distinct incidents. */
     public DiagnosticIncidentLog(int capacity, @NotNull DiagnosticValueSanitizer sanitizer) {
         this.capacity = capacity;
-        this.sanitizer = sanitizer;
+        this.sanitizer = Objects.requireNonNull(sanitizer, "sanitizer");
     }
 
     /** Adds an occurrence: a repeat of a known incident is counted, a new one pushes out the oldest when full. */
@@ -49,10 +50,10 @@ public final class DiagnosticIncidentLog {
     @NotNull
     public List<Map<String, Object>> snapshot() {
         synchronized (incidents) {
-            List<Map<String, Object>> copies = new ArrayList<Map<String, Object>>(incidents.size());
+            List<Map<String, Object>> copies = new ArrayList<>(incidents.size());
             for (Map<String, Object> incident : incidents) {
-                Map<String, Object> copy = new LinkedHashMap<String, Object>(incident);
-                copy.put("occurrenceTimeline", new ArrayList<Object>(timelineOf(incident)));
+                Map<String, Object> copy = new LinkedHashMap<>(incident);
+                copy.put("occurrenceTimeline", new ArrayList<>(timelineOf(incident)));
                 copies.add(copy);
             }
             return copies;
@@ -63,8 +64,8 @@ public final class DiagnosticIncidentLog {
     @NotNull
     public Map<String, Object> summary() {
         synchronized (incidents) {
-            Map<String, Integer> byLevel = new LinkedHashMap<String, Integer>();
-            Map<String, Integer> byComponent = new LinkedHashMap<String, Integer>();
+            Map<String, Integer> byLevel = new LinkedHashMap<>();
+            Map<String, Integer> byComponent = new LinkedHashMap<>();
             long occurrences = 0L;
             long omitted = 0L;
             for (Map<String, Object> incident : incidents) {
@@ -73,7 +74,7 @@ public final class DiagnosticIncidentLog {
                 occurrences += count(incident, "occurrenceCount", 1L);
                 omitted += count(incident, "omittedOccurrences", 0L);
             }
-            Map<String, Object> summary = new LinkedHashMap<String, Object>();
+            Map<String, Object> summary = new LinkedHashMap<>();
             summary.put("incidentCount", incidents.size());
             summary.put("occurrenceCount", occurrences);
             summary.put("omittedOccurrenceCount", omitted);
@@ -127,7 +128,7 @@ public final class DiagnosticIncidentLog {
     private Map<String, Object> newIncident(String incidentId, String timeUtc, DiagnosticLevel level,
                                             String component, String code, String message,
                                             Map<String, Object> fields, Throwable error) {
-        Map<String, Object> incident = new LinkedHashMap<String, Object>();
+        Map<String, Object> incident = new LinkedHashMap<>();
         incident.put("incidentId", incidentId);
         incident.put("timeUtc", timeUtc);
         incident.put("firstSeenUtc", timeUtc);
@@ -140,7 +141,7 @@ public final class DiagnosticIncidentLog {
         incident.put("message", message);
         incident.put("fields", fields);
         incident.put("origin", error == null ? null : sanitizer.exceptionOrigin(error));
-        incident.put("occurrenceTimeline", new ArrayList<Object>(Collections.singletonList(occurrence(timeUtc, fields))));
+        incident.put("occurrenceTimeline", new ArrayList<>(Collections.singletonList(occurrence(timeUtc, fields))));
         if (error != null) {
             incident.put("exception", sanitizer.exception(error));
         }
@@ -148,7 +149,7 @@ public final class DiagnosticIncidentLog {
     }
 
     private static Map<String, Object> occurrence(String timeUtc, Map<String, Object> fields) {
-        Map<String, Object> occurrence = new LinkedHashMap<String, Object>();
+        Map<String, Object> occurrence = new LinkedHashMap<>();
         occurrence.put("timeUtc", timeUtc);
         occurrence.put("thread", Thread.currentThread().getName());
         occurrence.put("fields", fields);

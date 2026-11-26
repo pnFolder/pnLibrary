@@ -31,18 +31,18 @@ public final class RequireAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public RequireAction() {
-        this(null, Collections.<Action>emptyList());
+        this(null, Collections.emptyList());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public RequireAction(@Nullable Requirement requirement) {
-        this(requirement, Collections.<Action>emptyList());
+        this(requirement, Collections.emptyList());
     }
 
     /** Creates it with every setting given. */
     public RequireAction(@Nullable Requirement requirement, @NotNull List<Action> deny) {
         this.requirement = requirement;
-        this.deny = deny;
+        this.deny = Objects.requireNonNull(deny, "deny");
     }
 
     /** What must hold; a missing one is never met. */

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.proxy;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,15 +55,15 @@ public final class ServersCommand {
 
     /** The command over {@code servers}, which is asked again each time the list is needed. */
     public ServersCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers) {
-        this.link = link;
-        this.servers = servers;
+        this.link = Objects.requireNonNull(link, "link");
+        this.servers = Objects.requireNonNull(servers, "servers");
     }
 
     /** The servers that reported to this proxy; one that has been silent for two minutes is offline. */
     @NotNull
     public static Supplier<List<NetworkServer>> fromReports(@NotNull final Link link) {
         return () -> {
-            List<NetworkServer> all = new ArrayList<NetworkServer>();
+            List<NetworkServer> all = new ArrayList<>();
             for (LinkEntry entry : link.getRegistry().all()) {
                 boolean online = Duration.between(entry.getReceivedAt(), Instant.now()).compareTo(STALE) < 0;
                 all.add(new NetworkServer(entry.getName(), online, entry.getReport()));
@@ -76,7 +77,7 @@ public final class ServersCommand {
     public static Supplier<List<NetworkServer>> fromNetworkMap(@NotNull final Link link) {
         return () -> {
             ReceivedNetwork network = link.getNetwork();
-            List<NetworkServer> all = new ArrayList<NetworkServer>();
+            List<NetworkServer> all = new ArrayList<>();
             if (network != null) {
                 all.add(new NetworkServer(LinkNames.PROXY, true, network.getReport().getProxy()));
                 all.addAll(network.getReport().getServers());
@@ -95,22 +96,12 @@ public final class ServersCommand {
                 server.executes(context -> view(context, context.<String>get("server")));
                 action(server, "check", RemoteAction.CHECK);
                 server.literal("update", update -> plugin(update, RemoteAction.UPDATE));
-                server.literal("auto", auto -> {
-                    auto.permission(RemoteAction.AUTO_ON.getPermission());
-                    auto.argument("plugin", ArgumentType.string(), plugin -> {
-                        plugin.suggests(context -> plugins(context.<String>get("server")));
-                        plugin.literal("on", on -> on.executes(
-                                context -> send(context, RemoteAction.AUTO_ON, context.<String>get("plugin"))));
-                        plugin.literal("off", off -> off.executes(
-                                context -> send(context, RemoteAction.AUTO_OFF, context.<String>get("plugin"))));
-                    });
-                });
             });
         });
     }
 
     private List<String> serverNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (NetworkServer server : servers.get()) {
             names.add(server.getName());
         }
@@ -142,7 +133,7 @@ public final class ServersCommand {
     }
 
     private List<String> plugins(String server) {
-        List<String> products = new ArrayList<String>();
+        List<String> products = new ArrayList<>();
         NetworkServer found = find(server);
         if (found != null) {
             for (LinkPlugin plugin : found.getReport().getPlugins()) {
@@ -168,7 +159,7 @@ public final class ServersCommand {
         ChatKit kit = CommandOutput.kit(context);
         List<NetworkServer> all = servers.get();
         String count = all.size() + " " + RussianText.plural(all.size(), "сервер", "сервера", "серверов");
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Серверы сети", kit.text(count, ChatPalette.LABEL)));
         if (all.isEmpty()) {
@@ -218,7 +209,7 @@ public final class ServersCommand {
             return;
         }
         LinkReport report = server.getReport();
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(server.getName(), kit.text(TaskLabels.ago(report.getSentAt()), ChatPalette.LABEL)));
         lines.add(kit.field("Сервер", kit.text(report.getPlatform(), ChatPalette.TEXT)));

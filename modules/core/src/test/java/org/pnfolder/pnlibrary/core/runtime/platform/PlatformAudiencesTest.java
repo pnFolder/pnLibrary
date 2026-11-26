@@ -28,7 +28,7 @@ class PlatformAudiencesTest {
     void lookupsDelegateWhileCloseSuppressesStaleResolution() {
         Sender console = new Sender("console", new ArrayList<>(), false);
         Player player = new Player(UUID.randomUUID(), "Alice", new ArrayList<>(), false);
-        RecordingAdapter adapter = new RecordingAdapter(console, new ArrayList<OnlinePlayer>(Arrays.asList(player)));
+        RecordingAdapter adapter = new RecordingAdapter(console, new ArrayList<>(Arrays.asList(player)));
         PlatformAudiences service = new PlatformAudiences(adapter);
 
         assertSame(adapter.console(), service.console());
@@ -37,14 +37,14 @@ class PlatformAudiencesTest {
         service.close();
         assertNull(service.player(player.getUniqueId()));
         assertNull(service.of("native"));
-        assertEquals(Collections.<OnlinePlayer>emptyList(), service.players());
+        assertEquals(Collections.emptyList(), service.players());
     }
 
     @Test
     void aPlayerIsFoundByNameIgnoringCase() {
         Player player = new Player(UUID.randomUUID(), "Alice", new ArrayList<>(), false);
         PlatformAudiences service = new PlatformAudiences(
-            new RecordingAdapter(new Sender("console", new ArrayList<>(), false), new ArrayList<OnlinePlayer>(Arrays.asList(player))));
+            new RecordingAdapter(new Sender("console", new ArrayList<>(), false), new ArrayList<>(Arrays.asList(player))));
 
         assertSame(player, service.player("aLiCe"));
         assertNull(service.player("Bob"));
@@ -56,7 +56,7 @@ class PlatformAudiencesTest {
         Player first = new Player(UUID.randomUUID(), "first", calls, false);
         Player broken = new Player(UUID.randomUUID(), "broken", calls, true);
         Player last = new Player(UUID.randomUUID(), "last", calls, false);
-        List<OnlinePlayer> members = new ArrayList<OnlinePlayer>(Arrays.asList(first, broken, first, last));
+        List<OnlinePlayer> members = new ArrayList<>(Arrays.asList(first, broken, first, last));
         PlatformAudiences service = new PlatformAudiences(new RecordingAdapter(new Sender("console", new ArrayList<>(), false), members));
 
         service.sendMessage(Component.text("hello"));
@@ -73,7 +73,7 @@ class PlatformAudiencesTest {
     void aReceiverThatThrowsIsReportedOnceAndTheOthersStillGetTheMessage() {
         List<String> calls = new ArrayList<>();
         List<Throwable> failures = new ArrayList<>();
-        List<OnlinePlayer> members = new ArrayList<OnlinePlayer>(Arrays.asList(
+        List<OnlinePlayer> members = new ArrayList<>(Arrays.asList(
             new Player(UUID.randomUUID(), "broken", calls, true), new Player(UUID.randomUUID(), "last", calls, false)));
         PlatformAudiences service = new PlatformAudiences(new RecordingAdapter(new Sender("console", new ArrayList<>(), false), members),
             failures::add);
@@ -89,7 +89,7 @@ class PlatformAudiencesTest {
     @Test
     void theAudiencesFollowWhoIsOnlineAndCanBeFiltered() {
         List<String> calls = new ArrayList<>();
-        List<OnlinePlayer> members = new ArrayList<OnlinePlayer>(Arrays.asList(
+        List<OnlinePlayer> members = new ArrayList<>(Arrays.asList(
             new Player(UUID.randomUUID(), "Alice", calls, false), new Player(UUID.randomUUID(), "Bob", calls, false)));
         PlatformAudiences service = new PlatformAudiences(new RecordingAdapter(new Sender("console", calls, false), members));
 

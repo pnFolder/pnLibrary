@@ -54,7 +54,7 @@ public final class ProductRelease {
                           @Nullable Instant publishedAt, @Nullable String changelogUrl,
                           @NotNull String description) {
         UpdateValidation.requireProvidedApi(providesApi);
-        Set<ProductId> seen = new HashSet<ProductId>();
+        Set<ProductId> seen = new HashSet<>();
         for (ProductDependency dependency : dependencies) {
             if (!seen.add(dependency.getProduct())) {
                 throw new IllegalArgumentException("Product release contains duplicate dependencies");
@@ -77,8 +77,8 @@ public final class ProductRelease {
     /** Creates a release with no dependencies, artifacts, repository or description. */
     public ProductRelease(@NotNull ProductId product, @NotNull SemanticVersion version,
                           @NotNull UpdateChannel channel, @NotNull ApiVersionRange supportedApi) {
-        this(product, version, channel, supportedApi, null, Collections.<ProductDependency>emptyList(), null,
-            Collections.<ArtifactDescriptor>emptyList(), Collections.<ExternalPluginDependency>emptyList(),
+        this(product, version, channel, supportedApi, null, Collections.emptyList(), null,
+            Collections.emptyList(), Collections.emptyList(),
             null, null, "");
     }
 

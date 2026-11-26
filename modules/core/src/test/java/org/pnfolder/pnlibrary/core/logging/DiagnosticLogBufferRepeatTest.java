@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.core.logging;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ class DiagnosticLogBufferRepeatTest {
     /** What the buffer must report: every record redacted and fingerprinted on its own, as the old code did. */
     private static Map<String, Object[]> expected(List<Record> records) {
         DiagnosticRedactor redactor = new DiagnosticRedactor();
-        Map<String, Object[]> result = new LinkedHashMap<String, Object[]>();
+        Map<String, Object[]> result = new LinkedHashMap<>();
         for (Record record : records) {
             String safe = cut(redactor.redact(record.message), 4_096);
             String id = DiagnosticThrowables.fingerprint(record.error,
@@ -90,7 +91,7 @@ class DiagnosticLogBufferRepeatTest {
 
     @Test
     void repeatsWithDifferentIdsAndNumbersStillFoldIntoTheSameIncidentsAsBefore() {
-        List<Record> records = new ArrayList<Record>();
+        List<Record> records = new ArrayList<>();
         for (int index = 0; index < 300; index++) {
             records.add(new Record(LogLevel.WARNING, "Player " + new UUID(index, 7) + " lost " + (10_000 + index) + " coins", null));
             records.add(new Record(LogLevel.ERROR, "Load failed", cause("db down", "load")));
@@ -106,7 +107,7 @@ class DiagnosticLogBufferRepeatTest {
         }
 
         Map<String, Object[]> want = expected(records);
-        Map<String, Object[]> got = new LinkedHashMap<String, Object[]>();
+        Map<String, Object[]> got = new LinkedHashMap<>();
         for (Map<String, Object> entry : buffer.snapshot()) {
             got.put((String) entry.get("incidentId"), new Object[] {entry.get("message"),
                 ((Map<?, ?>) entry.get("occurrences")).get("count")});
@@ -132,7 +133,7 @@ class DiagnosticLogBufferRepeatTest {
             List<String> context = Arrays.asList("plugin" + i, "ERROR");
             Throwable significant = DiagnosticThrowables.significantCause(error);
             StackTraceElement frame = DiagnosticThrowables.originFrame(error);
-            List<String> parts = new ArrayList<String>(context);
+            List<String> parts = new ArrayList<>(context);
             parts.add(normalize("message " + i));
             parts.add(significant == null ? "" : significant.getClass().getName());
             parts.add(normalize(significant == null || significant.getMessage() == null ? "" : significant.getMessage()));
@@ -142,7 +143,7 @@ class DiagnosticLogBufferRepeatTest {
                 .digest(String.join("\u0000", parts).getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder();
             for (int b = 0; b < 8; b++) {
-                hex.append(String.format("%02x", digest[b]));
+                hex.append(String.format(Locale.ROOT, "%02x", digest[b]));
             }
             assertEquals(hex.toString(), DiagnosticThrowables.fingerprint(error, context, "message " + i));
         }

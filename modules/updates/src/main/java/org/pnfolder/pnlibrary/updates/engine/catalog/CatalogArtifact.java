@@ -33,13 +33,13 @@ public final class CatalogArtifact {
     public CatalogArtifact(@NotNull String file, @NotNull PlatformType platform, @Nullable VersionRangeText minecraft,
                            @Nullable VersionRangeText platformApi, int javaMinimum, @Nullable Integer javaMaximum,
                            @NotNull URI url, @Nullable String sha256, @Nullable Long size) {
-        this.file = file;
-        this.platform = platform;
+        this.file = Objects.requireNonNull(file, "file");
+        this.platform = Objects.requireNonNull(platform, "platform");
         this.minecraft = minecraft;
         this.platformApi = platformApi;
         this.javaMinimum = javaMinimum;
         this.javaMaximum = javaMaximum;
-        this.url = url;
+        this.url = Objects.requireNonNull(url, "url");
         this.sha256 = sha256;
         this.size = size;
     }

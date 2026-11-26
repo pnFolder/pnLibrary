@@ -33,7 +33,7 @@ public final class ActionBarAction implements Action {
 
     /** Creates it with every setting given. */
     public ActionBarAction(@NotNull String text, @Nullable ComponentSerializerType serializerType, @NotNull ActionTarget target) {
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text");
         this.serializerType = serializerType;
         this.target = target;
     }

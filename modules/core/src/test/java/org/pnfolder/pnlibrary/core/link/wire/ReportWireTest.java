@@ -35,8 +35,19 @@ class ReportWireTest {
     }
 
     @Test
+    void theNeedForARestartAndTheAddressSurviveTheWire() throws IOException {
+        LinkReport report = new LinkReport("velocity", "1", 0, Collections.emptyList(), Instant.ofEpochMilli(9), true,
+            "10.0.0.5:25577");
+
+        assertEquals(report, roundTrip(report, 10));
+        assertEquals(false, roundTrip(new LinkReport("velocity", "1", 0, Collections.emptyList(), Instant.EPOCH), 10)
+            .getRestartNeeded());
+        assertNull(roundTrip(new LinkReport("velocity", "1", 0, Collections.emptyList(), Instant.EPOCH), 10).getAddress());
+    }
+
+    @Test
     void onlyTheFirstPluginsUpToTheLimitAreSent() throws IOException {
-        List<LinkPlugin> plugins = new ArrayList<LinkPlugin>();
+        List<LinkPlugin> plugins = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             plugins.add(new LinkPlugin("p" + i, "1", "2", "ok"));
         }

@@ -28,7 +28,7 @@ public class UsingThePlaceholders {
 
     /** Values of the caller win over registered ones: {@code {reward}} is not a placeholder, but it is filled. */
     public CompletionStage<String> withOwnData(UUID player) {
-        return placeholders.render("You get {reward} for {clan.name}", ViewerInfo.of(player), Collections.<String, Object>singletonMap("reward", 100));
+        return placeholders.render("You get {reward} for {clan.name}", ViewerInfo.of(player), Collections.singletonMap("reward", 100));
     }
 
     /** One value, not text: the type stays (Integer here), so it can be compared or calculated. */
@@ -43,7 +43,7 @@ public class UsingThePlaceholders {
 
     /** What is registered, with description, owner, type, default format and PlaceholderAPI names. */
     public List<String> describe() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (PlaceholderInfo info : placeholders.list()) {
             lines.add("{" + info.getAddress() + "} " + info.getType() + " " + info.getDescription() + " (" + info.getOwner() + ") "
                     + String.join(", ", info.getPublished()));
@@ -53,7 +53,7 @@ public class UsingThePlaceholders {
 
     /** The outside systems. {@code %...%} of PlaceholderAPI is filled by {@code render} itself when an adapter is available. */
     public List<String> outside() {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (PlaceholderAdapter adapter : placeholders.adapters().all()) {
             lines.add(adapter.getId() + ": " + (adapter.isAvailable() ? "available" : "unavailable"));
         }

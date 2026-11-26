@@ -59,7 +59,7 @@ public final class MissingPluginScreens extends MenuScreens {
     }
 
     /** The two buttons of the settings screen about missing plugins. */
-    void buttons(MenuBuilder builder) {
+    public void buttons(MenuBuilder builder) {
         Boolean automatic = data().downloadsAutomatic();
         if (automatic == null) {
             return;
@@ -74,7 +74,7 @@ public final class MissingPluginScreens extends MenuScreens {
         boolean on = automatic;
         builder.button(13, MenuItems.icon(Icons.TOGGLE, "HOPPER", "Недостающие плагины", Style.lore(CoreFormatting.wrapText(
             "Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.",
-            CoreFormatting.WRAP_WIDTH, 4), Collections.<Fact>emptyList(), Style.choices(java.util.Arrays.asList("скачивать самому",
+            CoreFormatting.WRAP_WIDTH, 4), Collections.emptyList(), Style.choices(java.util.Arrays.asList("скачивать самому",
             "только сообщать"), on ? 0 : 1), Style.left(on ? "выключить" : "включить")), "REDSTONE_TORCH_ON",
             Tone.of(false, false, on, !on)), go(who -> allowed(who, MenuConstants.SETTINGS, () -> {
                 data().setDownloadsAutomatic(!on);

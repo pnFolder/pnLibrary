@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,7 +16,7 @@ public final class CommandException extends RuntimeException {
     /** Stops the command with {@code error}. */
     public CommandException(@NotNull CommandError error) {
         super(error.getClass().getSimpleName(), null, false, false);
-        this.error = error;
+        this.error = Objects.requireNonNull(error, "error");
     }
 
     /** The error to answer with. */

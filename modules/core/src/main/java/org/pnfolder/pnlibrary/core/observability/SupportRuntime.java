@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest;
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticLevel;
@@ -81,11 +82,11 @@ public final class SupportRuntime implements AutoCloseable {
                           @NotNull PnLibraryConfig config, @NotNull LibraryPaths paths,
                           @NotNull Supplier<Map<String, Object>> runtimeDiagnostics,
                           @NotNull BiConsumer<Object, Throwable> onRuntimeError) {
-        this.owner = owner;
-        this.platformLogObservation = platformLogObservation;
-        this.diagnostics = diagnostics;
-        this.config = config;
-        this.onRuntimeError = onRuntimeError;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.platformLogObservation = Objects.requireNonNull(platformLogObservation, "platformLogObservation");
+        this.diagnostics = Objects.requireNonNull(diagnostics, "diagnostics");
+        this.config = Objects.requireNonNull(config, "config");
+        this.onRuntimeError = Objects.requireNonNull(onRuntimeError, "onRuntimeError");
         this.observations = new ObservabilityRuntime(paths);
         this.service = new ObservabilityHub(diagnostics, observations);
         this.logs = new DiagnosticLogBuffer(Math.max(10, Math.min(config.getLogRecords(), 2_000)));
@@ -178,7 +179,7 @@ public final class SupportRuntime implements AutoCloseable {
     @NotNull
     public Map<String, Object> reportSummary() {
         List<Map.Entry<String, byte[]>> historyFiles = Failures.runCatchingNonFatal(history::files)
-                .getOrDefault(Collections.<Map.Entry<String, byte[]>>emptyList());
+                .getOrDefault(Collections.emptyList());
         return reportMetrics.summary(historyFiles, uploadLedger.diagnosticSnapshot(), config.getMaxReportBytes());
     }
 
@@ -240,7 +241,7 @@ public final class SupportRuntime implements AutoCloseable {
 
     private void runtimeError(Object logOwner, String message, Throwable error) {
         service.record(new ObservationRequest(null, logOwner.getClass().getName(), "RUNTIME_ERROR",
-                ObservationLevel.ERROR, runtimeErrorData(message, error), Collections.<java.nio.file.Path>emptyList(), null));
+                ObservationLevel.ERROR, runtimeErrorData(message, error), Collections.emptyList(), null));
         onRuntimeError.accept(logOwner, error);
     }
 
@@ -278,7 +279,7 @@ public final class SupportRuntime implements AutoCloseable {
         data.put("hasException", Boolean.toString(error != null));
         observations.record(new ObservationRequest(plugin, component, message,
                 ObservationConversions.toObservationLevel(level), data,
-                Collections.<java.nio.file.Path>emptyList(), error));
+                Collections.emptyList(), error));
     }
 
     /** Console only: recording it would raise another diagnostic event and run the failing callback again. */

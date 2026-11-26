@@ -22,22 +22,12 @@ public final class PlayerLifecyclePublisher {
 
     /** Announces that {@code uniqueId} joined. */
     public static void joined(@NotNull final PnLibrary library, @NotNull final UUID uniqueId, @NotNull final String name) {
-        publish(library, new Supplier<Event>() {
-            @Override
-            public Event get() {
-                return new PlayerJoinedEvent(uniqueId, name, library.getAudiences().player(uniqueId));
-            }
-        });
+        publish(library, () -> new PlayerJoinedEvent(uniqueId, name, library.getAudiences().player(uniqueId)));
     }
 
     /** Announces that {@code uniqueId} left. */
     public static void left(@NotNull final PnLibrary library, @NotNull final UUID uniqueId, @NotNull final String name) {
-        publish(library, new Supplier<Event>() {
-            @Override
-            public Event get() {
-                return new PlayerLeftEvent(uniqueId, name, library.getAudiences().player(uniqueId));
-            }
-        });
+        publish(library, () -> new PlayerLeftEvent(uniqueId, name, library.getAudiences().player(uniqueId)));
     }
 
     private static void publish(PnLibrary library, Supplier<Event> create) {

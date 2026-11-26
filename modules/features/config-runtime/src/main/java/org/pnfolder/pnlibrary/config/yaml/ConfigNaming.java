@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy;
 
 /** Turns a field name into the YAML key of a naming style. */
-final class ConfigNaming {
+public final class ConfigNaming {
     private static final Pattern LOWER_TO_UPPER_BOUNDARY = Pattern.compile("([a-z0-9])([A-Z])");
     private static final Pattern ACRONYM_BOUNDARY = Pattern.compile("([A-Z]+)([A-Z][a-z])");
     private static final Pattern WORD_SEPARATOR = Pattern.compile("[_\\-\\s]+");
@@ -19,13 +20,13 @@ final class ConfigNaming {
     }
 
     @NotNull
-    static String apply(@NotNull String value, @NotNull ConfigNamingStrategy strategy) {
+    public static String apply(@NotNull String value, @NotNull ConfigNamingStrategy strategy) {
         if (strategy == ConfigNamingStrategy.AS_DECLARED) {
             return value;
         }
         String spaced = ACRONYM_BOUNDARY.matcher(LOWER_TO_UPPER_BOUNDARY.matcher(value).replaceAll("$1 $2")).replaceAll("$1 $2");
-        List<String> words = new ArrayList<String>();
-        for (String word : WORD_SEPARATOR.split(spaced)) {
+        List<String> words = new ArrayList<>();
+        for (String word : WORD_SEPARATOR.split(spaced, -1)) {
             if (!YamlText.isBlank(word)) {
                 words.add(word);
             }

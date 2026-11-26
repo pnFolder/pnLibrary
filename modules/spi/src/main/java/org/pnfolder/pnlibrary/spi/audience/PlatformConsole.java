@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.audience;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ public final class PlatformConsole implements Console, ForwardingAudience.Single
     private final Audience audience;
 
     public PlatformConsole(@NotNull Audience audience) {
-        this.audience = audience;
+        this.audience = Objects.requireNonNull(audience, "audience");
     }
 
     @NotNull

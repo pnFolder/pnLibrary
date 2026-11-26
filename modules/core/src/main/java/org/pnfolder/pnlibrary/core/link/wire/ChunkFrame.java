@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.remote.DataChunk;
 
@@ -8,7 +9,7 @@ public final class ChunkFrame implements LinkFrame {
     private final DataChunk chunk;
 
     public ChunkFrame(@NotNull DataChunk chunk) {
-        this.chunk = chunk;
+        this.chunk = Objects.requireNonNull(chunk, "chunk");
     }
 
     public @NotNull DataChunk getChunk() {

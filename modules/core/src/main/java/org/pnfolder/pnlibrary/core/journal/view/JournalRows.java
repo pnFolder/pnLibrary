@@ -87,7 +87,7 @@ final class JournalRows {
 
     private static List<Component> hover(ChatKit kit, List<JournalRecord> group, Component icon) {
         JournalRecord record = group.get(0);
-        List<Component> hover = new ArrayList<Component>();
+        List<Component> hover = new ArrayList<>();
         hover.add(icon.append(kit.text(" " + levelTag(record.getLevel()), levelColor(record.getLevel())))
             .append(kit.dot()).append(kit.text(record.getSource(), ChatPalette.ACCENT)));
         hover.add(kit.blank());

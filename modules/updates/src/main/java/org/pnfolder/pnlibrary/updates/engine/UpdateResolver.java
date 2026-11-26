@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
@@ -27,14 +28,14 @@ public final class UpdateResolver {
     private final ProductId libraryComponent;
 
     public UpdateResolver(@NotNull ProductId libraryComponent) {
-        this.libraryComponent = libraryComponent;
+        this.libraryComponent = Objects.requireNonNull(libraryComponent, "libraryComponent");
     }
 
     /** Resolves with the stable channel for everyone, no pauses, any platform and Java, and the default policy. */
     @NotNull
     public ResolutionResult resolve(@NotNull List<InstalledProduct> installed, @NotNull List<ProductRelease> releases) {
-        return resolve(installed, releases, Collections.<ProductId, UpdateChannel>emptyMap(), UpdateChannel.STABLE,
-            Collections.<ProductId>emptySet(), null, Integer.MAX_VALUE, new ResolverPolicy());
+        return resolve(installed, releases, Collections.emptyMap(), UpdateChannel.STABLE,
+            Collections.emptySet(), null, Integer.MAX_VALUE, new ResolverPolicy());
     }
 
     /**
@@ -135,7 +136,7 @@ public final class UpdateResolver {
                 if (index == 0 && primaryFailure == null) {
                     return new ResolutionResult.Ready(attempt.plan);
                 }
-                return new ResolutionResult.Blocked(primaryFailure == null ? Collections.<BlockedReason>emptyList() : primaryFailure,
+                return new ResolutionResult.Blocked(primaryFailure == null ? Collections.emptyList() : primaryFailure,
                     attempt.plan);
             }
             if (primaryFailure == null) {
@@ -190,12 +191,7 @@ public final class UpdateResolver {
                                                  Set<ProductId> frozen, ResolverPolicy policy,
                                                  Map<ProductId, List<ProductRelease>> domains) {
         List<InstalledProduct> sorted = new ArrayList<InstalledProduct>(installed);
-        Collections.sort(sorted, new Comparator<InstalledProduct>() {
-            @Override
-            public int compare(InstalledProduct left, InstalledProduct right) {
-                return left.getProduct().compareTo(right.getProduct());
-            }
-        });
+        Collections.sort(sorted, (left, right) -> left.getProduct().compareTo(right.getProduct()));
         List<BlockedReason> reasons = new ArrayList<BlockedReason>();
         for (InstalledProduct current : sorted) {
             if (current.getProduct().equals(libraryComponent)) {
@@ -223,12 +219,7 @@ public final class UpdateResolver {
             installedById.put(product.getProduct(), product);
         }
         List<ProductRelease> ordered = new ArrayList<ProductRelease>(ResolverSearch.retainRequired(solution, installedById.keySet()).values());
-        Collections.sort(ordered, new Comparator<ProductRelease>() {
-            @Override
-            public int compare(ProductRelease left, ProductRelease right) {
-                return left.getProduct().compareTo(right.getProduct());
-            }
-        });
+        Collections.sort(ordered, (left, right) -> left.getProduct().compareTo(right.getProduct()));
         List<ProductChange> changes = new ArrayList<ProductChange>();
         for (ProductRelease target : ordered) {
             InstalledProduct current = installedById.get(target.getProduct());

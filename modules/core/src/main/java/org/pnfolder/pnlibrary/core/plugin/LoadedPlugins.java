@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,14 +23,14 @@ import org.pnfolder.pnlibrary.core.commands.engine.CommandService;
 import org.pnfolder.pnlibrary.core.downloads.DownloadService;
 import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
-import org.pnfolder.pnlibrary.core.plugin.module.LibraryFetcher;
+import org.pnfolder.pnlibrary.core.plugin.module.library.LibraryFetcher;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleDependencyValidator;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleMetadataFactory;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleMetadataFactory;
 import org.pnfolder.pnlibrary.core.plugin.module.ModulePreferences;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleProductResolver;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResourceFactory;
-import org.pnfolder.pnlibrary.core.plugin.module.ScenarioDefinitions;
-import org.pnfolder.pnlibrary.core.remote.RemotePolicyMonitor;
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ScenarioDefinitions;
+import org.pnfolder.pnlibrary.core.remote.monitor.RemotePolicyMonitor;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry;
 import org.pnfolder.pnlibrary.core.tasks.TaskService;
@@ -57,8 +58,8 @@ public final class LoadedPlugins implements PluginRegistry {
                          @NotNull ConfigurationRuntime configurations, @Nullable CommandService commands,
                          @Nullable DownloadService downloadService, @Nullable String libraryVersion,
                          @NotNull ModulePreferences modulePreferences, @NotNull LibraryFetcher libraryFetcher) {
-        this.ownership = ownership;
-        this.identity = identity;
+        this.ownership = Objects.requireNonNull(ownership, "ownership");
+        this.identity = Objects.requireNonNull(identity, "identity");
         this.downloadService = downloadService;
         ModuleResourceFactory resourceFactory = new ModuleResourceFactory(events, tasks, services, logging, metrics, diagnostics,
                 updates, shared.getPlaceholders(), shared.getCurrency(), configurations, downloadService, new ComponentCache());
@@ -132,7 +133,7 @@ public final class LoadedPlugins implements PluginRegistry {
     @Override
     public @NotNull List<PluginRegistration> all() {
         synchronized (host.plugins) {
-            return Collections.<PluginRegistration>unmodifiableList(new ArrayList<PluginRegistration>(host.plugins.values()));
+            return Collections.unmodifiableList(new ArrayList<>(host.plugins.values()));
         }
     }
 
@@ -143,11 +144,11 @@ public final class LoadedPlugins implements PluginRegistry {
         }
         List<LoadedPlugin> current;
         synchronized (host.plugins) {
-            current = new ArrayList<LoadedPlugin>(host.plugins.values());
+            current = new ArrayList<>(host.plugins.values());
             host.plugins.clear();
             host.productDescriptors.clear();
         }
-        List<CleanupStep> steps = new ArrayList<CleanupStep>();
+        List<CleanupStep> steps = new ArrayList<>();
         for (final LoadedPlugin plugin : current) {
             steps.add(plugin::closeInternal);
         }

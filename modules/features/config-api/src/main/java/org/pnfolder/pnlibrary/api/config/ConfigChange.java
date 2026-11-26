@@ -21,8 +21,8 @@ public final class ConfigChange {
      */
     public ConfigChange(@Nullable ConfigId id, @NotNull ConfigChangeCause cause, @NotNull List<String> paths) {
         this.id = id;
-        this.cause = cause;
-        this.paths = paths;
+        this.cause = Objects.requireNonNull(cause, "cause");
+        this.paths = Objects.requireNonNull(paths, "paths");
     }
 
     /** The file. */

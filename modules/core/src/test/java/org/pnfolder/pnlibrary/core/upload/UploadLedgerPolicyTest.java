@@ -57,7 +57,7 @@ class UploadLedgerPolicyTest {
         ledger.record(receipt("due", 100), 0);
         UploadLedgerPersistence persistence = new UploadLedgerPersistence(file, clock);
         persistence.write(Arrays.asList(entry("due", 999), entry("future", 1_001)));
-        final List<String> deletedIds = new ArrayList<String>();
+        final List<String> deletedIds = new ArrayList<>();
         UploadProvider provider = new UploadProvider() {
             @Override
             public @NotNull String getBackendId() {
@@ -78,7 +78,7 @@ class UploadLedgerPolicyTest {
 
         assertEquals(1, ledger.cleanup(provider));
         assertEquals(Collections.singletonList("due"), deletedIds);
-        List<String> left = new ArrayList<String>();
+        List<String> left = new ArrayList<>();
         for (UploadLedgerEntry remaining : persistence.read()) {
             left.add(remaining.getId());
         }

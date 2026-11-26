@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
@@ -22,8 +23,8 @@ public final class RollbackCatalog {
     private final TransactionJournalRepository journals;
 
     public RollbackCatalog(@NotNull Path root, @NotNull TransactionJournalRepository journals) {
-        this.root = root;
-        this.journals = journals;
+        this.root = Objects.requireNonNull(root, "root");
+        this.journals = Objects.requireNonNull(journals, "journals");
     }
 
     /** Returns the most recently modified rollback candidate, if any. */

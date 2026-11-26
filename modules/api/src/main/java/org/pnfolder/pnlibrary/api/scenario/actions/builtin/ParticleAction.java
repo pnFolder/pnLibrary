@@ -50,7 +50,7 @@ public final class ParticleAction implements Action {
 
     /** Creates it with every setting given. */
     public ParticleAction(@NotNull String key, int count, double offsetX, double offsetY, double offsetZ, double speed) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key, "key");
         this.count = count;
         this.offsetX = offsetX;
         this.offsetY = offsetY;

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +34,7 @@ class JournalStoreBatchTest {
     @TempDir Path directory;
 
     private final Instant day = Instant.parse("2026-10-19T10:00:00Z");
-    private final Map<JournalLevel, Duration> retention = new EnumMap<JournalLevel, Duration>(JournalLevel.class);
+    private final Map<JournalLevel, Duration> retention = new EnumMap<>(JournalLevel.class);
     private final JournalRejection throwing = (record, error) -> {
         throw (RuntimeException) error;
     };
@@ -45,9 +46,9 @@ class JournalStoreBatchTest {
     }
 
     private List<JournalRecord> corpus(int count) {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
+        List<JournalRecord> records = new ArrayList<>();
         for (int index = 0; index < count; index++) {
-            Map<String, String> details = new LinkedHashMap<String, String>();
+            Map<String, String> details = new LinkedHashMap<>();
             if (index % 7 == 0) {
                 details.put("exception", "X");
                 details.put(JournalRecord.STACKTRACE, "trace " + index);
@@ -63,7 +64,7 @@ class JournalStoreBatchTest {
     }
 
     private static List<JournalRecord> allAs(List<JournalRecord> records, JournalLevel level) {
-        List<JournalRecord> result = new ArrayList<JournalRecord>();
+        List<JournalRecord> result = new ArrayList<>();
         for (JournalRecord record : records) {
             result.add(withLevel(record, level));
         }
@@ -75,7 +76,7 @@ class JournalStoreBatchTest {
     }
 
     private List<JournalRecord> readAll(JournalStore store, int limit) {
-        return store.read(Collections.<JournalLevel>emptySet(), null, null, limit, null);
+        return store.read(Collections.emptySet(), null, null, limit, null);
     }
 
     private long fileCount(Path folder) throws IOException {
@@ -106,7 +107,7 @@ class JournalStoreBatchTest {
     void blocksOfTheOldOneRecordFormatAndNewBatchesLiveInOneFile() throws IOException {
         store(directory).append(new JournalRecord(day.toEpochMilli(), JournalLevel.INFO, "a", "LOG", "legacy"));
         JournalStore reopened = store(directory);
-        List<JournalRecord> info = new ArrayList<JournalRecord>();
+        List<JournalRecord> info = new ArrayList<>();
         for (JournalRecord record : corpus(30)) {
             if (record.getLevel() == JournalLevel.INFO) {
                 info.add(record);
@@ -203,10 +204,10 @@ class JournalStoreBatchTest {
         }
         JournalRecord bad = new JournalRecord(day.toEpochMilli(), JournalLevel.INFO, "a", "LOG", new String(chars));
         JournalRecord good = new JournalRecord(day.toEpochMilli() + 1, JournalLevel.INFO, "a", "LOG", "small");
-        List<JournalRecord> rejected = new ArrayList<JournalRecord>();
+        List<JournalRecord> rejected = new ArrayList<>();
         journal.appendAll(java.util.Arrays.asList(good, bad), (record, error) -> rejected.add(record));
 
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         for (JournalRecord record : journal.read()) {
             messages.add(record.getMessage());
         }
@@ -219,15 +220,15 @@ class JournalStoreBatchTest {
         Map<String, String> details = Collections.singletonMap("exception", "java.lang.Boom");
         JournalRecord record = new JournalRecord(1, JournalLevel.ERROR, "shop", "ERROR", "boom\nsecond line", details);
         String key = String.join("\u0000", "ERROR", "shop", "boom", "java.lang.Boom");
-        assertEquals(String.format("%08x", key.hashCode()), record.getFingerprint());
+        assertEquals(String.format(Locale.ROOT, "%08x", key.hashCode()), record.getFingerprint());
         assertSame(record.getFingerprint(), record.getFingerprint());
         JournalRecord shortRecord = new JournalRecord(1, JournalLevel.INFO, "", "LOG", "");
-        assertEquals(String.format("%08x", String.join("\u0000", "INFO", "", "", "").hashCode()),
+        assertEquals(String.format(Locale.ROOT, "%08x", String.join("\u0000", "INFO", "", "", "").hashCode()),
             shortRecord.getFingerprint());
         for (int i = 0; i < 300; i++) {
             JournalRecord r = new JournalRecord(i, JournalLevel.WARNING, "s" + i, "LOG", "m" + i);
             String k = String.join("\u0000", "WARNING", "s" + i, "m" + i, "");
-            assertEquals(String.format("%08x", k.hashCode()), r.getFingerprint());
+            assertEquals(String.format(Locale.ROOT, "%08x", k.hashCode()), r.getFingerprint());
         }
     }
 

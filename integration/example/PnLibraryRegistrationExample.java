@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleContext;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.plugin.PluginBuilder;
 import org.pnfolder.pnlibrary.api.plugin.PluginRegistration;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
-import org.pnfolder.pnlibrary.api.remote.PolicyErrorAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.PolicyErrorAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryProvider;
@@ -107,7 +107,7 @@ public final class PnLibraryRegistrationExample implements AutoCloseable {
                 plugin.getDataFolder().toPath(),
                 DiagnosticContainer.builder("myplugin")
                         .snapshot(() -> {
-                            Map<String, Object> values = new HashMap<String, Object>();
+                            Map<String, Object> values = new HashMap<>();
                             values.put("version", plugin.getDescription().getVersion());
                             values.put("players", plugin.getServer().getOnlinePlayers().size());
                             return values;
@@ -128,7 +128,7 @@ public final class PnLibraryRegistrationExample implements AutoCloseable {
                 .charts(c -> {
                     c.simplePie("storage", () -> "sqlite");
                     c.advancedPie("modes", () -> {
-                        Map<String, Integer> modes = new HashMap<String, Integer>();
+                        Map<String, Integer> modes = new HashMap<>();
                         modes.put("a", 3);
                         modes.put("b", 1);
                         return modes;
@@ -137,7 +137,7 @@ public final class PnLibraryRegistrationExample implements AutoCloseable {
                             "1.21", Collections.singletonMap("paper", 10)));
                     c.singleLineChart("online", () -> plugin.getServer().getOnlinePlayers().size());
                     c.multiLineChart("lines", () -> {
-                        Map<String, Integer> lines = new HashMap<String, Integer>();
+                        Map<String, Integer> lines = new HashMap<>();
                         lines.put("x", 1);
                         lines.put("y", 2);
                         return lines;

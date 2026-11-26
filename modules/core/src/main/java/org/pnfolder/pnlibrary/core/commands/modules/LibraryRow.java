@@ -48,22 +48,22 @@ public final class LibraryRow {
             boolean verified, boolean conflict, @Nullable String file, long size, @NotNull String trust,
             @NotNull String scope, @Nullable String place, @NotNull String state, boolean autoLoad, @Nullable String error,
             boolean restartRequired) {
-        this.owner = owner;
-        this.title = title;
-        this.coordinates = coordinates;
-        this.version = version;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.title = Objects.requireNonNull(title, "title");
+        this.coordinates = Objects.requireNonNull(coordinates, "coordinates");
+        this.version = Objects.requireNonNull(version, "version");
         this.description = description;
-        this.repositories = repositories;
+        this.repositories = Objects.requireNonNull(repositories, "repositories");
         this.isolated = isolated;
         this.required = required;
         this.verified = verified;
         this.conflict = conflict;
         this.file = file;
         this.size = size;
-        this.trust = trust;
-        this.scope = scope;
+        this.trust = Objects.requireNonNull(trust, "trust");
+        this.scope = Objects.requireNonNull(scope, "scope");
         this.place = place;
-        this.state = state;
+        this.state = Objects.requireNonNull(state, "state");
         this.autoLoad = autoLoad;
         this.error = error;
         this.restartRequired = restartRequired;

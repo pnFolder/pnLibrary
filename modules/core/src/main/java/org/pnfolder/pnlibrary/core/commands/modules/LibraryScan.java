@@ -40,13 +40,10 @@ final class LibraryScan {
         for (LibraryUsage use : usage) {
             rows.add(row(use, versions.get(identity(use.getLibrary())).size() > 1, locate));
         }
-        Collections.sort(rows, new Comparator<LibraryRow>() {
-            @Override
-            public int compare(LibraryRow left, LibraryRow right) {
+        Collections.sort(rows, (left, right) -> {
                 int byOwner = left.getOwner().compareTo(right.getOwner());
                 return byOwner != 0 ? byOwner : left.getTitle().compareTo(right.getTitle());
-            }
-        });
+            });
         return rows;
     }
 

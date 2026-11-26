@@ -18,7 +18,7 @@ final class UpdateEventFiles {
     /** The regular {@code .json} files in {@code directory}; temporary files are not entries. */
     @NotNull
     static List<Path> list(@NotNull Path directory) throws IOException {
-        List<Path> files = new ArrayList<Path>();
+        List<Path> files = new ArrayList<>();
         try (Stream<Path> stream = Files.list(directory)) {
             for (Path path : (Iterable<Path>) stream::iterator) {
                 if (path.getFileName().toString().endsWith(".json")
@@ -37,8 +37,8 @@ final class UpdateEventFiles {
      */
     static int prune(@NotNull Path directory, long cutoffMillis, int maxEvents) throws IOException {
         List<Path> files = list(directory);
-        final List<Long> modified = new ArrayList<Long>();
-        List<Integer> order = new ArrayList<Integer>();
+        final List<Long> modified = new ArrayList<>();
+        List<Integer> order = new ArrayList<>();
         for (int index = 0; index < files.size(); index++) {
             modified.add(Files.getLastModifiedTime(files.get(index)).toMillis());
             order.add(index);

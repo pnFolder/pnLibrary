@@ -106,7 +106,7 @@ class TranslatableTypeTest {
     @Test
     @DisplayName("translate reports a null key when there are no candidates")
     void translateReportsANullKeyWhenThereAreNoCandidates() {
-        Translation result = table.translate(new FixedType(Collections.<String>emptyList(), "fallback"), "x");
+        Translation result = table.translate(new FixedType(Collections.emptyList(), "fallback"), "x");
         assertNull(result.getKey());
         assertEquals("fallback", result.getText());
         assertFalse(result.isLocalized());

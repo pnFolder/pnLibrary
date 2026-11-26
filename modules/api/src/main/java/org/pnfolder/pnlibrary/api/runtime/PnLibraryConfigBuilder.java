@@ -15,7 +15,7 @@ import java.util.List;
 public final class PnLibraryConfigBuilder {
     boolean upload = false;
     String uploadMode = "encrypted";
-    List<String> uploadProviders = Arrays.asList("catbox", "fileio");
+    List<String> uploadProviders = Arrays.asList("catbox", "litterbox", "gofile");
     String uploadEndpoint = "https://api.mclo.gs/1/log";
     String uploadPublicBase = "https://mclo.gs/";
     String uploadPublicKey = "";
@@ -31,8 +31,8 @@ public final class PnLibraryConfigBuilder {
     int maxReportBytes = 8 * 1024 * 1024;
     int deleteAfterDays = 90;
     int taskHistoryCapacity = 256;
-    List<String> secretKeyPatterns = Collections.<String>emptyList();
-    List<String> redactValuePatterns = Collections.<String>emptyList();
+    List<String> secretKeyPatterns = Collections.emptyList();
+    List<String> redactValuePatterns = Collections.emptyList();
     boolean privacy = false;
     int journalInfoDays = 7;
     int journalWarningDays = 30;
@@ -64,7 +64,7 @@ public final class PnLibraryConfigBuilder {
         this.uploadMode = value;
         return this;
     }
-    /** Sets providers attempted in order: {@code catbox}, {@code fileio}, {@code custom}. */
+    /** Sets providers attempted in order: {@code catbox}, {@code litterbox}, {@code gofile}, {@code custom}. */
     @NotNull public PnLibraryConfigBuilder uploadProviders(@NotNull List<String> value) {
         this.uploadProviders = new ArrayList<>(value);
         return this;

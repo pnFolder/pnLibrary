@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Locale;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -141,7 +142,7 @@ class OfflineUpdateInstallerTest {
         ApiVersionRange api = new ApiVersionRange(8, 8);
         StringBuilder digest = new StringBuilder();
         for (byte value : MessageDigest.getInstance("SHA-256").digest(bytes)) {
-            digest.append(String.format("%02x", value));
+            digest.append(String.format(Locale.ROOT, "%02x", value));
         }
         ArtifactSpecification specification = new ArtifactSpecification(ProductId.of("pnlibrary"),
             SemanticVersion.parse("2.0.0"), api, "release.jar", (long) bytes.length, digest.toString());

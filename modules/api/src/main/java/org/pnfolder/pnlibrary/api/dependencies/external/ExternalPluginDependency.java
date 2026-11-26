@@ -152,10 +152,10 @@ public final class ExternalPluginDependency implements PluginDependency {
         private SemanticVersion maximumInclusive;
         private SemanticVersion maximumExclusive;
         private DownloadPolicy downloadPolicy;
-        private final List<URI> mirrors = new ArrayList<URI>();
+        private final List<URI> mirrors = new ArrayList<>();
         private boolean verifyPluginId = true;
         private boolean verifyVersion = true;
-        private final List<ExternalArtifact> variants = new ArrayList<ExternalArtifact>();
+        private final List<ExternalArtifact> variants = new ArrayList<>();
         private String title;
         private Long generalMaxBytes;
         private String description;
@@ -271,7 +271,7 @@ public final class ExternalPluginDependency implements PluginDependency {
         }
 
         private List<ExternalArtifact> allArtifacts() {
-            List<ExternalArtifact> all = new ArrayList<ExternalArtifact>(variants);
+            List<ExternalArtifact> all = new ArrayList<>(variants);
             if (artifact != null) {
                 all.add(artifact);
             }

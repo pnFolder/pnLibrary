@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.cooldowns;
 
+import java.util.Objects;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
@@ -26,11 +27,11 @@ public final class CooldownSettings {
                             @NotNull List<Predicate<Audience>> bypassConditions, @NotNull List<CooldownTier> tiers,
                             @NotNull TierPick pick, boolean shared, @Nullable Consumer<CooldownDenied> onDenied,
                             @Nullable Consumer<CooldownStarted> onStarted) {
-        this.duration = duration;
-        this.bypassPermissions = bypassPermissions;
-        this.bypassConditions = bypassConditions;
-        this.tiers = tiers;
-        this.pick = pick;
+        this.duration = Objects.requireNonNull(duration, "duration");
+        this.bypassPermissions = Objects.requireNonNull(bypassPermissions, "bypassPermissions");
+        this.bypassConditions = Objects.requireNonNull(bypassConditions, "bypassConditions");
+        this.tiers = Objects.requireNonNull(tiers, "tiers");
+        this.pick = Objects.requireNonNull(pick, "pick");
         this.shared = shared;
         this.onDenied = onDenied;
         this.onStarted = onStarted;

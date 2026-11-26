@@ -22,7 +22,7 @@ public final class ServerGroup {
     private final Map<String, Set<String>> skip;
 
     public ServerGroup(@NotNull String name, @NotNull Set<String> servers, @NotNull Set<String> plugins) {
-        this(name, servers, plugins, Collections.<String, Set<String>>emptyMap(), Collections.<String, Set<String>>emptyMap());
+        this(name, servers, plugins, Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -34,9 +34,9 @@ public final class ServerGroup {
      */
     public ServerGroup(@NotNull String name, @NotNull Set<String> servers, @NotNull Set<String> plugins,
                        @NotNull Map<String, Set<String>> extra, @NotNull Map<String, Set<String>> skip) {
-        this.name = name;
-        this.servers = servers;
-        this.plugins = plugins;
+        this.name = Objects.requireNonNull(name, "name");
+        this.servers = Objects.requireNonNull(servers, "servers");
+        this.plugins = Objects.requireNonNull(plugins, "plugins");
         this.extra = extra;
         this.skip = skip;
     }
@@ -64,7 +64,7 @@ public final class ServerGroup {
     /** The plugins {@code server} should have in this group: the common ones, without its skips, and with its extras. */
     public @NotNull Set<String> wanted(@NotNull String server) {
         Set<String> skipped = named(skip, server);
-        Set<String> result = new LinkedHashSet<String>();
+        Set<String> result = new LinkedHashSet<>();
         for (String plugin : plugins) {
             if (!containsIgnoreCase(skipped, plugin)) {
                 result.add(plugin);
@@ -93,7 +93,7 @@ public final class ServerGroup {
     }
 
     public @NotNull ServerGroup addServer(@NotNull String server) {
-        Set<String> next = new LinkedHashSet<String>(servers);
+        Set<String> next = new LinkedHashSet<>(servers);
         next.add(server);
         return new ServerGroup(name, next, plugins, extra, skip);
     }
@@ -104,7 +104,7 @@ public final class ServerGroup {
     }
 
     public @NotNull ServerGroup addPlugin(@NotNull String plugin) {
-        Set<String> next = new LinkedHashSet<String>(plugins);
+        Set<String> next = new LinkedHashSet<>(plugins);
         next.add(plugin);
         return new ServerGroup(name, servers, next, extra, skip);
     }
@@ -117,7 +117,7 @@ public final class ServerGroup {
 
     /** The same group without any difference for {@code server}. */
     public @NotNull ServerGroup reset(@NotNull String server) {
-        Set<String> none = Collections.<String>emptySet();
+        Set<String> none = Collections.emptySet();
         return new ServerGroup(name, servers, plugins, replaced(extra, server, none), replaced(skip, server, none));
     }
 
@@ -132,11 +132,11 @@ public final class ServerGroup {
                 return entry.getValue();
             }
         }
-        return Collections.<String>emptySet();
+        return Collections.emptySet();
     }
 
     private static Map<String, Set<String>> replaced(Map<String, Set<String>> map, String server, Set<String> plugins) {
-        Map<String, Set<String>> result = new LinkedHashMap<String, Set<String>>();
+        Map<String, Set<String>> result = new LinkedHashMap<>();
         for (Map.Entry<String, Set<String>> entry : map.entrySet()) {
             if (!entry.getKey().equalsIgnoreCase(server)) {
                 result.put(entry.getKey(), entry.getValue());
@@ -149,7 +149,7 @@ public final class ServerGroup {
     }
 
     private static Map<String, Set<String>> withoutPlugin(Map<String, Set<String>> map, String plugin) {
-        Map<String, Set<String>> result = new LinkedHashMap<String, Set<String>>();
+        Map<String, Set<String>> result = new LinkedHashMap<>();
         for (Map.Entry<String, Set<String>> entry : map.entrySet()) {
             Set<String> left = without(entry.getValue(), plugin);
             if (!left.isEmpty()) {
@@ -160,7 +160,7 @@ public final class ServerGroup {
     }
 
     private static Set<String> without(Set<String> names, String name) {
-        Set<String> result = new LinkedHashSet<String>();
+        Set<String> result = new LinkedHashSet<>();
         for (String each : names) {
             if (!each.equalsIgnoreCase(name)) {
                 result.add(each);

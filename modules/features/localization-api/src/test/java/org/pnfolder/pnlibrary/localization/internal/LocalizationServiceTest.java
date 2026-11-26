@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization.internal;
 
+import java.util.Locale;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -296,14 +297,9 @@ class LocalizationServiceTest {
     @DisplayName("callers sharing a rejected locale submission receive the same failure")
     void callersSharingARejectedLocaleSubmissionReceiveTheSameFailure() {
         final TranslationRequest request = russian();
-        final AtomicReference<DefaultMinecraftLocalization> service = new AtomicReference<DefaultMinecraftLocalization>();
-        final AtomicReference<CompletableFuture<?>> shared = new AtomicReference<CompletableFuture<?>>();
-        RejectOnceExecutor executor = new RejectOnceExecutor(new Runnable() {
-            @Override
-            public void run() {
-                shared.set(service.get().load(request).toCompletableFuture());
-            }
-        });
+        final AtomicReference<DefaultMinecraftLocalization> service = new AtomicReference<>();
+        final AtomicReference<CompletableFuture<?>> shared = new AtomicReference<>();
+        RejectOnceExecutor executor = new RejectOnceExecutor(() -> shared.set(service.get().load(request).toCompletableFuture()));
         try {
             service.set(service(new Fixture(0, null), executor));
             try (DefaultMinecraftLocalization opened = service.get()) {
@@ -325,7 +321,7 @@ class LocalizationServiceTest {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.shutdown();
         try (DefaultMinecraftLocalization service = service(new Fixture(0, null), executor)) {
-            List<CompletionStage<?>> operations = Arrays.<CompletionStage<?>>asList(
+            List<CompletionStage<?>> operations = Arrays.asList(
                     service.availableVersions(), service.availableLocales(MinecraftVersion.V1_21_4));
             for (CompletionStage<?> operation : operations) {
                 CompletableFuture<?> future = operation.toCompletableFuture();
@@ -396,7 +392,7 @@ class LocalizationServiceTest {
         assertTrue(occupied.await(5, TimeUnit.SECONDS));
         try {
             DefaultMinecraftLocalization service = service(new Fixture(0, null), executor);
-            List<CompletionStage<?>> operations = Arrays.<CompletionStage<?>>asList(
+            List<CompletionStage<?>> operations = Arrays.asList(
                     service.availableVersions(), service.availableLocales(MinecraftVersion.V1_21_4),
                     service.load(russian()));
             service.close();
@@ -416,8 +412,8 @@ class LocalizationServiceTest {
     @Test
     @DisplayName("close racing executor submission settles the accepted operation")
     void closeRacingExecutorSubmissionSettlesTheAcceptedOperation() {
-        final AtomicReference<DefaultMinecraftLocalization> service = new AtomicReference<DefaultMinecraftLocalization>();
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>()) {
+        final AtomicReference<DefaultMinecraftLocalization> service = new AtomicReference<>();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()) {
             @Override
             public void execute(Runnable command) {
                 service.get().close();
@@ -440,7 +436,7 @@ class LocalizationServiceTest {
         private final AtomicBoolean rejectNext = new AtomicBoolean(true);
 
         RejectOnceExecutor(Runnable beforeRejection) {
-            super(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+            super(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
             this.beforeRejection = beforeRejection;
         }
 
@@ -461,7 +457,7 @@ class LocalizationServiceTest {
             byte[] digest = MessageDigest.getInstance("SHA-1").digest(bytes);
             StringBuilder text = new StringBuilder();
             for (byte b : digest) {
-                text.append(String.format("%02x", b));
+                text.append(String.format(Locale.ROOT, "%02x", b));
             }
             return text.toString();
         } catch (java.security.NoSuchAlgorithmException error) {
@@ -470,7 +466,7 @@ class LocalizationServiceTest {
     }
 
     private static final class Fixture extends LocalizationHttpClient {
-        final Map<URI, Integer> calls = new ConcurrentHashMap<URI, Integer>();
+        final Map<URI, Integer> calls = new ConcurrentHashMap<>();
         volatile int assetDownloads = 0;
         private final long delayMillis;
         private final byte[] manifestOverride;

@@ -67,7 +67,7 @@ class PlaceholderReplyTest {
 
     @Test
     void theListShowsBranchesByWhatReplyHolds() {
-        List<String> addresses = new ArrayList<String>();
+        List<String> addresses = new ArrayList<>();
         for (PlaceholderInfo info : engine.list()) {
             addresses.add(info.getAddress());
         }

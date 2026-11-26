@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.history;
 
+import java.util.Locale;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -85,8 +86,8 @@ public final class ConfigurationSnapshots {
             count += selection.getFiles().size();
         }
         require(count <= MAXIMUM_FILES, "Configuration snapshot exceeds 100 files");
-        List<Source> sources = new ArrayList<Source>();
-        Set<Path> distinct = new HashSet<Path>();
+        List<Source> sources = new ArrayList<>();
+        Set<Path> distinct = new HashSet<>();
         for (Map.Entry<ProductId, UpdateConfigurationBackup> entry : selections.entrySet()) {
             for (String relative : entry.getValue().getFiles()) {
                 Source source = new Source(entry.getKey(), entry.getValue(), relative,
@@ -141,7 +142,7 @@ public final class ConfigurationSnapshots {
     private List<ConfigurationSnapshotFile> copyAll(List<Source> sources, Path target) throws IOException {
         long configurationTotal = 0;
         long dataTotal = 0;
-        List<ConfigurationSnapshotFile> records = new ArrayList<ConfigurationSnapshotFile>();
+        List<ConfigurationSnapshotFile> records = new ArrayList<>();
         for (int index = 0; index < sources.size(); index++) {
             Source source = sources.get(index);
             BackupLabel label = source.request.labelOf(source.relative);
@@ -152,7 +153,7 @@ public final class ConfigurationSnapshots {
             }
             boolean isConfiguration = label.getKind() == BackupKind.CONFIGURATION;
             long room = isConfiguration ? maximumTotalBytes - configurationTotal : maximumDataTotalBytes - dataTotal;
-            String blob = String.format("%04d", index) + ".bin";
+            String blob = String.format(Locale.ROOT, "%04d", index) + ".bin";
             long limit = Math.min(fileLimit(label.getKind()), room);
             ConfigurationSnapshotFile record = copyFile(source, label, blob, target, limit);
             if (isConfiguration) {
@@ -205,8 +206,8 @@ public final class ConfigurationSnapshots {
         Instant.parse(snapshot.getCreatedAt());
         require(!snapshot.getFiles().isEmpty() && snapshot.getFiles().size() <= MAXIMUM_FILES,
             "Invalid configuration file count");
-        Set<Path> sources = new HashSet<Path>();
-        Set<String> blobs = new HashSet<String>();
+        Set<Path> sources = new HashSet<>();
+        Set<String> blobs = new HashSet<>();
         long configurationTotal = 0;
         long dataTotal = 0;
         for (ConfigurationSnapshotFile file : snapshot.getFiles()) {

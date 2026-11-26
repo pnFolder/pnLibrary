@@ -1,10 +1,12 @@
 package org.pnfolder.pnlibrary.bukkit.commands;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.pnfolder.pnlibrary.common.lang.Pair;
 import org.bukkit.Bukkit;
@@ -14,6 +16,7 @@ import org.bukkit.plugin.Plugin;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
+import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration;
@@ -23,6 +26,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateViews;
+import org.pnfolder.pnlibrary.core.settings.RestartSettings;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateConfirmationTokens;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages;
@@ -45,6 +49,7 @@ final class BukkitUpdateFlow {
     private final UpdateConfirmationTokens tokens = new UpdateConfirmationTokens();
     private final BukkitRestartFlow restart;
     private final BukkitRollbackFlow rollback;
+    private final BukkitRestartWatcher watcher;
 
     BukkitUpdateFlow(Plugin plugin, PnLibrary library, UpdateCatalogCommands catalog, BukkitCommandReplies replies,
                      ServerScheduler scheduler) {
@@ -52,9 +57,22 @@ final class BukkitUpdateFlow {
         this.catalog = catalog;
         this.replies = replies;
         this.scheduler = scheduler;
-        ServerRestarter restarter = new ServerRestarter(scheduler, () -> library.getLogging().logger(plugin, "pnLibrary"));
+        Supplier<PnLogger> log = () -> library.getLogging().logger(plugin, "pnLibrary");
+        Supplier<RestartSettings> settings = () -> RestartSettingsSource.of(library);
+        ServerRestarter restarter = new ServerRestarter(scheduler, log, settings);
         this.restart = new BukkitRestartFlow(library, replies, tokens, restarter);
         this.rollback = new BukkitRollbackFlow(library, replies, tokens, restart);
+        this.watcher = new BukkitRestartWatcher(library, restarter, restart, settings, log, Instant.now());
+    }
+
+    /** Begins watching for staged updates; the command alone, as in tests, plans nothing. */
+    void watchRestarts() {
+        watcher.start(scheduler);
+    }
+
+    /** Stops watching for staged updates. */
+    void close() {
+        watcher.close();
     }
 
     /** Replies immediately, then shows the refreshed list of updates on the server thread. */
@@ -87,7 +105,7 @@ final class BukkitUpdateFlow {
     }
 
     void cancelRestart(org.pnfolder.pnlibrary.api.commands.CommandSender reply) {
-        restart.cancelRestart(reply);
+        restart.cancelRestart(reply, watcher::suppressAuto);
     }
 
     // --- status -------------------------------------------------------------------------------------------------
@@ -124,7 +142,7 @@ final class BukkitUpdateFlow {
             return library.getUpdates().getProducts().all();
         }
         UpdateRegistration found = library.getUpdates().getProducts().get(requested);
-        return found == null ? Collections.<UpdateRegistration>emptyList() : Collections.singletonList(found);
+        return found == null ? Collections.emptyList() : Collections.singletonList(found);
     }
 
     // --- update -------------------------------------------------------------------------------------------------
@@ -234,6 +252,9 @@ final class BukkitUpdateFlow {
                 break;
             case RESTART_EMPTY:
                 restart.run(sender, reply, grant, ServerRestarter.Mode.WHEN_EMPTY);
+                break;
+            case RESTART_FEW:
+                restart.run(sender, reply, grant, ServerRestarter.Mode.WHEN_FEW);
                 break;
             case ROLLBACK:
                 rollback.runSavedRollback(sender, reply, plan, false);

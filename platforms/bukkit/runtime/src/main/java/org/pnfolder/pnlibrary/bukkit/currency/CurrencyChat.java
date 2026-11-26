@@ -49,7 +49,7 @@ final class CurrencyChat {
      * legacy colors; the mark is a sibling, so uncolored template text does not take the tone's color.
      */
     static void configured(BukkitCommandSender sender, Currency currency, ChatTone tone, String template) {
-        configured(sender, currency, tone, template, Collections.<String, String>emptyMap());
+        configured(sender, currency, tone, template, Collections.emptyMap());
     }
 
     static void configured(BukkitCommandSender sender, Currency currency, ChatTone tone, String template,

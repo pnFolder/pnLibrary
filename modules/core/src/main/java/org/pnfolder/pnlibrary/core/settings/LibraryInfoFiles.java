@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
+import org.pnfolder.pnlibrary.core.guide.LibraryCommandGuide;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -68,9 +70,9 @@ public final class LibraryInfoFiles {
     public LibraryInfoFiles(@NotNull LibraryPaths paths, @NotNull Supplier<List<SettingValue>> values,
                             @NotNull String version, @NotNull Clock clock, @NotNull String supportUrl,
                             @NotNull String repositoryUrl, @NotNull Consumer<String> warning) {
-        this.paths = paths;
+        this.paths = Objects.requireNonNull(paths, "paths");
         this.texts = new LibraryInfoTexts(paths, values, version, clock, supportUrl, repositoryUrl);
-        this.warning = warning;
+        this.warning = Objects.requireNonNull(warning, "warning");
     }
 
     /** Writes every file; call it once the settings are loaded. */
@@ -147,7 +149,7 @@ public final class LibraryInfoFiles {
     }
 
     private static List<String> withoutTime(String text) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (String line : text.split("\r\n|\r|\n", -1)) {
             if (!line.startsWith(LibraryInfoTexts.CREATED)) {
                 lines.add(line);

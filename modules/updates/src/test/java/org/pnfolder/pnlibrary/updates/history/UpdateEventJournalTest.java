@@ -78,7 +78,7 @@ class UpdateEventJournalTest {
 
     @Test
     void corruptEntriesDoNotHideValidHistoryAndTemporaryFilesAreIgnored() throws IOException {
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
         UpdateEventJournal journal = new UpdateEventJournal(directory, clock, warnings::add);
         journal.record(snapshot(1, "pnlibrary"));
         write(directory.resolve("broken.json"), "not json");
@@ -151,7 +151,7 @@ class UpdateEventJournalTest {
     }
 
     private static List<Long> revisions(List<UpdateEvent> events) {
-        List<Long> result = new ArrayList<Long>();
+        List<Long> result = new ArrayList<>();
         for (UpdateEvent event : events) {
             result.add(event.getRevision());
         }

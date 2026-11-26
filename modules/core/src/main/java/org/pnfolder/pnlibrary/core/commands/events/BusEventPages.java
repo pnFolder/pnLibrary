@@ -36,7 +36,7 @@ final class BusEventPages {
         ChatKit kit = CommandOutput.kit(context);
         List<EventInfo> all = bus().events();
         BusFilter filter = BusFilter.named(word);
-        List<EventInfo> shown = new ArrayList<EventInfo>();
+        List<EventInfo> shown = new ArrayList<>();
         for (EventInfo info : all) {
             if (filter.keeps(info)) {
                 shown.add(info);
@@ -44,7 +44,7 @@ final class BusEventPages {
         }
         int pages = ChatPager.pageCount(shown.size(), PAGE_SIZE);
         int page = ChatPager.clamp(requestedPage, pages);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("События плагинов", kit.text(listenerCount(), ChatPalette.LABEL)));
         lines.add(tabs(kit, all, word));
@@ -73,7 +73,7 @@ final class BusEventPages {
     }
 
     private List<Component> listFooter(ChatKit kit) {
-        List<Component> lines = new ArrayList<Component>(BusChat.footer(kit,
+        List<Component> lines = new ArrayList<>(BusChat.footer(kit,
                 kit.option("все слушатели", ROOT + " listeners", "Каждый слушатель каждого плагина", ChatPalette.ACCENT),
                 kit.option("записи", ROOT + " traces", "Записанные вызовы", ChatPalette.ACCENT),
                 kit.option("история", ROOT + " history", "Сколько раз вызывали по дням", ChatPalette.ACCENT)));
@@ -157,11 +157,11 @@ final class BusEventPages {
 
     /** Names offered while typing: short ones, and the full name only where two events share a short one. */
     List<String> eventNames() {
-        List<String> all = new ArrayList<String>();
+        List<String> all = new ArrayList<>();
         for (EventInfo info : bus().events()) {
             all.add(info.getEventType());
         }
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (String name : all) {
             int same = 0;
             for (String other : all) {
@@ -188,14 +188,14 @@ final class BusEventPages {
             return;
         }
         Class<? extends Event> type = bus().eventType(name);
-        List<ListenerInfo> listeners = type == null ? new ArrayList<ListenerInfo>() : bus().listeners(type);
+        List<ListenerInfo> listeners = type == null ? new ArrayList<>() : bus().listeners(type);
         CommandOutput.send(context, viewLines(kit, name, info, listeners));
     }
 
     private List<Component> viewLines(ChatKit kit, String name, EventInfo info, List<ListenerInfo> listeners) {
         boolean tracing = bus().tracedEvents().contains(name);
         Component status = info.getListeners() > 0 ? kit.text("слушают", ChatPalette.OK) : kit.text("никто не слушает", ChatPalette.FAINT);
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header(CoreFormatting.shortName(name), status));
         lines.add(kit.text("  " + name, ChatPalette.LABEL));

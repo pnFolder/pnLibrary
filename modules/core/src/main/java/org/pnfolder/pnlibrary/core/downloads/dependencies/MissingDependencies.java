@@ -13,7 +13,7 @@ public final class MissingDependencies {
     private static final int CODE_PARTS = 4;
     private static final int PART_LENGTH = 4;
 
-    private final List<MissingGroup> groups = new ArrayList<MissingGroup>();
+    private final List<MissingGroup> groups = new ArrayList<>();
     private final SecureRandom random = new SecureRandom();
 
     /** Remembers the missing {@code items} of {@code owner} under a new code. */
@@ -26,7 +26,7 @@ public final class MissingDependencies {
 
     /** The groups that are not installed yet. */
     public synchronized @NotNull List<MissingGroup> pending() {
-        List<MissingGroup> pending = new ArrayList<MissingGroup>();
+        List<MissingGroup> pending = new ArrayList<>();
         for (MissingGroup group : groups) {
             if (group.getPending()) {
                 pending.add(group);

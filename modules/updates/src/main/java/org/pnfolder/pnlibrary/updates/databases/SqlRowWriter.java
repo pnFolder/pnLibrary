@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +23,7 @@ public final class SqlRowWriter {
     public static final int FETCH_ROWS = 1000;
 
     /** Column types written as binary literals. */
-    public static final Set<Integer> BINARY_TYPES = Collections.unmodifiableSet(new HashSet<Integer>(
+    public static final Set<Integer> BINARY_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB)));
 
     private static final int ROWS_PER_INSERT = 200;
@@ -33,10 +34,10 @@ public final class SqlRowWriter {
     private final RowLiteral literal;
 
     public SqlRowWriter(@NotNull BufferedWriter out, @NotNull Path target, long maximumBytes, @NotNull RowLiteral literal) {
-        this.out = out;
-        this.target = target;
+        this.out = Objects.requireNonNull(out, "out");
+        this.target = Objects.requireNonNull(target, "target");
         this.maximumBytes = maximumBytes;
-        this.literal = literal;
+        this.literal = Objects.requireNonNull(literal, "literal");
     }
 
     /** Writes every row of {@code rows}; {@code insertHead} is the statement up to and including the opening parenthesis. */

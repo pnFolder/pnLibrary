@@ -15,7 +15,7 @@ final class StartupBox implements MessageBox {
     private final BoxKind kind;
     private final String explicitName;
     private final String explicitVersion;
-    private final List<BoxRow> rows = new ArrayList<BoxRow>();
+    private final List<BoxRow> rows = new ArrayList<>();
     private boolean shown;
 
     StartupBox(BoxEnvironment environment, Object owner, String title, BoxKind kind,

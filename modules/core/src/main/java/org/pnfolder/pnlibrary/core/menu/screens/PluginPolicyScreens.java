@@ -64,7 +64,7 @@ public final class PluginPolicyScreens extends MenuScreens {
                 go(who -> allowed(who, MenuConstants.SETTINGS, () -> chooseJava(who, product, java))));
         }
         builder.button(16, MenuItems.icon(Icons.RESET, "BARRIER", "Подбирать самому", Style.lore(Collections.singletonList(
-            "Сборка, как у установленной версии, иначе самая новая из подходящих."), Collections.<Fact>emptyList(),
+            "Сборка, как у установленной версии, иначе самая новая из подходящих."), Collections.emptyList(),
             Style.left("сбросить")), Tone.MUTED), go(who -> allowed(who, MenuConstants.SETTINGS, () -> chooseJava(who, product, null))));
         builder.button(MenuConstants.SMALL_BACK, MenuItems.backItem(), go(who -> routes.card(who, product)));
         show(player, builder.build());
@@ -90,7 +90,7 @@ public final class PluginPolicyScreens extends MenuScreens {
     }
 
     private static ItemSpec holdChoice(String label, @Nullable Duration selectedRemaining) {
-        List<Fact> note = selectedRemaining == null ? Collections.<Fact>emptyList()
+        List<Fact> note = selectedRemaining == null ? Collections.emptyList()
             : Fact.list("Выбрано", "● осталось " + MenuText.timeLeft(selectedRemaining));
         String action = selectedRemaining != null ? "начать срок заново" : "приостановить";
         return MenuItems.icon(Icons.CLOCK, "CLOCK", label, Style.lore(Collections.singletonList(
@@ -112,7 +112,7 @@ public final class PluginPolicyScreens extends MenuScreens {
         }
         if (remaining != null) {
             builder.button(16, MenuItems.icon(Icons.RESET, "REDSTONE", "Снять паузу", Style.lore(
-                Collections.singletonList("Вернуть обновления сейчас."), Collections.<Fact>emptyList(), Style.left("снять")), Tone.GOOD),
+                Collections.singletonList("Вернуть обновления сейчас."), Collections.emptyList(), Style.left("снять")), Tone.GOOD),
                 go(who -> allowed(who, MenuConstants.SETTINGS, () -> chooseHold(who, product, null))));
         }
         builder.button(MenuConstants.SMALL_BACK, MenuItems.backItem(), go(who -> routes.card(who, product)));

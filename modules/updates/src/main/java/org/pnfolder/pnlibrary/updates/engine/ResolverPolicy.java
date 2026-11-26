@@ -12,7 +12,7 @@ public final class ResolverPolicy {
     private final Set<String> installedExternalPlugins;
 
     public ResolverPolicy() {
-        this(false, Collections.<String>emptySet());
+        this(false, Collections.emptySet());
     }
 
     /**
@@ -21,7 +21,7 @@ public final class ResolverPolicy {
      */
     public ResolverPolicy(boolean allowManagedInstalls, @NotNull Set<String> installedExternalPlugins) {
         this.allowManagedInstalls = allowManagedInstalls;
-        this.installedExternalPlugins = Collections.unmodifiableSet(new LinkedHashSet<String>(installedExternalPlugins));
+        this.installedExternalPlugins = Collections.unmodifiableSet(new LinkedHashSet<>(installedExternalPlugins));
     }
 
     public boolean getAllowManagedInstalls() {

@@ -148,7 +148,7 @@ final class BukkitLinkReporter implements PluginMessageListener {
         if (pieces == null) {
             pieces = DataChunks.split(id, to, false, "Ответ слишком большой.", key, Instant.now());
         }
-        List<byte[]> toSend = pieces == null ? new ArrayList<byte[]>() : pieces;
+        List<byte[]> toSend = pieces == null ? new ArrayList<>() : pieces;
         scheduler.nextTick(() -> {
             Player sender = carrier.isOnline() ? carrier : firstOnline();
             for (byte[] piece : toSend) {

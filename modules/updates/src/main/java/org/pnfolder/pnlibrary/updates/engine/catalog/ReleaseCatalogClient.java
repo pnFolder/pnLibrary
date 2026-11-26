@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.catalog;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient;
 
@@ -25,10 +26,10 @@ public final class ReleaseCatalogClient {
 
     public ReleaseCatalogClient(@NotNull TrustedHttpClient http, @NotNull ReleaseCatalogStore store,
                                 @NotNull Executor executor, @NotNull Duration ttl, @NotNull ReleaseCatalogCodec codec) {
-        this.http = http;
-        this.store = store;
-        this.executor = executor;
-        this.ttl = ttl;
+        this.http = Objects.requireNonNull(http, "http");
+        this.store = Objects.requireNonNull(store, "store");
+        this.executor = Objects.requireNonNull(executor, "executor");
+        this.ttl = Objects.requireNonNull(ttl, "ttl");
         this.codec = codec;
     }
 

@@ -62,7 +62,7 @@ final class JournalRetention {
             return 0;
         }
         LocalDate today = today();
-        List<Path> survivors = new ArrayList<Path>();
+        List<Path> survivors = new ArrayList<>();
         int removed = 0;
         for (Path file : files.all()) {
             JournalLevel level = files.levelOf(file);
@@ -84,7 +84,7 @@ final class JournalRetention {
     int enforce(List<Path> all) throws IOException {
         lastEnforcedAtMillis = clock.millis();
         newSegmentStarted = false;
-        List<Path> ordered = new ArrayList<Path>(all);
+        List<Path> ordered = new ArrayList<>(all);
         ordered.sort(evictionOrder());
         long total = 0;
         for (Path file : ordered) {

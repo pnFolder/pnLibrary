@@ -23,12 +23,8 @@ public final class BungeeMetricsFactory extends NativePluginMetricsFactory<Plugi
                 (plugin, projectId) -> {
                     BStatsClient client = openBStats(plugin, projectId, pnLogger);
                     return new BStatsMetricsSession(projectId,
-                            chart -> {
-                                client.addCustomChart(chart);
-                            },
-                            () -> {
-                                client.shutdown();
-                            });
+                            chart -> client.addCustomChart(chart),
+                            () -> client.shutdown());
                 },
                 (plugin, token) -> (PluginMetrics) new SimpleFastStatsMetricsSession(token,
                         contextToken -> new BungeeContext.Factory(plugin, contextToken)));
@@ -47,11 +43,7 @@ public final class BungeeMetricsFactory extends NativePluginMetricsFactory<Plugi
                 },
                 null,
                 () -> true,
-                (message, error) -> {
-                    pnLogger.get().warning(message, error);
-                },
-                message -> {
-                    pnLogger.get().info(message);
-                });
+                (message, error) -> pnLogger.get().warning(message, error),
+                message -> pnLogger.get().info(message));
     }
 }

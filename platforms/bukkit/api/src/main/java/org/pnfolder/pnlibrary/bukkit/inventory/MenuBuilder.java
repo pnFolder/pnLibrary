@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bukkit.inventory;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,8 +22,8 @@ public final class MenuBuilder {
     private boolean cancelPlayerInventory = true;
 
     MenuBuilder(@NotNull String title, @NotNull MenuType type) {
-        this.title = title;
-        this.type = type;
+        this.title = Objects.requireNonNull(title, "title");
+        this.type = Objects.requireNonNull(type, "type");
     }
 
     /** Sets chest rows from one through six; ignored by fixed-size menu types. */

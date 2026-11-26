@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -86,21 +87,21 @@ final class YamlMigrationEngine {
         if (!(loaded instanceof Map)) {
             throw new IllegalArgumentException("Configuration root must be a YAML object");
         }
-        Map<String, Object> root = new LinkedHashMap<String, Object>();
+        Map<String, Object> root = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : ((Map<?, ?>) loaded).entrySet()) {
             root.put(String.valueOf(entry.getKey()), entry.getValue());
         }
         ConfigDocument document = new ConfigDocument(root);
         int fileVersion = versionOf(document);
         if (fileVersion > steps.getLatestVersion()) {
-            return new Result(content, Collections.<String>emptyList(), true);
+            return new Result(content, Collections.emptyList(), true);
         }
         List<Integer> applied = steps.applyTo(document, fileVersion);
         // The marker is written back by stampDefaults, together with its warning comment.
         document.remove(ConfigSteps.VERSION_KEY);
         Map<String, Object> body = document.toMap();
         String dumped = body.isEmpty() ? "" : YamlText.trimEnd(yaml.dump(body).replace("\r\n", "\n")) + "\n";
-        List<String> labels = new ArrayList<String>();
+        List<String> labels = new ArrayList<>();
         for (Integer version : applied) {
             labels.add("v" + version);
         }

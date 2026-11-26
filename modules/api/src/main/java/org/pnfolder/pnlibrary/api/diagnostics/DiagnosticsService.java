@@ -64,12 +64,12 @@ public interface DiagnosticsService {
 
     /** Like the full call, with no detail and no fields. */
     default void status(@NotNull String plugin, @NotNull String component, @NotNull String state) {
-        status(plugin, component, state, "", Collections.<String, Object>emptyMap());
+        status(plugin, component, state, "", Collections.emptyMap());
     }
 
     /** Like the full call, with no fields. */
     default void status(@NotNull String plugin, @NotNull String component, @NotNull String state, @NotNull String detail) {
-        status(plugin, component, state, detail, Collections.<String, Object>emptyMap());
+        status(plugin, component, state, detail, Collections.emptyMap());
     }
 
     /** Removes the component status entry previously set by {@link #status}. */
@@ -96,12 +96,12 @@ public interface DiagnosticsService {
     /** Like the full call, with no error and no fields. */
     default void record(@NotNull String plugin, @NotNull DiagnosticLevel level, @NotNull String component, @NotNull String code,
                         @NotNull String message) {
-        record(plugin, level, component, code, message, null, Collections.<String, Object>emptyMap());
+        record(plugin, level, component, code, message, null, Collections.emptyMap());
     }
 
     /** Like the full call, with no fields. */
     default void record(@NotNull String plugin, @NotNull DiagnosticLevel level, @NotNull String component, @NotNull String code,
                         @NotNull String message, @Nullable Throwable error) {
-        record(plugin, level, component, code, message, error, Collections.<String, Object>emptyMap());
+        record(plugin, level, component, code, message, error, Collections.emptyMap());
     }
 }

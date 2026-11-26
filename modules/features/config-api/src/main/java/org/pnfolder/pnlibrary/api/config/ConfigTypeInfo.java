@@ -31,10 +31,10 @@ public final class ConfigTypeInfo {
     public ConfigTypeInfo(@NotNull Class<?> baseType, @NotNull Class<?> implementation, @NotNull String name,
                           @NotNull Set<String> aliases, @Nullable PluginId owner, int priority,
                           @Nullable ConfigAddress target) {
-        this.baseType = baseType;
-        this.implementation = implementation;
-        this.name = name;
-        this.aliases = aliases;
+        this.baseType = Objects.requireNonNull(baseType, "baseType");
+        this.implementation = Objects.requireNonNull(implementation, "implementation");
+        this.name = Objects.requireNonNull(name, "name");
+        this.aliases = Objects.requireNonNull(aliases, "aliases");
         this.owner = owner;
         this.priority = priority;
         this.target = target;

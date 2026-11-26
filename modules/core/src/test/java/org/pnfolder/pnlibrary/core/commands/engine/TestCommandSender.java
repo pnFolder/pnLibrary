@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.api.commands.CommandSender;
 
 /** A sender with chosen permissions that keeps the messages and sounds it was sent. */
 final class TestCommandSender implements CommandSender {
-    final List<Component> messages = new ArrayList<Component>();
-    final List<Sound> sounds = new ArrayList<Sound>();
+    final List<Component> messages = new ArrayList<>();
+    final List<Sound> sounds = new ArrayList<>();
     private final Set<String> permissions;
     private final boolean console;
 
@@ -30,7 +30,7 @@ final class TestCommandSender implements CommandSender {
     }
 
     TestCommandSender(boolean console) {
-        this(Collections.<String>emptySet(), console);
+        this(Collections.emptySet(), console);
     }
 
     TestCommandSender() {
@@ -55,7 +55,7 @@ final class TestCommandSender implements CommandSender {
 
     /** The plain text of every message, without the mark that opens a notice. */
     List<String> texts() {
-        List<String> texts = new ArrayList<String>();
+        List<String> texts = new ArrayList<>();
         for (Component message : messages) {
             texts.add(textOf(message));
         }

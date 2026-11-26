@@ -24,7 +24,7 @@ class ModuleDependencyValidatorTest {
     }
 
     private void validate(ModuleDependencyValidator validator, PluginDependency dependency) {
-        validator.validate(Collections.singletonList(dependency), Collections.<String, ProductDescriptor>emptyMap());
+        validator.validate(Collections.singletonList(dependency), Collections.emptyMap());
     }
 
     @Test
@@ -35,7 +35,7 @@ class ModuleDependencyValidatorTest {
     @Test
     void aMissingPluginNamesItsDownloadPage() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-            () -> validate(validator(Collections.<String, String>emptyMap(), false), vault));
+            () -> validate(validator(Collections.emptyMap(), false), vault));
 
         assertTrue(error.getMessage().contains("Vault"));
         assertTrue(error.getMessage().contains("https://example.org/vault"));
@@ -54,16 +54,16 @@ class ModuleDependencyValidatorTest {
     void anOptionalPluginNeverBlocks() {
         PluginDependency optional = Dependencies.plugin("Vault", "1.7.0", "https://example.org/vault", false);
 
-        assertDoesNotThrow(() -> validate(validator(Collections.<String, String>emptyMap(), false), optional));
+        assertDoesNotThrow(() -> validate(validator(Collections.emptyMap(), false), optional));
     }
 
     @Test
     void aMissingPluginThatCanBeDownloadedAutomaticallyDoesNotBlock() {
         PluginDependency automatic = Dependencies.plugin("Vault", "1.7.0", "https://example.org/Vault.jar", repeat('a', 64));
 
-        assertDoesNotThrow(() -> validate(validator(Collections.<String, String>emptyMap(), true), automatic));
+        assertDoesNotThrow(() -> validate(validator(Collections.emptyMap(), true), automatic));
         assertThrows(IllegalArgumentException.class,
-            () -> validate(validator(Collections.<String, String>emptyMap(), false), automatic));
+            () -> validate(validator(Collections.emptyMap(), false), automatic));
     }
 
     private static String repeat(char letter, int count) {

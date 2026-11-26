@@ -25,12 +25,12 @@ public final class RandomAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public RandomAction() {
-        this(Collections.<RandomOption>emptyList());
+        this(Collections.emptyList());
     }
 
     /** Creates it with every setting given. */
     public RandomAction(@NotNull List<RandomOption> options) {
-        this.options = options;
+        this.options = Objects.requireNonNull(options, "options");
     }
 
     /** The choices; with none, nothing happens. */

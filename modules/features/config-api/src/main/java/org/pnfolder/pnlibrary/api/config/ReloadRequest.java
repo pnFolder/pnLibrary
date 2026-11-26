@@ -24,8 +24,8 @@ public final class ReloadRequest {
      */
     public ReloadRequest(@Nullable ConfigId id, @NotNull ConfigApply apply, @NotNull List<ConfigSetting> settings) {
         this.id = id;
-        this.apply = apply;
-        this.settings = settings;
+        this.apply = Objects.requireNonNull(apply, "apply");
+        this.settings = Objects.requireNonNull(settings, "settings");
     }
 
     /** The file. */

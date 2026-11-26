@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** ASCII stand-ins for the glyphs used on pages, for readers that cannot show anything else. */
 final class ChatAscii {
-    private static final Map<Character, String> STAND_INS = new HashMap<Character, String>();
+    private static final Map<Character, String> STAND_INS = new HashMap<>();
 
     static {
         STAND_INS.put('─', "-");

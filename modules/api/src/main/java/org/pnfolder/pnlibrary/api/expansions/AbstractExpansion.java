@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.expansions;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,7 +19,7 @@ public abstract class AbstractExpansion implements Expansion {
     private volatile ExpansionState state = ExpansionState.DISABLED;
 
     protected AbstractExpansion(@NotNull String id) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id, "id");
     }
 
     @NotNull

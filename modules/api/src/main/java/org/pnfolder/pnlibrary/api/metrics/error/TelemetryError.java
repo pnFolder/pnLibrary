@@ -21,7 +21,7 @@ public final class TelemetryError {
 
     /** An error without an operation and attributes. */
     public TelemetryError(@NotNull String type, @Nullable String message, @NotNull List<String> stackTrace, boolean handled) {
-        this(type, message, stackTrace, handled, null, Collections.<String, Object>emptyMap());
+        this(type, message, stackTrace, handled, null, Collections.emptyMap());
     }
 
     /**

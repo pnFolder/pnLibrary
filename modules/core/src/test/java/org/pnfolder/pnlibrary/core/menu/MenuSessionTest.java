@@ -23,7 +23,7 @@ import org.pnfolder.pnlibrary.core.menu.style.Row;
 
 class MenuSessionTest {
     private static ItemSpec item(String name) {
-        return new ItemSpec(null, "STONE", null, name, Collections.<String>emptyList());
+        return new ItemSpec(null, "STONE", null, name, Collections.emptyList());
     }
 
     private static MenuSession session() {
@@ -81,7 +81,7 @@ class MenuSessionTest {
 
     @Test
     void anEmptyListSaysSoAndAPagePastTheEndIsPulledBack() {
-        Menu empty = shown(session(), new ArrayList<Row>(), 5);
+        Menu empty = shown(session(), new ArrayList<>(), 5);
         assertTrue(plain(empty.getItems().get(22).getItem().getName()).contains("пусто"));
         assertTrue(empty.getTitle().contains("1/1"));
 

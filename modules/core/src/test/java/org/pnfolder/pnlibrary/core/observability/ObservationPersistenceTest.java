@@ -60,7 +60,7 @@ class ObservationPersistenceTest {
         Path source = root.resolve("server.log");
         Files.write(source, "secret".getBytes(StandardCharsets.UTF_8));
         Observation observation = Observation.from(new ObservationRequest(null, null, "failed", ObservationLevel.INFO,
-                Collections.<String, String>emptyMap(), Collections.singletonList(source)));
+                Collections.emptyMap(), Collections.singletonList(source)));
 
         try (ObservationJournal journal = new ObservationJournal(root.resolve("observations.jsonl"))) {
             journal.append(observation);
@@ -82,7 +82,7 @@ class ObservationPersistenceTest {
         assertEquals("text/plain", attachment.getContentType());
         assertTrue(Files.exists(attachment.getStoredPath()));
 
-        store.removeOrphans(Collections.<String>emptySet());
+        store.removeOrphans(Collections.emptySet());
         assertFalse(Files.exists(attachment.getStoredPath()));
     }
 

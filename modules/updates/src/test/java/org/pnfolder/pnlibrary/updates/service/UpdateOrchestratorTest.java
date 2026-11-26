@@ -44,11 +44,8 @@ import org.pnfolder.pnlibrary.updates.history.UpdateStateStore;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
 
 class UpdateOrchestratorTest {
-    private static final UpdateConfiguration MANUAL = new UpdateConfiguration()
-        .withPluginAutomaticDownload(false)
-        .withLibrary(new UpdateConfiguration.LibraryPolicy(UpdateChannel.DEV, false));
-    private static final UpdateConfiguration AUTOMATIC = new UpdateConfiguration()
-        .withLibrary(new UpdateConfiguration.LibraryPolicy(UpdateChannel.DEV, true));
+    private static final UpdateConfiguration MANUAL = new UpdateConfiguration();
+    private static final UpdateConfiguration AUTOMATIC = new UpdateConfiguration();
 
     @TempDir
     Path directory;
@@ -121,7 +118,7 @@ class UpdateOrchestratorTest {
         AtomicInteger mutations = new AtomicInteger();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor, UpdateOrchestratorHooks.builder(
             () -> new ResolutionResult.Ready(plan("2.0.0")), snapshot -> mutations.incrementAndGet(), snapshot -> { })
-            .build());
+            .automaticAllowed(snapshot -> false).build());
         try {
             CompletableFuture<UpdatePlanSnapshot> check = orchestrator.checkNow().toCompletableFuture();
             CompletableFuture<UpdatePlanSnapshot> stage = orchestrator.stage(UUID.randomUUID()).toCompletableFuture();
@@ -150,7 +147,7 @@ class UpdateOrchestratorTest {
         CountDownLatch release = new CountDownLatch(1);
         List<UpdatePlanSnapshot> announcements = new ArrayList<>();
         List<UpdatePlanSnapshot> staged = new ArrayList<>();
-        AtomicReference<ResolutionResult> result = new AtomicReference<ResolutionResult>(
+        AtomicReference<ResolutionResult> result = new AtomicReference<>(
             new ResolutionResult.Ready(plan("2.0.0")));
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor, UpdateOrchestratorHooks.builder(() -> {
@@ -162,7 +159,7 @@ class UpdateOrchestratorTest {
                 Thread.currentThread().interrupt();
             }
             return result.get();
-        }, staged::add, announcements::add).build());
+        }, staged::add, announcements::add).automaticAllowed(snapshot -> false).build());
         try {
             CompletableFuture<UpdatePlanSnapshot> first = orchestrator.checkNow().toCompletableFuture();
             assertTrue(entered.await(1, TimeUnit.SECONDS));
@@ -193,8 +190,8 @@ class UpdateOrchestratorTest {
         AtomicBoolean available = new AtomicBoolean(true);
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor, UpdateOrchestratorHooks.builder(
             () -> new ResolutionResult.Ready(available.get() ? plan("2.0.0")
-                : new UpdatePlan(1, Collections.<ProductChange>emptyList(), Collections.<ProductRelease>emptyList())),
-            snapshot -> { }, announcements::add).build());
+                : new UpdatePlan(1, Collections.emptyList(), Collections.emptyList())),
+            snapshot -> { }, announcements::add).automaticAllowed(snapshot -> false).build());
         try {
             orchestrator.checkNow().toCompletableFuture().get();
             orchestrator.checkNow().toCompletableFuture().get();
@@ -216,7 +213,7 @@ class UpdateOrchestratorTest {
     void executorRejectionCompletesCheckAndStageFuturesInsteadOfLeaking() throws Exception {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor,
-            hooks(() -> new ResolutionResult.Ready(plan("2.0.0"))).build());
+            hooks(() -> new ResolutionResult.Ready(plan("2.0.0"))).automaticAllowed(snapshot -> false).build());
         executor.shutdownNow();
         assertThrows(Exception.class, () -> orchestrator.checkNow().toCompletableFuture().get());
         assertThrows(Exception.class, () -> orchestrator.stage(UUID.randomUUID()).toCompletableFuture().get());
@@ -230,7 +227,7 @@ class UpdateOrchestratorTest {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         AtomicInteger rollbackRuns = new AtomicInteger();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor,
-            hooks(() -> new ResolutionResult.Ready(plan("2.0.0"))).build());
+            hooks(() -> new ResolutionResult.Ready(plan("2.0.0"))).automaticAllowed(snapshot -> false).build());
         try {
             UpdatePlanSnapshot available = orchestrator.checkNow().toCompletableFuture().get();
 
@@ -263,7 +260,7 @@ class UpdateOrchestratorTest {
         }).remoteResolver(() -> {
             remoteCalls.incrementAndGet();
             return new ResolutionResult.Ready(plan("3.0.0"));
-        }).build());
+        }).automaticAllowed(snapshot -> false).build());
         try {
             CompletableFuture<UpdatePlanSnapshot> cached = orchestrator.checkNow(false).toCompletableFuture();
             assertTrue(cachedEntered.await(1, TimeUnit.SECONDS));
@@ -284,7 +281,7 @@ class UpdateOrchestratorTest {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor, hooks(() -> {
             throw new IllegalStateException("GitHub вернул HTTP 404");
-        }).build());
+        }).automaticAllowed(snapshot -> false).build());
         try {
             UpdatePlanSnapshot failed = orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS);
 
@@ -305,7 +302,7 @@ class UpdateOrchestratorTest {
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor,
             hooks(() -> new ResolutionResult.Ready(plan("2.0.0")))
                 .observeState((snapshot, recordedActor, operation) -> observations.add(observed(operation, recordedActor)))
-                .build());
+                .automaticAllowed(snapshot -> false).build());
         try {
             UpdatePlanSnapshot plan = orchestrator.checkNow(actor).toCompletableFuture().get(2, TimeUnit.SECONDS);
             orchestrator.stage(plan.getId(), actor).toCompletableFuture().get(2, TimeUnit.SECONDS);
@@ -349,7 +346,7 @@ class UpdateOrchestratorTest {
                     assertEquals(actor, recordedActor);
                     observations.add(snapshot);
                 }
-            }).build());
+            }).automaticAllowed(snapshot -> false).build());
         try {
             UpdatePlanSnapshot selected = orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS);
             assertThrows(Exception.class,
@@ -368,7 +365,7 @@ class UpdateOrchestratorTest {
     void savedRollbackCanPublishItsOwnPlanWithoutAnUnrelatedCurrentPlan() throws Exception {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor,
-            hooks(() -> new ResolutionResult.Ready(plan("3.0.0"))).build());
+            hooks(() -> new ResolutionResult.Ready(plan("3.0.0"))).automaticAllowed(snapshot -> false).build());
         UUID id = UUID.randomUUID();
         try {
             UpdatePlanSnapshot saved = new UpdatePlanSnapshot(id, 0, UpdateState.ROLLED_BACK, plan("2.0.0"),
@@ -392,7 +389,7 @@ class UpdateOrchestratorTest {
         UpdateOrchestrator orchestrator = orchestrator(MANUAL, executor, UpdateOrchestratorHooks.builder(
             () -> new ResolutionResult.Ready(plan("2.0.0")), snapshot -> { }, snapshot -> {
                 throw new IllegalStateException("announcement broke");
-            }).unexpectedFailure((message, error) -> reported.add(new AbstractMap.SimpleEntry<>(message, error))).build());
+            }).unexpectedFailure((message, error) -> reported.add(new AbstractMap.SimpleEntry<>(message, error))).automaticAllowed(snapshot -> false).build());
         try {
             orchestrator.start();
             Map.Entry<String, Throwable> entry = reported.poll(5, TimeUnit.SECONDS);

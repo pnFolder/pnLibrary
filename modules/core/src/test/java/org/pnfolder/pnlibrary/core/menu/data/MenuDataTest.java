@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu.data;
 
+import org.pnfolder.pnlibrary.core.menu.data.question.EventAbout;
+import org.pnfolder.pnlibrary.core.menu.data.remote.MenuWire;
+import org.pnfolder.pnlibrary.core.menu.data.remote.RemoteMenuData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -63,7 +66,7 @@ class MenuDataTest {
     private final UpdateSnapshot snapshot = new UpdateSnapshot("shop", "1.0.0", "1.1.0", UpdateChannel.BETA, UpdateState.UPDATE_AVAILABLE,
         21, 17, true, "https://example.org/r", "ok", null, new ApiVersionRange(1, 2),
         Collections.singletonList(new ReleaseSummary("1.1.0", UpdateChannel.STABLE, now, "https://example.org/c")),
-        Collections.<Integer>emptyList(), null, null);
+        Collections.emptyList(), null, null);
     private final UpdateHistoryEntry entry = new UpdateHistoryEntry(UUID.randomUUID(), now, UUID.randomUUID(), UpdateState.UPDATE_STAGED,
         new UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin"), "stage", Collections.singletonList(new ProductChange(ProductId.of("shop"),
         SemanticVersion.parse("1.0.0"), SemanticVersion.parse("1.1.0"))), "text");
@@ -233,7 +236,7 @@ class MenuDataTest {
 
     @Test
     void aCommandRunsOnTheOtherServerAndItsAnswerIsPrintedToTheViewer() {
-        RemoteMenuData remote = connected(new HashMap<String, Object>());
+        RemoteMenuData remote = connected(new HashMap<>());
 
         List<Component> lines = remote.command(new ViewerInfo("Admin", Collections.singleton("pnlibrary.admin")), "pn events full g1");
 
@@ -266,7 +269,7 @@ class MenuDataTest {
     void settingsTravelThroughTheLinkAndAChangeNeedsTheSettingsPermission() {
         final UpdateActor actor = new UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin");
         SettingRow row = new SettingRow("privacy", "Приватность отчёта", "SWITCH", "Прятать данные.", "false", "false", false, "",
-            Collections.<String>emptyList(), false);
+            Collections.emptyList(), false);
         SettingRow zone = new SettingRow("time-zone", "Часовой пояс", "CHOICE", "Пояс.", "UTC", "UTC", false, "",
             Collections.singletonList("UTC"), true, "zones");
         RemoteMenuData granted = connected(answers("settings", Arrays.asList(row, zone),

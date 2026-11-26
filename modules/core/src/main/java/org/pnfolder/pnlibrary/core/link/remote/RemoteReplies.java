@@ -21,7 +21,7 @@ public final class RemoteReplies {
         }
     }
 
-    private final ConcurrentHashMap<UUID, Waiting> waiting = new ConcurrentHashMap<UUID, Waiting>();
+    private final ConcurrentHashMap<UUID, Waiting> waiting = new ConcurrentHashMap<>();
     private final LinkTimeouts timeouts = new LinkTimeouts("pnlibrary-link-replies");
 
     /** Waits for the answer to request {@code id}; if none comes in time, {@code onResult} gets a failure instead. */

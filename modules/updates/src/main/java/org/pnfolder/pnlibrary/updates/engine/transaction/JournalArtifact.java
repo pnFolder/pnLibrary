@@ -45,10 +45,10 @@ public final class JournalArtifact {
                            @Nullable String previousVersion, @Nullable String installedTarget,
                            @Nullable JournalVersion expected, @Nullable JournalVersion prior,
                            @Nullable String backupSha256) {
-        this.component = component;
-        this.target = target;
-        this.staged = staged;
-        this.backup = backup;
+        this.component = Objects.requireNonNull(component, "component");
+        this.target = Objects.requireNonNull(target, "target");
+        this.staged = Objects.requireNonNull(staged, "staged");
+        this.backup = Objects.requireNonNull(backup, "backup");
         this.targetExisted = targetExisted;
         this.expectedVersion = expectedVersion;
         this.previousVersion = previousVersion;

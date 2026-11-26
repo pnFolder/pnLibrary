@@ -44,14 +44,14 @@ class DepsCommandTest {
         MissingDependency vault = new MissingDependency("Vault", "1.7.0", new URI("https://example.org/vault"),
                 Arrays.asList(new URI("https://example.org/Vault.jar"))).withTitle("Экономика").withDescription("Нужна для денег.")
                 .withRequired(true);
-        MissingDependency optional = new MissingDependency("Optional", "2.0.0", null, Collections.<URI>emptyList()).withRequired(false);
+        MissingDependency optional = new MissingDependency("Optional", "2.0.0", null, Collections.emptyList()).withRequired(false);
         return new MissingGroup("Shop", "a1b2c3", Arrays.asList(vault, optional), registered ? mock(DownloadRegistration.class) : null);
     }
 
     @Test
     @DisplayName("nothing missing is said plainly")
     void nothingMissingIsSaidPlainly() {
-        when(downloads.missingGroups()).thenReturn(Collections.<MissingGroup>emptyList());
+        when(downloads.missingGroups()).thenReturn(Collections.emptyList());
 
         String text = run();
 

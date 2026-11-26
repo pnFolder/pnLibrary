@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity.commands;
 
+import java.util.Objects;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.audience.Audience;
@@ -32,8 +33,8 @@ public final class VelocityCommandAdapter extends GenericPlatformCommandAdapter<
     VelocityCommandAdapter(
             @NotNull NativeCommandRegistrar<CommandSource> nativeRegistrar,
             @NotNull Function<CommandSource, Audience> audience) {
-        this.nativeRegistrar = nativeRegistrar;
-        this.audience = audience;
+        this.nativeRegistrar = Objects.requireNonNull(nativeRegistrar, "nativeRegistrar");
+        this.audience = Objects.requireNonNull(audience, "audience");
     }
 
     @NotNull

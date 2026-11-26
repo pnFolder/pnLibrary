@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.core.link.report.LinkReport;
 
 /** The newest report of every server that answered over the link; a newer report from the same name replaces the old one. */
 public final class LinkRegistry {
-    private final ConcurrentHashMap<String, LinkEntry> entries = new ConcurrentHashMap<String, LinkEntry>();
+    private final ConcurrentHashMap<String, LinkEntry> entries = new ConcurrentHashMap<>();
 
     /** Stores {@code report} as the latest of {@code name}. */
     public void accept(@NotNull String name, @NotNull LinkReport report) {
@@ -25,7 +25,7 @@ public final class LinkRegistry {
 
     /** Every known server, sorted by name without regard to case. */
     public @NotNull List<LinkEntry> all() {
-        List<LinkEntry> all = new ArrayList<LinkEntry>(entries.values());
+        List<LinkEntry> all = new ArrayList<>(entries.values());
         Collections.sort(all, (a, b) -> new LowerCaseOrder().compare(a.getName(), b.getName()));
         return all;
     }

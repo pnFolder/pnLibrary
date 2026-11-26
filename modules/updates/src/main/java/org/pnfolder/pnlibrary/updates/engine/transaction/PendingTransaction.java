@@ -20,7 +20,7 @@ public final class PendingTransaction {
     private final boolean rollback;
 
     public PendingTransaction(@NotNull Path journal, @NotNull Map<String, String> expectedVersions) {
-        this(journal, expectedVersions, null, Collections.<String>emptySet(), false);
+        this(journal, expectedVersions, null, Collections.emptySet(), false);
     }
 
     public PendingTransaction(@NotNull Path journal, @NotNull Map<String, String> expectedVersions,
@@ -37,10 +37,10 @@ public final class PendingTransaction {
      */
     public PendingTransaction(@NotNull Path journal, @NotNull Map<String, String> expectedVersions,
                               @Nullable String preparedSession, @NotNull Set<String> unknownProducts, boolean rollback) {
-        this.journal = journal;
-        this.expectedVersions = Collections.unmodifiableMap(new LinkedHashMap<String, String>(expectedVersions));
+        this.journal = Objects.requireNonNull(journal, "journal");
+        this.expectedVersions = Collections.unmodifiableMap(new LinkedHashMap<>(expectedVersions));
         this.preparedSession = preparedSession;
-        this.unknownProducts = Collections.unmodifiableSet(new LinkedHashSet<String>(unknownProducts));
+        this.unknownProducts = Collections.unmodifiableSet(new LinkedHashSet<>(unknownProducts));
         this.rollback = rollback;
     }
 

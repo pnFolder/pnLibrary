@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases.mysql;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.Arrays;
@@ -20,7 +21,7 @@ public final class MysqlEngine implements DatabaseEngine {
     }
 
     public MysqlEngine(@NotNull JdbcConnections connections) {
-        this.connections = connections;
+        this.connections = Objects.requireNonNull(connections, "connections");
     }
 
     @Override

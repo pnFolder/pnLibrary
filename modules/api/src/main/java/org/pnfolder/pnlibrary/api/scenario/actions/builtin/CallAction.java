@@ -28,17 +28,17 @@ public final class CallAction implements Action {
 
     /** Creates the action with every setting at its default. */
     public CallAction() {
-        this("", Collections.<String, String>emptyMap());
+        this("", Collections.emptyMap());
     }
 
     /** Creates it with the first 1 setting; the rest keep their defaults. */
     public CallAction(@NotNull String name) {
-        this(name, Collections.<String, String>emptyMap());
+        this(name, Collections.emptyMap());
     }
 
     /** Creates it with every setting given. */
     public CallAction(@NotNull String name, @NotNull Map<String, String> args) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.args = args;
     }
 

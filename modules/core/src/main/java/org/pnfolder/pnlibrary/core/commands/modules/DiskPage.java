@@ -20,7 +20,7 @@ final class DiskPage {
     void show(CommandContext context) {
         ChatKit kit = CommandOutput.kit(context);
         DiskReport report = DiskUsage.scan(DiskUsage.getPluginsFolder(), DiskUsage.registeredFiles(library));
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         lines.add(kit.blank());
         lines.add(kit.header("Диск плагинов", kit.text(DiskUsage.format(report.getTotal()), ChatPalette.LABEL)));
         for (DiskRow row : report.getRows()) {

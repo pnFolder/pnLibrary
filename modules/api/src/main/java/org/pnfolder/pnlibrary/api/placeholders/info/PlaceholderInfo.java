@@ -27,7 +27,7 @@ public final class PlaceholderInfo {
     /** A placeholder that is not published, visible to all. */
     public PlaceholderInfo(@NotNull String address, @NotNull String description, @NotNull String owner, @NotNull String type,
                            @Nullable String format) {
-        this(address, description, owner, type, format, Collections.<String>emptyList());
+        this(address, description, owner, type, format, Collections.emptyList());
     }
 
     /** A placeholder visible to all. */

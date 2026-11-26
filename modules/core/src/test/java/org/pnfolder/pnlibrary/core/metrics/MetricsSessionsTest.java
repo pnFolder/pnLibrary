@@ -92,7 +92,7 @@ class MetricsSessionsTest {
         MetricsSessions registry = new MetricsSessions(opening(() -> { }, closed::incrementAndGet));
 
         assertThrows(IllegalArgumentException.class,
-                () -> registry.open(new Object(), Collections.<MetricsProviderConfiguration>emptyList()));
+                () -> registry.open(new Object(), Collections.emptyList()));
         List<MetricsProviderConfiguration> disabled = new ArrayList<>();
         for (MetricsProviderConfiguration configuration : bStats) {
             disabled.add(configuration.withEnabled(false));

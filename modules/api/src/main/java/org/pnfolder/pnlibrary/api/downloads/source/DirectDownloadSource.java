@@ -34,7 +34,7 @@ public final class DirectDownloadSource {
         this.size = builder.size;
         this.sha256 = builder.sha256;
         this.maxBytes = builder.maxBytes;
-        this.mirrors = Collections.unmodifiableList(new ArrayList<URI>(builder.mirrors));
+        this.mirrors = Collections.unmodifiableList(new ArrayList<>(builder.mirrors));
     }
 
     /** The HTTPS URI from which the file is downloaded. */
@@ -100,7 +100,7 @@ public final class DirectDownloadSource {
         private Long size;
         private String sha256;
         private Long maxBytes;
-        private final List<URI> mirrors = new ArrayList<URI>();
+        private final List<URI> mirrors = new ArrayList<>();
 
         private Builder() {
         }

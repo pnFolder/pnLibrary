@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
+import org.pnfolder.pnlibrary.core.placeholders.address.ParsedAddress;
+import org.pnfolder.pnlibrary.core.placeholders.address.Addresses;
+import org.pnfolder.pnlibrary.core.placeholders.address.AddressSegment;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -147,7 +151,7 @@ final class PlaceholderResolution {
      * first and its value, quoted when needed, takes its place. {@code null} when one of them gives no value.
      */
     private CompletionStage<String> expandInner(List<AddressSegment> segments, ViewerInfo viewer, Map<String, Object> values, String consumer) {
-        final List<CompletableFuture<String>> parts = new ArrayList<CompletableFuture<String>>();
+        final List<CompletableFuture<String>> parts = new ArrayList<>();
         for (AddressSegment segment : segments) {
             if (!segment.isInner()) {
                 parts.add(CompletableFuture.completedFuture(segment.getText()));

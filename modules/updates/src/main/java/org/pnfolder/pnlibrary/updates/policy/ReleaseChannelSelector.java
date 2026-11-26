@@ -16,7 +16,7 @@ public final class ReleaseChannelSelector {
     @NotNull
     public static ReleaseChannelSelection select(@NotNull ProductId product, @NotNull List<ProductRelease> releases,
                                                  @NotNull UpdateChannel channel) {
-        List<ProductRelease> productReleases = new ArrayList<ProductRelease>();
+        List<ProductRelease> productReleases = new ArrayList<>();
         ProductRelease latestAllowed = null;
         for (ProductRelease release : releases) {
             if (!release.getProduct().equals(product)) {

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import java.util.Locale;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,6 @@ public final class ModuleRuntimeSummary {
         if (!enabled) {
             return "disabled";
         }
-        return state == null ? "unavailable" : state.toLowerCase();
+        return state == null ? "unavailable" : state.toLowerCase(Locale.ROOT);
     }
 }

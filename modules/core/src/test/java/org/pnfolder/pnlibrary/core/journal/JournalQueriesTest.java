@@ -27,7 +27,7 @@ class JournalQueriesTest {
     private final long now = System.currentTimeMillis();
 
     private JournalQueries queries(JournalRecord... records) {
-        Map<JournalLevel, Duration> retention = new EnumMap<JournalLevel, Duration>(JournalLevel.class);
+        Map<JournalLevel, Duration> retention = new EnumMap<>(JournalLevel.class);
         for (JournalLevel level : JournalLevel.values()) {
             retention.put(level, Duration.ofDays(30));
         }
@@ -43,7 +43,7 @@ class JournalQueriesTest {
     }
 
     private static List<String> messages(List<JournalGroup> groups) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (JournalGroup group : groups) {
             result.add(group.getMessage());
         }
@@ -84,7 +84,7 @@ class JournalQueriesTest {
 
     @Test
     void detailSplitsTheStackTraceFromTheOtherFactsAndListsEveryTime() {
-        Map<String, String> details = new LinkedHashMap<String, String>();
+        Map<String, String> details = new LinkedHashMap<>();
         details.put("player", "Steve");
         details.put(JournalRecord.STACKTRACE, "boom\n at x");
         JournalQueries queries = queries(

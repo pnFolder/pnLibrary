@@ -84,7 +84,7 @@ class AtomicDownloadPublisherTest {
         assertSame(publicationFailure, thrown);
         assertTrue(Arrays.asList(publicationFailure.getSuppressed()).contains(restorationFailure));
         assertArrayEquals(bytes("original first"), Files.readAllBytes(first));
-        List<Path> backups = new ArrayList<Path>();
+        List<Path> backups = new ArrayList<>();
         try (Stream<Path> paths = Files.walk(directory.resolve("downloads/transactions"))) {
             paths.filter(Files::isRegularFile).forEach(backups::add);
         }

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import org.pnfolder.pnlibrary.core.guide.LibraryCommandGuide;
+import org.pnfolder.pnlibrary.core.guide.GuideEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,7 +26,7 @@ class LibraryInfoFilesTest {
     @TempDir
     Path directory;
 
-    private final List<String> warnings = new ArrayList<String>();
+    private final List<String> warnings = new ArrayList<>();
     private SettingsStore store;
 
     private Path plugin() {

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,12 +88,12 @@ final class YamlDefaultsMerger {
                         @NotNull CommentPolicy comments) {
         List<String> target = dropTrailingEmpty(YamlText.lines(existing));
         List<String> source = dropTrailingEmpty(YamlText.lines(defaults));
-        List<YamlBlock> candidates = collect(source, 0, source.size(), 0, Collections.<String>emptyList());
+        List<YamlBlock> candidates = collect(source, 0, source.size(), 0, Collections.emptyList());
         List<String> added = values == MissingValuePolicy.ADD
-                ? addMissing(target, source, candidates) : Collections.<String>emptyList();
+                ? addMissing(target, source, candidates) : Collections.emptyList();
         List<String> commented = Collections.emptyList();
         if (comments == CommentPolicy.ADD_MISSING) {
-            List<YamlBlock> remaining = new ArrayList<YamlBlock>();
+            List<YamlBlock> remaining = new ArrayList<>();
             for (YamlBlock candidate : candidates) {
                 if (!added.contains(candidate.dotted())) {
                     remaining.add(candidate);
@@ -107,15 +108,15 @@ final class YamlDefaultsMerger {
     @NotNull
     static List<String> paths(@NotNull String yaml) {
         List<String> lines = YamlText.lines(yaml);
-        List<String> paths = new ArrayList<String>();
-        for (YamlBlock block : collect(lines, 0, lines.size(), 0, Collections.<String>emptyList())) {
+        List<String> paths = new ArrayList<>();
+        for (YamlBlock block : collect(lines, 0, lines.size(), 0, Collections.emptyList())) {
             paths.add(block.dotted());
         }
         return paths;
     }
 
     private static List<String> dropTrailingEmpty(List<String> lines) {
-        List<String> result = new ArrayList<String>(lines);
+        List<String> result = new ArrayList<>(lines);
         while (!result.isEmpty() && result.get(result.size() - 1).isEmpty()) {
             result.remove(result.size() - 1);
         }
@@ -123,7 +124,7 @@ final class YamlDefaultsMerger {
     }
 
     private static List<String> addMissing(List<String> target, List<String> source, List<YamlBlock> candidates) {
-        List<String> added = new ArrayList<String>();
+        List<String> added = new ArrayList<>();
         for (YamlBlock candidate : candidates) {
             if (find(target, candidate.path()) != null) {
                 continue;
@@ -144,7 +145,7 @@ final class YamlDefaultsMerger {
     }
 
     private static List<String> addComments(List<String> target, List<String> source, List<YamlBlock> candidates) {
-        List<String> commented = new ArrayList<String>();
+        List<String> commented = new ArrayList<>();
         for (YamlBlock candidate : candidates) {
             List<String> sourceComments = comments(source.subList(candidate.start(), candidate.keyLine()));
             if (sourceComments.isEmpty()) {
@@ -161,7 +162,7 @@ final class YamlDefaultsMerger {
     }
 
     private static List<String> comments(List<String> lines) {
-        List<String> comments = new ArrayList<String>();
+        List<String> comments = new ArrayList<>();
         for (String line : lines) {
             if (isComment(line)) {
                 comments.add(line);
@@ -216,7 +217,7 @@ final class YamlDefaultsMerger {
     }
 
     private static List<YamlBlock> collect(List<String> lines, int start, int end, int indent, List<String> parent) {
-        List<YamlBlock> result = new ArrayList<YamlBlock>();
+        List<YamlBlock> result = new ArrayList<>();
         for (YamlBlock block : blocks(lines, start, end, indent)) {
             YamlBlock located = block.withPath(copyWith(parent, block.key()));
             result.add(located);
@@ -229,7 +230,7 @@ final class YamlDefaultsMerger {
     }
 
     private static List<String> copyWith(List<String> parent, String key) {
-        List<String> path = new ArrayList<String>(parent);
+        List<String> path = new ArrayList<>(parent);
         path.add(key);
         return path;
     }
@@ -247,8 +248,8 @@ final class YamlDefaultsMerger {
     }
 
     private static List<YamlBlock> blocks(List<String> lines, int start, int end, int indent) {
-        List<Integer> keyLines = new ArrayList<Integer>();
-        List<String> keys = new ArrayList<String>();
+        List<Integer> keyLines = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
         for (int index = start; index < end; index++) {
             String key = key(lines.get(index), indent);
             if (key != null) {
@@ -256,12 +257,12 @@ final class YamlDefaultsMerger {
                 keys.add(key);
             }
         }
-        List<YamlBlock> blocks = new ArrayList<YamlBlock>();
+        List<YamlBlock> blocks = new ArrayList<>();
         for (int position = 0; position < keyLines.size(); position++) {
             int keyLine = keyLines.get(position);
             int decoratedStart = decoratedStart(lines, keyLine, start);
             int next = position + 1 < keyLines.size() ? decoratedStart(lines, keyLines.get(position + 1), keyLine + 1) : end;
-            blocks.add(new YamlBlock(keys.get(position), indent, decoratedStart, keyLine, next, Collections.<String>emptyList()));
+            blocks.add(new YamlBlock(keys.get(position), indent, decoratedStart, keyLine, next, Collections.emptyList()));
         }
         return blocks;
     }
@@ -298,9 +299,9 @@ final class YamlDefaultsMerger {
 
     private static List<String> reindent(List<String> lines, int from, int to) {
         if (from == to) {
-            return new ArrayList<String>(lines);
+            return new ArrayList<>(lines);
         }
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (String line : lines) {
             if (YamlText.isBlank(line)) {
                 result.add(line);

@@ -49,7 +49,7 @@ public final class PlaceholderScreens extends MenuScreens {
                 parameters.add(new Fact(variant.getLabel(), variant.getText()));
             }
             rows.add(new Row(MenuItems.icon(null, "NAME_TAG", "{" + info.getAddress() + "}",
-                Style.lore(Collections.<String>emptyList(), parameters)), go(who -> { })));
+                Style.lore(Collections.emptyList(), parameters)), go(who -> { })));
         }
         list(player, "Плейсхолдеры", rows, page, MenuConstants.PAGE_SIZE, (who, to) -> placeholders(who, to), routes::home,
             "Плейсхолдеров нет");

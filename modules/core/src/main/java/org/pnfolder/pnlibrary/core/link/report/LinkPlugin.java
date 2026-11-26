@@ -18,10 +18,10 @@ public final class LinkPlugin {
      * @param state update state word, for example {@code UP_TO_DATE} or {@code UPDATE_AVAILABLE}
      */
     public LinkPlugin(@NotNull String product, @NotNull String version, @Nullable String latest, @NotNull String state) {
-        this.product = product;
-        this.version = version;
+        this.product = Objects.requireNonNull(product, "product");
+        this.version = Objects.requireNonNull(version, "version");
         this.latest = latest;
-        this.state = state;
+        this.state = Objects.requireNonNull(state, "state");
     }
 
     public @NotNull String getProduct() {

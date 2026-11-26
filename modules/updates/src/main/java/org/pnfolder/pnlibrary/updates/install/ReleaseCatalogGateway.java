@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.install;
 
+import java.util.Objects;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -41,9 +42,9 @@ public final class ReleaseCatalogGateway {
     /** Creates a gateway that runs its requests on {@code requestExecutor}. */
     public ReleaseCatalogGateway(@NotNull ReleaseCatalogClient client, @NotNull TrustedHttpClient http,
                                  @NotNull Executor requestExecutor) {
-        this.client = client;
-        this.http = http;
-        this.requestExecutor = requestExecutor;
+        this.client = Objects.requireNonNull(client, "client");
+        this.http = Objects.requireNonNull(http, "http");
+        this.requestExecutor = Objects.requireNonNull(requestExecutor, "requestExecutor");
     }
 
     /**
@@ -54,7 +55,7 @@ public final class ReleaseCatalogGateway {
     public ReleaseCatalog load(@NotNull CatalogSource source, @NotNull RefreshMode refreshMode) {
         CatalogEndpoints endpoints = new CatalogEndpoints(source);
         CompletableFuture<ReleaseCatalog> result = new CompletableFuture<>();
-        List<String> failures = Collections.synchronizedList(new ArrayList<String>());
+        List<String> failures = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger remaining = new AtomicInteger(PRIMARY_ENDPOINT_COUNT);
 
         Runnable fallback = () -> submit("jsDelivr", result, failures, null, endpoints,

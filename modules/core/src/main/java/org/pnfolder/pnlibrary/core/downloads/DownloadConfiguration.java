@@ -30,14 +30,8 @@ public final class DownloadConfiguration {
 
     /** The download policy in these settings (the {@code downloads.*} keys). */
     public static @NotNull DownloadConfiguration of(@NotNull LibrarySettings settings) {
-        Set<DownloadDestination> destinations = EnumSet.noneOf(DownloadDestination.class);
-        if (settings.getDownloadsToDataFolder()) {
-            destinations.add(DownloadDestination.DATA_FOLDER);
-        }
-        if (settings.getDownloadsToCache()) {
-            destinations.add(DownloadDestination.CACHE);
-        }
-        return new DownloadConfiguration(settings.getDownloadsEnabled(), settings.getDownloadsAutomatic(), destinations);
+        return new DownloadConfiguration(settings.getDownloadsEnabled(), settings.getDownloadsAutomatic(),
+            EnumSet.of(DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE));
     }
 
     /** The same policy with the automatic switch set to {@code value}. */

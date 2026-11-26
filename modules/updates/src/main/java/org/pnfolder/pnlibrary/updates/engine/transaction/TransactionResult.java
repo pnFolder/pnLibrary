@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -14,8 +15,8 @@ public final class TransactionResult {
      * @param journal durable transaction journal path
      */
     public TransactionResult(@NotNull TransactionState state, @NotNull Path journal) {
-        this.state = state;
-        this.journal = journal;
+        this.state = Objects.requireNonNull(state, "state");
+        this.journal = Objects.requireNonNull(journal, "journal");
     }
 
     @NotNull

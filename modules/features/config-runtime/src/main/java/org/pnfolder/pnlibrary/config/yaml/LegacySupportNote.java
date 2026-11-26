@@ -26,7 +26,7 @@ final class LegacySupportNote {
     /** Returns {@code content} without any old support note; content without a note is returned unchanged. */
     @NotNull
     static String removeFrom(@NotNull String content) {
-        List<String> kept = new ArrayList<String>();
+        List<String> kept = new ArrayList<>();
         boolean inNote = false;
         for (String line : content.split("\n", -1)) {
             boolean isNote = startsWithOld(line) || (inNote && LINK_LINE.matcher(line).matches());

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.tasks;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot;
@@ -29,13 +30,13 @@ public final class TaskHistoryStore {
 
     /** A store in {@code file}. */
     public TaskHistoryStore(@NotNull Path file) {
-        this.file = file;
+        this.file = Objects.requireNonNull(file, "file");
     }
 
     /** The tasks in the file; lines that cannot be read are left out. */
     @NotNull
     public List<TaskSnapshot> load() {
-        List<TaskSnapshot> loaded = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> loaded = new ArrayList<>();
         for (List<String> fields : TsvRecords.read(file)) {
             try {
                 loaded.add(parse(fields));
@@ -48,7 +49,7 @@ public final class TaskHistoryStore {
 
     /** Replaces the file with {@code snapshots}. */
     public void save(@NotNull List<TaskSnapshot> snapshots) {
-        List<List<Object>> records = new ArrayList<List<Object>>();
+        List<List<Object>> records = new ArrayList<>();
         for (TaskSnapshot snapshot : snapshots) {
             records.add(format(snapshot));
         }
@@ -56,7 +57,7 @@ public final class TaskHistoryStore {
     }
 
     private static List<Object> format(TaskSnapshot task) {
-        return Arrays.<Object>asList(
+        return Arrays.asList(
                 task.getId().getValue(), task.getName(), task.getKey(), task.getOwnerName(), task.getExecutionKind().name(),
                 task.getStatus().name(), join(task.getTags()), task.getCreatedAt(), task.getNextRunAt(), task.getRunCount(),
                 task.getSkippedCount(), task.getLastStartedAt(), task.getLastCompletedAt(), task.getLastFailure(),
@@ -102,8 +103,8 @@ public final class TaskHistoryStore {
     }
 
     private static Set<String> tags(String joined) {
-        Set<String> tags = new LinkedHashSet<String>();
-        for (String tag : joined.split(TAG_SEPARATOR)) {
+        Set<String> tags = new LinkedHashSet<>();
+        for (String tag : joined.split(TAG_SEPARATOR, -1)) {
             if (!tag.isEmpty()) {
                 tags.add(tag);
             }

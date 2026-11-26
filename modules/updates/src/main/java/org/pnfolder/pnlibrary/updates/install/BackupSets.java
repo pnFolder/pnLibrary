@@ -162,7 +162,7 @@ final class BackupSets {
         read.onFailure(error -> warn.accept("Копия настроек " + snapshot + " набора " + journal.getId() + " нечитаема: "
                 + (error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName())));
         List<ConfigurationSnapshotFile> files = read.getOrNull();
-        return files == null ? new ArrayList<ConfigurationSnapshotFile>() : files;
+        return files == null ? new ArrayList<>() : files;
     }
 
     private Set<String> busy() throws IOException {

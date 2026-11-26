@@ -11,9 +11,9 @@ public final class RunningCooldown {
     private final Duration remaining;
 
     public RunningCooldown(@NotNull String owner, @NotNull String action, @NotNull Duration remaining) {
-        this.owner = owner;
-        this.action = action;
-        this.remaining = remaining;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.action = Objects.requireNonNull(action, "action");
+        this.remaining = Objects.requireNonNull(remaining, "remaining");
     }
 
     @NotNull

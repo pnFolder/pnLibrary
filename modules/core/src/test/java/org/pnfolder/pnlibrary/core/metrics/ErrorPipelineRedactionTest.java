@@ -49,7 +49,7 @@ class ErrorPipelineRedactionTest {
         for (int index = 0; index < corpus.size(); index++) {
             String text = corpus.get(index);
             pipeline.capture(new TelemetryError("T" + index, text, Collections.singletonList(text), true, null,
-                    Collections.<String, Object>singletonMap("k", text)));
+                    Collections.singletonMap("k", text)));
         }
 
         assertEquals(corpus.size(), received.size());

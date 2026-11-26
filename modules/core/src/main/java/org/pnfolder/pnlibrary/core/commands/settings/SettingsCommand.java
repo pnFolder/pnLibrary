@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.commands.settings;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,8 +50,8 @@ public final class SettingsCommand {
     private final SettingPickerHook picker;
 
     public SettingsCommand(@NotNull SettingsStore settings, @NotNull SettingPickerHook picker) {
-        this.settings = settings;
-        this.picker = picker;
+        this.settings = Objects.requireNonNull(settings, "settings");
+        this.picker = Objects.requireNonNull(picker, "picker");
     }
 
     public SettingsCommand(@NotNull SettingsStore settings) {
@@ -119,7 +120,7 @@ public final class SettingsCommand {
     }
 
     private List<String> keys() {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (SettingSpec spec : SettingsRegistry.getAll()) {
             keys.add(spec.getKey());
         }
@@ -127,7 +128,7 @@ public final class SettingsCommand {
     }
 
     private List<String> choiceKeys() {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (SettingSpec spec : SettingsRegistry.getAll()) {
             if (spec.getChoices() != null) {
                 keys.add(spec.getKey());
@@ -137,7 +138,7 @@ public final class SettingsCommand {
     }
 
     private List<String> changedKeys() {
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         for (SettingValue value : settings.values()) {
             if (value.getChanged()) {
                 keys.add(value.getSpec().getKey());
@@ -169,9 +170,9 @@ public final class SettingsCommand {
     private List<String> values(String key) {
         SettingSpec spec = key == null ? null : SettingsRegistry.get(key);
         if (spec == null) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
-        List<String> proposals = new ArrayList<String>();
+        List<String> proposals = new ArrayList<>();
         if (spec.getKind() == SettingKind.SWITCH) {
             proposals.add(SettingTexts.switchWord(true));
             proposals.add(SettingTexts.switchWord(false));
@@ -188,10 +189,10 @@ public final class SettingsCommand {
                 proposals.addAll(spec.getChoices().getAll());
             }
         }
-        LinkedHashSet<String> distinct = new LinkedHashSet<String>();
+        LinkedHashSet<String> distinct = new LinkedHashSet<>();
         distinct.add(spec.display(spec.getDefault()));
         distinct.addAll(proposals);
-        return new ArrayList<String>(distinct);
+        return new ArrayList<>(distinct);
     }
 
     private void say(CommandContext context, String text, TextColor color) {

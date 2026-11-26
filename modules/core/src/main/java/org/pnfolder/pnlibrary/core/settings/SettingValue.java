@@ -11,8 +11,8 @@ public final class SettingValue {
 
     /** Creates the pair. */
     public SettingValue(@NotNull SettingSpec spec, @NotNull String current, boolean changed) {
-        this.spec = spec;
-        this.current = current;
+        this.spec = Objects.requireNonNull(spec, "spec");
+        this.current = Objects.requireNonNull(current, "current");
         this.changed = changed;
     }
 

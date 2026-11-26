@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -18,9 +19,9 @@ public final class PlatformPnLogger implements PnLogger {
     private final String name;
 
     public PlatformPnLogger(@NotNull PlatformLogging logging, @NotNull Object owner, @NotNull String name) {
-        this.logging = logging;
-        this.owner = owner;
-        this.name = name;
+        this.logging = Objects.requireNonNull(logging, "logging");
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     @Override

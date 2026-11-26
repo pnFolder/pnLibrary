@@ -51,7 +51,7 @@ class LinkLimitsTest {
     }
 
     private static LinkReport report(int plugins) {
-        List<LinkPlugin> list = new ArrayList<LinkPlugin>();
+        List<LinkPlugin> list = new ArrayList<>();
         for (int i = 0; i < plugins; i++) {
             list.add(new LinkPlugin(repeat("p", 150) + i, "1.0.0", "2.0.0", "UPDATE_AVAILABLE"));
         }
@@ -60,12 +60,12 @@ class LinkLimitsTest {
 
     @Test
     void aHugeNetworkMapIsCutToTheFrameLimitAndStillVerifies() {
-        List<NetworkServer> servers = new ArrayList<NetworkServer>();
-        List<ServerGroup> groups = new ArrayList<ServerGroup>();
+        List<NetworkServer> servers = new ArrayList<>();
+        List<ServerGroup> groups = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             servers.add(new NetworkServer("s" + i, true, report(40)));
-            Set<String> groupServers = new LinkedHashSet<String>();
-            Set<String> plugins = new LinkedHashSet<String>();
+            Set<String> groupServers = new LinkedHashSet<>();
+            Set<String> plugins = new LinkedHashSet<>();
             for (int n = 0; n < 60; n++) {
                 groupServers.add(repeat("server", 30) + n);
                 plugins.add(repeat("plugin", 30) + n);
@@ -97,7 +97,7 @@ class LinkLimitsTest {
     void anExistingUnreadableKeyFileIsKeptAndNotReplaced(@TempDir Path folder) throws Exception {
         Path file = folder.resolve(LinkSecret.FILE);
         Files.write(file, "not a key !!".getBytes(StandardCharsets.UTF_8));
-        List<String> warnings = new ArrayList<String>();
+        List<String> warnings = new ArrayList<>();
 
         assertNull(LinkSecret.readOrCreate(folder, warnings::add));
 

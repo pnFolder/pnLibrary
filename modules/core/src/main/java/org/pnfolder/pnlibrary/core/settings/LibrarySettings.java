@@ -22,11 +22,8 @@ public final class LibrarySettings {
     private final String noPermissionMessage;
     private final boolean downloadsEnabled;
     private final boolean downloadsAutomatic;
-    private final boolean downloadsToDataFolder;
-    private final boolean downloadsToCache;
     private final Duration updateCheckInterval;
-    private final Duration updateConnectTimeout;
-    private final Duration updateReadTimeout;
+    private final RestartSettings restart;
 
     /** Settings with every value given. */
     public LibrarySettings(
@@ -37,23 +34,17 @@ public final class LibrarySettings {
         @NotNull String noPermissionMessage,
         boolean downloadsEnabled,
         boolean downloadsAutomatic,
-        boolean downloadsToDataFolder,
-        boolean downloadsToCache,
         @NotNull Duration updateCheckInterval,
-        @NotNull Duration updateConnectTimeout,
-        @NotNull Duration updateReadTimeout) {
+        @NotNull RestartSettings restart) {
         this.privacy = privacy;
         this.historyRetentionDays = historyRetentionDays;
         this.journalForeignPlugins = journalForeignPlugins;
-        this.timeZone = timeZone;
-        this.noPermissionMessage = noPermissionMessage;
+        this.timeZone = Objects.requireNonNull(timeZone, "timeZone");
+        this.noPermissionMessage = Objects.requireNonNull(noPermissionMessage, "noPermissionMessage");
         this.downloadsEnabled = downloadsEnabled;
         this.downloadsAutomatic = downloadsAutomatic;
-        this.downloadsToDataFolder = downloadsToDataFolder;
-        this.downloadsToCache = downloadsToCache;
-        this.updateCheckInterval = updateCheckInterval;
-        this.updateConnectTimeout = updateConnectTimeout;
-        this.updateReadTimeout = updateReadTimeout;
+        this.updateCheckInterval = Objects.requireNonNull(updateCheckInterval, "updateCheckInterval");
+        this.restart = Objects.requireNonNull(restart, "restart");
     }
 
     /** Settings with every value at its default. */
@@ -66,11 +57,8 @@ public final class LibrarySettings {
             "Недостаточно прав для этой команды.",
             true,
             true,
-            true,
-            true,
             UpdateDefaults.CHECK_INTERVAL,
-            UpdateDefaults.CONNECT_TIMEOUT,
-            UpdateDefaults.READ_TIMEOUT);
+            new RestartSettings());
     }
 
     /** Whether personal data of players is left out of diagnostic reports. */
@@ -108,119 +96,74 @@ public final class LibrarySettings {
         return downloadsAutomatic;
     }
 
-    /** Whether a file may be saved into the data folder of the plugin that asked for it. */
-    public boolean getDownloadsToDataFolder() {
-        return downloadsToDataFolder;
-    }
-
-    /** Whether a file may be saved into the shared cache of pnLibrary. */
-    public boolean getDownloadsToCache() {
-        return downloadsToCache;
-    }
-
     /** How often the release catalogs are asked for new versions. */
     public @NotNull Duration getUpdateCheckInterval() {
         return updateCheckInterval;
     }
 
-    /** How long to wait for a connection while downloading an update file. */
-    public @NotNull Duration getUpdateConnectTimeout() {
-        return updateConnectTimeout;
+    /** How the server restarts after an update is staged. */
+    public @NotNull RestartSettings getRestart() {
+        return restart;
     }
 
-    /** How long to wait for data from a silent server while downloading an update file. */
-    public @NotNull Duration getUpdateReadTimeout() {
-        return updateReadTimeout;
+    public @NotNull LibrarySettings withRestart(@NotNull RestartSettings value) {
+        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
+            downloadsEnabled, downloadsAutomatic, updateCheckInterval,
+            value);
     }
 
-    /** A copy with privacy changed. */
     public @NotNull LibrarySettings withPrivacy(boolean value) {
         return new LibrarySettings(value, historyRetentionDays, journalForeignPlugins, timeZone,
             noPermissionMessage, downloadsEnabled,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with historyRetentionDays changed. */
     public @NotNull LibrarySettings withHistoryRetentionDays(int value) {
         return new LibrarySettings(privacy, value, journalForeignPlugins, timeZone, noPermissionMessage,
             downloadsEnabled,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with journalForeignPlugins changed. */
     public @NotNull LibrarySettings withJournalForeignPlugins(boolean value) {
         return new LibrarySettings(privacy, historyRetentionDays, value, timeZone, noPermissionMessage,
             downloadsEnabled,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with timeZone changed. */
     public @NotNull LibrarySettings withTimeZone(@NotNull String value) {
         return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, value,
             noPermissionMessage, downloadsEnabled,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with noPermissionMessage changed. */
     public @NotNull LibrarySettings withNoPermissionMessage(@NotNull String value) {
         return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, value,
             downloadsEnabled,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with downloadsEnabled changed. */
     public @NotNull LibrarySettings withDownloadsEnabled(boolean value) {
         return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone,
             noPermissionMessage, value,
-            downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with downloadsAutomatic changed. */
     public @NotNull LibrarySettings withDownloadsAutomatic(boolean value) {
         return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, value, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsEnabled, value, updateCheckInterval,
+            restart);
     }
 
-    /** A copy with downloadsToDataFolder changed. */
-    public @NotNull LibrarySettings withDownloadsToDataFolder(boolean value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, value, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
-    }
-
-    /** A copy with downloadsToCache changed. */
-    public @NotNull LibrarySettings withDownloadsToCache(boolean value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, downloadsToDataFolder, value, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
-    }
-
-    /** A copy with updateCheckInterval changed. */
     public @NotNull LibrarySettings withUpdateCheckInterval(@NotNull Duration value) {
         return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, downloadsToDataFolder, downloadsToCache, value,
-            updateConnectTimeout, updateReadTimeout);
-    }
-
-    /** A copy with updateConnectTimeout changed. */
-    public @NotNull LibrarySettings withUpdateConnectTimeout(@NotNull Duration value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            value, updateReadTimeout);
-    }
-
-    /** A copy with updateReadTimeout changed. */
-    public @NotNull LibrarySettings withUpdateReadTimeout(@NotNull Duration value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, value);
+            downloadsEnabled, downloadsAutomatic, value,
+            restart);
     }
 
     /** The runtime policy of diagnostics and command answers; everything not listed here keeps its default. */
@@ -231,6 +174,7 @@ public final class LibrarySettings {
             .noPermissionMessage(noPermissionMessage)
             .journalForeignPlugins(journalForeignPlugins)
             .timeZone(timeZone)
+            .upload(true)
             .build();
     }
 
@@ -247,18 +191,15 @@ public final class LibrarySettings {
             && noPermissionMessage.equals(that.noPermissionMessage)
             && downloadsEnabled == that.downloadsEnabled
             && downloadsAutomatic == that.downloadsAutomatic
-            && downloadsToDataFolder == that.downloadsToDataFolder
-            && downloadsToCache == that.downloadsToCache
             && updateCheckInterval.equals(that.updateCheckInterval)
-            && updateConnectTimeout.equals(that.updateConnectTimeout)
-            && updateReadTimeout.equals(that.updateReadTimeout);
+            && restart.equals(that.restart);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, downloadsToDataFolder, downloadsToCache, updateCheckInterval,
-            updateConnectTimeout, updateReadTimeout);
+            downloadsEnabled, downloadsAutomatic, updateCheckInterval,
+            restart);
     }
 
     @Override
@@ -270,10 +211,7 @@ public final class LibrarySettings {
             + "noPermissionMessage=" + noPermissionMessage + ", "
             + "downloadsEnabled=" + downloadsEnabled + ", "
             + "downloadsAutomatic=" + downloadsAutomatic + ", "
-            + "downloadsToDataFolder=" + downloadsToDataFolder + ", "
-            + "downloadsToCache=" + downloadsToCache + ", "
             + "updateCheckInterval=" + updateCheckInterval + ", "
-            + "updateConnectTimeout=" + updateConnectTimeout + ", "
-            + "updateReadTimeout=" + updateReadTimeout + ")";
+            + "restart=" + restart + ")";
     }
 }

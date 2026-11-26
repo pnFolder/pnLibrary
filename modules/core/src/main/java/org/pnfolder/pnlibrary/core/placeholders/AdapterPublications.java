@@ -65,12 +65,7 @@ final class AdapterPublications implements PlaceholderAdapterRegistry {
     @Override
     public @NotNull List<PlaceholderAdapter> all() {
         List<PlaceholderAdapter> all = new ArrayList<PlaceholderAdapter>(adapters.values());
-        Collections.sort(all, new Comparator<PlaceholderAdapter>() {
-            @Override
-            public int compare(PlaceholderAdapter a, PlaceholderAdapter b) {
-                return a.getId().compareTo(b.getId());
-            }
-        });
+        Collections.sort(all, (a, b) -> a.getId().compareTo(b.getId()));
         return all;
     }
 

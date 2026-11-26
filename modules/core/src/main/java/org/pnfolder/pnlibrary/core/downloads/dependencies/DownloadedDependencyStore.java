@@ -41,7 +41,7 @@ public final class DownloadedDependencyStore {
     public @NotNull List<DownloadedDependency> consumeInstalled(@NotNull Map<String, String> installed)
         throws IOException {
         List<String> recorded = readNames();
-        List<DownloadedDependency> confirmed = new ArrayList<DownloadedDependency>();
+        List<DownloadedDependency> confirmed = new ArrayList<>();
         for (String expected : recorded) {
             for (Map.Entry<String, String> entry : installed.entrySet()) {
                 if (entry.getKey().equalsIgnoreCase(expected)) {
@@ -53,7 +53,7 @@ public final class DownloadedDependencyStore {
         if (confirmed.isEmpty()) {
             return confirmed;
         }
-        List<String> remaining = new ArrayList<String>();
+        List<String> remaining = new ArrayList<>();
         for (String expected : recorded) {
             if (!isConfirmed(confirmed, expected)) {
                 remaining.add(expected);
@@ -86,7 +86,7 @@ public final class DownloadedDependencyStore {
     }
 
     private List<String> readNames() throws IOException {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         if (!Files.exists(marker)) {
             return names;
         }

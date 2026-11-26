@@ -44,22 +44,22 @@ public final class ModuleInfo {
     public ModuleInfo(@NotNull String key, @NotNull String plugin, @NotNull String title, @NotNull ModuleState state,
                       boolean autoStart, boolean controllable, @Nullable String error, @NotNull List<String> libraries,
                       @NotNull List<String> pluginLibraries, @Nullable String description) {
-        this.key = key;
-        this.plugin = plugin;
-        this.title = title;
-        this.state = state;
+        this.key = Objects.requireNonNull(key, "key");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.title = Objects.requireNonNull(title, "title");
+        this.state = Objects.requireNonNull(state, "state");
         this.autoStart = autoStart;
         this.controllable = controllable;
         this.error = error;
-        this.libraries = libraries;
-        this.pluginLibraries = pluginLibraries;
+        this.libraries = Objects.requireNonNull(libraries, "libraries");
+        this.pluginLibraries = Objects.requireNonNull(pluginLibraries, "pluginLibraries");
         this.description = description;
     }
 
     public ModuleInfo(@NotNull String key, @NotNull String plugin, @NotNull String title, @NotNull ModuleState state,
                       boolean autoStart, boolean controllable, @Nullable String error) {
-        this(key, plugin, title, state, autoStart, controllable, error, Collections.<String>emptyList(),
-            Collections.<String>emptyList(), null);
+        this(key, plugin, title, state, autoStart, controllable, error, Collections.emptyList(),
+            Collections.emptyList(), null);
     }
 
     public @NotNull String getKey() {
@@ -126,7 +126,7 @@ public final class ModuleInfo {
 
     /** The view of one module without the libraries of its plugin. */
     public static @NotNull ModuleInfo of(@NotNull String key, @NotNull ModuleContext module) {
-        return of(key, module, Collections.<String>emptyList());
+        return of(key, module, Collections.emptyList());
     }
 
     /** The view of one module with the libraries its plugin registered for all of its modules. */
@@ -147,12 +147,7 @@ public final class ModuleInfo {
                 modules.add(of(plugin.getId().getValue() + ":" + module.getId().getValue(), module, shared));
             }
         }
-        Collections.sort(modules, new Comparator<ModuleInfo>() {
-            @Override
-            public int compare(ModuleInfo a, ModuleInfo b) {
-                return a.key.compareTo(b.key);
-            }
-        });
+        Collections.sort(modules, (a, b) -> a.key.compareTo(b.key));
         return modules;
     }
 

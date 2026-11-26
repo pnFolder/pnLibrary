@@ -1,5 +1,12 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigPolymorphicResolver;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigObjectIntrospector;
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigSchemaInspector;
+import org.pnfolder.pnlibrary.config.yaml.text.ScalarConversion;
+import org.pnfolder.pnlibrary.config.yaml.text.ConfigValueText;
+import org.pnfolder.pnlibrary.config.yaml.text.YamlText;
+import java.util.Objects;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -34,19 +41,19 @@ final class YamlValueReader {
     private final ConfigOptions options;
     private final Consumer<String> warning;
     private final SerializationContexts contexts;
-    private final List<String> skipped = new ArrayList<String>();
+    private final List<String> skipped = new ArrayList<>();
 
     YamlValueReader(@NotNull ConfigObjectIntrospector introspector, @NotNull ConfigSerializerResolver serializers,
                     @NotNull ConfigPolymorphicResolver polymorphic, @NotNull ConfigSchemaInspector schema,
                     @NotNull ConfigOptions options, @NotNull Consumer<String> warning,
                     @NotNull SerializationContexts contexts) {
-        this.introspector = introspector;
-        this.serializers = serializers;
-        this.polymorphic = polymorphic;
-        this.schema = schema;
-        this.options = options;
-        this.warning = warning;
-        this.contexts = contexts;
+        this.introspector = Objects.requireNonNull(introspector, "introspector");
+        this.serializers = Objects.requireNonNull(serializers, "serializers");
+        this.polymorphic = Objects.requireNonNull(polymorphic, "polymorphic");
+        this.schema = Objects.requireNonNull(schema, "schema");
+        this.options = Objects.requireNonNull(options, "options");
+        this.warning = Objects.requireNonNull(warning, "warning");
+        this.contexts = Objects.requireNonNull(contexts, "contexts");
     }
 
     /** Forgets the elements skipped by an earlier read. */
@@ -57,16 +64,16 @@ final class YamlValueReader {
     /** The elements skipped since {@link #startRead()}. */
     @NotNull
     List<String> skippedSoFar() {
-        return new ArrayList<String>(skipped);
+        return new ArrayList<>(skipped);
     }
 
     /** Reads {@code value} as {@code type} for a serializer that decodes nested values. */
     Object decodeNested(Object value, Type type, String at) {
-        return located(at, () -> convert(value, type, null, at, Collections.<Annotation>emptyList()));
+        return located(at, () -> convert(value, type, null, at, Collections.emptyList()));
     }
 
     void populate(@NotNull Object target, @NotNull Class<?> targetType, @NotNull Map<?, ?> values, @NotNull String prefix) {
-        Map<String, Object> byKey = new LinkedHashMap<String, Object>();
+        Map<String, Object> byKey = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : values.entrySet()) {
             byKey.put(String.valueOf(entry.getKey()), entry.getValue());
         }
@@ -134,7 +141,7 @@ final class YamlValueReader {
         Class<?> rawType = introspector.rawClass(targetType);
         ConfigSerializer<Object> serializer = serializers.forType(rawType);
         if (serializer != null) {
-            return serializer.deserialize(value, contexts.create(targetType, path, Collections.<Annotation>emptyList(), current));
+            return serializer.deserialize(value, contexts.create(targetType, path, Collections.emptyList(), current));
         }
         if (value == null) {
             return null;
@@ -166,7 +173,7 @@ final class YamlValueReader {
         Object array = Array.newInstance(component, value.size());
         for (int index = 0; index < value.size(); index++) {
             Array.set(array, index, convert(value.get(index), component, null, path + "[" + index + "]",
-                    Collections.<Annotation>emptyList()));
+                    Collections.emptyList()));
         }
         return array;
     }
@@ -174,7 +181,7 @@ final class YamlValueReader {
     private Object convertCollection(Type targetType, Class<?> rawType, List<?> value, String path, List<Annotation> annotations) {
         Type elementType = typeArgument(targetType, 0, Object.class);
         boolean skipUnknown = options.getUnknownTypes() == UnknownTypePolicy.SKIP;
-        List<Object> converted = new ArrayList<Object>();
+        List<Object> converted = new ArrayList<>();
         for (int index = 0; index < value.size(); index++) {
             String at = path + "[" + index + "]";
             Object item = value.get(index);
@@ -211,12 +218,12 @@ final class YamlValueReader {
     private Object convertMap(Type targetType, Class<?> rawType, Map<?, ?> value, String path) {
         Type keyType = typeArgument(targetType, 0, String.class);
         Type valueType = typeArgument(targetType, 1, Object.class);
-        Map<Object, Object> converted = new LinkedHashMap<Object, Object>();
+        Map<Object, Object> converted = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : value.entrySet()) {
             String at = path + "." + entry.getKey();
-            Object convertedKey = convert(entry.getKey(), keyType, null, "", Collections.<Annotation>emptyList());
+            Object convertedKey = convert(entry.getKey(), keyType, null, "", Collections.emptyList());
             converted.put(convertedKey, located(at, () -> convert(entry.getValue(), valueType, null, at,
-                    Collections.<Annotation>emptyList())));
+                    Collections.emptyList())));
         }
         return introspector.map(rawType, converted, path);
     }
@@ -265,7 +272,7 @@ final class YamlValueReader {
         }
         String name = entry.getValue() == null ? "" : YamlText.trim(entry.getValue().toString());
         Class<?> implementation = polymorphic.decodingType(baseType, annotations, name, path);
-        Map<Object, Object> body = new LinkedHashMap<Object, Object>();
+        Map<Object, Object> body = new LinkedHashMap<>();
         for (Map.Entry<?, ?> other : node.entrySet()) {
             if (!java.util.Objects.equals(other.getKey(), entry.getKey())) {
                 body.put(other.getKey(), other.getValue());
@@ -281,7 +288,7 @@ final class YamlValueReader {
         if (form == null) {
             return value;
         }
-        Map<String, Object> node = new LinkedHashMap<String, Object>();
+        Map<String, Object> node = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : value.entrySet()) {
             node.put(String.valueOf(entry.getKey()), entry.getValue());
         }

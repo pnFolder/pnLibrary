@@ -13,9 +13,9 @@ public final class UpdateBackupItem {
 
     /** Creates the description of one saved file. */
     public UpdateBackupItem(@NotNull ProductId product, @NotNull BackupKind kind, @NotNull String name, long bytes) {
-        this.product = product;
-        this.kind = kind;
-        this.name = name;
+        this.product = Objects.requireNonNull(product, "product");
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.name = Objects.requireNonNull(name, "name");
         this.bytes = bytes;
     }
 

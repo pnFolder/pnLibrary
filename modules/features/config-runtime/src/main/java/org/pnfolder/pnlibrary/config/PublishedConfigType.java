@@ -48,7 +48,7 @@ final class PublishedConfigType implements ConfigTypeRegistration {
     }
 
     Set<String> words() {
-        Set<String> words = new LinkedHashSet<String>(aliases);
+        Set<String> words = new LinkedHashSet<>(aliases);
         words.add(name);
         return Collections.unmodifiableSet(words);
     }

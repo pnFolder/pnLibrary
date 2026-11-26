@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteResult;
 
@@ -8,7 +9,7 @@ public final class ResultFrame implements LinkFrame {
     private final RemoteResult result;
 
     public ResultFrame(@NotNull RemoteResult result) {
-        this.result = result;
+        this.result = Objects.requireNonNull(result, "result");
     }
 
     public @NotNull RemoteResult getResult() {

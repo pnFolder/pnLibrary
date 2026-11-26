@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.settings;
 
+import java.util.Objects;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,13 +39,13 @@ public final class LegacySettingsImport {
 
     /** Creates an import; {@code warning} receives what could not be imported, in words for the administrator. */
     public LegacySettingsImport(@NotNull LibraryPaths paths, @NotNull Consumer<String> warning) {
-        this.paths = paths;
-        this.warning = warning;
+        this.paths = Objects.requireNonNull(paths, "paths");
+        this.warning = Objects.requireNonNull(warning, "warning");
     }
 
     /** Imports into {@code store} every old file that exists. */
     public void run(@NotNull SettingsStore store) {
-        Set<String> held = new HashSet<String>();
+        Set<String> held = new HashSet<>();
         for (SettingValue value : store.values()) {
             if (value.getChanged()) {
                 held.add(value.getSpec().getKey());
@@ -62,7 +63,7 @@ public final class LegacySettingsImport {
         Map<?, ?> root;
         try {
             Object loaded = new Yaml(new SafeConstructor(new LoaderOptions())).load(TextFiles.read(file));
-            root = loaded instanceof Map ? (Map<?, ?>) loaded : new LinkedHashMap<Object, Object>();
+            root = loaded instanceof Map ? (Map<?, ?>) loaded : new LinkedHashMap<>();
         } catch (Exception error) {
             warning.accept(file.getFileName() + " не прочитан и остался на месте: " + firstLine(error.getMessage()));
             return;
@@ -82,7 +83,7 @@ public final class LegacySettingsImport {
 
     /** {@code destinations: {cache: true}} becomes {@code destinations.cache}; keys of the old files were already kebab case. */
     private Map<String, Object> flatten(Map<?, ?> map, String prefix) {
-        Map<String, Object> flat = new LinkedHashMap<String, Object>();
+        Map<String, Object> flat = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             String key = prefix + entry.getKey();
             if (entry.getValue() instanceof Map) {
@@ -96,6 +97,9 @@ public final class LegacySettingsImport {
 
     private void take(SettingsStore store, Set<String> held, String source, String key, Object value) {
         SettingSpec spec = SettingsRegistry.get(key);
+        if (spec == null && SettingsRegistry.isRetired(key)) {
+            return;
+        }
         if (spec == null) {
             warning.accept(source + ": параметр «" + key + "» больше не существует, пропущен.");
             return;

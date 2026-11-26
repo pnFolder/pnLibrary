@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.events.inspect.history;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay;
@@ -53,9 +54,9 @@ public final class EventHistory implements AutoCloseable {
     private final Consumer<Throwable> onFailure;
     private final LongSupplier now;
     private final ConcurrentSkipListMap<LocalDate, ConcurrentHashMap<String, EventCounts>> days =
-            new ConcurrentSkipListMap<LocalDate, ConcurrentHashMap<String, EventCounts>>();
+            new ConcurrentSkipListMap<>();
     private final ConcurrentSkipListMap<LocalDateTime, ConcurrentHashMap<String, EventCounts>> hours =
-            new ConcurrentSkipListMap<LocalDateTime, ConcurrentHashMap<String, EventCounts>>();
+            new ConcurrentSkipListMap<>();
     private final AtomicBoolean dirty = new AtomicBoolean(false);
     private final AtomicLong lastFlush;
     private final FailureThrottle failureThrottle = new FailureThrottle();
@@ -90,10 +91,10 @@ public final class EventHistory implements AutoCloseable {
             @NotNull LongSupplier now) {
         this.file = file;
         this.retentionDays = retentionDays;
-        this.zone = zone;
+        this.zone = Objects.requireNonNull(zone, "zone");
         this.clock = clock;
         this.flushEveryMillis = flushEveryMillis;
-        this.onFailure = onFailure;
+        this.onFailure = Objects.requireNonNull(onFailure, "onFailure");
         this.now = now;
         this.lastFlush = new AtomicLong(clock.getAsLong());
         this.worker = file != null && retentionDays > 0 ? new ManagedWorker("pnLibrary-event-history") : null;
@@ -151,8 +152,8 @@ public final class EventHistory implements AutoCloseable {
         HistoryBucket created = new HistoryBucket(
                 minuteStart,
                 minuteStart + MINUTE_MILLIS,
-                hours.computeIfAbsent(local.truncatedTo(ChronoUnit.HOURS), key -> new ConcurrentHashMap<String, EventCounts>()),
-                days.computeIfAbsent(local.toLocalDate(), key -> new ConcurrentHashMap<String, EventCounts>()));
+                hours.computeIfAbsent(local.truncatedTo(ChronoUnit.HOURS), key -> new ConcurrentHashMap<>()),
+                days.computeIfAbsent(local.toLocalDate(), key -> new ConcurrentHashMap<>()));
         bucket = created;
         prune(local);
         return created;
@@ -171,9 +172,9 @@ public final class EventHistory implements AutoCloseable {
     /** The recorded days, newest first and then by event name; only {@code eventType} when given. */
     @NotNull
     public List<EventDay> entries(@Nullable String eventType) {
-        List<EventDay> found = new ArrayList<EventDay>();
+        List<EventDay> found = new ArrayList<>();
         for (Map.Entry<LocalDate, ConcurrentHashMap<String, EventCounts>> day : days.descendingMap().entrySet()) {
-            for (Map.Entry<String, EventCounts> event : new TreeMap<String, EventCounts>(day.getValue()).entrySet()) {
+            for (Map.Entry<String, EventCounts> event : new TreeMap<>(day.getValue()).entrySet()) {
                 if (eventType == null || event.getKey().equals(eventType)) {
                     found.add(new EventDay(day.getKey(), event.getKey(), event.getValue().getCalls(), event.getValue().getDenied()));
                 }
@@ -191,9 +192,9 @@ public final class EventHistory implements AutoCloseable {
     /** The recorded hours, newest first and then by event name; only {@code eventType} when given. */
     @NotNull
     public List<EventHour> hourly(@Nullable String eventType) {
-        List<EventHour> found = new ArrayList<EventHour>();
+        List<EventHour> found = new ArrayList<>();
         for (Map.Entry<LocalDateTime, ConcurrentHashMap<String, EventCounts>> hour : hours.descendingMap().entrySet()) {
-            for (Map.Entry<String, EventCounts> event : new TreeMap<String, EventCounts>(hour.getValue()).entrySet()) {
+            for (Map.Entry<String, EventCounts> event : new TreeMap<>(hour.getValue()).entrySet()) {
                 if (eventType == null || event.getKey().equals(eventType)) {
                     found.add(new EventHour(hour.getKey(), event.getKey(), event.getValue().getCalls(), event.getValue().getDenied()));
                 }
@@ -236,12 +237,12 @@ public final class EventHistory implements AutoCloseable {
         EventHistoryFile.Sink sink = new EventHistoryFile.Sink() {
             @Override
             public void day(LocalDate date, String event, long calls, long denied) {
-                countsOf(days.computeIfAbsent(date, key -> new ConcurrentHashMap<String, EventCounts>()), event).add(calls, denied);
+                countsOf(days.computeIfAbsent(date, key -> new ConcurrentHashMap<>()), event).add(calls, denied);
             }
 
             @Override
             public void hour(LocalDateTime hour, String event, long calls, long denied) {
-                countsOf(hours.computeIfAbsent(hour, key -> new ConcurrentHashMap<String, EventCounts>()), event).add(calls, denied);
+                countsOf(hours.computeIfAbsent(hour, key -> new ConcurrentHashMap<>()), event).add(calls, denied);
             }
         };
         Failures.runCatchingNonFatal((Callable<Void>) () -> {

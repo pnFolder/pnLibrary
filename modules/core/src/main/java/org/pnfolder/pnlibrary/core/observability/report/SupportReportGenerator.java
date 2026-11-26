@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.observability.report;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.diagnostics.DebugRequest;
@@ -75,7 +76,7 @@ public final class SupportReportGenerator {
                                   @NotNull Supplier<List<Map.Entry<String, byte[]>>> diagnosticHistory,
                                   @NotNull Supplier<ObservabilityReportSnapshot> observabilitySnapshot,
                                   @NotNull Supplier<Map<String, Object>> runtimeDiagnostics) {
-        this.config = config;
+        this.config = Objects.requireNonNull(config, "config");
         this.encryptionCodec = encryptionCodec;
         this.uploader = uploader;
         this.uploadLedger = uploadLedger;

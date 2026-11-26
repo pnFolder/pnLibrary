@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.diagnostics.config;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,15 +34,15 @@ public final class ConfigRedaction {
     private final List<Pattern> keyPatterns;
     private final List<Pattern> valuePatterns;
     private final DiagnosticRedactor redactor;
-    private final List<String[]> wildcardPaths = new ArrayList<String[]>();
+    private final List<String[]> wildcardPaths = new ArrayList<>();
 
     /** Creates the rules of one file: paths and key patterns to hide, value patterns to blank. */
     public ConfigRedaction(@NotNull Set<String> excludedPaths, @NotNull List<Pattern> keyPatterns,
                            @NotNull List<Pattern> valuePatterns, @NotNull DiagnosticRedactor redactor) {
-        this.excludedPaths = excludedPaths;
-        this.keyPatterns = keyPatterns;
-        this.valuePatterns = valuePatterns;
-        this.redactor = redactor;
+        this.excludedPaths = Objects.requireNonNull(excludedPaths, "excludedPaths");
+        this.keyPatterns = Objects.requireNonNull(keyPatterns, "keyPatterns");
+        this.valuePatterns = Objects.requireNonNull(valuePatterns, "valuePatterns");
+        this.redactor = Objects.requireNonNull(redactor, "redactor");
         for (String path : excludedPaths) {
             String[] segments = segments(path);
             if (contains(segments, "*")) {
@@ -53,7 +54,7 @@ public final class ConfigRedaction {
     /** Compiles case-insensitive patterns; an invalid one is skipped so one typo cannot block every report. */
     @NotNull
     public static List<Pattern> compile(@NotNull List<String> patterns) {
-        List<Pattern> compiled = new ArrayList<Pattern>();
+        List<Pattern> compiled = new ArrayList<>();
         for (final String source : patterns) {
             if (Whitespace.isBlank(source) || source.length() > MAX_PATTERN_LENGTH) {
                 continue;
@@ -85,7 +86,7 @@ public final class ConfigRedaction {
     }
 
     private Map<String, Object> hideRequested(Map<String, Object> data, String parent) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             String path = parent.isEmpty() ? key : parent + "." + key;
@@ -106,7 +107,7 @@ public final class ConfigRedaction {
             return hideRequested((Map<String, Object>) value, path);
         }
         if (value instanceof List) {
-            List<Object> items = new ArrayList<Object>();
+            List<Object> items = new ArrayList<>();
             for (Object item : (List<Object>) value) {
                 items.add(hideRequestedValue(item, path));
             }
@@ -119,7 +120,7 @@ public final class ConfigRedaction {
     }
 
     private Map<String, Object> redactTree(Map<String, Object> data, String parent, int depth) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         if (depth >= MAX_DEPTH) {
             result.put("[limit]", "[depth limit reached]");
             return result;
@@ -148,7 +149,7 @@ public final class ConfigRedaction {
             return redactTree((Map<String, Object>) value, path, depth + 1);
         }
         if (value instanceof List) {
-            List<Object> items = new ArrayList<Object>();
+            List<Object> items = new ArrayList<>();
             for (Object item : (List<Object>) value) {
                 if (items.size() >= MAX_ENTRIES_PER_LIST) {
                     break;

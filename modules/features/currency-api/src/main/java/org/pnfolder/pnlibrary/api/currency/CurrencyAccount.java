@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.currency;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -10,7 +11,7 @@ public final class CurrencyAccount {
 
     /** Creates the account of the player with the given UUID. */
     public CurrencyAccount(@NotNull UUID playerId) {
-        this.playerId = playerId;
+        this.playerId = Objects.requireNonNull(playerId, "playerId");
     }
 
     /** Player that owns the balance. */

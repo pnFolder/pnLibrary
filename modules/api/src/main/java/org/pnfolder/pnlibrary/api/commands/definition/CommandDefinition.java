@@ -38,7 +38,7 @@ public final class CommandDefinition {
             CommandNode root,
             String noPermissionMessage) {
         this.name = name;
-        this.aliases = Collections.unmodifiableSet(new LinkedHashSet<String>(aliases));
+        this.aliases = Collections.unmodifiableSet(new LinkedHashSet<>(aliases));
         this.permission = permission;
         this.consoleBypassesPermission = consoleBypassesPermission;
         this.execution = execution;
@@ -70,13 +70,13 @@ public final class CommandDefinition {
     /** Returns an already-completed command execution stage. */
     @NotNull
     public static CompletionStage<Void> completedExecution() {
-        return CompletableFuture.<Void>completedFuture(null);
+        return CompletableFuture.completedFuture(null);
     }
 
     /** Returns an already-completed immutable suggestion stage. */
     @NotNull
     public static CompletionStage<List<String>> completedSuggestions(@NotNull List<String> values) {
-        return CompletableFuture.completedFuture(Collections.unmodifiableList(new ArrayList<String>(values)));
+        return CompletableFuture.completedFuture(Collections.unmodifiableList(new ArrayList<>(values)));
     }
 
     /** Normalized primary command name. */

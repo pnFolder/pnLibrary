@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.localization;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +18,7 @@ public class TranslationException extends RuntimeException {
     /** Creates a failure of the given category that wraps its {@code cause}. */
     public TranslationException(@NotNull Reason reason, @NotNull String message, @Nullable Throwable cause) {
         super(message, cause);
-        this.reason = reason;
+        this.reason = Objects.requireNonNull(reason, "reason");
     }
 
     /** Stable failure category suitable for programmatic handling. */

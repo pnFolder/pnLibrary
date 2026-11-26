@@ -21,15 +21,15 @@ final class JournalRepeats {
     }
 
     static List<Component> section(ChatKit kit, List<JournalRecord> group) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         ZoneId zone = DisplayZone.getZone();
         LocalDate today = LocalDate.now(zone);
-        Map<LocalDate, List<JournalRecord>> days = new LinkedHashMap<LocalDate, List<JournalRecord>>();
+        Map<LocalDate, List<JournalRecord>> days = new LinkedHashMap<>();
         for (JournalRecord record : group.subList(0, Math.min(JournalConstants.REPEAT_ROWS, group.size()))) {
             LocalDate day = Instant.ofEpochMilli(record.getTimeMillis()).atZone(zone).toLocalDate();
             List<JournalRecord> items = days.get(day);
             if (items == null) {
-                items = new ArrayList<JournalRecord>();
+                items = new ArrayList<>();
                 days.put(day, items);
             }
             items.add(record);
@@ -47,7 +47,7 @@ final class JournalRepeats {
     /** The heading of one day and a row for each occurrence of it. */
     private static List<Component> dayRows(ChatKit kit, LocalDate day, List<JournalRecord> items, LocalDate today,
                                            ZoneId zone) {
-        List<Component> lines = new ArrayList<Component>();
+        List<Component> lines = new ArrayList<>();
         boolean recent = day.equals(today) || day.equals(today.minusDays(1));
         String title = day.equals(today) ? "Сегодня" : day.equals(today.minusDays(1)) ? "Вчера"
             : JournalTime.longDate(day);

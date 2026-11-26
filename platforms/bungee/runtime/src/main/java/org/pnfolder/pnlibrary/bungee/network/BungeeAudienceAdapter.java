@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
@@ -29,7 +30,7 @@ public final class BungeeAudienceAdapter implements PlatformAudienceAdapter {
 
     /** Creates an adapter that reads players and the console from the proxy of {@code plugin}. */
     public BungeeAudienceAdapter(@NotNull Plugin plugin) {
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     @NotNull

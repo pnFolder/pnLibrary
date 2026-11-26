@@ -23,8 +23,8 @@ public final class ReleaseSummary {
      */
     public ReleaseSummary(@NotNull String version, @NotNull UpdateChannel channel, @Nullable Instant publishedAt,
                           @Nullable String changelogUrl) {
-        this.version = version;
-        this.channel = channel;
+        this.version = Objects.requireNonNull(version, "version");
+        this.channel = Objects.requireNonNull(channel, "channel");
         this.publishedAt = publishedAt;
         this.changelogUrl = changelogUrl;
     }

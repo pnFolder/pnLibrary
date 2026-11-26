@@ -18,7 +18,7 @@ public final class RefRequirement implements Requirement {
 
     /** Creates it with every setting given. */
     public RefRequirement(@NotNull String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     /** Name given when the requirement was defined. */

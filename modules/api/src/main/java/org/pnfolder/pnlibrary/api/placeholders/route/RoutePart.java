@@ -21,7 +21,7 @@ public final class RoutePart {
 
     /** A part without arguments. */
     public RoutePart(@NotNull RouteKind kind, @NotNull String text, @NotNull String name) {
-        this(kind, text, name, Collections.<String>emptyList());
+        this(kind, text, name, Collections.emptyList());
     }
 
     /**

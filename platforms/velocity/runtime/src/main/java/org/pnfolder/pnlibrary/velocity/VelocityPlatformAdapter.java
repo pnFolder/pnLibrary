@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.velocity;
 
+import java.util.Objects;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
-import org.pnfolder.pnlibrary.api.remote.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogSink;
@@ -65,15 +66,15 @@ final class VelocityPlatformAdapter extends ProxyPlatformAdapter {
             @NotNull PlatformMetricsFactory metricsFactory,
             @NotNull Path dataFolder) {
         super(plugin);
-        this.proxy = proxy;
-        this.nativeMetricsFactory = metricsFactory;
-        this.dataPath = dataFolder;
+        this.proxy = Objects.requireNonNull(proxy, "proxy");
+        this.nativeMetricsFactory = Objects.requireNonNull(metricsFactory, "metricsFactory");
+        this.dataPath = Objects.requireNonNull(dataFolder, "dataFolder");
         this.nativeLogger = LoggerFactory.getLogger(plugin.getClass());
         this.diagnosticDetailsCollector = new VelocityDiagnosticDetailsCollector(proxy);
         this.plugins = new PlatformPlugins<>("Velocity",
                 () -> proxy.getPluginManager().getPlugins(),
                 owner -> proxy.getPluginManager().fromInstance(owner).orElse(null),
-                VelocityPlatformAdapter::describe);
+            container -> container != null ? describe(container) : null);
         this.logObserver = new VelocityLogObserver(plugin,
                 id -> proxy.getPluginManager().getPlugin(id.toLowerCase(Locale.ROOT))
                         .flatMap(PluginContainer::getInstance).orElse(null),

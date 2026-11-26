@@ -54,7 +54,7 @@ public final class UpdateReminders implements AutoCloseable {
                 .delay(UpdateDefaults.REMINDER_INTERVAL)
                 .interval(UpdateDefaults.REMINDER_INTERVAL)
                 .action(context -> {
-                    for (Player player : new ArrayList<Player>(plugin.getServer().getOnlinePlayers())) {
+                    for (Player player : new ArrayList<>(plugin.getServer().getOnlinePlayers())) {
                         if (canSeeUpdates(player)) {
                             remind(player, false);
                         }

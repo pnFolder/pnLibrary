@@ -1,15 +1,23 @@
 package org.pnfolder.pnlibrary.bukkit.commands;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
+
+import net.kyori.adventure.audience.Audience;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
 import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
+import org.pnfolder.pnlibrary.core.settings.RestartSettings;
+import org.pnfolder.pnlibrary.core.settings.SettingTexts;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateConfirmationTokens;
 
@@ -39,27 +47,44 @@ final class BukkitRestartFlow {
             replies.say(reply, ChatTone.WARNING, "Нет подготовленных обновлений, которым нужен перезапуск.");
             return;
         }
-        askRestart(sender, reply, plan.getId(), plan.getRevision());
+        askRestart(sender, reply, plan.getId(), plan.getRevision(), null);
     }
 
-    /** Offers the three ways to restart; each button carries its own confirmation. */
+    /** Sends every administrator who may restart the card with the ways to restart; {@code note} says why, or is null. */
+    void announce(UpdatePlanSnapshot plan, String note) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Audience audience = player.hasPermission("pnlibrary.updates.restart")
+                ? library.getAudiences().player(player.getUniqueId()) : null;
+            if (audience != null) {
+                askRestart(player, new BukkitCommandSender(player, audience), plan.getId(), plan.getRevision(), note);
+            }
+        }
+    }
+
+    /** Offers the ways to restart; each button carries its own confirmation. */
     private void askRestart(CommandSender sender, org.pnfolder.pnlibrary.api.commands.CommandSender reply, UUID plan,
-                            long revision) {
-        String script = restarter.script() == null
-            ? "restart-script в spigot.yml не задан: сервер остановится и поднимется, только если его запустит панель или скрипт автозапуска."
-            : "Сервер поднимется сам.";
-        replies.confirmChoices(
-            reply,
-            "Перезапуск сервера",
-            Arrays.asList("Игроков на сервере: " + Bukkit.getOnlinePlayers().size() + ".",
-                "Подготовленные версии применятся после перезапуска.", script),
-            Arrays.asList(
-                new ConfirmChoice("Сейчас", command(sender, plan, revision, UpdateAction.RESTART),
-                    "Перезапустить сразу, игрокам придёт отсчёт"),
-                new ConfirmChoice("Через 5 мин", command(sender, plan, revision, UpdateAction.RESTART_LATER),
-                    "Предупредить игроков и перезапустить через 5 минут"),
-                new ConfirmChoice("Когда никого нет", command(sender, plan, revision, UpdateAction.RESTART_EMPTY),
-                    "Перезапустить, как только все выйдут")));
+                            long revision, String note) {
+        List<String> lines = new ArrayList<>();
+        lines.add("Игроков на сервере: " + Bukkit.getOnlinePlayers().size() + ".");
+        lines.add("Подготовленные версии применятся после перезапуска.");
+        if (note != null) {
+            lines.add(note);
+        }
+        List<ConfirmChoice> choices = new ArrayList<>(Arrays.asList(
+            new ConfirmChoice("Сейчас", command(sender, plan, revision, UpdateAction.RESTART),
+                "Перезапустить сразу, игрокам придёт отсчёт"),
+            new ConfirmChoice("Через 5 мин", command(sender, plan, revision, UpdateAction.RESTART_LATER),
+                "Предупредить игроков и перезапустить через 5 минут"),
+            new ConfirmChoice("Когда никого нет", command(sender, plan, revision, UpdateAction.RESTART_EMPTY),
+                "Перезапустить, как только все выйдут")));
+        RestartSettings settings = restarter.settings();
+        if (settings.getMaxPlayers() > 0) {
+            choices.add(new ConfirmChoice("Когда игроков ≤ " + settings.getMaxPlayers(),
+                command(sender, plan, revision, UpdateAction.RESTART_FEW),
+                "Перезапустить, когда игроков не больше " + settings.getMaxPlayers() + " дольше "
+                    + SettingTexts.duration(settings.getQuietTime())));
+        }
+        replies.confirmChoices(reply, "Перезапуск сервера", lines, choices);
     }
 
     private String command(CommandSender sender, UUID plan, long revision, UpdateAction action) {
@@ -74,9 +99,14 @@ final class BukkitRestartFlow {
         }
     }
 
-    /** Withdraws a restart that is counting down or waiting for the server to empty. */
-    void cancelRestart(org.pnfolder.pnlibrary.api.commands.CommandSender reply) {
-        if (restarter.cancel()) {
+    /**
+     * Withdraws a restart that is counting down or waiting for its condition, and the automatic one.
+     *
+     * @param autoWithdrawn withdraws the automatic restart of the waiting plan; false when there was none
+     */
+    void cancelRestart(org.pnfolder.pnlibrary.api.commands.CommandSender reply, BooleanSupplier autoWithdrawn) {
+        boolean waiting = restarter.cancel();
+        if (autoWithdrawn.getAsBoolean() || waiting) {
             replies.say(reply, ChatTone.SUCCESS, "Перезапуск отменён.");
         } else {
             replies.say(reply, ChatTone.WARNING, "Перезапуск не запланирован.");
@@ -100,11 +130,10 @@ final class BukkitRestartFlow {
             replies.say(reply, ChatTone.FAILURE, "План обновления изменился; запросите перезапуск заново.");
             return;
         }
-        if (restarter.start(mode) == ServerRestarter.Started.COUNTDOWN) {
-            replies.say(reply, ChatTone.SUCCESS, "Перезапуск запланирован.", "Отменить: /pn update restart cancel");
-        } else {
-            replies.say(reply, ChatTone.SUCCESS, "Перезапущу сервер, когда на нём никого не останется.",
-                "Отменить: /pn update restart cancel");
-        }
+        ServerRestarter.Started started = restarter.start(mode);
+        String text = started == ServerRestarter.Started.COUNTDOWN ? "Перезапуск запланирован."
+            : started == ServerRestarter.Started.WAITING_FOR_EMPTY ? "Перезапущу сервер, когда на нём никого не останется."
+            : "Перезапущу сервер, когда игроков будет не больше " + restarter.settings().getMaxPlayers() + ".";
+        replies.say(reply, ChatTone.SUCCESS, text, "Отменить: /pn update restart cancel");
     }
 }

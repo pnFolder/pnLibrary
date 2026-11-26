@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.logging;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -23,18 +24,18 @@ public final class DiagnosticCapture implements PlatformLogging {
     private final DiagnosticLogBuffer incidents;
     private final JournalSink journal;
     private final ErrorSink onError;
-    private final ThreadLocal<Boolean> emitting = new ThreadLocal<Boolean>();
-    private final ConcurrentHashMap<String, Long> echoes = new ConcurrentHashMap<String, Long>();
+    private final ThreadLocal<Boolean> emitting = new ThreadLocal<>();
+    private final ConcurrentHashMap<String, Long> echoes = new ConcurrentHashMap<>();
     private final FailureThrottle stageFailures = new FailureThrottle();
 
     public DiagnosticCapture(@NotNull PlatformOwnership ownership, @NotNull PlatformLogging nativeLogging,
                              @Nullable DiagnosticLogBuffer incidents, @Nullable JournalSink journal,
                              @NotNull ErrorSink onError) {
-        this.ownership = ownership;
-        this.nativeLogging = nativeLogging;
+        this.ownership = Objects.requireNonNull(ownership, "ownership");
+        this.nativeLogging = Objects.requireNonNull(nativeLogging, "nativeLogging");
         this.incidents = incidents;
         this.journal = journal;
-        this.onError = onError;
+        this.onError = Objects.requireNonNull(onError, "onError");
     }
 
     public DiagnosticCapture(@NotNull PlatformOwnership ownership, @NotNull PlatformLogging nativeLogging,
@@ -50,12 +51,12 @@ public final class DiagnosticCapture implements PlatformLogging {
     /** Writes to the journal and incident buffer at {@code level} without emitting to the console. */
     public void captureOnly(@NotNull Object owner, @NotNull LogLevel level, @NotNull String message,
                             @Nullable Throwable error) {
-        capture(owner, level, message, error, true, Collections.<String, Object>emptyMap());
+        capture(owner, level, message, error, true, Collections.emptyMap());
     }
 
     public void write(@NotNull Object owner, @NotNull LogLevel level, @NotNull String message,
                       @Nullable Throwable error) {
-        write(owner, level, message, error, Collections.<String, Object>emptyMap());
+        write(owner, level, message, error, Collections.emptyMap());
     }
 
     public void write(@NotNull Object owner, @NotNull LogLevel level, @NotNull String message,
@@ -107,7 +108,7 @@ public final class DiagnosticCapture implements PlatformLogging {
         if (Boolean.TRUE.equals(emitting.get()) || echoedRecently(level, message)) {
             return;
         }
-        capture(owner, level, message, error, includeJournal, Collections.<String, Object>emptyMap());
+        capture(owner, level, message, error, includeJournal, Collections.emptyMap());
     }
 
     /** A native logger may echo our line on another thread, where the thread-local guard cannot see it. */

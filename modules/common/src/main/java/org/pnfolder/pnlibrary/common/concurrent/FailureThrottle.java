@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.common.concurrent;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +32,7 @@ public final class FailureThrottle {
     /** A throttle that reads time from {@code clock}, which tests use to move time forward. */
     public FailureThrottle(long intervalMillis, @NotNull LongSupplier clock) {
         this.intervalMillis = intervalMillis;
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     /**

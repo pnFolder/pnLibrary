@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import java.util.Objects;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -35,9 +36,9 @@ public final class JdbcConnections {
     }
 
     private JdbcConnections(String driverClass, String scheme, Map<String, String> timeouts, OptionalLibrary library) {
-        this.driverClass = driverClass;
-        this.scheme = scheme;
-        this.timeouts = timeouts;
+        this.driverClass = Objects.requireNonNull(driverClass, "driverClass");
+        this.scheme = Objects.requireNonNull(scheme, "scheme");
+        this.timeouts = Objects.requireNonNull(timeouts, "timeouts");
         this.library = library;
     }
 
@@ -76,7 +77,7 @@ public final class JdbcConnections {
     }
 
     private static Map<String, String> timeouts(String first, String firstValue, String second, String secondValue) {
-        Map<String, String> map = new LinkedHashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<>();
         map.put(first, firstValue);
         map.put(second, secondValue);
         return Collections.unmodifiableMap(map);

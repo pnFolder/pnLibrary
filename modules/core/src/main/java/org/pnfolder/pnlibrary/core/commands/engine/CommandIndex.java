@@ -14,11 +14,11 @@ import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 final class CommandIndex {
     private final Object lock = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final Set<String> reservedNames = new LinkedHashSet<String>();
-    private final Set<RegisteredCommand> registrations = new LinkedHashSet<RegisteredCommand>();
+    private final Set<String> reservedNames = new LinkedHashSet<>();
+    private final Set<RegisteredCommand> registrations = new LinkedHashSet<>();
     private final IdentityHashMap<CommandDefinition, RegisteredCommand> byDefinition =
-            new IdentityHashMap<CommandDefinition, RegisteredCommand>();
-    private final IdentityHashMap<Object, Set<RegisteredCommand>> byOwner = new IdentityHashMap<Object, Set<RegisteredCommand>>();
+            new IdentityHashMap<>();
+    private final IdentityHashMap<Object, Set<RegisteredCommand>> byOwner = new IdentityHashMap<>();
 
     /** Marks the index closed; false when it already was. */
     boolean close() {
@@ -57,7 +57,7 @@ final class CommandIndex {
             byDefinition.put(registration.getCommand(), registration);
             Set<RegisteredCommand> owned = byOwner.get(registration.getOwner());
             if (owned == null) {
-                owned = Collections.newSetFromMap(new IdentityHashMap<RegisteredCommand, Boolean>());
+                owned = Collections.newSetFromMap(new IdentityHashMap<>());
                 byOwner.put(registration.getOwner(), owned);
             }
             owned.add(registration);
@@ -83,19 +83,19 @@ final class CommandIndex {
     List<RegisteredCommand> ownedBy(Object owner) {
         synchronized (lock) {
             Set<RegisteredCommand> owned = byOwner.get(owner);
-            return owned == null ? new ArrayList<RegisteredCommand>() : new ArrayList<RegisteredCommand>(owned);
+            return owned == null ? new ArrayList<>() : new ArrayList<>(owned);
         }
     }
 
     List<RegisteredCommand> all() {
         synchronized (lock) {
-            return new ArrayList<RegisteredCommand>(registrations);
+            return new ArrayList<>(registrations);
         }
     }
 
     /** The registrations that are still open, captured once so names and count describe the same set. */
     List<RegisteredCommand> open() {
-        List<RegisteredCommand> current = new ArrayList<RegisteredCommand>();
+        List<RegisteredCommand> current = new ArrayList<>();
         for (RegisteredCommand registration : all()) {
             if (!registration.isClosed()) {
                 current.add(registration);

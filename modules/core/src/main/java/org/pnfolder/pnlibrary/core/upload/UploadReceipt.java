@@ -24,12 +24,12 @@ public final class UploadReceipt {
      */
     public UploadReceipt(@NotNull URI link, @NotNull String id, @NotNull String deleteToken, long createdEpochSeconds,
                          long expiresEpochSeconds, @NotNull String backend) {
-        this.link = link;
-        this.id = id;
-        this.deleteToken = deleteToken;
+        this.link = Objects.requireNonNull(link, "link");
+        this.id = Objects.requireNonNull(id, "id");
+        this.deleteToken = Objects.requireNonNull(deleteToken, "deleteToken");
         this.createdEpochSeconds = createdEpochSeconds;
         this.expiresEpochSeconds = expiresEpochSeconds;
-        this.backend = backend;
+        this.backend = Objects.requireNonNull(backend, "backend");
     }
 
     /** A receipt for a backend that gives no delete token and no expiry; the upload counts as made now. */

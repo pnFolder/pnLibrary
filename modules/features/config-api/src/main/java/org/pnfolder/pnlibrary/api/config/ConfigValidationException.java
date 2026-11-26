@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.config;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public class ConfigValidationException extends IllegalArgumentException {
     /** Creates a failure that reports every problem produced by the validator. */
     public ConfigValidationException(@NotNull List<ConfigProblem> problems) {
         super(describe(problems));
-        this.problems = problems;
+        this.problems = Objects.requireNonNull(problems, "problems");
     }
 
     /** Every problem reported by the validator. */

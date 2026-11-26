@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -63,15 +64,10 @@ final class PlaceholderGroups {
         List<PlaceholderInfo> found = new ArrayList<PlaceholderInfo>();
         for (List<PlaceholderEntry> entries : groups.values()) {
             for (PlaceholderEntry entry : entries) {
-                collect(entry, entry.getRoot(), Collections.<String>emptyList(), found);
+                collect(entry, entry.getRoot(), Collections.emptyList(), found);
             }
         }
-        Collections.sort(found, new Comparator<PlaceholderInfo>() {
-            @Override
-            public int compare(PlaceholderInfo a, PlaceholderInfo b) {
-                return a.getAddress().compareTo(b.getAddress());
-            }
-        });
+        Collections.sort(found, (a, b) -> a.getAddress().compareTo(b.getAddress()));
         return found;
     }
 

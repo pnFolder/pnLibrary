@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupQuery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,7 +57,7 @@ class UpdateCatalogViewTest {
         List<ReleaseSummary> releases = Collections.singletonList(
             new ReleaseSummary("1.1.0", UpdateChannel.STABLE, Instant.parse("2026-10-01T00:00:00Z")));
         UpdateSnapshot snapshot = new UpdateSnapshot("pnlibrary", "1.0.0", "1.1.0", UpdateChannel.STABLE, UpdateState.UPDATE_AVAILABLE,
-            17, 8, true, null, "Каталог ответил", null, null, releases, Collections.<Integer>emptyList(), null, null);
+            17, 8, true, null, "Каталог ответил", null, null, releases, Collections.emptyList(), null, null);
 
         Component row = row(catalog(Collections.singletonList(snapshot), BUKKIT), "pnlibrary");
 
@@ -66,7 +67,7 @@ class UpdateCatalogViewTest {
         assertTrue(card.contains("Статус: доступно обновление"));
         assertTrue(card.contains("Версия: v1.0.0 → v1.1.0"));
         assertTrue(card.contains("Выпущена: 1 октября · 16 д назад"));
-        assertTrue(card.contains("Автозагрузка: включена"));
+        assertFalse(card.contains("Автозагрузка"));
         assertTrue(card.contains("Каталог ответил"));
         assertTrue(card.endsWith("\n\nНажмите, чтобы открыть карточку"), card);
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies;
 
+import java.util.Objects;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,9 +22,9 @@ public final class MissingGroup {
     /** Creates a group; {@code registration} is null when no dependency has a direct link. */
     public MissingGroup(@NotNull String owner, @NotNull String code, @NotNull List<MissingDependency> items,
                         @Nullable DownloadRegistration registration) {
-        this.owner = owner;
-        this.code = code;
-        this.items = Collections.unmodifiableList(new ArrayList<MissingDependency>(items));
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.code = Objects.requireNonNull(code, "code");
+        this.items = Collections.unmodifiableList(new ArrayList<>(items));
         this.registration = registration;
     }
 
@@ -49,7 +50,7 @@ public final class MissingGroup {
 
     /** Every direct address of every file. */
     public @NotNull List<URI> getAddresses() {
-        List<URI> addresses = new ArrayList<URI>();
+        List<URI> addresses = new ArrayList<>();
         for (MissingDependency item : items) {
             addresses.addAll(item.getSources());
         }

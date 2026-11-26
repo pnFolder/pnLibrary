@@ -118,9 +118,9 @@ public final class ConfigDocument {
                 current = (Map<String, Object>) next;
             } else if (next == null) {
                 if (!create) {
-                    return new LinkedHashMap<String, Object>();
+                    return new LinkedHashMap<>();
                 }
-                Map<String, Object> created = new LinkedHashMap<String, Object>();
+                Map<String, Object> created = new LinkedHashMap<>();
                 current.put(part, created);
                 current = created;
             } else {
@@ -137,13 +137,13 @@ public final class ConfigDocument {
                 throw new IllegalArgumentException("Invalid configuration path: " + path);
             }
         }
-        List<String> parts = new ArrayList<String>(split.length);
+        List<String> parts = new ArrayList<>(split.length);
         Collections.addAll(parts, split);
         return parts;
     }
 
     private static Map<String, Object> mutableMap(Map<String, Object> value) {
-        Map<String, Object> out = new LinkedHashMap<String, Object>();
+        Map<String, Object> out = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : value.entrySet()) {
             out.put(entry.getKey(), mutableValue(entry.getValue()));
         }
@@ -152,14 +152,14 @@ public final class ConfigDocument {
 
     private static Object mutableValue(Object value) {
         if (value instanceof Map) {
-            Map<String, Object> out = new LinkedHashMap<String, Object>();
+            Map<String, Object> out = new LinkedHashMap<>();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
                 out.put(String.valueOf(entry.getKey()), mutableValue(entry.getValue()));
             }
             return out;
         }
         if (value instanceof List) {
-            List<Object> out = new ArrayList<Object>();
+            List<Object> out = new ArrayList<>();
             for (Object item : (List<?>) value) {
                 out.add(mutableValue(item));
             }
@@ -169,7 +169,7 @@ public final class ConfigDocument {
     }
 
     private static Map<String, Object> immutableMap(Map<String, Object> value) {
-        Map<String, Object> out = new LinkedHashMap<String, Object>();
+        Map<String, Object> out = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : value.entrySet()) {
             out.put(entry.getKey(), immutableValue(entry.getValue()));
         }
@@ -178,14 +178,14 @@ public final class ConfigDocument {
 
     private static Object immutableValue(Object value) {
         if (value instanceof Map) {
-            Map<String, Object> out = new LinkedHashMap<String, Object>();
+            Map<String, Object> out = new LinkedHashMap<>();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
                 out.put(String.valueOf(entry.getKey()), immutableValue(entry.getValue()));
             }
             return Collections.unmodifiableMap(out);
         }
         if (value instanceof List) {
-            List<Object> out = new ArrayList<Object>();
+            List<Object> out = new ArrayList<>();
             for (Object item : (List<?>) value) {
                 out.add(immutableValue(item));
             }

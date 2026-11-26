@@ -55,10 +55,10 @@ public final class EventTrace {
             @NotNull DispatchMode mode,
             @NotNull String thread,
             @Nullable Instant at) {
-        this.eventName = eventName;
+        this.eventName = Objects.requireNonNull(eventName, "eventName");
         this.allowed = allowed;
         this.result = result;
-        this.steps = Collections.unmodifiableList(new ArrayList<Step>(steps));
+        this.steps = Collections.unmodifiableList(new ArrayList<>(steps));
         this.mode = mode;
         this.thread = thread;
         this.at = at;

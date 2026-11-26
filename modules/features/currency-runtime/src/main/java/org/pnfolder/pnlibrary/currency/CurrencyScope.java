@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -29,9 +30,9 @@ final class CurrencyScope implements CurrencyService {
     private final AtomicBoolean scopeClosed = new AtomicBoolean(false);
 
     CurrencyScope(@NotNull CurrencyHub hub, @NotNull PluginId owner, @NotNull PlaceholderService placeholders) {
-        this.hub = hub;
-        this.owner = owner;
-        this.placeholders = placeholders;
+        this.hub = Objects.requireNonNull(hub, "hub");
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.placeholders = Objects.requireNonNull(placeholders, "placeholders");
     }
 
     @Override
@@ -96,7 +97,7 @@ final class CurrencyScope implements CurrencyService {
         if (!scopeClosed.compareAndSet(false, true)) {
             return;
         }
-        for (CurrencyKey key : new ArrayList<CurrencyKey>(owned)) {
+        for (CurrencyKey key : new ArrayList<>(owned)) {
             RegisteredCurrency entry = hub.ownedBy(key.getOwner(), key.getName());
             if (entry != null) {
                 entry.close();

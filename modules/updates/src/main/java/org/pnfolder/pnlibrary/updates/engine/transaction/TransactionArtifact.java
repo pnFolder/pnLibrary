@@ -40,9 +40,9 @@ public final class TransactionArtifact {
     public TransactionArtifact(@NotNull ArtifactSpecification specification, @NotNull Path source, @NotNull Path target,
                                @NotNull Path rollbackSource, @Nullable String previousVersion,
                                @Nullable ApiVersionRange previousApi, @Nullable Path installedTarget) {
-        this.specification = specification;
-        this.source = source;
-        this.target = target;
+        this.specification = Objects.requireNonNull(specification, "specification");
+        this.source = Objects.requireNonNull(source, "source");
+        this.target = Objects.requireNonNull(target, "target");
         this.rollbackSource = rollbackSource;
         this.previousVersion = previousVersion;
         this.previousApi = previousApi;

@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.api.registry.Registry;
 import org.pnfolder.pnlibrary.api.registry.RegistryEntry;
 import org.pnfolder.pnlibrary.api.registry.Visibility;
 import org.pnfolder.pnlibrary.api.services.ServiceManager;
-import org.pnfolder.pnlibrary.core.placeholders.FormatDef;
+import org.pnfolder.pnlibrary.core.placeholders.format.FormatDef;
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholderEngine;
 import org.pnfolder.pnlibrary.core.placeholders.RegistryEntries;
 import org.pnfolder.pnlibrary.core.registry.ListRegistry;
@@ -46,12 +46,7 @@ public final class LibraryRegistries {
 
     private static List<RegistryEntry<?>> formats(PlaceholderEngine placeholders) {
         List<FormatDef> sorted = new ArrayList<FormatDef>(placeholders.getFormats().all());
-        Collections.sort(sorted, new Comparator<FormatDef>() {
-            @Override
-            public int compare(FormatDef left, FormatDef right) {
-                return left.getName().compareTo(right.getName());
-            }
-        });
+        Collections.sort(sorted, (left, right) -> left.getName().compareTo(right.getName()));
         List<RegistryEntry<?>> entries = new ArrayList<RegistryEntry<?>>();
         for (FormatDef format : sorted) {
             entries.add(RegistryEntries.format(format));

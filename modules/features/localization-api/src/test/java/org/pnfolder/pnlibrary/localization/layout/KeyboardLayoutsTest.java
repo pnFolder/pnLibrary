@@ -22,11 +22,11 @@ class KeyboardLayoutsTest {
 
     private static TranslationIndex<String> apples(KeyboardLayouts layouts) {
         return TranslationIndex.of(
-                Collections.singletonList(new TranslationMatch<String>("item.apple", "Apple", "apple")), layouts);
+                Collections.singletonList(new TranslationMatch<>("item.apple", "Apple", "apple")), layouts);
     }
 
     private static List<KeyboardLayout> builtInPlus(KeyboardLayout... extra) {
-        List<KeyboardLayout> all = new ArrayList<KeyboardLayout>(KeyboardLayout.builtIn);
+        List<KeyboardLayout> all = new ArrayList<>(KeyboardLayout.builtIn);
         Collections.addAll(all, extra);
         return all;
     }
@@ -121,7 +121,7 @@ class KeyboardLayoutsTest {
 
         AutoCloseable handle = layouts.register(dvorak);
         assertEquals("item.apple", bestKey(index, "arrpd"));
-        List<String> suggested = new ArrayList<String>();
+        List<String> suggested = new ArrayList<>();
         for (TranslationMatch<String> match : index.suggest("arrpd")) {
             suggested.add(match.getKey());
         }
@@ -138,7 +138,7 @@ class KeyboardLayoutsTest {
         layouts.register(dvorak);
         TranslationIndex<String> index = apples(layouts);
 
-        assertNull(index.best("arrpd", 0.7, Collections.<KeyboardLayout>emptyList()));
+        assertNull(index.best("arrpd", 0.7, Collections.emptyList()));
         assertNull(index.best("arrpd", 0.7, KeyboardLayout.builtIn));
         assertEquals("item.apple", index.best("arrpd", 0.7, builtInPlus(dvorak)).getKey());
     }
@@ -147,7 +147,7 @@ class KeyboardLayoutsTest {
     @DisplayName("an index built without a registry uses the built-in layouts")
     void anIndexBuiltWithoutARegistryUsesTheBuiltInLayouts() {
         TranslationIndex<String> index = TranslationIndex.of(
-                Collections.singletonList(new TranslationMatch<String>("item.apple", "Яблоко", "apple")));
+                Collections.singletonList(new TranslationMatch<>("item.apple", "Яблоко", "apple")));
 
         assertSame(KeyboardLayouts.builtIn, index.getLayouts());
         assertEquals("item.apple", bestKey(index, "z,kjrj"));

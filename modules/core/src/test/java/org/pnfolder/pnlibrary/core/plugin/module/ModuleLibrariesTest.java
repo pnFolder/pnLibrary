@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.library.ModuleLibraryLoader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -79,7 +80,7 @@ class ModuleLibrariesTest {
 
         assertEquals(true, libraries.remove(hikari));
         assertEquals(false, libraries.remove(hikari));
-        assertEquals(Collections.<ModuleLibrary>emptyList(), libraries.getLoaded());
+        assertEquals(Collections.emptyList(), libraries.getLoaded());
     }
 
     @Test

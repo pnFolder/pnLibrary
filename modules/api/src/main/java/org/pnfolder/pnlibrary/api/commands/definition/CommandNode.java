@@ -60,13 +60,13 @@ public final class CommandNode {
         this.execution = execution;
         this.suggestions = suggestions;
         this.executable = executable;
-        this.children = Collections.unmodifiableList(new ArrayList<CommandNode>(children));
+        this.children = Collections.unmodifiableList(new ArrayList<>(children));
         this.noPermissionMessage = noPermissionMessage;
         this.errorHandlers = Collections.unmodifiableMap(
-                new LinkedHashMap<Class<? extends CommandError>, CommandErrorHandler<?>>(errorHandlers));
+                new LinkedHashMap<>(errorHandlers));
         this.senderRule = senderRule;
-        this.alsoPermissions = Collections.unmodifiableList(new ArrayList<String>(alsoPermissions));
-        this.description = Collections.unmodifiableList(new ArrayList<String>(description));
+        this.alsoPermissions = Collections.unmodifiableList(new ArrayList<>(alsoPermissions));
+        this.description = Collections.unmodifiableList(new ArrayList<>(description));
         this.acceptsExtraArguments = acceptsExtraArguments;
     }
 
@@ -136,7 +136,7 @@ public final class CommandNode {
     private static CommandNode rebased(CommandNode node, String mountName) {
         final CommandHandler execution = node.execution;
         final SuggestionHandler suggestions = node.suggestions;
-        List<CommandNode> children = new ArrayList<CommandNode>();
+        List<CommandNode> children = new ArrayList<>();
         for (CommandNode child : node.children) {
             children.add(rebased(child, null));
         }

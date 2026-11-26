@@ -84,7 +84,7 @@ public final class Style {
     /** A description with only click hints. */
     public static @NotNull List<String> lore(@NotNull List<String> lines, @NotNull List<Fact> parameters,
                                              @NotNull String... hints) {
-        return lore(lines, parameters, Collections.<String>emptyList(), hints);
+        return lore(lines, parameters, Collections.emptyList(), hints);
     }
 
     /**

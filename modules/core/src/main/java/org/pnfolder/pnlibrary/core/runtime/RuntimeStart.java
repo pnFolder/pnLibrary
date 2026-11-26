@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.core.commands.registry.RegistryCommand;
 import org.pnfolder.pnlibrary.core.commands.settings.SettingsCommand;
 import org.pnfolder.pnlibrary.core.diagnostics.command.DiagnosticCommands;
 import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands;
-import org.pnfolder.pnlibrary.core.placeholders.LibraryPlaceholders;
+import org.pnfolder.pnlibrary.core.placeholders.library.LibraryPlaceholders;
 import org.pnfolder.pnlibrary.core.placeholders.PlaceholdersCommand;
 import org.pnfolder.pnlibrary.core.runtime.details.RuntimeMetricsBootstrap;
 import org.pnfolder.pnlibrary.core.scenario.ActionsCommand;

@@ -60,7 +60,7 @@ class BukkitItemsTest {
         assertEquals(enchantments, spec.getEnchantments());
         assertEquals(1, spec.getCustomizers().size());
         spec.getCustomizers().get(0).apply(new TestItem(null, 1));
-        assertEquals(Collections.<Object>singletonList(42), seen);
+        assertEquals(Collections.singletonList(42), seen);
     }
 
     @Test

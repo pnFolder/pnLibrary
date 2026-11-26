@@ -82,14 +82,11 @@ public interface PluginBuilder extends MinecraftSupportDeclaration {
         if (parts.length != 3 && parts.length != 4) {
             throw new IllegalArgumentException("Expected group:artifact:version, got: " + coordinates);
         }
-        return library(parts[0], parts[1], parts[2], new Consumer<ModuleLibrary.Builder>() {
-            @Override
-            public void accept(ModuleLibrary.Builder builder) {
+        return library(parts[0], parts[1], parts[2], builder -> {
                 if (parts.length == 4) {
                     builder.classifier(parts[3]);
                 }
-            }
-        });
+            });
     }
 
     /** Builds a library inline: {@code setup.library("org.xerial", "sqlite-jdbc", "3.46.0.0", it -> it.title("SQLite"))}. */

@@ -15,9 +15,9 @@ public final class RegisteredDiagnosticConfiguration {
     /** Creates a declaration of {@code configuration} for {@code plugin}, read from {@code dataDirectory}. */
     public RegisteredDiagnosticConfiguration(@NotNull String plugin, @Nullable Path dataDirectory,
                                              @NotNull DiagnosticConfiguration configuration) {
-        this.plugin = plugin;
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.dataDirectory = dataDirectory;
-        this.configuration = configuration;
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
     }
 
     /** The normalized plugin key the declaration belongs to. */

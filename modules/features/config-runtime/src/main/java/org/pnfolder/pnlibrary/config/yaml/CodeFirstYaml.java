@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.config.yaml;
 
+import org.pnfolder.pnlibrary.config.yaml.schema.ConfigSchema;
+import java.util.Objects;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +38,7 @@ import org.pnfolder.pnlibrary.api.logging.PnLogger;
  * is replaced atomically only after successful decoding.
  *
  * <pre>{@code
- * Settings settings = new CodeFirstYaml<Settings>(file, new Settings(), codec, logger).load().getValue();
+ * Settings settings = new CodeFirstYaml<>(file, new Settings(), codec, logger).load().getValue();
  * }</pre>
  */
 public final class CodeFirstYaml<T> implements ManagedConfig<T> {
@@ -53,7 +55,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
 
     /** Creates a handle that checks nothing beyond decoding and uses {@link ConfigOptions#DEFAULT}. */
     public CodeFirstYaml(@NotNull File file, @NotNull T defaults, @NotNull ConfigCodec<T> codec, @NotNull PnLogger logger) {
-        this(file, defaults, codec, logger, value -> Collections.<ConfigProblem>emptyList(), ConfigOptions.DEFAULT);
+        this(file, defaults, codec, logger, value -> Collections.emptyList(), ConfigOptions.DEFAULT);
     }
 
     /** Creates a handle that uses {@link ConfigOptions#DEFAULT}. */
@@ -69,10 +71,10 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
      */
     public CodeFirstYaml(@NotNull File file, @NotNull T defaults, @NotNull ConfigCodec<T> codec, @NotNull PnLogger logger,
                          @NotNull ConfigValueValidator<T> validator, @NotNull ConfigOptions options) {
-        this.file = file;
-        this.defaults = defaults;
-        this.codec = codec;
-        this.logger = logger;
+        this.file = Objects.requireNonNull(file, "file");
+        this.defaults = Objects.requireNonNull(defaults, "defaults");
+        this.codec = Objects.requireNonNull(codec, "codec");
+        this.logger = Objects.requireNonNull(logger, "logger");
         this.validator = validator;
         this.options = options;
         this.fileStore = new ConfigurationFileStore(file, content -> codec.decode(content));
@@ -141,15 +143,15 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
         // Re-dumped YAML loses administrator comments, so it is used only when a migration step ran.
         boolean migrated = migration != null && !migration.getApplied().isEmpty();
         String working = migrated ? fileStore.normalize(migration.getContent()) : original;
-        List<String> appliedMigrations = migration != null ? migration.getApplied() : Collections.<String>emptyList();
+        List<String> appliedMigrations = migration != null ? migration.getApplied() : Collections.emptyList();
         Differences differences = differences(defaultsYaml, working);
         YamlDefaultsMerger.Result syncResult = synchronize(working, defaultsYaml);
         String synchronizedContent = LegacySupportNote.removeFrom(syncResult.getContent());
         T value = decodeAndValidate(synchronizedContent);
         if (synchronizedContent.equals(original)) {
             loadedValue = value;
-            return new ConfigLoadResult<T>(value, Collections.<String>emptyList(), null, Collections.<String>emptyList(),
-                    Collections.<String>emptyList(), appliedMigrations);
+            return new ConfigLoadResult<>(value, Collections.emptyList(), null, Collections.emptyList(),
+                    Collections.emptyList(), appliedMigrations);
         }
         return writeChanges(original, synchronizedContent, value, differences, appliedMigrations, syncResult);
     }
@@ -165,7 +167,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
         }
         T value = decodeAndValidate(fileStore.normalize(readFile()));
         loadedValue = value;
-        return new ConfigLoadResult<T>(value, Collections.<String>emptyList(), null);
+        return new ConfigLoadResult<>(value, Collections.emptyList(), null);
     }
 
     private ConfigLoadResult<T> createFromDefaults(String defaultsYaml) throws IOException {
@@ -175,7 +177,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
         T value = decodeAndValidate(defaultsYaml);
         fileStore.writeDecoded(defaultsYaml);
         loadedValue = value;
-        return new ConfigLoadResult<T>(value, YamlDefaultsMerger.paths(defaultsYaml), null);
+        return new ConfigLoadResult<>(value, YamlDefaultsMerger.paths(defaultsYaml), null);
     }
 
     /** A file written by a newer plugin version is read as it is and never rewritten. */
@@ -183,7 +185,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
         logger.warning("Файл " + file.getName() + " создан более новой версией плагина; он читается без изменений.");
         T value = decodeAndValidate(original);
         loadedValue = value;
-        return new ConfigLoadResult<T>(value, Collections.<String>emptyList(), null);
+        return new ConfigLoadResult<>(value, Collections.emptyList(), null);
     }
 
     /** Paths missing from the file and paths unknown to the code. */
@@ -199,11 +201,11 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
 
     /** The paths the file lacks and the paths the code does not know; fails when the policy forbids either. */
     private Differences differences(String defaultsYaml, String working) {
-        Set<String> defaultPaths = new LinkedHashSet<String>(YamlDefaultsMerger.paths(defaultsYaml));
-        Set<String> workingPaths = new LinkedHashSet<String>(YamlDefaultsMerger.paths(working));
+        Set<String> defaultPaths = new LinkedHashSet<>(YamlDefaultsMerger.paths(defaultsYaml));
+        Set<String> workingPaths = new LinkedHashSet<>(YamlDefaultsMerger.paths(working));
         List<String> missing = sortedWithout(defaultPaths, workingPaths);
         List<String> unknown = sortedWithout(workingPaths, defaultPaths);
-        Set<String> required = codec instanceof ConfigSchema ? ((ConfigSchema) codec).getRequiredPaths() : Collections.<String>emptySet();
+        Set<String> required = codec instanceof ConfigSchema ? ((ConfigSchema) codec).getRequiredPaths() : Collections.emptySet();
         List<String> requiredMissing = sortedWithout(required, workingPaths);
         if (!requiredMissing.isEmpty()) {
             throw new IllegalStateException("Required configuration values are missing from " + file.getName() + ": "
@@ -219,9 +221,9 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
     }
 
     private static List<String> sortedWithout(Set<String> from, Set<String> removed) {
-        Set<String> rest = new TreeSet<String>(from);
+        Set<String> rest = new TreeSet<>(from);
         rest.removeAll(removed);
-        return new ArrayList<String>(rest);
+        return new ArrayList<>(rest);
     }
 
     private YamlDefaultsMerger.Result synchronize(String working, String defaultsYaml) {
@@ -233,7 +235,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
         if (migrations != null) {
             canonical = fileStore.normalize(migrationEngine.stampDefaults(canonical, migrations));
         }
-        return new YamlDefaultsMerger.Result(canonical, Collections.<String>emptyList(), Collections.<String>emptyList());
+        return new YamlDefaultsMerger.Result(canonical, Collections.emptyList(), Collections.emptyList());
     }
 
     private ConfigLoadResult<T> writeChanges(String original, String synchronizedContent, T value, Differences differences,
@@ -251,10 +253,10 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
             logger.info("Применены миграции " + file.getName() + ": " + String.join(", ", migrations));
         }
         loadedValue = value;
-        return new ConfigLoadResult<T>(value,
-                options.getMissingValues() == MissingValuePolicy.ADD ? differences.missing : Collections.<String>emptyList(),
+        return new ConfigLoadResult<>(value,
+                options.getMissingValues() == MissingValuePolicy.ADD ? differences.missing : Collections.emptyList(),
                 backup,
-                removeUnknown ? differences.unknown : Collections.<String>emptyList(),
+                removeUnknown ? differences.unknown : Collections.emptyList(),
                 syncResult.getAddedComments(),
                 migrations);
     }
@@ -332,7 +334,7 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
             throw error;
         }
         skippedUnknownTypes = codec instanceof AnnotatedYamlCodec
-                ? ((AnnotatedYamlCodec<?>) codec).getSkippedUnknownTypes() : Collections.<String>emptyList();
+                ? ((AnnotatedYamlCodec<?>) codec).getSkippedUnknownTypes() : Collections.emptyList();
         List<ConfigProblem> problems = validator.validate(value);
         if (!problems.isEmpty()) {
             throw new ConfigValidationException(problems);

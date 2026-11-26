@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.LongAdder;
 /** Counts the calls and the denials of every event type, and passes each call to the history. */
 public final class EventCounters {
     private final EventHistory history;
-    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
+    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
 
     /** Creates counters that also feed {@code history} when it is not {@code null}. */
     public EventCounters(@Nullable EventHistory history) {
@@ -50,7 +50,7 @@ public final class EventCounters {
     /** Every counted event name with its class, or {@code null} once the class was unloaded. */
     @NotNull
     public Map<String, Class<?>> types() {
-        Map<String, Class<?>> found = new LinkedHashMap<String, Class<?>>();
+        Map<String, Class<?>> found = new LinkedHashMap<>();
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
             found.put(entry.getKey(), entry.getValue().type.get());
         }
@@ -76,7 +76,7 @@ public final class EventCounters {
         volatile long lastMillis;
 
         Counter(Class<?> type) {
-            this.type = new WeakReference<Class<?>>(type);
+            this.type = new WeakReference<>(type);
         }
     }
 }

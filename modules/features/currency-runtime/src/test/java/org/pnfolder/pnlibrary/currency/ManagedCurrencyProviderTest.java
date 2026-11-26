@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import org.pnfolder.pnlibrary.currency.storage.FileCurrencyStorage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,14 +115,14 @@ class ManagedCurrencyProviderTest {
         @NotNull
         public CompletionStage<CurrencyHistoryPage> history(@NotNull CurrencyKey currency, @NotNull CurrencyHistoryQuery query) {
             return CompletableFuture.completedFuture(
-                    new CurrencyHistoryPage(Collections.<CurrencyTransaction>emptyList(), query.getOffset(), false));
+                    new CurrencyHistoryPage(Collections.emptyList(), query.getOffset(), false));
         }
 
         @Override
         @NotNull
         public CompletionStage<CurrencyStorageSnapshot> export(@NotNull CurrencyKey currency) {
             return CompletableFuture.completedFuture(new CurrencyStorageSnapshot(currency, Instant.now(),
-                    Collections.<UUID, BigDecimal>emptyMap(), Collections.<CurrencyTransaction>emptyList()));
+                    Collections.emptyMap(), Collections.emptyList()));
         }
 
         @Override

@@ -45,7 +45,7 @@ public final class MenuConstants {
         new HoldOption("6 часов", Duration.ofHours(6)),
         new HoldOption("1 день", Duration.ofDays(1)),
         new HoldOption("3 дня", Duration.ofDays(3)),
-        new HoldOption("7 дней", Duration.ofDays(7))));
+        new HoldOption("5 дней", Duration.ofDays(5))));
 
     private MenuConstants() {
     }

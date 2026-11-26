@@ -85,7 +85,7 @@ class TrackingPlatformCommandAdapterTest {
 
             @Override
             public CompletionStage<List<String>> suggest(CommandDefinition command, CommandContext context) {
-                return CompletableFuture.completedFuture(Collections.<String>emptyList());
+                return CompletableFuture.completedFuture(Collections.emptyList());
             }
         };
     }

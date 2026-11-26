@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,7 +21,7 @@ class ModuleProductResolverTest {
     private ModuleProductResolver resolver(String version) {
         PlatformOwnership platform = mock(PlatformOwnership.class);
         when(platform.ownerDetails(owner)).thenReturn(
-            version == null ? Collections.<String, String>emptyMap() : Collections.singletonMap("version", version));
+            version == null ? Collections.emptyMap() : Collections.singletonMap("version", version));
         return new ModuleProductResolver(platform);
     }
 

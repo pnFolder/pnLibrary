@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.remote;
 
+import org.pnfolder.pnlibrary.core.remote.report.RemotePolicyFailureInterpreter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;

@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.core.commands.tasks.TaskPeriod;
 import org.pnfolder.pnlibrary.core.commands.tasks.TaskState;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
-import org.pnfolder.pnlibrary.core.menu.data.EventAbout;
+import org.pnfolder.pnlibrary.core.menu.data.question.EventAbout;
 import org.pnfolder.pnlibrary.core.menu.screens.Filter;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Row;
@@ -68,6 +68,9 @@ public interface MenuRoutes {
 
     void network(@NotNull MenuViewer player, int page);
 
+    /** The page with the important announcements of the network. */
+    void notices(@NotNull MenuViewer player, int page);
+
     @NotNull String ownerLine(@NotNull String name);
 
     @NotNull List<Fact> ownerParameters(@Nullable OwnerInfo owner);
@@ -77,8 +80,6 @@ public interface MenuRoutes {
     void actions(@NotNull MenuViewer player, int page);
 
     void plugins(@NotNull MenuViewer player, @NotNull Filter filter, int page);
-
-    @NotNull CompletionStage<?> setAutomatic(@NotNull UpdateSnapshot snapshot, boolean enable, @NotNull MenuViewer player);
 
     void settings(@NotNull MenuViewer player);
 

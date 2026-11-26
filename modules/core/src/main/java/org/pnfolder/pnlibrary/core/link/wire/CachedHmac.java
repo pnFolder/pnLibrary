@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Supplier;
@@ -22,14 +23,14 @@ public final class CachedHmac implements FrameSigner {
     }
 
     private final Supplier<Mac> create;
-    private final ThreadLocal<Keyed> perThread = new ThreadLocal<Keyed>();
+    private final ThreadLocal<Keyed> perThread = new ThreadLocal<>();
 
     public CachedHmac() {
         this(CachedHmac::newMac);
     }
 
     public CachedHmac(@NotNull Supplier<Mac> create) {
-        this.create = create;
+        this.create = Objects.requireNonNull(create, "create");
     }
 
     @Override

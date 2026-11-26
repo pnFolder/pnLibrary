@@ -18,17 +18,14 @@ import java.util.Map;
 
 /** Keeps the recorded calls of the events an administrator switched tracing on for. */
 public final class EventTracer {
-    private static final Comparator<EventTrace> OLDEST_FIRST = new Comparator<EventTrace>() {
-        @Override
-        public int compare(EventTrace left, EventTrace right) {
+    private static final Comparator<EventTrace> OLDEST_FIRST = (left, right) -> {
             Instant a = left.getAt();
             Instant b = right.getAt();
             if (a == null || b == null) {
                 return a == b ? 0 : a == null ? -1 : 1;
             }
             return a.compareTo(b);
-        }
-    };
+        };
 
     /** Traced event types and their capacity; empty almost always, so dispatch only reads one volatile field. */
     private volatile Map<Class<? extends Event>, Integer> traced = Collections.emptyMap();

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.updates.request;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
@@ -22,7 +23,7 @@ public final class PluginUpdateArtifact {
      */
     public PluginUpdateArtifact(@NotNull String pattern, int minimumJava, @Nullable Integer maximumJava,
                                 @Nullable PlatformType platform) {
-        this.pattern = pattern;
+        this.pattern = Objects.requireNonNull(pattern, "pattern");
         this.minimumJava = minimumJava;
         this.maximumJava = maximumJava;
         this.platform = platform;

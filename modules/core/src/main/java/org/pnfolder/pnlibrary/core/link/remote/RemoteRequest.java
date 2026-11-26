@@ -27,13 +27,13 @@ public final class RemoteRequest {
      */
     public RemoteRequest(@NotNull UUID id, @NotNull String target, @NotNull String origin, @NotNull String actor,
                          @NotNull RemoteAction action, @Nullable String product, @NotNull Instant sentAt) {
-        this.id = id;
-        this.target = target;
-        this.origin = origin;
-        this.actor = actor;
-        this.action = action;
+        this.id = Objects.requireNonNull(id, "id");
+        this.target = Objects.requireNonNull(target, "target");
+        this.origin = Objects.requireNonNull(origin, "origin");
+        this.actor = Objects.requireNonNull(actor, "actor");
+        this.action = Objects.requireNonNull(action, "action");
         this.product = product;
-        this.sentAt = sentAt;
+        this.sentAt = Objects.requireNonNull(sentAt, "sentAt");
     }
 
     public @NotNull UUID getId() {

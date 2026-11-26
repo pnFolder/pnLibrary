@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.config.ConfigApply;
 import org.pnfolder.pnlibrary.api.config.ConfigSetting;
 import org.pnfolder.pnlibrary.api.config.ConfigSettingKind;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
-import org.pnfolder.pnlibrary.core.menu.screens.ConfigRow;
+import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.text.CoreFormatting;
 
 /**
@@ -57,7 +57,7 @@ public final class ConfigLook {
     }
 
     private static List<Fact> pending(@Nullable ConfigApply apply) {
-        return apply == null ? Collections.<Fact>emptyList() : Collections.singletonList(new Fact("Ждёт", AMBER + applyWord(apply)));
+        return apply == null ? Collections.emptyList() : Collections.singletonList(new Fact("Ждёт", AMBER + applyWord(apply)));
     }
 
     public static @NotNull ItemSpec plugin(@NotNull String name, int modules, int files, int editable, @Nullable ConfigApply waiting) {
@@ -135,7 +135,7 @@ public final class ConfigLook {
                 break;
         }
         List<String> description = setting.getDescription().trim().isEmpty()
-            ? Collections.<String>emptyList() : CoreFormatting.wrapText(setting.getDescription(), CoreFormatting.WRAP_WIDTH, 4);
+            ? Collections.emptyList() : CoreFormatting.wrapText(setting.getDescription(), CoreFormatting.WRAP_WIDTH, 4);
         return MenuItems.icon(texture, material, setting.getTitle(),
             Style.lore(description, settingFacts(setting), choices(setting), ConfigHints.of(setting, readOnly)),
             Tone.of(false, false, toggle && on, toggle && !on));
@@ -240,7 +240,7 @@ public final class ConfigLook {
             facts.addAll(ConfigText.fact(labelsAndValues[index], labelsAndValues[index + 1]));
         }
         return MenuItems.icon(Icons.PLUGINS, "COMPASS", "Где вы",
-            Style.lore(Collections.<String>emptyList(), facts));
+            Style.lore(Collections.emptyList(), facts));
     }
 
     /** Facts built from alternating labels and values, long values wrapped. */

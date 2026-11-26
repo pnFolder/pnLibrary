@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.commands;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.md_5.bungee.api.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -30,8 +31,8 @@ public final class BungeeCommandAdapter extends GenericPlatformCommandAdapter<Co
     BungeeCommandAdapter(
             @NotNull NativeCommandRegistrar<CommandSender> nativeRegistrar,
             @NotNull Function<CommandSender, Audience> audience) {
-        this.nativeRegistrar = nativeRegistrar;
-        this.audience = audience;
+        this.nativeRegistrar = Objects.requireNonNull(nativeRegistrar, "nativeRegistrar");
+        this.audience = Objects.requireNonNull(audience, "audience");
     }
 
     @NotNull

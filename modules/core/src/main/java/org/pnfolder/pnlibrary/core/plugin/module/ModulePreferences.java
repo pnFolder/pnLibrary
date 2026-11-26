@@ -20,7 +20,7 @@ import org.pnfolder.pnlibrary.common.io.AtomicFiles;
  */
 public final class ModulePreferences {
     private final Path file;
-    private final Set<String> disabled = new LinkedHashSet<String>();
+    private final Set<String> disabled = new LinkedHashSet<>();
 
     public ModulePreferences() {
         this(null);
@@ -61,7 +61,7 @@ public final class ModulePreferences {
         try {
             Files.createDirectories(file.getParent());
             JsonObject root = new JsonObject();
-            root.add("disabled", new Gson().toJsonTree(new ArrayList<String>(disabled)));
+            root.add("disabled", new Gson().toJsonTree(new ArrayList<>(disabled)));
             AtomicFiles.write(file, new Gson().toJson(root).getBytes(StandardCharsets.UTF_8));
         } catch (IOException failure) {
             throw new java.io.UncheckedIOException(failure);

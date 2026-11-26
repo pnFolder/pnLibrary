@@ -14,8 +14,8 @@ public final class DependencyDownloadRequest {
     /** Creates the request; {@code requirements} is keyed by the key of each file. */
     public DependencyDownloadRequest(@NotNull FileDownloads request,
                                      @NotNull Map<String, ExternalPluginDependency> requirements) {
-        this.request = request;
-        this.requirements = requirements;
+        this.request = Objects.requireNonNull(request, "request");
+        this.requirements = Objects.requireNonNull(requirements, "requirements");
     }
 
     /** The files to download. */

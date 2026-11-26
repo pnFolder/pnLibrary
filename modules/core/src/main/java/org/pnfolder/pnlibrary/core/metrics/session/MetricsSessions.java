@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.metrics.session;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.metrics.MetricsService;
@@ -25,7 +26,7 @@ import java.util.Set;
 public final class MetricsSessions implements MetricsService, AutoCloseable {
     private final PlatformMetricsFactory factory;
     private final PlatformType platform;
-    private final Set<PluginMetrics> sessions = Collections.newSetFromMap(new IdentityHashMap<PluginMetrics, Boolean>());
+    private final Set<PluginMetrics> sessions = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean closed;
 
     /** Sessions that open their configurations as given, without picking a platform's bStats project. */
@@ -40,7 +41,7 @@ public final class MetricsSessions implements MetricsService, AutoCloseable {
      * @param platform the running platform, used to pick its bStats project; {@code null} keeps configurations as given
      */
     public MetricsSessions(@NotNull PlatformMetricsFactory factory, @Nullable PlatformType platform) {
-        this.factory = factory;
+        this.factory = Objects.requireNonNull(factory, "factory");
         this.platform = platform;
     }
 

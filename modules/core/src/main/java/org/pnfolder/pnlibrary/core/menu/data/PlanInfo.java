@@ -12,9 +12,9 @@ public final class PlanInfo {
     private final List<String> blockers;
 
     public PlanInfo(@NotNull UpdateState state, boolean hasChanges, @NotNull List<String> blockers) {
-        this.state = state;
+        this.state = Objects.requireNonNull(state, "state");
         this.hasChanges = hasChanges;
-        this.blockers = blockers;
+        this.blockers = Objects.requireNonNull(blockers, "blockers");
     }
 
     public @NotNull UpdateState getState() {

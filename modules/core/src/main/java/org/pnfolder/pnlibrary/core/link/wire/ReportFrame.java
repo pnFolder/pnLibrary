@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.report.LinkReport;
 
@@ -8,7 +9,7 @@ public final class ReportFrame implements LinkFrame {
     private final LinkReport report;
 
     public ReportFrame(@NotNull LinkReport report) {
-        this.report = report;
+        this.report = Objects.requireNonNull(report, "report");
     }
 
     public @NotNull LinkReport getReport() {

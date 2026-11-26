@@ -31,7 +31,7 @@ class VelocityDiagnosticDetailsCollectorTest {
         PluginManager manager = mock(PluginManager.class);
         when(proxy.getPluginManager()).thenReturn(manager);
         when(manager.getPlugins()).thenReturn(Collections.emptyList());
-        when(proxy.getAllServers()).thenReturn(Collections.<RegisteredServer>emptyList());
+        when(proxy.getAllServers()).thenReturn(Collections.emptyList());
         List<Player> players = new ArrayList<>();
         for (long ping : new long[] {10L, 500L}) {
             Player player = mock(Player.class);
@@ -56,9 +56,9 @@ class VelocityDiagnosticDetailsCollectorTest {
         RegisteredServer backend = mock(RegisteredServer.class);
         when(proxy.getPluginManager()).thenReturn(manager);
         when(manager.getPlugins()).thenReturn(Collections.emptyList());
-        when(proxy.getAllPlayers()).thenReturn(Collections.<Player>emptyList());
+        when(proxy.getAllPlayers()).thenReturn(Collections.emptyList());
         when(proxy.getAllServers()).thenReturn(Collections.singletonList(backend));
-        when(backend.getPlayersConnected()).thenReturn(Collections.<Player>emptyList());
+        when(backend.getPlayersConnected()).thenReturn(Collections.emptyList());
         when(backend.getServerInfo()).thenReturn(
                 new ServerInfo("lobby", InetSocketAddress.createUnresolved("backend.internal", 25565)));
         VelocityDiagnosticDetailsCollector collector = new VelocityDiagnosticDetailsCollector(proxy);

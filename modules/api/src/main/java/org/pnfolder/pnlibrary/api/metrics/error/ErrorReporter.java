@@ -15,12 +15,12 @@ public interface ErrorReporter extends AutoCloseable {
 
     /** Captures a handled {@code throwable} with a bounded stack trace. */
     default void capture(@NotNull Throwable throwable) {
-        capture(throwable, null, true, Collections.<String, Object>emptyMap());
+        capture(throwable, null, true, Collections.emptyMap());
     }
 
     /** Captures a handled {@code throwable} that happened during {@code operation}. */
     default void capture(@NotNull Throwable throwable, @Nullable String operation) {
-        capture(throwable, operation, true, Collections.<String, Object>emptyMap());
+        capture(throwable, operation, true, Collections.emptyMap());
     }
 
     /** Convenience conversion for a Throwable with a bounded stack trace. */

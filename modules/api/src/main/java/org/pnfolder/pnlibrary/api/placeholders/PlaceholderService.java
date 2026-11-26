@@ -85,19 +85,19 @@ public interface PlaceholderService extends AutoCloseable {
     /** The value of {@code address} for nobody in particular. */
     @NotNull
     default CompletionStage<Object> resolve(@NotNull String address) {
-        return resolve(address, ViewerInfo.none(), Collections.<String, Object>emptyMap());
+        return resolve(address, ViewerInfo.none(), Collections.emptyMap());
     }
 
     /** The value of {@code address} for {@code viewer}. */
     @NotNull
     default CompletionStage<Object> resolve(@NotNull String address, @NotNull ViewerInfo viewer) {
-        return resolve(address, viewer, Collections.<String, Object>emptyMap());
+        return resolve(address, viewer, Collections.emptyMap());
     }
 
     /** Like the call with a {@link ViewerInfo}, for a plain player id (or {@code null}). */
     @NotNull
     default CompletionStage<Object> resolve(@NotNull String address, @Nullable UUID playerId) {
-        return resolve(address, ViewerInfo.of(playerId), Collections.<String, Object>emptyMap());
+        return resolve(address, ViewerInfo.of(playerId), Collections.emptyMap());
     }
 
     /** Like the call with a {@link ViewerInfo}, for a plain player id (or {@code null}). */
@@ -113,19 +113,19 @@ public interface PlaceholderService extends AutoCloseable {
     /** {@code text} filled in for nobody in particular. */
     @NotNull
     default CompletionStage<String> render(@NotNull String text) {
-        return render(text, ViewerInfo.none(), Collections.<String, Object>emptyMap());
+        return render(text, ViewerInfo.none(), Collections.emptyMap());
     }
 
     /** {@code text} filled in for {@code viewer}. */
     @NotNull
     default CompletionStage<String> render(@NotNull String text, @NotNull ViewerInfo viewer) {
-        return render(text, viewer, Collections.<String, Object>emptyMap());
+        return render(text, viewer, Collections.emptyMap());
     }
 
     /** Like the call with a {@link ViewerInfo}, for a plain player id (or {@code null}). */
     @NotNull
     default CompletionStage<String> render(@NotNull String text, @Nullable UUID playerId) {
-        return render(text, ViewerInfo.of(playerId), Collections.<String, Object>emptyMap());
+        return render(text, ViewerInfo.of(playerId), Collections.emptyMap());
     }
 
     /** Like the call with a {@link ViewerInfo}, for a plain player id (or {@code null}). */

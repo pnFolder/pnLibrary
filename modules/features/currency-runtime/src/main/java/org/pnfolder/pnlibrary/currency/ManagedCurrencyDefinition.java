@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,8 @@ final class ManagedCurrencyDefinition extends CurrencyOptions implements Managed
     private String service;
 
     ManagedCurrencyDefinition(@NotNull PluginId owner, @NotNull String name) {
-        this.owner = owner;
-        this.name = name;
+        this.owner = Objects.requireNonNull(owner, "owner");
+        this.name = Objects.requireNonNull(name, "name");
         this.descriptor = CurrencyDescriptor.builder(name);
         this.service = owner.getValue();
         this.placeholderOptions = new ManagedPlaceholderOptions(owner.getValue());
@@ -100,7 +101,7 @@ final class ManagedCurrencyDefinition extends CurrencyOptions implements Managed
     /** Registers balance, formatted and symbol placeholders for {@code currency}; the caller closes the returned handles. */
     @NotNull
     List<AutoCloseable> installPlaceholders(@NotNull CurrencyRegistration currency, @NotNull PlaceholderService placeholders) {
-        List<AutoCloseable> handles = new ArrayList<AutoCloseable>();
+        List<AutoCloseable> handles = new ArrayList<>();
         if (!placeholderOptions.isEnabled()) {
             return handles;
         }
@@ -108,7 +109,7 @@ final class ManagedCurrencyDefinition extends CurrencyOptions implements Managed
         handles.add(register(placeholders, normalizedName, "balance", ofPlayer(currency, balance -> balance)));
         handles.add(register(placeholders, normalizedName, "formatted", ofPlayer(currency, currency::format)));
         handles.add(register(placeholders, normalizedName, "symbol",
-                playerId -> CompletableFuture.<Object>completedFuture(currency.getDescriptor().getSymbol())));
+                playerId -> CompletableFuture.completedFuture(currency.getDescriptor().getSymbol())));
         return handles;
     }
 
@@ -121,7 +122,7 @@ final class ManagedCurrencyDefinition extends CurrencyOptions implements Managed
 
     private static Function<UUID, CompletionStage<Object>> ofPlayer(CurrencyRegistration currency,
                                                                     Function<BigDecimal, Object> transform) {
-        return playerId -> playerId == null ? CompletableFuture.<Object>completedFuture(null)
+        return playerId -> playerId == null ? CompletableFuture.completedFuture(null)
                 : currency.balance(playerId).thenApply(transform);
     }
 }

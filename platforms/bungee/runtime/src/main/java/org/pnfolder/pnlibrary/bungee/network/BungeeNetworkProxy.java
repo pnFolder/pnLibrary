@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -29,7 +30,7 @@ public final class BungeeNetworkProxy implements NetworkProxy {
 
     /** Wraps the native {@code proxy}. */
     public BungeeNetworkProxy(@NotNull ProxyServer proxy) {
-        this.proxy = proxy;
+        this.proxy = Objects.requireNonNull(proxy, "proxy");
     }
 
     @NotNull
@@ -131,7 +132,7 @@ public final class BungeeNetworkProxy implements NetworkProxy {
         }
         String author = description.getAuthor();
         List<String> authors = author == null
-                ? Collections.<String>emptyList() : Collections.singletonList(author);
+                ? Collections.emptyList() : Collections.singletonList(author);
         return new OwnerInfo(description.getName(), description.getVersion(), authors);
     }
 }

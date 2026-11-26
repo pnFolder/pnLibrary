@@ -11,7 +11,7 @@ public final class SettingOutcome {
 
     public SettingOutcome(boolean ok, @NotNull String message, boolean live) {
         this.ok = ok;
-        this.message = message;
+        this.message = Objects.requireNonNull(message, "message");
         this.live = live;
     }
 

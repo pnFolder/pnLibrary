@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.proxy;
 
+import java.util.Objects;
 import java.nio.file.Path;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -42,16 +43,18 @@ public final class ProxyLink implements AutoCloseable {
      * @param platformName the proxy software and its version, shown in the network map
      * @param players how many players are online on the whole proxy
      * @param broadcast sends the network map to every game server
+     * @param addresses where the game server of that name can be reached, or null; shown in important announcements
      */
     public ProxyLink(@NotNull PnLibrary library, @NotNull Path folder, @NotNull Consumer<String> warn,
                      @NotNull LinkTransport transport, @NotNull Function<Object, OwnerInfo> describe,
                      @NotNull BiPredicate<String, String> holds, @NotNull Supplier<String> platformName,
-                     @NotNull IntSupplier players, @NotNull Consumer<byte[]> broadcast) {
-        this.broadcast = broadcast;
+                     @NotNull IntSupplier players, @NotNull Consumer<byte[]> broadcast,
+                     @NotNull Function<String, String> addresses) {
+        this.broadcast = Objects.requireNonNull(broadcast, "broadcast");
         Link link = new Link(LinkSecret.readOrCreate(folder, warn), folder, transport);
         ProxyControlCommand control = new ProxyControlCommand(library, link);
         this.data = ProxyMenu.server(library, link, control, describe, holds);
-        this.publisher = link.getEnabled() ? new NetworkPublisher(library, link, platformName, players) : null;
+        this.publisher = link.getEnabled() ? new NetworkPublisher(library, link, platformName, players, addresses) : null;
         this.receiver = new LinkReceiver(link, new RemoteExecutor(library), data);
         control.register();
     }

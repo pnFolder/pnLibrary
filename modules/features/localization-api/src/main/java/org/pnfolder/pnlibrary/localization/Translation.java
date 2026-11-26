@@ -21,7 +21,7 @@ public final class Translation {
     /** Creates a result; {@code key} is {@code null} when the value had no candidate keys. */
     public Translation(@Nullable String key, @NotNull String text, boolean localized) {
         this.key = key;
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text");
         this.localized = localized;
     }
 

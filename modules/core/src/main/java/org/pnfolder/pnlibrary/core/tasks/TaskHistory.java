@@ -14,7 +14,7 @@ import java.util.function.BiPredicate;
 final class TaskHistory {
     private static final long SAVE_EVERY_MILLIS = 30_000L;
 
-    private final LinkedHashMap<TaskId, ArchivedTask> entries = new LinkedHashMap<TaskId, ArchivedTask>();
+    private final LinkedHashMap<TaskId, ArchivedTask> entries = new LinkedHashMap<>();
     private final int capacity;
     private final TaskHistoryStore store;
     private long lastSaved;
@@ -52,7 +52,7 @@ final class TaskHistory {
 
     /** The snapshots of the tasks whose owner and scope token pass {@code belongs}. */
     synchronized List<TaskSnapshot> matching(BiPredicate<Object, Object> belongs) {
-        List<TaskSnapshot> found = new ArrayList<TaskSnapshot>();
+        List<TaskSnapshot> found = new ArrayList<>();
         for (ArchivedTask archived : entries.values()) {
             if (belongs.test(archived.getOwner(), archived.getScopeToken())) {
                 found.add(archived.getSnapshot());

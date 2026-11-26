@@ -38,7 +38,7 @@ class MinecraftLocaleTest {
     @Test
     @DisplayName("every code is unique and normalized")
     void everyCodeIsUniqueAndNormalized() {
-        Set<String> unique = new HashSet<String>();
+        Set<String> unique = new HashSet<>();
         int count = 0;
         boolean normalized = true;
         for (MinecraftLocale locale : MinecraftLocale.values()) {
@@ -59,7 +59,7 @@ class MinecraftLocaleTest {
                 .locales(MinecraftLocale.RU_RU, MinecraftLocale.EN_US)
                 .fallback(MinecraftLocale.EN_US)
                 .build();
-        assertEquals(new LinkedHashSet<String>(Arrays.asList("ru_ru", "en_us")), typed.getLocales());
+        assertEquals(new LinkedHashSet<>(Arrays.asList("ru_ru", "en_us")), typed.getLocales());
         assertEquals("en_us", typed.getFallbackLocale());
     }
 }

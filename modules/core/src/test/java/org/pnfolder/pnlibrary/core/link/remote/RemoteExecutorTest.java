@@ -27,33 +27,13 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 
 class RemoteExecutorTest {
-    private static final class Call {
-        final String product;
-        final boolean enabled;
-        final UpdateActor actor;
-
-        Call(String product, boolean enabled, UpdateActor actor) {
-            this.product = product;
-            this.enabled = enabled;
-            this.actor = actor;
-        }
-    }
-
-    private final List<Call> calls = new ArrayList<Call>();
-    private CompletionStage<UpdateSnapshot> automaticAnswer = CompletableFuture.completedFuture(null);
-    private final UpdateSettings settings = mock(UpdateSettings.class, call -> {
-        if (call.getMethod().getName().equals("automaticDownload")) {
-            calls.add(new Call(call.<String>getArgument(0), call.<Boolean>getArgument(1), call.<UpdateActor>getArgument(2)));
-            return automaticAnswer;
-        }
-        return null;
-    });
+    private final UpdateSettings settings = mock(UpdateSettings.class);
     private final UpdateProducts products = mock(UpdateProducts.class);
     private final UpdateService updates = mock(UpdateService.class);
     private final PnLibrary library = mock(PnLibrary.class);
     private Instant now = Instant.parse("2026-11-04T10:00:00Z");
     private final RemoteExecutor executor;
-    private final List<RemoteResult> results = new ArrayList<RemoteResult>();
+    private final List<RemoteResult> results = new ArrayList<>();
 
     RemoteExecutorTest() {
         when(updates.getSettings()).thenReturn(settings);
@@ -75,28 +55,12 @@ class RemoteExecutorTest {
     }
 
     @Test
-    void automaticDownloadIsSwitchedThroughTheUpdateServiceForARemoteActor() {
-        run(request(RemoteAction.AUTO_ON));
-
-        Call call = calls.get(0);
-        assertEquals("shop", call.product);
-        assertTrue(call.enabled);
-        assertEquals(UpdateActor.Kind.INTEGRATION, call.actor.getKind());
-        assertEquals("remote:proxy", call.actor.getId());
-        assertTrue(results.get(0).getOk());
-        assertTrue(results.get(0).getText().contains("включена"));
-    }
-
-    @Test
-    void aFailureOfTheUpdateServiceBecomesARefusalWithItsReason() {
-        CompletableFuture<UpdateSnapshot> failed = new CompletableFuture<UpdateSnapshot>();
-        failed.completeExceptionally(new IllegalStateException("диск полон"));
-        automaticAnswer = failed;
-
-        run(request(RemoteAction.AUTO_OFF));
-
-        assertFalse(results.get(0).getOk());
-        assertTrue(results.get(0).getText().contains("диск полон"));
+    void thereIsNoRemoteActionThatSwitchesAutomaticDownload() {
+        List<String> words = new ArrayList<>();
+        for (RemoteAction action : RemoteAction.values()) {
+            words.add(action.getWord());
+        }
+        assertEquals(Arrays.asList("check", "update"), words);
     }
 
     @Test
@@ -118,25 +82,24 @@ class RemoteExecutorTest {
 
     @Test
     void aRequestThatWasAlreadyCarriedOutIsRefused() {
-        RemoteRequest same = request(RemoteAction.AUTO_ON);
+        RemoteRequest same = request(RemoteAction.UPDATE);
 
         run(same);
         run(same);
 
-        assertEquals(Arrays.asList(true, false), Arrays.asList(results.get(0).getOk(), results.get(1).getOk()));
+        assertTrue(results.get(0).getText().contains("не подключён"));
         assertTrue(results.get(1).getText().contains("уже выполнялся"));
-        assertEquals(1, calls.size());
     }
 
     @Test
     void anOldRequestIdIsForgottenAfterTenMinutes() {
-        RemoteRequest same = request(RemoteAction.AUTO_ON);
+        RemoteRequest same = request(RemoteAction.UPDATE);
 
         run(same);
         now = now.plus(Duration.ofMinutes(11));
         run(same);
 
-        assertEquals(Arrays.asList(true, true), Arrays.asList(results.get(0).getOk(), results.get(1).getOk()));
+        assertFalse(results.get(1).getText().contains("уже выполнялся"));
     }
 
     @Test

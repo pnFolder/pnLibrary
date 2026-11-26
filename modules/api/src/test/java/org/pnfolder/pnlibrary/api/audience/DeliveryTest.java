@@ -37,7 +37,7 @@ class DeliveryTest {
         assertEquals(DeliveryStatus.PARTIAL, Delivery.combine(Arrays.asList(bad, ok)).getStatus());
         assertEquals(DeliveryStatus.FAILED, Delivery.combine(Arrays.asList(no, bad)).getStatus());
         assertEquals(DeliveryStatus.UNSUPPORTED, Delivery.combine(Arrays.asList(no, no)).getStatus());
-        assertEquals(DeliveryStatus.UNSUPPORTED, Delivery.combine(Collections.<Delivery>emptyList()).getStatus());
+        assertEquals(DeliveryStatus.UNSUPPORTED, Delivery.combine(Collections.emptyList()).getStatus());
     }
 
     @Test
@@ -48,7 +48,7 @@ class DeliveryTest {
 
         assertEquals(1, mixed.getDelivered());
         assertEquals(3, mixed.getReceipts().size());
-        assertEquals(Arrays.<Throwable>asList(cause, other), mixed.getFailures());
+        assertEquals(Arrays.asList(cause, other), mixed.getFailures());
         assertSame(cause, mixed.getFailure());
         assertNull(Delivery.delivered().getFailure());
     }
@@ -109,11 +109,11 @@ class DeliveryTest {
     @Test
     @DisplayName("a group with nobody in it is unsupported and fatal errors are not caught")
     void aGroupWithNobodyInItIsUnsupportedAndFatalErrorsAreNotCaught() {
-        Audience nobody = Audience.audience(Collections.<Audience>emptyList());
+        Audience nobody = Audience.audience(Collections.emptyList());
 
         assertEquals(DeliveryStatus.UNSUPPORTED,
             AudienceExtensions.deliver(nobody, it -> it.sendMessage(Component.text("hi"))).getStatus());
-        Audience dying = receiver("dying", new ArrayList<String>(), new OutOfMemoryError());
+        Audience dying = receiver("dying", new ArrayList<>(), new OutOfMemoryError());
         assertThrows(OutOfMemoryError.class,
             () -> AudienceExtensions.deliver(dying, it -> it.sendMessage(Component.text("hi"))));
     }

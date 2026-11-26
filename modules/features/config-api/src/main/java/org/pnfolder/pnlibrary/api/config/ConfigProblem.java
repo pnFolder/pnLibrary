@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.config;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /** One semantic configuration problem. */
@@ -14,8 +15,8 @@ public final class ConfigProblem {
      * @param message human-readable explanation without the path prefix
      */
     public ConfigProblem(@NotNull String path, @NotNull String message) {
-        this.path = path;
-        this.message = message;
+        this.path = Objects.requireNonNull(path, "path");
+        this.message = Objects.requireNonNull(message, "message");
     }
 
     /** Full dot-separated YAML path. */

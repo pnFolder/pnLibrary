@@ -20,6 +20,6 @@ final class NoMoneyError extends CommandError {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        return Collections.<String, Object>singletonMap("price", price);
+        return Collections.singletonMap("price", price);
     }
 }

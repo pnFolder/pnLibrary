@@ -131,11 +131,11 @@ class LinkTest {
 
     @Test
     void theNetworkMapKeepsEveryServerAndDropsForgeries() {
-        Set<String> servers = new LinkedHashSet<String>(Collections.singletonList("lobby"));
-        Set<String> plugins = new LinkedHashSet<String>(Arrays.asList("shop", "chat"));
+        Set<String> servers = new LinkedHashSet<>(Collections.singletonList("lobby"));
+        Set<String> plugins = new LinkedHashSet<>(Arrays.asList("shop", "chat"));
         ServerGroup group = new ServerGroup("grief", servers, plugins,
-            Collections.<String, Set<String>>singletonMap("lobby", Collections.singleton("quiz")),
-            Collections.<String, Set<String>>singletonMap("lobby", Collections.singleton("chat")));
+            Collections.singletonMap("lobby", Collections.singleton("quiz")),
+            Collections.singletonMap("lobby", Collections.singleton("chat")));
         NetworkReport network = new NetworkReport(report,
             Arrays.asList(new NetworkServer("lobby", true, report), new NetworkServer("games", false, report)),
             report.getSentAt(), Collections.singletonList(group));
@@ -170,7 +170,7 @@ class LinkTest {
 
     @Test
     void theProxyPassesARequestToItsTargetAndTheAnswerBackToWhoAsked() {
-        List<Sent> sent = new ArrayList<Sent>();
+        List<Sent> sent = new ArrayList<>();
         LinkReceiver receiver = new LinkReceiver(new Link(key, null, recording(sent, "gone")));
 
         assertTrue(receiver.receive("lobby", true, LinkCodec.encodeRequest(request, key)));
@@ -197,7 +197,7 @@ class LinkTest {
     @Test
     void anAnswerToTheProxyItselfReachesWhoeverWaitsForIt() {
         Link link = new Link(key);
-        AtomicReference<RemoteResult> got = new AtomicReference<RemoteResult>();
+        AtomicReference<RemoteResult> got = new AtomicReference<>();
         link.getReplies().expect(request.getId(), got::set);
         LinkReceiver receiver = new LinkReceiver(link);
 
@@ -227,13 +227,13 @@ class LinkTest {
         List<byte[]> pieces = DataChunks.split(call.getId(), "lobby", true, text, key);
 
         assertTrue(pieces.size() > 1);
-        List<DataChunk> chunks = new ArrayList<DataChunk>();
+        List<DataChunk> chunks = new ArrayList<>();
         for (byte[] piece : pieces) {
             assertTrue(piece.length <= LinkCodec.MAX_FRAME_BYTES);
             chunks.add(LinkCodec.decodeChunk(piece, key));
         }
         Collections.sort(chunks, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
-        List<byte[]> bytes = new ArrayList<byte[]>();
+        List<byte[]> bytes = new ArrayList<>();
         for (DataChunk chunk : chunks) {
             bytes.add(chunk.getBytes());
         }
@@ -243,7 +243,7 @@ class LinkTest {
 
     @Test
     void theAskerGetsTheAnswerWhenTheLastPieceArrivesAndAnErrorWhenTheServerRefuses() throws Exception {
-        List<DataCall> asked = new ArrayList<DataCall>();
+        List<DataCall> asked = new ArrayList<>();
         DataClient client = new DataClient(key, bytes -> asked.add(LinkCodec.decodeCall(bytes, key)));
         CompletableFuture<String> good = client.call("games", "Admin", "version", "{}");
         CompletableFuture<String> bad = client.call("games", "Admin", "plan", "{}");
@@ -254,7 +254,7 @@ class LinkTest {
             builder.append('x');
         }
         String text = builder.toString();
-        List<DataChunk> pieces = new ArrayList<DataChunk>();
+        List<DataChunk> pieces = new ArrayList<>();
         for (byte[] piece : DataChunks.split(asked.get(0).getId(), "lobby", true, text, key)) {
             pieces.add(LinkCodec.decodeChunk(piece, key));
         }
@@ -275,7 +275,7 @@ class LinkTest {
 
     @Test
     void theProxyPassesAQuestionOnTakesTheAnswerBackAndTellsTheAskerWhenTheServerIsGone() {
-        List<Sent> sent = new ArrayList<Sent>();
+        List<Sent> sent = new ArrayList<>();
         LinkReceiver receiver = new LinkReceiver(new Link(key, null, recording(sent, "gone")));
 
         assertTrue(receiver.receive("lobby", true, LinkCodec.encodeCall(call, key)));
@@ -300,7 +300,7 @@ class LinkTest {
 
     @Test
     void theProxyAnswersAQuestionForItselfThroughItsHandler() {
-        List<Sent> sent = new ArrayList<Sent>();
+        List<Sent> sent = new ArrayList<>();
         LinkReceiver receiver = new LinkReceiver(new Link(key, null, recording(sent, "")), null,
             (question, reply) -> reply.accept(true, "answer to " + question.getMethod()));
         DataCall toProxy = new DataCall(call.getId(), LinkNames.PROXY, call.getOrigin(), call.getViewer(),

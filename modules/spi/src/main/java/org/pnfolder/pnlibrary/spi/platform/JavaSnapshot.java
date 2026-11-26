@@ -16,9 +16,9 @@ public final class JavaSnapshot {
      * @param name JVM implementation name
      */
     public JavaSnapshot(@NotNull String version, @NotNull String vendor, @NotNull String name) {
-        this.version = version;
-        this.vendor = vendor;
-        this.name = name;
+        this.version = Objects.requireNonNull(version, "version");
+        this.vendor = Objects.requireNonNull(vendor, "vendor");
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     /** Reads the metadata of the running JVM; unavailable values are {@code unknown}. */

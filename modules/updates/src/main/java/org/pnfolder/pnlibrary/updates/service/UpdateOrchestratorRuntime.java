@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
+import java.util.Objects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -15,7 +17,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -67,7 +68,6 @@ public final class UpdateOrchestratorRuntime implements AutoCloseable {
      * @param stageGraph downloads and prepares a plan
      * @param announce tells administrators about a plan
      * @param automaticAllowed whether a plan may be staged without an administrator
-     * @param automaticOverridesActive whether an administrator override turns automatic download on
      */
     public UpdateOrchestratorRuntime(@NotNull UpdateConfiguration configuration, @NotNull LibraryPaths paths,
                                      @NotNull PlatformLogging logging, @NotNull PlatformReadiness readiness,
@@ -76,9 +76,8 @@ public final class UpdateOrchestratorRuntime implements AutoCloseable {
                                      @NotNull Function<RefreshMode, ResolutionResult> resolveGraph,
                                      @NotNull Consumer<UpdatePlanSnapshot> stageGraph,
                                      @NotNull Consumer<UpdatePlanSnapshot> announce,
-                                     @NotNull Predicate<UpdatePlanSnapshot> automaticAllowed,
-                                     @NotNull BooleanSupplier automaticOverridesActive) throws IOException {
-        this.logging = logging;
+                                     @NotNull Predicate<UpdatePlanSnapshot> automaticAllowed) throws IOException {
+        this.logging = Objects.requireNonNull(logging, "logging");
         this.installationLock = UpdateInstallationLock.acquire(paths);
         this.audit = new UpdateAudit(paths, logging, this, closed::get);
         UpdateOrchestratorHooks hooks = UpdateOrchestratorHooks
@@ -86,7 +85,6 @@ public final class UpdateOrchestratorRuntime implements AutoCloseable {
                 .automaticAllowed(automaticAllowed)
                 .remoteResolver(() -> resolveGraph.apply(RefreshMode.FORCE_REMOTE))
                 .beforeCheck(() -> reconcileRecovered(installer, registrations))
-                .automaticOverridesActive(automaticOverridesActive)
                 .unexpectedFailure((message, error) -> {
                     if (!closed.get()) {
                         logging.log(this, LogLevel.ERROR, message, error);
@@ -109,19 +107,6 @@ public final class UpdateOrchestratorRuntime implements AutoCloseable {
             }).onFailure(error::addSuppressed);
             throw error;
         }
-    }
-
-    /** Wires the orchestrator with no administrator override of automatic download. */
-    public UpdateOrchestratorRuntime(@NotNull UpdateConfiguration configuration, @NotNull LibraryPaths paths,
-                                     @NotNull PlatformLogging logging, @NotNull PlatformReadiness readiness,
-                                     @NotNull UpdateInstaller installer,
-                                     @NotNull Supplier<List<RegisteredUpdate>> registrations,
-                                     @NotNull Function<RefreshMode, ResolutionResult> resolveGraph,
-                                     @NotNull Consumer<UpdatePlanSnapshot> stageGraph,
-                                     @NotNull Consumer<UpdatePlanSnapshot> announce,
-                                     @NotNull Predicate<UpdatePlanSnapshot> automaticAllowed) throws IOException {
-        this(configuration, paths, logging, readiness, installer, registrations, resolveGraph, stageGraph, announce,
-                automaticAllowed, () -> false);
     }
 
     /** The orchestrator that runs checks and operations. */

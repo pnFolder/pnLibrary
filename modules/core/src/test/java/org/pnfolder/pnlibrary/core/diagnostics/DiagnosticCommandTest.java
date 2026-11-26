@@ -43,7 +43,7 @@ class DiagnosticCommandTest {
         CommandDefinition definition = DiagnosticCommands.create(library);
 
         List<String> suggestions = definition.getSuggestions()
-            .suggest(new CommandContext(new TestSender(), Collections.<String>emptyList(), "debug", "example"))
+            .suggest(new CommandContext(new TestSender(), Collections.emptyList(), "debug", "example"))
             .toCompletableFuture().join();
 
         assertEquals("debug", definition.getName());
@@ -54,11 +54,11 @@ class DiagnosticCommandTest {
 
     @Test
     void suggestionsExposeTargetAndFlagsFromOneSharedDefinition() {
-        PnLibrary library = libraryWithPlugins(Collections.<PluginMetadata>emptyList());
+        PnLibrary library = libraryWithPlugins(Collections.emptyList());
         CommandDefinition definition = DiagnosticCommands.create(library);
 
         List<String> suggestions = definition.getSuggestions()
-            .suggest(new CommandContext(new TestSender(), Collections.<String>emptyList(), "debug", ""))
+            .suggest(new CommandContext(new TestSender(), Collections.emptyList(), "debug", ""))
             .toCompletableFuture().join();
 
         assertEquals(Arrays.asList("all", "--local"), suggestions);
@@ -66,7 +66,7 @@ class DiagnosticCommandTest {
 
     @Test
     void invalidInvocationRendersUsageWithoutAPlatformRenderer() {
-        PnLibrary library = libraryWithPlugins(Collections.<PluginMetadata>emptyList());
+        PnLibrary library = libraryWithPlugins(Collections.emptyList());
         TestSender sender = new TestSender();
         CommandDefinition definition = DiagnosticCommands.create(library);
 
@@ -105,7 +105,7 @@ class DiagnosticCommandTest {
     }
 
     private static List<String> plain(List<Component> components) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (Component component : components) {
             lines.add(PlainTextComponentSerializer.plainText().serialize(component));
         }
@@ -117,7 +117,7 @@ class DiagnosticCommandTest {
     }
 
     private static PnLibrary libraryWithPlugins(List<PluginMetadata> metadata) {
-        final List<PluginRegistration> registrations = new ArrayList<PluginRegistration>();
+        final List<PluginRegistration> registrations = new ArrayList<>();
         for (final PluginMetadata value : metadata) {
             final ModuleContext module = proxy(ModuleContext.class, method -> {
                 if (method.getName().equals("getMetadata")) {
@@ -160,7 +160,7 @@ class DiagnosticCommandTest {
     }
 
     private static final class TestSender implements CommandSender {
-        final List<Component> messages = new ArrayList<Component>();
+        final List<Component> messages = new ArrayList<>();
 
         @NotNull
         @Override

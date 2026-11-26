@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.currency;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,8 +28,8 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId;
  */
 final class CurrencyHub implements CurrencyProviderRegistry, AutoCloseable {
     private final BiConsumer<String, Throwable> report;
-    private final ConcurrentHashMap<CurrencyKey, RegisteredCurrency> entries = new ConcurrentHashMap<CurrencyKey, RegisteredCurrency>();
-    private final ConcurrentHashMap<CurrencyKey, CurrencyKey> aliases = new ConcurrentHashMap<CurrencyKey, CurrencyKey>();
+    private final ConcurrentHashMap<CurrencyKey, RegisteredCurrency> entries = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<CurrencyKey, CurrencyKey> aliases = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     CurrencyHub() {
@@ -36,7 +37,7 @@ final class CurrencyHub implements CurrencyProviderRegistry, AutoCloseable {
     }
 
     CurrencyHub(@NotNull BiConsumer<String, Throwable> report) {
-        this.report = report;
+        this.report = Objects.requireNonNull(report, "report");
     }
 
     /** Creates the per-plugin view of this registry; call once per plugin that registers or resolves currencies. */
@@ -48,7 +49,7 @@ final class CurrencyHub implements CurrencyProviderRegistry, AutoCloseable {
     @Override
     @NotNull
     public CurrencyRegistration register(@NotNull PluginId owner, @NotNull String name, @NotNull CurrencyProvider provider) {
-        return install(owner, name, provider, Collections.<String>emptySet());
+        return install(owner, name, provider, Collections.emptySet());
     }
 
     @Override
@@ -65,14 +66,14 @@ final class CurrencyHub implements CurrencyProviderRegistry, AutoCloseable {
     @Override
     @NotNull
     public List<Currency> all() {
-        List<RegisteredCurrency> active = new ArrayList<RegisteredCurrency>();
+        List<RegisteredCurrency> active = new ArrayList<>();
         for (RegisteredCurrency entry : entries.values()) {
             if (entry.getState() == CurrencyRegistrationState.ACTIVE) {
                 active.add(entry);
             }
         }
         Collections.sort(active, Comparator.comparing((RegisteredCurrency entry) -> entry.getKey().toString()));
-        return Collections.<Currency>unmodifiableList(active);
+        return Collections.unmodifiableList(active);
     }
 
     /** The active currency registered under {@code requested} or an alias of it, or {@code null}. */
@@ -97,7 +98,7 @@ final class CurrencyHub implements CurrencyProviderRegistry, AutoCloseable {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        for (RegisteredCurrency entry : new ArrayList<RegisteredCurrency>(entries.values())) {
+        for (RegisteredCurrency entry : new ArrayList<>(entries.values())) {
             entry.close();
         }
         entries.clear();

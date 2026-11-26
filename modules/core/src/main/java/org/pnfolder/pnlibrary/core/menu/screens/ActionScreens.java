@@ -32,7 +32,7 @@ public final class ActionScreens extends MenuScreens {
                 parameters.add(new Fact(variant.getLabel(), variant.getText()));
             }
             rows.add(new Row(MenuItems.icon(null, "COMMAND_BLOCK", info.getName(),
-                Style.lore(Collections.<String>emptyList(), parameters)), go(who -> { })));
+                Style.lore(Collections.emptyList(), parameters)), go(who -> { })));
         }
         list(player, "Действия", rows, page, MenuConstants.PAGE_SIZE, (who, to) -> actions(who, to), routes::home, "Действий нет");
     }

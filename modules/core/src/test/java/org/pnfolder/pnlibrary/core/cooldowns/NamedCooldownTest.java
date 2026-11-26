@@ -30,7 +30,7 @@ class NamedCooldownTest {
     private final Cooldown home = service.cooldown("home", Duration.ofSeconds(30), "shop.home.nocooldown");
 
     private static Audience player(UUID id, String... permissions) {
-        final Set<String> held = new HashSet<String>(Arrays.asList(permissions));
+        final Set<String> held = new HashSet<>(Arrays.asList(permissions));
         final Pointers pointers = AudienceExtensions.senderPointers("Alice", id, held::contains);
         return new Audience() {
             @Override
@@ -107,7 +107,7 @@ class NamedCooldownTest {
 
     @Test
     void runDoesTheActionOnceAndCallsTheOwnReactionInsteadWhenThePlayerHasToWait() {
-        final List<Long> denied = new ArrayList<Long>();
+        final List<Long> denied = new ArrayList<>();
         Cooldown kit = named(b -> b.duration(Duration.ofMinutes(5)).onDenied(d -> denied.add(d.getRemainingSeconds())));
         Audience alice = player();
         final int[] given = {0};
@@ -122,7 +122,7 @@ class NamedCooldownTest {
 
     @Test
     void withoutAnOwnReactionThePlayerGetsTheLibrarysMessage() {
-        final List<String> messages = new ArrayList<String>();
+        final List<String> messages = new ArrayList<>();
         final Pointers pointers = AudienceExtensions.senderPointers("Alice", UUID.randomUUID(), name -> false);
         Audience alice = new Audience() {
             @Override
@@ -157,7 +157,7 @@ class NamedCooldownTest {
 
     @Test
     void onStartedHearsTheLengthThatAppliesToTheOneWhoStartedIt() {
-        final List<Duration> started = new ArrayList<Duration>();
+        final List<Duration> started = new ArrayList<>();
         Cooldown kit = named(b -> b.duration(Duration.ofHours(1)).tier("shop.donor", Duration.ofMinutes(20))
             .onStarted(s -> started.add(s.getDuration())));
 
@@ -227,7 +227,7 @@ class NamedCooldownTest {
     @Test
     void aTierWithoutAPermissionAndANegativeFactorAreRefused() {
         assertThrows(IllegalArgumentException.class,
-            () -> named(b -> b.duration(Duration.ofSeconds(1)).tier(Collections.<String>emptyList(), Duration.ZERO)));
+            () -> named(b -> b.duration(Duration.ofSeconds(1)).tier(Collections.emptyList(), Duration.ZERO)));
         assertThrows(IllegalArgumentException.class,
             () -> named(b -> b.duration(Duration.ofSeconds(1)).tier("x", -1.0)));
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.journal.store;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.journal.JournalRecord;
 
@@ -11,7 +12,7 @@ public final class JournalSnapshot {
     private final boolean truncated;
 
     public JournalSnapshot(@NotNull List<JournalRecord> records, boolean truncated) {
-        this.records = records;
+        this.records = Objects.requireNonNull(records, "records");
         this.truncated = truncated;
     }
 

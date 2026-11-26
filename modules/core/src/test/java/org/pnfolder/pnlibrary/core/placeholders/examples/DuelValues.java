@@ -45,11 +45,11 @@ public class DuelValues {
     /** Looking at the parts: formats and arguments are there too. */
     @Placeholder
     public Reply<String> explain(@Route RouteInfo route) {
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         for (RoutePart part : route.getParts()) {
             parts.add(part.getKind().name().toLowerCase(java.util.Locale.ROOT) + "=" + part.getText());
         }
-        List<String> formats = new ArrayList<String>();
+        List<String> formats = new ArrayList<>();
         for (RoutePart format : route.of(RouteKind.FORMAT)) {
             formats.add(format.getName());
         }

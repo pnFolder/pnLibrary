@@ -31,7 +31,7 @@ public final class CurrencyTransactionRequest {
     public CurrencyTransactionRequest(@NotNull CurrencyTransactionType type, @NotNull BigDecimal amount,
                                       @Nullable CurrencyAccount source, @Nullable CurrencyAccount target,
                                       @NotNull CurrencyActor actor, @NotNull String service) {
-        this(type, amount, source, target, actor, service, null, Collections.<String, String>emptyMap(), null);
+        this(type, amount, source, target, actor, service, null, Collections.emptyMap(), null);
     }
 
     /**
@@ -78,7 +78,7 @@ public final class CurrencyTransactionRequest {
         this.actor = actor;
         this.service = service;
         this.reason = reason;
-        this.metadata = Collections.unmodifiableMap(new LinkedHashMap<String, String>(metadata));
+        this.metadata = Collections.unmodifiableMap(new LinkedHashMap<>(metadata));
         this.idempotencyKey = idempotencyKey;
     }
 

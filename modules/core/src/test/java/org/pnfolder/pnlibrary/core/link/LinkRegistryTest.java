@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.core.link.report.LinkReport;
 
 class LinkRegistryTest {
     private static LinkReport report(int players) {
-        return new LinkReport("paper", "1.0", players, Collections.<LinkPlugin>emptyList(), Instant.EPOCH);
+        return new LinkReport("paper", "1.0", players, Collections.emptyList(), Instant.EPOCH);
     }
 
     @Test
@@ -34,7 +34,7 @@ class LinkRegistryTest {
         registry.accept("beta", report(0));
         registry.accept("Alpha", report(0));
 
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (LinkEntry entry : registry.all()) {
             names.add(entry.getName());
         }

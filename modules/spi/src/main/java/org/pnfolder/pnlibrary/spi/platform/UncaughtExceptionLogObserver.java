@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -17,7 +18,7 @@ public final class UncaughtExceptionLogObserver {
     private Thread.UncaughtExceptionHandler installed;
 
     public UncaughtExceptionLogObserver(@NotNull Object owner) {
-        this.owner = owner;
+        this.owner = Objects.requireNonNull(owner, "owner");
     }
 
     /** Installs or removes the uncaught-exception hook; {@code null} restores the previous handler. */

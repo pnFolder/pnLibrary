@@ -111,7 +111,7 @@ public final class JournalTime {
         LocalDate from = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate();
         LocalDate to = Instant.ofEpochMilli(now).atZone(zone).toLocalDate();
         Period period = Period.between(from, to);
-        List<String> parts = new ArrayList<String>();
+        List<String> parts = new ArrayList<>();
         addPart(parts, period.getYears(), "год", "года", "лет");
         addPart(parts, period.getMonths(), "месяц", "месяца", "месяцев");
         addPart(parts, period.getDays(), "день", "дня", "дней");

@@ -33,11 +33,8 @@ public final class DiagnosticsRegistry implements DiagnosticsService {
     private final DiagnosticValueSanitizer sanitizer = new DiagnosticValueSanitizer();
     private volatile Runnable eventChangeListener;
     private volatile DiagnosticEventListener activityListener;
-    private volatile BiConsumer<String, Throwable> internalFailure = new BiConsumer<String, Throwable>() {
-        @Override
-        public void accept(String what, Throwable error) {
-        }
-    };
+    private volatile BiConsumer<String, Throwable> internalFailure = (what, error) -> {
+        };
 
     /** Creates a registry that keeps 100 distinct incidents per plugin. */
     public DiagnosticsRegistry() {

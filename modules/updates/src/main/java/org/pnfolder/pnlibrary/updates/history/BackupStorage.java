@@ -49,7 +49,7 @@ public final class BackupStorage {
             return;
         }
         try (Stream<Path> paths = Files.walk(folder)) {
-            for (Path path : (Iterable<Path>) paths.sorted(Comparator.<Path>reverseOrder())::iterator) {
+            for (Path path : (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
                 Files.delete(path);
             }
         }

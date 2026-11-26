@@ -26,7 +26,7 @@ final class PluginEventScope implements EventScope {
     private final PluginId plugin;
     private final ModuleId module;
     private final AtomicBoolean scopeClosed = new AtomicBoolean(false);
-    private final CopyOnWriteArrayList<ListenerSubscription> ownedSubscriptions = new CopyOnWriteArrayList<ListenerSubscription>();
+    private final CopyOnWriteArrayList<ListenerSubscription> ownedSubscriptions = new CopyOnWriteArrayList<>();
 
     PluginEventScope(EventDispatcher dispatcher, PluginId pluginId, PluginId plugin, @Nullable ModuleId module) {
         this.dispatcher = dispatcher;
@@ -63,7 +63,7 @@ final class PluginEventScope implements EventScope {
         if (handlers.isEmpty()) {
             throw new IllegalArgumentException(listener.getClass().getName() + " does not declare any @EventHandler methods");
         }
-        List<EventSubscription> registered = new ArrayList<EventSubscription>();
+        List<EventSubscription> registered = new ArrayList<>();
         try {
             for (EventHandlerInspector.Handler handler : handlers) {
                 registered.add(subscribeHandler(listener, handler));

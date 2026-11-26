@@ -58,7 +58,7 @@ permissions:
     description: Просматривать совместимый план обновлений
     default: op
   pnlibrary.updates.settings:
-    description: Менять канал, автозагрузку и паузу обновлений плагина
+    description: Менять канал и паузу обновлений плагина
     default: op
   pnlibrary.updates.rollback:
     description: Просматривать резервные наборы и откатывать обновления

@@ -57,12 +57,7 @@ public final class ModuleLabels {
                 modules.add(new NamedModule(plugin.getId().getValue() + ":" + module.getId().getValue(), module));
             }
         }
-        Collections.sort(modules, new Comparator<NamedModule>() {
-            @Override
-            public int compare(NamedModule left, NamedModule right) {
-                return left.getName().compareTo(right.getName());
-            }
-        });
+        Collections.sort(modules, (left, right) -> left.getName().compareTo(right.getName()));
         return modules;
     }
 }

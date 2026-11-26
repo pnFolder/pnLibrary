@@ -2,6 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ final class ViewFixtures {
 
     static UpdateHistoryEntry event(String at, UpdateState state, String operation, String actor, String product, String from, String to) {
         return new UpdateHistoryEntry(UUID.randomUUID(), Instant.parse(at), UUID.randomUUID(), state,
-            new UpdateActor(UpdateActor.Kind.CONSOLE, actor.toLowerCase(), actor), operation,
+            new UpdateActor(UpdateActor.Kind.CONSOLE, actor.toLowerCase(Locale.ROOT), actor), operation,
             Collections.singletonList(new ProductChange(ProductId.of(product), SemanticVersion.parse(from), SemanticVersion.parse(to))), null);
     }
 
@@ -63,7 +64,7 @@ final class ViewFixtures {
 
     static UpdateSnapshot snapshot(String product, UpdateState state, String changelog, UpdateChannel channel, String latest) {
         return new UpdateSnapshot(product, "1.0.0", latest, channel, state, 17, 8, false, null, null, changelog, null,
-            Collections.<org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary>emptyList(), Collections.<Integer>emptyList(), null, null);
+            Collections.emptyList(), Collections.emptyList(), null, null);
     }
 
     /** The bold title of a header line, which is either the line itself or its first child. */

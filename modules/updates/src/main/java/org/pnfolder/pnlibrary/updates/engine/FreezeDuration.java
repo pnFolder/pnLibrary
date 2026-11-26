@@ -7,10 +7,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Parses and validates administrator-supplied update-freeze durations: from one minute to seven days. */
+/** Parses and validates administrator-supplied update-freeze durations: from one minute to five days. */
 public final class FreezeDuration {
-    /** The longest pause: updates of a component can never be held for more than a week. */
-    public static final Duration MAXIMUM = Duration.ofDays(7);
+    /** The longest pause: updates of a component can never be held for more than five days. */
+    public static final Duration MAXIMUM = Duration.ofDays(5);
 
     private static final Duration MINIMUM = Duration.ofMinutes(1);
     private static final Pattern PATTERN = Pattern.compile("^(\\d+)([mhd])$", Pattern.CASE_INSENSITIVE);
@@ -38,7 +38,7 @@ public final class FreezeDuration {
     @NotNull
     public static Duration validate(@NotNull Duration duration) {
         if (duration.compareTo(MINIMUM) < 0 || duration.compareTo(MAXIMUM) > 0) {
-            throw new IllegalArgumentException("Freeze duration must be between 1 minute and 7 days");
+            throw new IllegalArgumentException("Freeze duration must be between 1 minute and 5 days");
         }
         return duration;
     }

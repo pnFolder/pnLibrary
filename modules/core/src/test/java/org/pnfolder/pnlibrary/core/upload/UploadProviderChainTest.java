@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class UploadProviderChainTest {
     @Test
     void usesProvidersInOrderUntilOneSucceeds() throws Exception {
-        final List<String> calls = new ArrayList<String>();
+        final List<String> calls = new ArrayList<>();
         final UploadReceipt expected = receipt("secondary");
         UploadProviderChain chain = new UploadProviderChain(Arrays.asList(
             provider("primary", calls, () -> {

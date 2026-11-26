@@ -20,7 +20,7 @@ public final class MenuItems {
 
     public static @NotNull ItemSpec section(@Nullable String texture, @NotNull String material, @NotNull String label,
                                             @NotNull String description) {
-        return section(texture, material, label, description, Collections.<Fact>emptyList());
+        return section(texture, material, label, description, Collections.emptyList());
     }
 
     public static @NotNull ItemSpec section(@Nullable String texture, @NotNull String material, @NotNull String label,
@@ -40,12 +40,12 @@ public final class MenuItems {
 
     public static @NotNull ItemSpec backItem(@NotNull String label) {
         return icon(Icons.BACK, "ARROW", "« " + label,
-            Style.lore(Collections.<String>emptyList(), Collections.<Fact>emptyList(), Style.left("вернуться")), Tone.WARN);
+            Style.lore(Collections.emptyList(), Collections.emptyList(), Style.left("вернуться")), Tone.WARN);
     }
 
     public static @NotNull ItemSpec closeItem() {
         return icon(Icons.BACK, "BARRIER", "Закрыть",
-            Style.lore(Collections.<String>emptyList(), Collections.<Fact>emptyList(), Style.left("закрыть меню")), Tone.DANGER);
+            Style.lore(Collections.emptyList(), Collections.emptyList(), Style.left("закрыть меню")), Tone.DANGER);
     }
 
     public static @NotNull String menuTitle(@NotNull String text) {
@@ -77,7 +77,7 @@ public final class MenuItems {
     }
 
     public static @NotNull ItemSpec glass(@NotNull String modern, short legacyData) {
-        return new ItemSpec(null, modern, "STAINED_GLASS_PANE", " ", Collections.<String>emptyList(), legacyData);
+        return new ItemSpec(null, modern, "STAINED_GLASS_PANE", " ", Collections.emptyList(), legacyData);
     }
 
     /** A button of the normal tone: the textured head when the server can make one, otherwise the item. */

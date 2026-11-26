@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.events;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +20,7 @@ public final class HandlerCache<S> {
     private final BiPredicate<S, Class<?>> matches;
     private final Comparator<S> order;
     private final AtomicLong generation = new AtomicLong();
-    private final WeakHashMap<Class<?>, List<S>> cache = new WeakHashMap<Class<?>, List<S>>();
+    private final WeakHashMap<Class<?>, List<S>> cache = new WeakHashMap<>();
 
     // Hot events repeat the same class: the last-used entry is a lock-free fast path.
     private volatile Last<S> last;
@@ -29,9 +30,9 @@ public final class HandlerCache<S> {
             @NotNull Supplier<? extends Iterable<S>> all,
             @NotNull BiPredicate<S, Class<?>> matches,
             @NotNull Comparator<S> order) {
-        this.all = all;
-        this.matches = matches;
-        this.order = order;
+        this.all = Objects.requireNonNull(all, "all");
+        this.matches = Objects.requireNonNull(matches, "matches");
+        this.order = Objects.requireNonNull(order, "order");
     }
 
     /** Forgets the lists of every class that {@code changed} matches, or all of them when it is {@code null}. */
@@ -63,7 +64,7 @@ public final class HandlerCache<S> {
         synchronized (cache) {
             if (generation.get() == before) {
                 cache.put(type, built);
-                last = new Last<S>(type, built);
+                last = new Last<>(type, built);
             }
         }
         return built;
@@ -75,14 +76,14 @@ public final class HandlerCache<S> {
         synchronized (cache) {
             List<S> found = cache.get(type);
             if (found != null) {
-                last = new Last<S>(type, found);
+                last = new Last<>(type, found);
             }
             return found;
         }
     }
 
     private List<S> build(Class<?> type) {
-        List<S> found = new ArrayList<S>();
+        List<S> found = new ArrayList<>();
         for (S candidate : all.get()) {
             if (matches.test(candidate, type)) {
                 found.add(candidate);

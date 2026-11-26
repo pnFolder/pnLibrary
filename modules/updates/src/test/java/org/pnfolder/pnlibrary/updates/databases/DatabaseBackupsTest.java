@@ -23,7 +23,7 @@ class DatabaseBackupsTest {
     @TempDir
     Path directory;
 
-    private final List<Path> restored = new ArrayList<Path>();
+    private final List<Path> restored = new ArrayList<>();
     private final DatabaseEngine engine = new DatabaseEngine() {
         @Override
         public void dump(@NotNull DatabaseConnection connection, @NotNull List<String> tables, @NotNull Path target)
@@ -38,7 +38,7 @@ class DatabaseBackupsTest {
     };
 
     private DatabaseBackups backups() {
-        Map<DatabaseKind, DatabaseEngine> engines = new EnumMap<DatabaseKind, DatabaseEngine>(DatabaseKind.class);
+        Map<DatabaseKind, DatabaseEngine> engines = new EnumMap<>(DatabaseKind.class);
         engines.put(DatabaseKind.MYSQL, engine);
         return new DatabaseBackups(directory.resolve("databases"), new DatabaseSources(), engines);
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.backup.UpdateCatalogBackupCommands;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -102,13 +103,13 @@ public final class UpdateCatalogCommands {
                                  @Nullable String backupsPermission, @Nullable String managePermission,
                                  @NotNull Predicate<CommandContext> guard, @NotNull Consumer<Runnable> deliver,
                                  @NotNull BiConsumer<CommandContext, SettingSaved> onSaved) {
-        this.library = library;
-        this.routes = routes;
+        this.library = Objects.requireNonNull(library, "library");
+        this.routes = Objects.requireNonNull(routes, "routes");
         this.viewPermission = viewPermission;
         this.backupsPermission = backupsPermission;
         this.managePermission = managePermission;
-        this.guard = guard;
-        this.deliver = deliver;
+        this.guard = Objects.requireNonNull(guard, "guard");
+        this.deliver = Objects.requireNonNull(deliver, "deliver");
         this.settings = new UpdateCatalogSettingsCommands(library, this::ready, this::routesFor, deliver, onSaved);
         this.backups = new UpdateCatalogBackupCommands(library, this::ready, this::routesFor, this::requestedPage, deliver);
         this.history = new UpdateCatalogHistoryCommands(library, viewPermission, this::ready, this::routesFor, this::requestedPage, deliver);
@@ -171,10 +172,6 @@ public final class UpdateCatalogCommands {
 
     private void installSettings(CommandNodeBuilder set) {
         permission(set, managePermission);
-        set.literal("all", all -> all.literal("auto", auto -> auto.argument("value", ArgumentType.string(), value -> {
-            value.suggests(context -> UpdateCatalogSettingsCommands.SWITCH_SUGGESTIONS);
-            value.executes(settings::setAllAutomatic);
-        })));
         set.argument("plugin", ArgumentType.string(), plugin -> {
             plugin.suggests(context -> UpdateCatalogSupport.productNames(library));
             plugin.literal("channel", node -> node.argument("value", ArgumentType.string(), value -> {
@@ -184,10 +181,6 @@ public final class UpdateCatalogCommands {
             plugin.literal("java", node -> node.argument("value", ArgumentType.string(), value -> {
                 value.suggests(context -> java.util.Arrays.asList("8", "11", "17", "21", UpdateCatalogSettingsCommands.DEFAULT_CHANNEL));
                 value.executes(settings::setJava);
-            }));
-            plugin.literal("auto", node -> node.argument("value", ArgumentType.string(), value -> {
-                value.suggests(context -> UpdateCatalogSettingsCommands.SWITCH_SUGGESTIONS);
-                value.executes(settings::setAutomatic);
             }));
             plugin.literal("hold", node -> node.argument("value", ArgumentType.string(), value -> {
                 value.suggests(context -> {

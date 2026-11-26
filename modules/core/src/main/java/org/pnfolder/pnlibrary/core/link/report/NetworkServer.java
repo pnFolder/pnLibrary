@@ -15,9 +15,9 @@ public final class NetworkServer {
      * @param report its latest report
      */
     public NetworkServer(@NotNull String name, boolean online, @NotNull LinkReport report) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.online = online;
-        this.report = report;
+        this.report = Objects.requireNonNull(report, "report");
     }
 
     public @NotNull String getName() {

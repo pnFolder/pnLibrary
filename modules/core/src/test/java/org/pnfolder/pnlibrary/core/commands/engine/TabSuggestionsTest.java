@@ -19,14 +19,14 @@ class TabSuggestionsTest {
     @Test
     @DisplayName("late suggestions give an empty list")
     void lateSuggestionsGiveAnEmptyList() {
-        assertEquals(Collections.<String>emptyList(), TabSuggestions.suggestionsWithin(new CompletableFuture<List<String>>(), 10));
+        assertEquals(Collections.emptyList(), TabSuggestions.suggestionsWithin(new CompletableFuture<>(), 10));
     }
 
     @Test
     @DisplayName("failed suggestions give an empty list")
     void failedSuggestionsGiveAnEmptyList() {
-        CompletableFuture<List<String>> failed = new CompletableFuture<List<String>>();
+        CompletableFuture<List<String>> failed = new CompletableFuture<>();
         failed.completeExceptionally(new IllegalStateException("x"));
-        assertEquals(Collections.<String>emptyList(), TabSuggestions.suggestionsWithin(failed, 10));
+        assertEquals(Collections.emptyList(), TabSuggestions.suggestionsWithin(failed, 10));
     }
 }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.api.commands.error;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ public class BadUsage extends CommandError {
 
     /** @param usage generated hint, such as {@code /shop buy <item>} */
     public BadUsage(@NotNull String usage) {
-        this.usage = usage;
+        this.usage = Objects.requireNonNull(usage, "usage");
     }
 
     /** Generated hint, such as {@code /shop buy <item>}. */
@@ -22,6 +23,6 @@ public class BadUsage extends CommandError {
     @NotNull
     @Override
     public Map<String, Object> placeholders() {
-        return Collections.<String, Object>singletonMap("usage", usage);
+        return Collections.singletonMap("usage", usage);
     }
 }

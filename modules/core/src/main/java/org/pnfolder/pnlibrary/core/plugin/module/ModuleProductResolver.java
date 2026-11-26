@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.plugin.module;
 
+import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
@@ -13,7 +15,7 @@ public final class ModuleProductResolver {
     private final PlatformOwnership platform;
 
     public ModuleProductResolver(@NotNull PlatformOwnership platform) {
-        this.platform = platform;
+        this.platform = Objects.requireNonNull(platform, "platform");
     }
 
     public @Nullable ProductDescriptor resolve(@NotNull Object owner, @NotNull ModuleId moduleId,

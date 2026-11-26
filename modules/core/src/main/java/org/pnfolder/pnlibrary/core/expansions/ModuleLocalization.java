@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.expansions;
 
+import java.util.Objects;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ public final class ModuleLocalization implements MinecraftLocalization {
     private final KeyboardLayouts moduleLayouts;
 
     public ModuleLocalization(@NotNull MinecraftLocalization shared, @NotNull ModuleBinding module) {
-        this.shared = shared;
+        this.shared = Objects.requireNonNull(shared, "shared");
         this.moduleLayouts = new ModuleKeyboardLayouts(shared.getLayouts(), module);
     }
 

@@ -27,7 +27,7 @@ final class ResolverDomains {
                                                 boolean frozen, ResolverPolicy policy) {
         boolean currentSupportsApi = current.getSupportedApi().supports(targetApi);
         if (frozen) {
-            return currentSupportsApi ? Collections.singletonList(asRelease(current)) : Collections.<ProductRelease>emptyList();
+            return currentSupportsApi ? Collections.singletonList(asRelease(current)) : Collections.emptyList();
         }
         List<ProductRelease> candidates = new ArrayList<ProductRelease>();
         for (ProductRelease release : releases) {
@@ -73,20 +73,15 @@ final class ResolverDomains {
             }
         }
         List<ProductRelease> sorted = new ArrayList<ProductRelease>(distinct.values());
-        Collections.sort(sorted, new Comparator<ProductRelease>() {
-            @Override
-            public int compare(ProductRelease left, ProductRelease right) {
-                return right.getVersion().compareTo(left.getVersion());
-            }
-        });
+        Collections.sort(sorted, (left, right) -> right.getVersion().compareTo(left.getVersion()));
         return sorted;
     }
 
     static ProductRelease asRelease(InstalledProduct installed) {
         return new ProductRelease(installed.getProduct(), installed.getVersion(), UpdateChannel.STABLE,
-            installed.getSupportedApi(), installed.getProvidesApi(), Collections.<ProductDependency>emptyList(), null,
-            Collections.<org.pnfolder.pnlibrary.api.updates.release.ArtifactDescriptor>emptyList(),
-            Collections.<ExternalPluginDependency>emptyList(), null, null, "");
+            installed.getSupportedApi(), installed.getProvidesApi(), Collections.emptyList(), null,
+            Collections.emptyList(),
+            Collections.emptyList(), null, null, "");
     }
 
     static boolean externalPluginDependenciesAvailable(ProductRelease release, ResolverPolicy policy) {

@@ -12,7 +12,7 @@ public final class ConfigEditResult {
 
     /** Creates a result. */
     public ConfigEditResult(@NotNull ConfigSetting setting, @Nullable String previous) {
-        this.setting = setting;
+        this.setting = Objects.requireNonNull(setting, "setting");
         this.previous = previous;
     }
 

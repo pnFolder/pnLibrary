@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.placeholders;
 
+import org.pnfolder.pnlibrary.core.placeholders.address.Addresses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,7 +20,7 @@ import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
 import org.pnfolder.pnlibrary.api.registry.RegistryEntry;
 
 class PlaceholderServiceTest {
-    private final List<String> problems = new ArrayList<String>();
+    private final List<String> problems = new ArrayList<>();
     private final PlaceholderEngine engine = new PlaceholderEngine(problems::add);
 
     private PlaceholderService module() {
@@ -209,7 +210,7 @@ class PlaceholderServiceTest {
     @Test
     void valuesHandedOverByTheCallerWinAndTakeFormats() throws Exception {
         module();
-        Map<String, Object> values = new HashMap<String, Object>();
+        Map<String, Object> values = new HashMap<>();
         values.put("amount", 1500);
         values.put("clan.tag", "mine");
 

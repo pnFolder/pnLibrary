@@ -56,7 +56,7 @@ final class YamlBlock {
     }
 
     List<String> childPath(String child) {
-        List<String> result = new ArrayList<String>(path);
+        List<String> result = new ArrayList<>(path);
         result.add(child);
         return result;
     }

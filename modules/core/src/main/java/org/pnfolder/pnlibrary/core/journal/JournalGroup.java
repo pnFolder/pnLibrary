@@ -25,10 +25,10 @@ public final class JournalGroup {
      */
     public JournalGroup(@NotNull String id, @NotNull String level, @NotNull String source, @NotNull String message,
                         int count, long lastMillis) {
-        this.id = id;
-        this.level = level;
-        this.source = source;
-        this.message = message;
+        this.id = Objects.requireNonNull(id, "id");
+        this.level = Objects.requireNonNull(level, "level");
+        this.source = Objects.requireNonNull(source, "source");
+        this.message = Objects.requireNonNull(message, "message");
         this.count = count;
         this.lastMillis = lastMillis;
     }
