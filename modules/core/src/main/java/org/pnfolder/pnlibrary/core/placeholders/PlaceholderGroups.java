@@ -17,6 +17,9 @@ import org.pnfolder.pnlibrary.api.registry.Visibility;
 
 /** The registered trees of placeholders by group (the first word of an address), and what they tell about themselves. */
 final class PlaceholderGroups {
+    /** The group of trees that start with an argument: it answers when no word matches. */
+    static final String SLOT_GROUP = "";
+
     private final ConcurrentHashMap<String, CopyOnWriteArrayList<PlaceholderEntry>> groups =
             new ConcurrentHashMap<String, CopyOnWriteArrayList<PlaceholderEntry>>();
     private final Consumer<String> report;
@@ -25,25 +28,43 @@ final class PlaceholderGroups {
         this.report = report;
     }
 
-    /** The entries of a group, the nearest to {@code consumer} first. A placeholder inside may still be closed to it. */
+    /**
+     * The entries of a group, the nearest to {@code consumer} first, then the entries that start with an argument
+     * (a word always wins over them). A placeholder inside may still be closed to the consumer.
+     */
     List<PlaceholderEntry> visibleEntries(String group, final String consumer) {
+        List<PlaceholderEntry> entries = nearestFirst(groups.get(group), consumer);
+        entries.addAll(nearestFirst(groups.get(SLOT_GROUP), consumer));
+        return entries;
+    }
+
+    private static List<PlaceholderEntry> nearestFirst(List<PlaceholderEntry> registered, final String consumer) {
         List<PlaceholderEntry> entries = new ArrayList<PlaceholderEntry>();
-        List<PlaceholderEntry> registered = groups.get(group);
         if (registered != null) {
             entries.addAll(registered);
         }
-        Collections.sort(entries, new Comparator<PlaceholderEntry>() {
-            @Override
-            public int compare(PlaceholderEntry a, PlaceholderEntry b) {
-                return rank(a) - rank(b);
-            }
-
-            private int rank(PlaceholderEntry entry) {
-                Integer near = Ownership.nearness(entry.getOwner(), Visibility.ALL, consumer);
-                return near == null ? Integer.MAX_VALUE : near;
-            }
-        });
+        Collections.sort(entries, (a, b) -> rank(a, consumer) - rank(b, consumer));
         return entries;
+    }
+
+    private static int rank(PlaceholderEntry entry, String consumer) {
+        Integer near = Ownership.nearness(entry.getOwner(), Visibility.ALL, consumer);
+        return near == null ? Integer.MAX_VALUE : near;
+    }
+
+    /** Refuses a second tree that starts with an argument for {@code owner}: its arguments would be ambiguous. */
+    void requireFreeSlot(String owner, int incoming) {
+        int count = incoming;
+        List<PlaceholderEntry> taken = groups.get(SLOT_GROUP);
+        if (taken != null) {
+            for (PlaceholderEntry entry : taken) {
+                count += entry.getOwner().equals(owner) ? 1 : 0;
+            }
+        }
+        if (count > 1) {
+            throw new IllegalStateException(owner + ": only one placeholder may be bare in all its @Placeholders(root = true) classes,"
+                    + " their arguments right after the prefix would be ambiguous");
+        }
     }
 
     /** The PlaceholderAPI prefixes that some entry asks to be shown under. */
@@ -122,6 +143,10 @@ final class PlaceholderGroups {
         Map<String, Visibility> mine = addresses(entry.getRoot(), "");
         for (PlaceholderEntry other : others) {
             if (other.getOwner().equals(entry.getOwner())) {
+                if (other.isFromRoot() != entry.isFromRoot()) {
+                    report.accept(entry.getOwner() + ": the word '" + name + "' is both a placeholder of a root group and a group;"
+                            + " the group answers first");
+                }
                 continue;
             }
             Map<String, Visibility> theirs = addresses(other.getRoot(), "");

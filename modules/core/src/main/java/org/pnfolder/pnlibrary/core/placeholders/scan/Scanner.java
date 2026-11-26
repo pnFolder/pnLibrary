@@ -32,19 +32,34 @@ public final class Scanner {
         this.lookup = Objects.requireNonNull(lookup, "lookup");
     }
 
-    public List<PhNode> scan(List<Object> holders) {
-        List<PhNode> roots = new ArrayList<>();
+    public List<ScannedRoot> scan(List<Object> holders) {
+        List<ScannedRoot> roots = new ArrayList<>();
         for (final Object holder : holders) {
             Class<?> type = holder.getClass();
             Placeholders group = type.getAnnotation(Placeholders.class);
             if (group == null) {
                 throw new IllegalStateException(type.getName() + " must be marked with @Placeholders(\"group\")");
             }
-            PhNode root = new PhNode(PhPart.word(PhPart.checkWord(group.value())), Object.class);
             List<FormatRule> rules = new ArrayList<>();
             addRule(rules, type);
+            if (group.root()) {
+                if (!group.value().isEmpty()) {
+                    throw new IllegalStateException(type.getName() + ": @Placeholders(root = true) has no group word, remove value = \""
+                            + group.value() + "\"");
+                }
+                List<PhNode> members = new ArrayList<>();
+                members(type, members, call -> holder, new HashSet<>(), rules, 0, null, group.visibility());
+                for (PhNode member : members) {
+                    roots.add(new ScannedRoot(member, true));
+                }
+                continue;
+            }
+            if (group.value().isEmpty()) {
+                throw new IllegalStateException(type.getName() + ": @Placeholders needs a group word, or root = true for a group without one");
+            }
+            PhNode root = new PhNode(PhPart.word(PhPart.checkWord(group.value())), Object.class);
             members(type, root.getChildren(), call -> holder, new HashSet<>(), rules, 0, null, group.visibility());
-            roots.add(root);
+            roots.add(new ScannedRoot(root, false));
         }
         return roots;
     }
