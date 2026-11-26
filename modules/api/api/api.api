@@ -3793,7 +3793,9 @@ public final class org/pnfolder/pnlibrary/api/updates/release/ReleaseSummary {
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;)V
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Ljava/time/Instant;)V
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;Ljava/time/Instant;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getApi ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
 	public fun getChangelogUrl ()Ljava/lang/String;
 	public fun getChannel ()Lorg/pnfolder/pnlibrary/api/updates/product/UpdateChannel;
 	public fun getPublishedAt ()Ljava/time/Instant;
@@ -3885,7 +3887,19 @@ public final class org/pnfolder/pnlibrary/api/updates/request/PluginUpdateReques
 	public fun tag (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/request/PluginUpdateRequest$Builder;
 }
 
+public final class org/pnfolder/pnlibrary/api/updates/state/ApiRaised : org/pnfolder/pnlibrary/api/updates/state/BlockedReason {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;II)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFromApi ()I
+	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;
+	public fun getToApi ()I
+	public fun hashCode ()I
+	public fun isAdvisory ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract class org/pnfolder/pnlibrary/api/updates/state/BlockedReason {
+	public fun isAdvisory ()Z
 }
 
 public final class org/pnfolder/pnlibrary/api/updates/state/BlockedReason$ApiMismatch : org/pnfolder/pnlibrary/api/updates/state/BlockedReason {
@@ -3935,6 +3949,17 @@ public final class org/pnfolder/pnlibrary/api/updates/state/BlockedReason$NoComp
 	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;
 	public fun getRequiredApi ()I
 	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/updates/state/UnsupportedApi : org/pnfolder/pnlibrary/api/updates/state/BlockedReason {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;I)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getLibraryApi ()I
+	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;
+	public fun getSupportedApi ()Lorg/pnfolder/pnlibrary/api/version/ApiVersionRange;
+	public fun hashCode ()I
+	public fun isAdvisory ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -4007,6 +4032,18 @@ public final class org/pnfolder/pnlibrary/api/updates/state/UpdateState : java/l
 	public static final field UP_TO_DATE Lorg/pnfolder/pnlibrary/api/updates/state/UpdateState;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/updates/state/UpdateState;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/updates/state/UpdateState;
+}
+
+public final class org/pnfolder/pnlibrary/api/updates/state/WaitsForLibrary : org/pnfolder/pnlibrary/api/updates/state/BlockedReason {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;II)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getLibraryApi ()I
+	public fun getProduct ()Lorg/pnfolder/pnlibrary/api/updates/product/ProductId;
+	public fun getRequiredApi ()I
+	public fun getVersion ()Lorg/pnfolder/pnlibrary/api/version/SemanticVersion;
+	public fun hashCode ()I
+	public fun isAdvisory ()Z
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/version/ApiVersionRange {

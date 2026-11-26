@@ -9,7 +9,15 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 
 /** Structured explanation for a candidate or complete plan that cannot be installed. */
 public abstract class BlockedReason {
-    private BlockedReason() {
+    BlockedReason() {
+    }
+
+    /**
+     * Whether this is only a note: the plan stays installable and its state is not {@link UpdateState#BLOCKED}.
+     * Notes explain what the plan leaves out, such as a plugin that waits for a newer library.
+     */
+    public boolean isAdvisory() {
+        return false;
     }
 
     /** Product cannot run against the API generation required by the graph. */

@@ -21,7 +21,7 @@ import java.util.Objects;
  * <p>A mistake in the text is reported when the configuration loads. A calculation that fails at run time (for
  * example a text where a number is needed) is not met, and the reason says why.
  *
- * @throws ExpressionException when the text cannot be parsed
+ * <p>Reading it fails with {@code ExpressionException} when the text cannot be parsed
  */
 public final class ExpressionRequirement implements Requirement {
     private final String expression;

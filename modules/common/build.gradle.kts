@@ -15,8 +15,6 @@ java {
     withSourcesJar()
 }
 
-// The Maven Central javadoc artifact is produced by Dokka, so module metadata must wait for it explicitly.
-tasks.matching { it.name == "generateMetadataFileForMavenPublication" }.configureEach { dependsOn("dokkaJavadocJar") }
 
 mavenPublishing {
     publishToMavenCentral()

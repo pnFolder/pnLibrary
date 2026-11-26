@@ -52,6 +52,10 @@ final class ProductScreens extends CatalogStyle {
             version = version.append(changelogButton(changelog));
         }
         result.add(version);
+        String risk = update == null ? null : UpdateStatusMessages.riskNote(snapshot, update);
+        if (risk != null) {
+            result.add(field("Внимание", text(risk, ChatPalette.WARN)));
+        }
         Instant released = releasedAt(snapshot, update != null ? update : snapshot.getCurrentVersion());
         if (released != null) {
             result.add(field("Выпущена", text(released(released), ChatPalette.TEXT)));

@@ -211,7 +211,7 @@ public final class RegisteredUpdate implements UpdateRegistration {
         List<ReleaseSummary> summaries = new ArrayList<>();
         for (ProductRelease release : sorted) {
             summaries.add(new ReleaseSummary(release.getVersion().toString(), release.getChannel(),
-                    release.getPublishedAt(), release.getChangelogUrl()));
+                    release.getPublishedAt(), release.getChangelogUrl(), release.getSupportedApi()));
         }
         boolean newer = latest != null && latest.getVersion().compareTo(descriptor.getVersion()) > 0;
         state.set(new UpdateSnapshot(product, version, latest == null ? null : latest.getVersion().toString(), channel,

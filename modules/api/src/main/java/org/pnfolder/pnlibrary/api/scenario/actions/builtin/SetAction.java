@@ -18,7 +18,7 @@ import java.util.Objects;
  * - { type: message, messages: ['Price: [price]'] }
  * }</pre>
  *
- * @throws org.pnfolder.pnlibrary.api.scenario.expression.ExpressionException when the expression cannot be parsed
+ * <p>Reading it fails with {@code ExpressionException} when the expression cannot be parsed
  */
 public final class SetAction implements Action {
     private final String name;

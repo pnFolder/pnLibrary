@@ -74,11 +74,12 @@ public final class PlanState {
         List<BlockedReason> blockers = Collections.emptyList();
         if (result instanceof ResolutionResult.Ready) {
             plan = ((ResolutionResult.Ready) result).getPlan();
+            blockers = ((ResolutionResult.Ready) result).getAdvisories();
         } else if (result instanceof ResolutionResult.Blocked) {
             plan = ((ResolutionResult.Blocked) result).getFallbackPlan();
             blockers = ((ResolutionResult.Blocked) result).getReasons();
         }
-        UpdateState state = !blockers.isEmpty() ? UpdateState.BLOCKED
+        UpdateState state = hasBlocking(blockers) ? UpdateState.BLOCKED
                 : plan == null || plan.getChanges().isEmpty() ? UpdateState.UP_TO_DATE : UpdateState.UPDATE_AVAILABLE;
         String fingerprint = PlanFingerprint.of(state, plan, blockers);
         UpdatePlanSnapshot previous = current();
@@ -90,6 +91,15 @@ public final class PlanState {
             return previous;
         }
         return new UpdatePlanSnapshot(UUID.randomUUID(), nextRevision(), state, plan, blockers, null);
+    }
+
+    private static boolean hasBlocking(List<BlockedReason> reasons) {
+        for (BlockedReason reason : reasons) {
+            if (!reason.isAdvisory()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     UpdatePlanSnapshot failedSnapshot(Throwable error) {

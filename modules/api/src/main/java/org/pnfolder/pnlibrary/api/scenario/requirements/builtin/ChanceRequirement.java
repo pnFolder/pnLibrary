@@ -11,7 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Met by chance.
  *
- * @throws IllegalArgumentException when the probability is outside {@code 0.0..1.0}
+ * <p>Reading it fails with {@code IllegalArgumentException} when the probability is outside {@code 0.0..1.0}
  */
 public final class ChanceRequirement implements Requirement {
     private final double probability;

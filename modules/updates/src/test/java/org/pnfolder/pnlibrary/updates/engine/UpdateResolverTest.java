@@ -22,7 +22,10 @@ import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct;
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
 import org.pnfolder.pnlibrary.api.updates.release.ProductDependency;
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease;
+import org.pnfolder.pnlibrary.api.updates.state.ApiRaised;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
+import org.pnfolder.pnlibrary.api.updates.state.UnsupportedApi;
+import org.pnfolder.pnlibrary.api.updates.state.WaitsForLibrary;
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 
@@ -112,19 +115,78 @@ class UpdateResolverTest {
     }
 
     @Test
-    @DisplayName("reports blocked future API while returning old generation fallback updates")
-    void reportsBlockedFutureApiWhileReturningOldGenerationFallbackUpdates() {
-        ResolutionResult.Blocked result = (ResolutionResult.Blocked) resolve(
+    @DisplayName("library moves to the new API; a plugin that cannot follow stays and is noted")
+    void libraryMovesToTheNewApiAndUnsupportedPluginStaysNoted() {
+        ResolutionResult.Ready result = (ResolutionResult.Ready) resolve(
             list(installed(library, "2.9.0", range(4), 4), installed(market, "2.7.1", range(3, 4))),
             list(release(library, "3.0.0", range(5), 5), release(library, "2.9.4", range(4), 4)));
 
-        boolean reported = false;
-        for (BlockedReason reason : result.getReasons()) {
-            reported |= reason instanceof BlockedReason.NoCompatibleRelease
-                && ((BlockedReason.NoCompatibleRelease) reason).getProduct().equals(market);
-        }
-        assertTrue(reported);
-        assertEquals(version("2.9.4"), selected(result.getFallbackPlan(), library).getVersion());
+        assertEquals(version("3.0.0"), selected(result.getPlan(), library).getVersion());
+        assertEquals(5, result.getPlan().getTargetApi());
+        assertEquals(Collections.singleton(library), changed(result));
+        assertTrue(result.getAdvisories().contains(new UnsupportedApi(market, range(3, 4), 5)));
+        assertTrue(result.getAdvisories().contains(new ApiRaised(library, 4, 5)));
+    }
+
+    @Test
+    @DisplayName("plugin whose newest release needs a newer API than the library has is not updated and waits")
+    void pluginWithReleaseForNewerApiWaitsForLibrary() {
+        ResolutionResult.Ready result = (ResolutionResult.Ready) resolve(
+            list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1))),
+            list(release(market, "2.0.0", range(2)), release(market, "1.1.0", range(1))));
+
+        assertEquals(version("1.1.0"), selected(result.getPlan(), market).getVersion());
+        assertEquals(1, result.getPlan().getTargetApi());
+        assertEquals(Collections.singletonList(new WaitsForLibrary(market, version("2.0.0"), 2, 1)), result.getAdvisories());
+    }
+
+    @Test
+    @DisplayName("plugin that needs the newer API is installed together with the library release that provides it")
+    void pluginForNewerApiIsInstalledOnceTheLibraryProvidesIt() {
+        List<InstalledProduct> installed = list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1)));
+        List<ProductRelease> releases = list(release(market, "2.0.0", range(2)));
+        ResolutionResult.Ready waiting = (ResolutionResult.Ready) resolve(installed, releases);
+        assertTrue(changed(waiting).isEmpty());
+
+        releases.add(release(library, "2.0.0", range(2), 2));
+        ResolutionResult.Ready together = (ResolutionResult.Ready) resolve(installed, releases);
+        assertEquals(new HashSet<>(Arrays.asList(library, market)), changed(together));
+
+        // The library already stands on API 2: the next check installs the plugin by itself.
+        ResolutionResult.Ready next = (ResolutionResult.Ready) resolve(
+            list(installed(library, "2.0.0", range(2), 2), installed(market, "1.0.0", range(1, 2))), releases);
+        assertEquals(Collections.singleton(market), changed(next));
+        assertTrue(next.getAdvisories().isEmpty());
+    }
+
+    @Test
+    @DisplayName("both on one API gives an ordinary update without notes")
+    void bothOnOneApiGivesOrdinaryUpdate() {
+        ResolutionResult.Ready result = (ResolutionResult.Ready) resolve(
+            list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1))),
+            list(release(library, "1.1.0", range(1), 1), release(market, "1.1.0", range(1))));
+
+        assertEquals(new HashSet<>(Arrays.asList(library, market)), changed(result));
+        assertTrue(result.getAdvisories().isEmpty());
+    }
+
+    @Test
+    @DisplayName("a held library stays; a held plugin does not stop the library API update")
+    void holdDelaysOnlyItsOwnProduct() {
+        List<InstalledProduct> installed = list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1)));
+        List<ProductRelease> releases = list(release(library, "2.0.0", range(2), 2), release(market, "2.0.0", range(2)));
+
+        ResolutionResult.Ready pluginHeld = (ResolutionResult.Ready) new UpdateResolver(library).resolve(installed, releases,
+            Collections.emptyMap(), UpdateChannel.STABLE, Collections.singleton(market), null, Integer.MAX_VALUE,
+            new ResolverPolicy());
+        assertEquals(Collections.singleton(library), changed(pluginHeld));
+        assertTrue(pluginHeld.getAdvisories().contains(new UnsupportedApi(market, range(1), 2)));
+
+        ResolutionResult.Ready libraryHeld = (ResolutionResult.Ready) new UpdateResolver(library).resolve(installed, releases,
+            Collections.emptyMap(), UpdateChannel.STABLE, Collections.singleton(library), null, Integer.MAX_VALUE,
+            new ResolverPolicy());
+        assertTrue(changed(libraryHeld).isEmpty());
+        assertEquals(1, libraryHeld.getPlan().getTargetApi());
     }
 
     @Test
@@ -142,46 +204,6 @@ class UpdateResolverTest {
             null, Integer.MAX_VALUE, new ResolverPolicy());
 
         assertEquals(new HashSet<>(Arrays.asList(market, economy)), changed(result));
-    }
-
-    @Test
-    @DisplayName("freeze blocks only a transition that requires the frozen component")
-    void freezeBlocksOnlyATransitionThatRequiresTheFrozenComponent() {
-        ResolutionResult.Blocked result = (ResolutionResult.Blocked) new UpdateResolver(library).resolve(
-            list(installed(library, "2.9.0", range(4), 4), installed(market, "2.7.1", range(4))),
-            list(release(library, "3.0.0", range(5), 5), release(market, "3.0.0", range(5))),
-            Collections.emptyMap(), UpdateChannel.STABLE, Collections.singleton(market),
-            null, Integer.MAX_VALUE, new ResolverPolicy());
-
-        boolean reported = false;
-        for (BlockedReason reason : result.getReasons()) {
-            reported |= reason instanceof BlockedReason.Frozen && ((BlockedReason.Frozen) reason).getProduct().equals(market);
-        }
-        assertTrue(reported);
-        assertEquals(4, result.getFallbackPlan().getTargetApi());
-    }
-
-    @Test
-    @DisplayName("blocks the entire API migration when one installed plugin has no compatible release")
-    void blocksTheEntireApiMigrationWhenOneInstalledPluginHasNoCompatibleRelease() {
-        ResolutionResult.Blocked result = (ResolutionResult.Blocked) resolve(
-            list(installed(library, "1.0.0", range(1), 1), installed(market, "1.0.0", range(1)),
-                installed(economy, "1.0.0", range(1))),
-            list(release(library, "2.0.0", range(2), 2), release(market, "2.0.0", range(2))));
-
-        boolean reported = false;
-        for (BlockedReason reason : result.getReasons()) {
-            reported |= reason instanceof BlockedReason.NoCompatibleRelease
-                && ((BlockedReason.NoCompatibleRelease) reason).getProduct().equals(economy);
-        }
-        assertTrue(reported);
-        boolean libraryUntouched = true;
-        if (result.getFallbackPlan() != null) {
-            for (ProductChange change : result.getFallbackPlan().getChanges()) {
-                libraryUntouched &= !change.getProduct().equals(library);
-            }
-        }
-        assertTrue(libraryUntouched);
     }
 
     @Test

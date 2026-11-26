@@ -6,7 +6,13 @@ import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
+import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary;
+import org.pnfolder.pnlibrary.api.updates.state.ApiRaised;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
+import org.pnfolder.pnlibrary.api.updates.state.UnsupportedApi;
+import org.pnfolder.pnlibrary.api.updates.state.WaitsForLibrary;
+import org.pnfolder.pnlibrary.api.version.PnLibraryApi;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
@@ -66,7 +72,55 @@ public final class UpdateStatusMessages {
                     Character.toUpperCase(subject.charAt(0)) + subject.substring(1) + " уже использует актуальную версию."));
                 break;
         }
+        notices.addAll(advisories(plan, plugin.getProduct()));
         return notices;
+    }
+
+    /** Notes of the plan about one product: it waits for the library, does not support the API, or raises it. */
+    public static @NotNull List<ChatNotice> advisories(@NotNull UpdatePlanSnapshot plan, @NotNull String product) {
+        List<ChatNotice> notes = new ArrayList<>();
+        for (BlockedReason reason : plan.getBlockers()) {
+            if (reason.isAdvisory() && mentions(reason, product)) {
+                notes.add(new ChatNotice(ChatTone.WARNING, sentenceCase(blocker(reason))));
+            }
+        }
+        return notes;
+    }
+
+    /** Whether {@code reason} is about {@code product}. */
+    public static boolean mentions(@NotNull BlockedReason reason, @NotNull String product) {
+        return advisoryProduct(reason).equalsIgnoreCase(product);
+    }
+
+    private static String advisoryProduct(BlockedReason reason) {
+        if (reason instanceof UnsupportedApi) {
+            return ((UnsupportedApi) reason).getProduct().getValue();
+        }
+        if (reason instanceof WaitsForLibrary) {
+            return ((WaitsForLibrary) reason).getProduct().getValue();
+        }
+        if (reason instanceof ApiRaised) {
+            return ((ApiRaised) reason).getProduct().getValue();
+        }
+        return "";
+    }
+
+    /** The warning for a release that raises the library API above the installed one, or null when it does not. */
+    public static @Nullable String riskNote(@NotNull UpdateSnapshot snapshot, @NotNull String version) {
+        if (!snapshot.getProduct().equalsIgnoreCase(PnLibraryIdentity.PRODUCT_ID)) {
+            return null;
+        }
+        for (ReleaseSummary release : snapshot.getAvailableReleases()) {
+            if (release.getVersion().equals(version) && release.getApi() != null
+                && release.getApi().getMaximum() > PnLibraryApi.VERSION) {
+                return "повышает API до " + release.getApi().getMaximum() + ", плагины со старым API могут остаться без обновления";
+            }
+        }
+        return null;
+    }
+
+    private static String sentenceCase(String text) {
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
     private static UpdateState stateOf(UpdatePlanSnapshot plan, UpdateSnapshot plugin, boolean changed) {
@@ -110,6 +164,21 @@ public final class UpdateStatusMessages {
         if (reason instanceof BlockedReason.NoCompatibleRelease) {
             BlockedReason.NoCompatibleRelease none = (BlockedReason.NoCompatibleRelease) reason;
             return "для плагина " + none.getProduct() + " нет версии, совместимой с pnLibrary API " + none.getRequiredApi() + ".";
+        }
+        if (reason instanceof UnsupportedApi) {
+            UnsupportedApi unsupported = (UnsupportedApi) reason;
+            return "плагин " + unsupported.getProduct() + " не поддерживает API " + unsupported.getLibraryApi() + " ("
+                + unsupported.getSupportedApi().getMinimum() + "–" + unsupported.getSupportedApi().getMaximum()
+                + "), нужна новая версия плагина. Он остаётся на своей версии.";
+        }
+        if (reason instanceof WaitsForLibrary) {
+            WaitsForLibrary waits = (WaitsForLibrary) reason;
+            return "плагин " + waits.getProduct() + " v" + waits.getVersion() + " ждёт библиотеку: нужен API "
+                + waits.getRequiredApi() + ", у библиотеки " + waits.getLibraryApi() + ".";
+        }
+        if (reason instanceof ApiRaised) {
+            ApiRaised raised = (ApiRaised) reason;
+            return "обновление библиотеки " + raised.getProduct() + " повышает API до " + raised.getToApi() + " (сейчас " + raised.getFromApi() + ").";
         }
         return "обновление заблокировано: " + reason + ".";
     }

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu.screens.update;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.UpdateStatusMessages;
 import org.pnfolder.pnlibrary.core.menu.screens.PluginPolicyScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.Filter;
 import java.util.ArrayList;
@@ -138,6 +139,13 @@ final class UpdateCardScreens extends MenuScreens {
             List<Fact> parameters = Fact.list("Канал", release.getChannel().name().toLowerCase(Locale.ROOT));
             if (release.getPublishedAt() != null) {
                 parameters.add(new Fact("Выпущен", MenuText.clockTime(release.getPublishedAt())));
+            }
+            if (release.getApi() != null) {
+                parameters.add(new Fact("API", release.getApi().getMinimum() + "–" + release.getApi().getMaximum()));
+            }
+            String risk = UpdateStatusMessages.riskNote(snapshot, release.getVersion());
+            if (risk != null) {
+                parameters.add(new Fact("Внимание", risk));
             }
             if (current) {
                 parameters.add(new Fact("Состояние", "установлена сейчас"));

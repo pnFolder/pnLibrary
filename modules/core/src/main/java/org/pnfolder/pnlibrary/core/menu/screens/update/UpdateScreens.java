@@ -167,6 +167,13 @@ public final class UpdateScreens extends MenuScreens {
                 problems.add(Style.danger(blocker));
             }
         }
+        if (!problem && data().plan() != null) {
+            for (String note : data().plan().getBlockers()) {
+                if (note.contains(snapshot.getProduct())) {
+                    problems.add(Style.danger(note));
+                }
+            }
+        }
         List<Fact> parameters = Fact.list("Версия", snapshot.getCurrentVersion());
         if (snapshot.getLatestVersion() != null) {
             parameters.add(new Fact("Последняя", snapshot.getLatestVersion()));

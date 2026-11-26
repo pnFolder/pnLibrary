@@ -11,7 +11,9 @@ import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct;
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease;
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan;
+import org.pnfolder.pnlibrary.api.updates.state.ApiRaised;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
+import org.pnfolder.pnlibrary.api.updates.state.UnsupportedApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -131,10 +133,10 @@ public final class UpdateResolver {
             Attempt attempt = resolveForApi(installed, allowed, libraryDomain.get(index), frozen, policy);
             if (attempt.plan != null) {
                 if (!attempt.reasons.isEmpty()) {
-                    return new ResolutionResult.Blocked(attempt.reasons, attempt.plan);
+                    return new ResolutionResult.Blocked(withAdvisories(attempt.reasons, attempt.advisories), attempt.plan);
                 }
                 if (index == 0 && primaryFailure == null) {
-                    return new ResolutionResult.Ready(attempt.plan);
+                    return new ResolutionResult.Ready(attempt.plan, attempt.advisories);
                 }
                 return new ResolutionResult.Blocked(primaryFailure == null ? Collections.emptyList() : primaryFailure,
                     attempt.plan);
@@ -148,6 +150,12 @@ public final class UpdateResolver {
             failure.add(0, new BlockedReason.Frozen(libraryComponent));
         }
         return new ResolutionResult.Blocked(new ArrayList<BlockedReason>(new LinkedHashSet<BlockedReason>(failure)), null);
+    }
+
+    private static List<BlockedReason> withAdvisories(List<BlockedReason> reasons, List<BlockedReason> advisories) {
+        List<BlockedReason> all = new ArrayList<BlockedReason>(reasons);
+        all.addAll(advisories);
+        return all;
     }
 
     private boolean newerLibraryExists(List<ProductRelease> allowed, InstalledProduct currentLibrary) {
@@ -164,10 +172,8 @@ public final class UpdateResolver {
         int targetApi = libraryRelease.getProvidesApi();
         Map<ProductId, List<ProductRelease>> domains = new LinkedHashMap<ProductId, List<ProductRelease>>();
         domains.put(libraryComponent, Collections.singletonList(libraryRelease));
-        List<BlockedReason> reasons = installedDomains(installed, releases, targetApi, frozen, policy, domains);
-        if (!reasons.isEmpty()) {
-            return new Attempt(null, reasons);
-        }
+        List<BlockedReason> advisories = installedDomains(installed, releases, targetApi, frozen, policy, domains);
+        advisories.addAll(libraryRaise(installed, targetApi));
         if (policy.getAllowManagedInstalls()) {
             ResolverDomains.addMissingDependencyDomains(domains, releases, targetApi, policy);
         }
@@ -182,17 +188,29 @@ public final class UpdateResolver {
         selected.put(libraryComponent, libraryRelease);
         LinkedHashMap<ProductId, ProductRelease> solution = ResolverSearch.search(ids, 0, domains, selected);
         if (solution == null) {
-            return new Attempt(null, ResolverReasons.dependency(domains, libraryComponent, targetApi));
+            return new Attempt(null, ResolverReasons.dependency(domains, libraryComponent, targetApi), advisories);
         }
-        return plan(installed, releases, domains, solution, targetApi, policy);
+        return plan(installed, releases, domains, solution, targetApi, policy, advisories);
     }
 
+    private List<BlockedReason> libraryRaise(List<InstalledProduct> installed, int targetApi) {
+        List<BlockedReason> raised = new ArrayList<BlockedReason>();
+        for (InstalledProduct product : installed) {
+            Integer provided = product.getProduct().equals(libraryComponent) ? product.getProvidesApi() : null;
+            if (provided != null && targetApi > provided) {
+                raised.add(new ApiRaised(libraryComponent, provided, targetApi));
+            }
+        }
+        return raised;
+    }
+
+    /** Plugin domains under the library's target API; a plugin that cannot follow stays put and is only noted. */
     private List<BlockedReason> installedDomains(List<InstalledProduct> installed, List<ProductRelease> releases, int targetApi,
                                                  Set<ProductId> frozen, ResolverPolicy policy,
                                                  Map<ProductId, List<ProductRelease>> domains) {
         List<InstalledProduct> sorted = new ArrayList<InstalledProduct>(installed);
         Collections.sort(sorted, (left, right) -> left.getProduct().compareTo(right.getProduct()));
-        List<BlockedReason> reasons = new ArrayList<BlockedReason>();
+        List<BlockedReason> notes = new ArrayList<BlockedReason>();
         for (InstalledProduct current : sorted) {
             if (current.getProduct().equals(libraryComponent)) {
                 continue;
@@ -200,20 +218,20 @@ public final class UpdateResolver {
             boolean isFrozen = frozen.contains(current.getProduct());
             List<ProductRelease> domain = ResolverDomains.installedDomain(current, releases, targetApi, isFrozen, policy);
             if (domain.isEmpty()) {
-                if (isFrozen) {
-                    reasons.add(new BlockedReason.Frozen(current.getProduct()));
-                }
-                reasons.add(new BlockedReason.NoCompatibleRelease(current.getProduct(), targetApi));
-            } else {
-                domains.put(current.getProduct(), domain);
+                domain = Collections.singletonList(ResolverDomains.asRelease(current));
+                notes.add(new UnsupportedApi(current.getProduct(), current.getSupportedApi(), targetApi));
+            }
+            domains.put(current.getProduct(), domain);
+            if (!isFrozen) {
+                notes.addAll(ResolverReasons.waitsForLibrary(current, releases, targetApi));
             }
         }
-        return reasons;
+        return notes;
     }
 
     private Attempt plan(List<InstalledProduct> installed, List<ProductRelease> releases,
                          Map<ProductId, List<ProductRelease>> domains, LinkedHashMap<ProductId, ProductRelease> solution,
-                         int targetApi, ResolverPolicy policy) {
+                         int targetApi, ResolverPolicy policy, List<BlockedReason> advisories) {
         Map<ProductId, InstalledProduct> installedById = new HashMap<ProductId, InstalledProduct>();
         for (InstalledProduct product : installed) {
             installedById.put(product.getProduct(), product);
@@ -233,16 +251,18 @@ public final class UpdateResolver {
             reasons.addAll(ResolverReasons.missingDependency(upgrades, domains));
         }
         reasons.addAll(ResolverReasons.missingExternalPlugin(upgrades, policy));
-        return new Attempt(new UpdatePlan(targetApi, changes, ordered), new ArrayList<BlockedReason>(reasons));
+        return new Attempt(new UpdatePlan(targetApi, changes, ordered), new ArrayList<BlockedReason>(reasons), advisories);
     }
 
     private static final class Attempt {
         private final UpdatePlan plan;
         private final List<BlockedReason> reasons;
+        private final List<BlockedReason> advisories;
 
-        Attempt(UpdatePlan plan, List<BlockedReason> reasons) {
+        Attempt(UpdatePlan plan, List<BlockedReason> reasons, List<BlockedReason> advisories) {
             this.plan = plan;
             this.reasons = reasons;
+            this.advisories = advisories;
         }
     }
 }

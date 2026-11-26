@@ -6,6 +6,7 @@ import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct;
 import org.pnfolder.pnlibrary.api.updates.release.ProductDependency;
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
+import org.pnfolder.pnlibrary.api.updates.state.WaitsForLibrary;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 
 import java.util.ArrayList;
@@ -32,6 +33,24 @@ final class ResolverReasons {
             }
         }
         return upgrades;
+    }
+
+    /** The newest newer release of {@code current} that needs a newer API than the library will have, if any. */
+    static List<BlockedReason> waitsForLibrary(InstalledProduct current, List<ProductRelease> releases, int libraryApi) {
+        ProductRelease waiting = null;
+        for (ProductRelease release : releases) {
+            if (release.getProduct().equals(current.getProduct()) && release.getVersion().compareTo(current.getVersion()) > 0
+                && release.getSupportedApi().getMinimum() > libraryApi
+                && (waiting == null || release.getVersion().compareTo(waiting.getVersion()) > 0)) {
+                waiting = release;
+            }
+        }
+        List<BlockedReason> notes = new ArrayList<>();
+        if (waiting != null) {
+            notes.add(new WaitsForLibrary(current.getProduct(), waiting.getVersion(),
+                waiting.getSupportedApi().getMinimum(), libraryApi));
+        }
+        return notes;
     }
 
     static List<BlockedReason> missingDependency(List<ProductRelease> upgrades, Map<ProductId, List<ProductRelease>> domains) {

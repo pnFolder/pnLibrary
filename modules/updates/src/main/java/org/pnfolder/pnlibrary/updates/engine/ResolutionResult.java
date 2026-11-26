@@ -18,10 +18,26 @@ public abstract class ResolutionResult {
     /** Complete compatible resolution. */
     public static final class Ready extends ResolutionResult {
         private final UpdatePlan plan;
+        private final List<BlockedReason> advisories;
 
         /** @param plan atomic compatible update plan */
         public Ready(@NotNull UpdatePlan plan) {
+            this(plan, Collections.emptyList());
+        }
+
+        /**
+         * @param plan atomic compatible update plan
+         * @param advisories notes that do not block the plan (see {@link BlockedReason#isAdvisory()})
+         */
+        public Ready(@NotNull UpdatePlan plan, @NotNull List<BlockedReason> advisories) {
             this.plan = plan;
+            this.advisories = Collections.unmodifiableList(new ArrayList<>(advisories));
+        }
+
+        /** Notes about what the plan leaves out; the plan is installable regardless. */
+        @NotNull
+        public List<BlockedReason> getAdvisories() {
+            return advisories;
         }
 
         @NotNull
@@ -31,17 +47,21 @@ public abstract class ResolutionResult {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof Ready && plan.equals(((Ready) other).plan);
+            if (!(other instanceof Ready)) {
+                return false;
+            }
+            Ready that = (Ready) other;
+            return plan.equals(that.plan) && advisories.equals(that.advisories);
         }
 
         @Override
         public int hashCode() {
-            return plan.hashCode();
+            return 31 * plan.hashCode() + advisories.hashCode();
         }
 
         @Override
         public String toString() {
-            return "Ready(plan=" + plan + ")";
+            return "Ready(plan=" + plan + ", advisories=" + advisories + ")";
         }
     }
 

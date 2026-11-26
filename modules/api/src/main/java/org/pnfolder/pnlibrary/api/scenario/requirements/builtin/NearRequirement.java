@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * Met when the player is within {@code distance} blocks of {@code location}.
  *
- * @throws IllegalArgumentException when {@code location} is not {@code world,x,y,z} or {@code distance} is negative
+ * <p>Reading it fails with {@code IllegalArgumentException} when {@code location} is not {@code world,x,y,z} or {@code distance} is negative
  */
 public final class NearRequirement implements Requirement {
     private final String location;

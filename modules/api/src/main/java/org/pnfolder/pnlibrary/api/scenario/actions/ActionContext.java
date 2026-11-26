@@ -318,7 +318,7 @@ public final class ActionContext implements RequirementContext {
     /**
      * Replaces the placeholders in plain {@code text}, each kind in its own brackets, in one pass:
      *
-     * <table summary="placeholder kinds">
+     * <table><caption>Placeholder kinds</caption>
      * <tr><td>{@code {name}}</td><td>a value of this run (and {@code player}), else a pnLibrary placeholder</td></tr>
      * <tr><td>{@code {name}}, {@code {plugin:key}}</td><td>pnLibrary placeholders: the plugin's own, the library's, another plugin's</td></tr>
      * <tr><td>{@code %name%}</td><td>the external PlaceholderAPI only</td></tr>

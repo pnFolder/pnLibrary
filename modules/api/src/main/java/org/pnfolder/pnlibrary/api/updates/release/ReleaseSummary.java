@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
+import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
 
 /** Minimal release history entry used by status views. */
 public final class ReleaseSummary {
@@ -12,6 +13,7 @@ public final class ReleaseSummary {
     private final UpdateChannel channel;
     private final Instant publishedAt;
     private final String changelogUrl;
+    private final ApiVersionRange api;
 
     /**
      * Creates the entry.
@@ -23,10 +25,21 @@ public final class ReleaseSummary {
      */
     public ReleaseSummary(@NotNull String version, @NotNull UpdateChannel channel, @Nullable Instant publishedAt,
                           @Nullable String changelogUrl) {
+        this(version, channel, publishedAt, changelogUrl, null);
+    }
+
+    /**
+     * Creates an entry that also tells which API generations the release supports.
+     *
+     * @param api API generations the release supports, or null when the catalog does not say
+     */
+    public ReleaseSummary(@NotNull String version, @NotNull UpdateChannel channel, @Nullable Instant publishedAt,
+                          @Nullable String changelogUrl, @Nullable ApiVersionRange api) {
         this.version = Objects.requireNonNull(version, "version");
         this.channel = Objects.requireNonNull(channel, "channel");
         this.publishedAt = publishedAt;
         this.changelogUrl = changelogUrl;
+        this.api = api;
     }
 
     /** Creates an entry with no publication time and no changelog. */
@@ -63,6 +76,12 @@ public final class ReleaseSummary {
         return changelogUrl;
     }
 
+    /** API generations the release supports, or null when the catalog does not say. */
+    @Nullable
+    public ApiVersionRange getApi() {
+        return api;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof ReleaseSummary)) {
@@ -70,12 +89,13 @@ public final class ReleaseSummary {
         }
         ReleaseSummary that = (ReleaseSummary) other;
         return version.equals(that.version) && channel == that.channel
-            && Objects.equals(publishedAt, that.publishedAt) && Objects.equals(changelogUrl, that.changelogUrl);
+            && Objects.equals(publishedAt, that.publishedAt) && Objects.equals(changelogUrl, that.changelogUrl)
+            && Objects.equals(api, that.api);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version, channel, publishedAt, changelogUrl);
+        return Objects.hash(version, channel, publishedAt, changelogUrl, api);
     }
 
     @Override

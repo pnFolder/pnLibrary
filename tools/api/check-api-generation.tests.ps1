@@ -60,14 +60,14 @@ try {
     Invoke-Case 'generation-increase' $base $removal 4 5 0
     Invoke-Case 'generation-decrease' $base $addition 4 3 1
     $repo = Join-Path $testRoot 'all-modules'
-    @('gradle', 'modules/api/api', 'modules/features/config-api/api', 'modules/spi/api', 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version') |
+    @('gradle', 'modules/api/api', 'modules/features/config-api/api', 'modules/spi/api', 'modules/api/src/main/java/org/pnfolder/pnlibrary/api/version') |
         ForEach-Object { New-Item -ItemType Directory -Path (Join-Path $repo $_) -Force | Out-Null }
     [IO.File]::WriteAllText((Join-Path $repo 'gradle/public-modules.properties'), "modules/api=modules/features/config-api`nmodules/features/config-api=`n")
     [IO.File]::WriteAllText((Join-Path $repo 'modules/api/api/api.api'), $base)
     [IO.File]::WriteAllText((Join-Path $repo 'modules/spi/api/spi.api'), $base)
     $configDump = Join-Path $repo 'modules/features/config-api/api/config-api.api'
     [IO.File]::WriteAllText($configDump, $base)
-    [IO.File]::WriteAllText((Join-Path $repo 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'), 'const val VERSION: Int = 4')
+    [IO.File]::WriteAllText((Join-Path $repo 'modules/api/src/main/java/org/pnfolder/pnlibrary/api/version/PnLibraryApi.java'), 'public static final int VERSION = 4;')
     & git -C $repo init --quiet
     & git -C $repo -c user.name=ApiPolicyTest -c user.email=test@example.invalid add .
     & git -C $repo -c user.name=ApiPolicyTest -c user.email=test@example.invalid commit --quiet -m baseline

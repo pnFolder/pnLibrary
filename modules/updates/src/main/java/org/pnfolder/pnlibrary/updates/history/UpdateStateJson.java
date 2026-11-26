@@ -9,7 +9,10 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.updates.product.ProductId;
+import org.pnfolder.pnlibrary.api.updates.state.ApiRaised;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
+import org.pnfolder.pnlibrary.api.updates.state.UnsupportedApi;
+import org.pnfolder.pnlibrary.api.updates.state.WaitsForLibrary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
@@ -67,6 +70,26 @@ final class UpdateStateJson {
         } else if (reason instanceof BlockedReason.Frozen) {
             json.addProperty("type", "frozen");
             json.addProperty("plugin", ((BlockedReason.Frozen) reason).getProduct().getValue());
+        } else if (reason instanceof UnsupportedApi) {
+            UnsupportedApi unsupported = (UnsupportedApi) reason;
+            json.addProperty("type", "unsupported-api");
+            json.addProperty("plugin", unsupported.getProduct().getValue());
+            json.addProperty("minimumApi", unsupported.getSupportedApi().getMinimum());
+            json.addProperty("maximumApi", unsupported.getSupportedApi().getMaximum());
+            json.addProperty("libraryApi", unsupported.getLibraryApi());
+        } else if (reason instanceof WaitsForLibrary) {
+            WaitsForLibrary waits = (WaitsForLibrary) reason;
+            json.addProperty("type", "waits-for-library");
+            json.addProperty("plugin", waits.getProduct().getValue());
+            json.addProperty("version", waits.getVersion().toString());
+            json.addProperty("requiredApi", waits.getRequiredApi());
+            json.addProperty("libraryApi", waits.getLibraryApi());
+        } else if (reason instanceof ApiRaised) {
+            ApiRaised raised = (ApiRaised) reason;
+            json.addProperty("type", "api-raised");
+            json.addProperty("plugin", raised.getProduct().getValue());
+            json.addProperty("fromApi", raised.getFromApi());
+            json.addProperty("toApi", raised.getToApi());
         } else if (reason instanceof BlockedReason.NoCompatibleRelease) {
             BlockedReason.NoCompatibleRelease none = (BlockedReason.NoCompatibleRelease) reason;
             json.addProperty("type", "no-compatible-release");
@@ -107,6 +130,15 @@ final class UpdateStateJson {
                 return new BlockedReason.Frozen(product);
             case "no-compatible-release":
                 return new BlockedReason.NoCompatibleRelease(product, item.get("requiredApi").getAsInt());
+            case "unsupported-api":
+                return new UnsupportedApi(product,
+                    new ApiVersionRange(item.get("minimumApi").getAsInt(), item.get("maximumApi").getAsInt()),
+                    item.get("libraryApi").getAsInt());
+            case "waits-for-library":
+                return new WaitsForLibrary(product, SemanticVersion.parse(item.get("version").getAsString()),
+                    item.get("requiredApi").getAsInt(), item.get("libraryApi").getAsInt());
+            case "api-raised":
+                return new ApiRaised(product, item.get("fromApi").getAsInt(), item.get("toApi").getAsInt());
             default:
                 throw new IllegalStateException("Unknown update blocker type: " + type);
         }
