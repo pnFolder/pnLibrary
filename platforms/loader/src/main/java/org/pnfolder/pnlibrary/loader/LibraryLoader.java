@@ -10,13 +10,13 @@ import java.util.function.Function;
  *
  * <p>Libby downloads each file, checks its SHA-256 and adds it to the plugin classloader. Where it downloads from
  * is set by {@link LibrarySettings}; what it downloads is listed in {@link RuntimeLibraries}. The full JARs already
- * hold Kotlin, so nothing is downloaded for them.
+ * hold Adventure, so nothing is downloaded for them.
  *
- * <p>Only Kotlin is loaded at start. Everything else is optional and loaded by {@link #loadOptional} the moment
+ * <p>Only Adventure is loaded at start. Everything else is optional and loaded by {@link #loadOptional} the moment
  * something needs it, so a server that never uses a database backup or a remote policy downloads nothing for them.
  */
 public final class LibraryLoader {
-    private static final String PROBE = "kotlin.Unit";
+    private static final String PROBE = "net.kyori.adventure.text.minimessage.MiniMessage";
     // 3.26 is the last ECJ that runs on Java 8; the newer one needs Java 17.
     private static final int MODERN_COMPILER_JAVA = 17;
 
@@ -27,7 +27,7 @@ public final class LibraryLoader {
     }
 
     /**
-     * Loads {@code libraries} as {@code settings} say, unless Kotlin is already visible to {@code loader}.
+     * Loads {@code libraries} as {@code settings} say, unless Adventure is already visible to {@code loader}.
      * @throws LibraryLoadException if a library cannot be loaded after every attempt
      */
     public static void load(LibraryManager manager, ClassLoader loader, LibrarySettings settings, Library... libraries) {

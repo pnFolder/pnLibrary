@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -7,7 +6,7 @@ plugins {
 base { archivesName = "${rootProject.property("pnlibrary.name")}-common" }
 
 dependencies {
-    api(libs.kotlin.stdlib)
+    compileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
 }
@@ -16,8 +15,6 @@ java {
     withSourcesJar()
 }
 
-// The Maven Central javadoc artifact is produced by Dokka, so module metadata must wait for it explicitly.
-tasks.matching { it.name == "generateMetadataFileForMavenPublication" }.configureEach { dependsOn("dokkaJavadocJar") }
 
 mavenPublishing {
     publishToMavenCentral()

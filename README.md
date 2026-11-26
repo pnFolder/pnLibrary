@@ -6,7 +6,7 @@
 Что даёт плагинам:
 
 - **Обновления.** Каталог релизов, каналы (stable, rc, beta, alpha, dev), проверка SHA-256, подготовка к
-  перезапуску, резервные копии и откат, история с автором каждого действия, пауза до 7 дней.
+  перезапуску, резервные копии и откат, история с автором каждого действия, пауза до 5 дней.
 - **Диагностика.** Журнал событий `/pn events` со стеком вызовов и сводкой ошибок при входе администратора,
   «чёрный ящик» с удалением секретов, зашифрованный отчёт `/pn debug` для поддержки.
 - **Метрики.** bStats и FastStats через один интерфейс, с уважением настройки отключения bStats.
@@ -26,7 +26,7 @@
 |---|---|
 | `/pn` или `/pn updates` | каталог плагинов и обновлений |
 | `/pn updates info <плагин>` | карточка плагина |
-| `/pn updates settings <плагин>` | канал, автозагрузка, пауза |
+| `/pn updates settings <плагин>` | канал, пауза |
 | `/pn updates history` | история обновлений |
 | `/pn updates backups` | резервные наборы для отката |
 | `/pn check`, `/pn update <плагин>` | проверить, подготовить обновление |
@@ -37,8 +37,11 @@
 | `/pn money` | управление валютами плагинов |
 | `/pn stats` | почасовая статистика ошибок, задач и событий |
 | `/pn placeholders [test <адрес>]` | список и проверка плейсхолдеров |
+| `/pn registry [вид] [страница]` | всё зарегистрированное: плейсхолдеры, форматы, действия, сервисы, расширения; `find <текст>` ищет по всем |
+| `/pn cooldowns <игрок> [clear]` | что держит игрока в каждом плагине; `clear` сбрасывает |
+| `/pn downloads [now]` | файлы, которые плагины попросили скачать, и их состояние; `now` запускает |
 | `/pn bus`, `/pn tasks` | шина событий, задачи плагинов |
-| `/pn servers`, `/pn support` | серверы сети, обращение в поддержку |
+| `/pn servers`, `/pn notices`, `/pn support` | серверы сети, важные объявления (кому нужен перезапуск), обращение в поддержку |
 | `/pn debug [all\|плагин]` | отчёт для поддержки |
 
 На BungeeCord и Velocity команда называется `/pnproxy` (коротко `/pnp`): каталог обновлений, `events`, `bus`, `tasks`, `stats`, `placeholders`, `debug`, `servers` и `groups` (группы серверов есть только на прокси). Все команды обновлений и права описаны
@@ -51,7 +54,11 @@
 | `pnlibrary.admin` | всё управление pnLibrary |
 | `pnlibrary.events.view` | `/pn events` и сводку ошибок при входе |
 | `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
-| `pnlibrary.placeholders` | `/pn placeholders`: список и проверка плейсхолдеров |
+| `pnlibrary.placeholders` | `/pn placeholders`: список, `info` и проверка плейсхолдеров |
+| `pnlibrary.actions` | `/pn actions`: именованные действия, требования и функции плагинов |
+| `pnlibrary.registry` | `/pn registry`: просмотр реестров с владельцем и видимостью |
+| `pnlibrary.cooldowns` | `/pn cooldowns`: просмотр и сброс кулдаунов игрока |
+| `pnlibrary.downloads` | `/pn downloads`: просмотр и запуск загрузок |
 | `pnlibrary.debug` | `/pn debug` |
 | `pnlibrary.tasks` | `/pn tasks` |
 | `pnlibrary.events.bus` | `/pn bus` |
@@ -75,6 +82,20 @@ dependencies {
 
 Какие модули подключать и как собрать библиотеку локально, не публикуя, описано в [integration/README.md](integration/README.md).
 
+### Как получить библиотеку для сборки плагина
+
+pnLibrary не публикуется в Maven Central. Библиотеку скачивают из исходников нужной версии и ставят в локальный Maven-репозиторий своего компьютера:
+
+```powershell
+git clone https://github.com/pnFolder/pnLibrary.git
+cd pnLibrary
+git checkout v0.1.0-dev.6
+./gradlew.bat publishToMavenLocal --no-build-cache
+```
+
+После этого в `build.gradle.kts` плагина достаточно `repositories { mavenLocal() }` и зависимости нужной версии (`io.github.pnfolder:pnlibrary-api:0.1.0-dev.6`). Версия в зависимости должна совпадать с тегом, который вы поставили.
+Готовые jar для сервера лежат в [релизах GitHub](https://github.com/pnFolder/pnLibrary/releases). Сборка плагина на GitHub Actions без этого шага не найдёт библиотеку, поэтому плагины собираются и выпускаются локально.
+
 ```kotlin
 val library = PnLibraryProvider.get()
 val registration = library.plugins.register(this)
@@ -92,7 +113,7 @@ API состоит из интерфейсов, моделей и небольш
 ./gradlew :distribution:shadowUniversal  # distribution/build/libs/pnLibrary-<версия>-universal.jar
 ```
 
-Кроме лёгкого `universal` (Kotlin и Adventure скачиваются при старте) есть `universal-full` (`shadowUniversalFull`):
+Кроме лёгкого `universal` (Adventure скачивается при старте) есть `universal-full` (`shadowUniversalFull`):
 всё внутри, ничего не скачивается. Он лежит в релизе GitHub как ручная загрузка и в каталог обновлений не входит.
 Платформенные сборки: `shadowBukkit`, `shadowBungee`, `shadowVelocity`.
 
@@ -113,7 +134,7 @@ API состоит из интерфейсов, моделей и небольш
 - [Действия и требования](docs/actions.md)
 - [Каталог релизов](docs/releases.md)
 - [Ручная проверка перед выпуском](docs/verification.html)
-- [Плейсхолдеры](docs/placeholders.md), [пример](docs/placeholders-example.md)
+- [Плейсхолдеры](docs/placeholders.md)
 - [Хранилища](docs/storage.md)
 - [Задачи](docs/tasks.md)
 - [Диагностика](docs/diagnostics.md)

@@ -3,7 +3,7 @@ param(
     [string]$BaseApiPath,
     [string]$CurrentApiPath = 'modules/api/api/api.api',
     [string]$BaseVersionPath,
-    [string]$CurrentVersionPath = 'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt',
+    [string]$CurrentVersionPath = 'modules/api/src/main/java/org/pnfolder/pnlibrary/api/version/PnLibraryApi.java',
     # Project version such as 0.0.1-dev.4. Defaults to gradle.properties; a -dev version has no published API to protect.
     [string]$ProjectVersion
 )
@@ -33,7 +33,7 @@ function Read-InputText {
 
 function Read-ApiGeneration {
     param([string]$Source)
-    $match = [regex]::Match($Source, 'const\s+val\s+VERSION\s*:\s*Int\s*=\s*(\d+)')
+    $match = [regex]::Match($Source, '(?:const\s+val\s+VERSION\s*:\s*Int|int\s+VERSION)\s*=\s*(\d+)')
     if (-not $match.Success) { throw 'PnLibraryApi.VERSION was not found' }
     return [int]$match.Groups[1].Value
 }
@@ -87,8 +87,8 @@ $baseApi = if ($allModules) { '' } elseif ($BaseRef) {
 }
 $baseVersionSource = if ($BaseRef) {
     Read-GitFileWithFallback $BaseRef `
-        'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt' `
-        'pnlibrary-api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'
+        'modules/api/src/main/java/org/pnfolder/pnlibrary/api/version/PnLibraryApi.java' `
+        'modules/api/src/main/kotlin/org/pnfolder/pnlibrary/api/version/PnLibraryApi.kt'
 } else {
     Read-InputText $BaseVersionPath $null
 }

@@ -1,0 +1,18 @@
+// Init script of the pnFolder dev workspace.
+// Makes every plugin build use the pnLibrary that was published from the working tree (`dev.ps1 lib-publish`)
+// instead of the version written in the plugin's own build file. Nothing in the plugin repositories changes.
+def localVersion = System.getenv('PN_LOCAL_VERSION') ?: '0.1.0-dev.local'
+
+allprojects {
+    repositories {
+        mavenLocal()
+    }
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'io.github.pnfolder' && details.requested.name.startsWith('pnlibrary')) {
+                details.useVersion(localVersion)
+                details.because('pnFolder dev workspace: build against the local pnLibrary')
+            }
+        }
+    }
+}

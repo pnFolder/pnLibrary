@@ -1,131 +1,98 @@
 public final class org/pnfolder/pnlibrary/api/plugin/ModuleId {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/ModuleId$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Ljava/lang/String;
+	public fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
-	public static final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
+	public static fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class org/pnfolder/pnlibrary/api/plugin/ModuleId$Companion {
-	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/ModuleId;
-}
-
-public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Companion;
-	public synthetic fun <init> (ZZLjava/util/Set;Ljava/util/Set;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun allows (Lorg/pnfolder/pnlibrary/api/plugin/PluginId;Lorg/pnfolder/pnlibrary/api/plugin/PluginId;)Z
-	public static final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun getAllowAll ()Z
-	public final fun getAllowedPatterns ()Ljava/util/Set;
-	public final fun getAllowedPlugins ()Ljava/util/Set;
-	public final fun getDeniedPlugins ()Ljava/util/Set;
-	public final fun getOwnerAllowed ()Z
-	public static final fun only ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-	public static final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-	public static final fun shared ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-}
-
-public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder {
-	public final fun allow ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun allowAll ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun allowMatching ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun build ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-	public final fun deny ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun denyAll ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun owner ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-}
-
-public final class org/pnfolder/pnlibrary/api/plugin/PluginAccess$Companion {
-	public final fun builder ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess$Builder;
-	public final fun only ([Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-	public final fun ownerOnly ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
-	public final fun shared ()Lorg/pnfolder/pnlibrary/api/plugin/PluginAccess;
 }
 
 public final class org/pnfolder/pnlibrary/api/plugin/PluginId {
-	public static final field Companion Lorg/pnfolder/pnlibrary/api/plugin/PluginId$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getValue ()Ljava/lang/String;
+	public fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
-	public static final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
+	public static fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/plugin/PluginId$Companion {
-	public final fun of (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/plugin/PluginId;
-}
-
 public final class org/pnfolder/pnlibrary/common/concurrent/FailureThrottle {
-	public static final field MAX_KEYS I
 	public fun <init> ()V
-	public fun <init> (JLkotlin/jvm/functions/Function0;)V
-	public synthetic fun <init> (JLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun shouldReport (Ljava/lang/String;)Z
+	public fun <init> (J)V
+	public fun <init> (JLjava/util/function/LongSupplier;)V
+	public fun shouldReport (Ljava/lang/String;)Z
 }
 
 public final class org/pnfolder/pnlibrary/common/concurrent/ManagedWorker : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;I)V
+	public fun <init> (Ljava/lang/String;II)V
 	public fun <init> (Ljava/lang/String;IILjava/time/Duration;)V
-	public synthetic fun <init> (Ljava/lang/String;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
-	public final fun queued ()I
-	public final fun submit (Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
+	public fun queued ()I
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public final class org/pnfolder/pnlibrary/common/io/AtomicFiles {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/AtomicFiles;
-	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;)V
-	public static final fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;Z)V
-	public static synthetic fun move$default (Ljava/nio/file/Path;Ljava/nio/file/Path;ZILjava/lang/Object;)V
-	public static final fun write (Ljava/nio/file/Path;Lkotlin/jvm/functions/Function1;)V
-	public static final fun write (Ljava/nio/file/Path;ZLkotlin/jvm/functions/Function1;)V
-	public static final fun write (Ljava/nio/file/Path;[B)V
-	public static final fun write (Ljava/nio/file/Path;[BZ)V
-	public static synthetic fun write$default (Ljava/nio/file/Path;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static synthetic fun write$default (Ljava/nio/file/Path;[BZILjava/lang/Object;)V
+	public static fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;)V
+	public static fun move (Ljava/nio/file/Path;Ljava/nio/file/Path;Z)V
+	public static fun write (Ljava/nio/file/Path;Ljava/util/function/Consumer;)V
+	public static fun write (Ljava/nio/file/Path;ZLjava/util/function/Consumer;)V
+	public static fun write (Ljava/nio/file/Path;[B)V
+	public static fun write (Ljava/nio/file/Path;[BZ)V
 }
 
 public final class org/pnfolder/pnlibrary/common/io/Digests {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/Digests;
-	public static final fun hex ([B)Ljava/lang/String;
-	public static final fun sha256 (Ljava/nio/file/Path;)Ljava/lang/String;
-	public static final fun sha256 ([B)Ljava/lang/String;
+	public static fun hex ([B)Ljava/lang/String;
+	public static fun sha256 (Ljava/nio/file/Path;)Ljava/lang/String;
+	public static fun sha256 ([B)Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/common/io/TextFiles {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/TextFiles;
-	public final fun read (Ljava/nio/file/Path;Ljava/nio/charset/Charset;)Ljava/lang/String;
-	public static synthetic fun read$default (Lorg/pnfolder/pnlibrary/common/io/TextFiles;Ljava/nio/file/Path;Ljava/nio/charset/Charset;ILjava/lang/Object;)Ljava/lang/String;
-	public final fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;[Ljava/nio/file/OpenOption;)Ljava/nio/file/Path;
-	public static synthetic fun write$default (Lorg/pnfolder/pnlibrary/common/io/TextFiles;Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;[Ljava/nio/file/OpenOption;ILjava/lang/Object;)Ljava/nio/file/Path;
+	public static fun read (Ljava/nio/file/Path;)Ljava/lang/String;
+	public static fun read (Ljava/nio/file/Path;Ljava/nio/charset/Charset;)Ljava/lang/String;
+	public static fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;)Ljava/nio/file/Path;
+	public static fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;)Ljava/nio/file/Path;
+	public static fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;Ljava/nio/charset/Charset;[Ljava/nio/file/OpenOption;)Ljava/nio/file/Path;
+	public static fun write (Ljava/nio/file/Path;Ljava/lang/CharSequence;[Ljava/nio/file/OpenOption;)Ljava/nio/file/Path;
 }
 
 public final class org/pnfolder/pnlibrary/common/io/TsvRecords {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/io/TsvRecords;
-	public final fun escape (Ljava/lang/String;)Ljava/lang/String;
-	public final fun read (Ljava/nio/file/Path;)Ljava/util/List;
-	public final fun unescape (Ljava/lang/String;)Ljava/lang/String;
-	public final fun write (Ljava/nio/file/Path;Ljava/lang/String;Ljava/util/List;)Z
+	public static fun escape (Ljava/lang/String;)Ljava/lang/String;
+	public static fun read (Ljava/nio/file/Path;)Ljava/util/List;
+	public static fun unescape (Ljava/lang/String;)Ljava/lang/String;
+	public static fun write (Ljava/nio/file/Path;Ljava/lang/String;Ljava/util/List;)Z
 }
 
 public final class org/pnfolder/pnlibrary/common/jvm/JavaRuntime {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/jvm/JavaRuntime;
-	public static final fun getFeature ()I
+	public static fun getFeature ()I
+}
+
+public final class org/pnfolder/pnlibrary/common/lang/Attempt {
+	public fun exceptionOrNull ()Ljava/lang/Throwable;
+	public fun fold (Ljava/util/function/Function;Ljava/util/function/Function;)Ljava/lang/Object;
+	public fun getOrDefault (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getOrElse (Ljava/util/function/Function;)Ljava/lang/Object;
+	public fun getOrNull ()Ljava/lang/Object;
+	public fun isFailure ()Z
+	public fun isSuccess ()Z
+	public fun onFailure (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/common/lang/Attempt;
+	public fun onSuccess (Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/common/lang/Attempt;
 }
 
 public final class org/pnfolder/pnlibrary/common/lang/Failures {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/lang/Failures;
-	public static final fun rethrowIfFatal (Ljava/lang/Throwable;)V
+	public static fun rethrowIfFatal (Ljava/lang/Throwable;)V
+	public static fun runCatchingNonFatal (Ljava/util/concurrent/Callable;)Lorg/pnfolder/pnlibrary/common/lang/Attempt;
 }
 
-public final class org/pnfolder/pnlibrary/common/lang/FailuresKt {
-	public static final fun runCatchingNonFatal (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+public final class org/pnfolder/pnlibrary/common/lang/Pair {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFirst ()Ljava/lang/Object;
+	public fun getSecond ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersion : java/lang/Enum {
-	public static final field Companion Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion$Companion;
 	public static final field UNKNOWN Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public static final field V1_10 Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public static final field V1_10_1 Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
@@ -199,132 +166,87 @@ public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersion : ja
 	public static final field V1_9_4 Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public static final field V26_1 Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public static final field V26_2 Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public static final fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getKnown ()Z
-	public final fun getMajor ()I
-	public final fun getMinor ()I
-	public final fun getPatch ()I
-	public final fun getText ()Ljava/lang/String;
-	public final fun inRange (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
-	public final fun isAtLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isAtMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isBetween (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isNewerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isOlderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isSameOrNewerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isSameOrOlderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun isSameReleaseLine (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public static final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public static final fun parseInfo (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
-	public static final fun range (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun rangeTo (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun supported ()Ljava/util/List;
+	public static fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun getMajor ()I
+	public fun getMinor ()I
+	public fun getPatch ()I
+	public fun getText ()Ljava/lang/String;
+	public fun inRange (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
+	public fun isAtLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isAtMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isBetween (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isKnown ()Z
+	public fun isNewerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isOlderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isSameOrNewerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isSameOrOlderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public fun isSameReleaseLine (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public static fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public static fun parseInfo (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public static fun range (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun supported ()Ljava/util/List;
 	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public static fun values ()[Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 }
 
-public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersion$Companion {
-	public final fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun parse (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun parseInfo (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
-	public final fun range (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun supported ()Ljava/util/List;
-}
-
 public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo {
 	public fun <init> (Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;)V
-	public final fun compareNumeric (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;)Ljava/lang/Integer;
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun component3 ()Ljava/lang/Integer;
-	public final fun component4 ()Ljava/lang/Integer;
-	public final fun component5 ()Ljava/lang/Integer;
-	public final fun copy (Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;Ljava/lang/String;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Object;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;
+	public fun compareNumeric (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionInfo;)Ljava/lang/Integer;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getKnown ()Z
-	public final fun getMajor ()Ljava/lang/Integer;
-	public final fun getMinor ()Ljava/lang/Integer;
-	public final fun getNumeric ()Z
-	public final fun getParsed ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun getPatch ()Ljava/lang/Integer;
-	public final fun getRaw ()Ljava/lang/String;
+	public fun getMajor ()Ljava/lang/Integer;
+	public fun getMinor ()Ljava/lang/Integer;
+	public fun getParsed ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public fun getPatch ()Ljava/lang/Integer;
+	public fun getRaw ()Ljava/lang/String;
 	public fun hashCode ()I
+	public fun isKnown ()Z
+	public fun isNumeric ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange {
-	public static final field Companion Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;
 	public fun <init> (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;ZZ)V
-	public static final fun allKnown ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun between (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun betweenExclusive (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun component1 ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun component2 ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun component3 ()Z
-	public final fun component4 ()Z
-	public final fun contains (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public final fun copy (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;ZZ)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static synthetic fun copy$default (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;ZZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun allKnown ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun between (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun betweenExclusive (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun contains (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
 	public fun equals (Ljava/lang/Object;)Z
-	public static final fun exact (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun excludes (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
-	public static final fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun getIncludeMaximum ()Z
-	public final fun getIncludeMinimum ()Z
-	public final fun getMaximum ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
-	public final fun getMinimum ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public static fun exact (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun excludes (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Z
+	public static fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun getMaximum ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
+	public fun getMinimum ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;
 	public fun hashCode ()I
-	public final fun intersection (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun isExact ()Z
-	public static final fun newerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun olderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun overlaps (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
+	public fun intersection (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun isExact ()Z
+	public fun isIncludeMaximum ()Z
+	public fun isIncludeMinimum ()Z
+	public static fun newerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun olderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public fun overlaps (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;)Z
 	public fun toString ()Ljava/lang/String;
-	public static final fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static final fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-}
-
-public final class org/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange$Companion {
-	public final fun allKnown ()Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun atLeast (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun atMost (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun between (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun betweenExclusive (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun exact (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun from (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static synthetic fun from$default (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun newerThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun olderThan (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public final fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
-	public static synthetic fun until$default (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange$Companion;Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;ZILjava/lang/Object;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
+	public static fun until (Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersion;Z)Lorg/pnfolder/pnlibrary/common/minecraft/MinecraftVersionRange;
 }
 
 public final class org/pnfolder/pnlibrary/common/text/RussianText {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/text/RussianText;
-	public static final fun ago (Ljava/time/Duration;)Ljava/lang/String;
-	public static final fun counted (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public static final fun period (Ljava/time/Duration;)Ljava/lang/String;
-	public static final fun plural (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public static final fun remaining (Ljava/time/Duration;)Ljava/lang/String;
+	public static fun ago (Ljava/time/Duration;)Ljava/lang/String;
+	public static fun counted (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static fun period (Ljava/time/Duration;)Ljava/lang/String;
+	public static fun plural (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static fun remaining (Ljava/time/Duration;)Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/common/text/Wildcards {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/text/Wildcards;
-	public static final fun matches (Ljava/lang/String;Ljava/lang/String;)Z
+	public static fun matches (Ljava/lang/String;Ljava/lang/String;)Z
 }
 
 public final class org/pnfolder/pnlibrary/common/time/DisplayZone {
-	public static final field INSTANCE Lorg/pnfolder/pnlibrary/common/time/DisplayZone;
-	public final fun getZone ()Ljava/time/ZoneId;
-	public final fun setZone (Ljava/time/ZoneId;)V
+	public static fun getZone ()Ljava/time/ZoneId;
+	public static fun setZone (Ljava/time/ZoneId;)V
 }
 

@@ -1,7 +1,7 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.api.placeholders.model.PlaceholderKey;
+import org.pnfolder.pnlibrary.api.placeholders.info.ViewerInfo;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 
 import java.time.Duration;
@@ -12,9 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ApiValidationJavaTest {
     @Test
-    void placeholderKeysRejectInvalidNamesFromJava() {
-        assertEquals("balance", PlaceholderKey.of("balance", Long.class).getValue());
-        assertThrows(IllegalArgumentException.class, () -> PlaceholderKey.of("Bad Key", String.class));
+    void viewersWorkFromJava() {
+        assertEquals("en", ViewerInfo.none().getLanguage());
+        assertThrows(RuntimeException.class, () -> ViewerInfo.none().requirePlayerId());
     }
 
     @Test

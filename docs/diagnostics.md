@@ -26,6 +26,10 @@ DiagnosticRegistration reg = PnLibraryProvider.get().getDiagnostics().register("
 
 ## Отчёт `/pn debug`
 
+`/pn debug` всегда кладёт в архив всё: логи, журнал наблюдений и конфигурации плагинов. Флагов для состава нет. Единственный
+аргумент `--local` сохраняет файл на сервере без отправки. Что вошло в архив, написано в `manifest.json` (`logs`, `configs`); если
+администратор выключил логи или конфиги настройкой библиотеки, там будет `false`.
+
 Отчёт зашифрован, расшифровывает его поддержка (`tools/support/decode_pnsupport.py`). Настройка `privacy`
 (`/pn settings set privacy true`, по умолчанию `false`) скрывает имена, UUID, адреса и пинг игроков. Значения в конфигах плагинов скрывает
 аннотация `@ConfigSecret`, см. [configuration.md](configuration.md).

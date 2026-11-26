@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.console.ReportedFailure;
 /** Checks the console card that {@link StartupFailure} prints when pnLibrary cannot start. */
 class StartupFailureTest {
     private static final Library LIBRARY =
-            Library.builder().groupId("org.jetbrains.kotlin").artifactId("kotlin-stdlib").version("2.1.21").build();
+            Library.builder().groupId("net.kyori").artifactId("adventure-api").version("4.21.0").build();
 
     private static String render(Throwable error, LibrarySettings settings) {
         List<String> lines = StartupFailure.card(ConsoleTheme.plain(), settings,
@@ -29,7 +29,7 @@ class StartupFailureTest {
 
         String text = render(error, LibrarySettings.DEFAULT);
 
-        assertTrue(text.contains("org.jetbrains.kotlin:kotlin-stdlib:2.1.21"), text);
+        assertTrue(text.contains("net.kyori:adventure-api:4.21.0"), text);
         assertTrue(text.contains("timed out"), text);
         assertTrue(text.contains("попыток: 3"), text);
         assertTrue(text.contains("repo1.maven.org"), text);

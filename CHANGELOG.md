@@ -3,7 +3,22 @@
 ## Ветка next (0.1.0-dev)
 
 - Версия 0.1.0-dev.6: API несовместим с dev.5, поколение API (`PnLibraryApi.VERSION`) поднято с 1 до 2. Плагины, которые объявляли `pnLibraryApi(1, 1)`, нужно перевести на новое API и объявить `pnLibraryApi(2, 2)`.
+- Плейсхолдеры: владелец и видимость. Плейсхолдеры, форматы и конвертеры принадлежат модулю и снимаются с ним; `Visibility` (`MODULE`, `PLUGIN`, `ALL`) задаётся на `@Placeholder`/`@Placeholders` и решает, кому плейсхолдер виден (форматы и конвертеры всегда общие), побеждает ближайший, одинаковые адреса дают предупреждение. В адресе и в формате можно писать владельца: `{shop/main@shop.price|~~~@upper}` (`~` свой плагин, `~~` свой модуль, `~~~` библиотека). Плейсхолдер может быть внутри плейсхолдера: `{clan.of.{player.name}.level}`, до 16 уровней. `PlaceholderService.converter(type, converter)` заменяет `ArgumentAdapters` для модуля. Описание: `docs/placeholders.md`.
+- Действия, требования и функции выражений: уровень `DefinitionScope.PLUGIN`, побеждает ближайший владелец (раньше имя было одно на всех и конфликт был ошибкой), владельца можно написать перед именем: `~@give-kit`, `~~@give-kit`, `shop/main@give-kit`. Определения модуля снимаются при его закрытии.
+- Убран `PluginAccess` и всё, что на нём стояло: `currency.access(...)`, `CurrencyPlaceholderOptions.access`, `CurrencyProviderRegistry.register(..., access)` и `ConfigScope.extensions(...)`. Валюты и типы конфигураций доступны всем плагинам; в плагинах нужно удалить эти вызовы. Для плейсхолдеров, форматов и действий остаётся `Visibility` (`MODULE`, `PLUGIN`, `ALL`).
+- Команды и меню: `/pn placeholders info <адрес>` и новая команда `/pn actions` (право `pnlibrary.actions`, раздел «Действия» в `/pn gui`) показывают владельца, видимость и все формы записи с `~`, `~~`, `~~~`, `плагин/модуль@`. Скрытый чужой плейсхолдер пишет в лог, почему он не виден.
+- Аудитории (пакет `api.audience`, как в Adventure и `spi.audience`; ломает API: `CommandSender` теперь `Audience`):
+  - Вместо `LibraryAudience` и `AudienceSender` обычный Adventure `Audience`. Имя, `displayName`, `locale`, права и вид отправителя (`isPlayer`, `isConsole`, `id`) читаются расширениями из указателей Adventure. Платформы строят указатели сами (`senderPointers`, для игроков `playerPointers`), поэтому проверка прав работает на любой версии Minecraft, а не только там, где сервер сам отдаёт `PermissionChecker`.
+  - `Audiences` (`PnLibrary.audiences`): `console()`, `server()`, `players()`, `player(uuid | name)`, `filter { }`, `withPermission()`, `of(native)`. Рассылка по группе не прерывается из-за одного получателя, это работает для всех методов Adventure (заголовки, боссбар, звук, книга).
+  - `OnlinePlayer` только `uniqueId` и указатели. Остальное методами с умолчанием «не умею» (`addEffect`, `spawnParticle`, `runCommand`, `countItems`, `experienceLevel`, `position`), как у Adventure; Bukkit переопределяет, прокси нет. Значения без игрока в `api.world`: `StatusEffect`, `Particle`, `Position`, `ItemMatcher`.
+  - `Delivery` переписан в один класс-отчёт: `status` (`DELIVERED`, `PARTIAL`, `UNSUPPORTED`, `FAILED`), `receipts` (ответ каждого получателя: имя, исход, причина сбоя), `delivered`, `failures`, `failure`, `orThrow()`. Фабрики `Delivery.delivered()`, `unsupported()`, `failed(cause)`, `of(accepted)`, `combine(...)`, `to(audience) { }`. Вместо прежних `Delivered`/`Unsupported`/`Failed`. `Audience.deliver { it.sendMessage(...) }` работает для любой аудитории Adventure: одного получателя или группы (каждый получает операцию, даже если другой упал; пустая группа это `UNSUPPORTED`; частичный успех теперь `PARTIAL`, а не потерян).
+  - Звук и заголовок больше не возвращают `Delivery`; он остался у эффектов, частиц и команд. `LibraryAudience.dynamic` заменён функцией `dynamicAudience`.
+- Чат: подпапка `api.chat.style` убрана. `ChatPalette` лежит в `api.chat`, `ChatTone`, `ChatNotice` и `ConfirmChoice` собраны в один файл `ChatMessages.kt`. Меняется только путь импорта: `api.chat.style.ChatPalette` стал `api.chat.ChatPalette`, то же для `ChatTone` и `color`. В `ChatKit` кнопки команд (`button`, `option`) используют один общий код.
 ### Сценарии в одной папке
+- Отчёт `/pn debug`: папки модулей читаются как `plugins/pnclans/modules/war/` вместо `m-pnclans-war-<хеш>`. `/pn debug pnClans` теперь включает и модули плагина (раньше их записи не попадали в отчёт по имени плагина).
+- Отчёт `/pn debug`: логи, журнал наблюдений и конфигурации входят всегда. Флаги состава убраны совсем (`--full`, `--logs`, `--config`), остался только `--local`; со старыми флагами команда ответит «Неизвестные аргументы». В `manifest.json` вместо `diagnosticsMode` поля `logs` и `configs`.
+- Плейсхолдеры: у `PlaceholderBuilder` убраны `publishToPlaceholderApi()` и `publishToPlaceholderApi(namespace)`. Остались `publish(PlaceholderPublication)` и `publishToPlaceholderApi(namespace, name)`: имя в PlaceholderAPI всегда задаётся явно.
+- Убрано из билдеров: `RemotePolicySettings.support(url)` (ссылка помощи всегда одна, из библиотеки) и `PluginUpdateRequest.Builder.channel(...)` / `automaticDownload(...)`. Канал и автозагрузку выбирает администратор командами `/pn updates set` и в меню; по умолчанию стабильный канал и автозагрузка плагинов включена, у самой библиотеки выключена. В плагинах нужно удалить эти вызовы.
 - Загрузки: `maxBytes` задаёт наибольший размер для одного файла, больше или меньше общего потолка в 512 МБ (`FileDownload`, `variant`, зависимости).
 - Загрузки: без SHA-256 файл берётся с первой ссылки, которая ответила; сравнение копий между зеркалами и запоминание сумм убраны, остальные адреса служат запасными.
 - Зависимости плагинов, варианты файла: `variant(...)` задаёт отдельный файл под платформу и версию Minecraft со своими ссылкой, SHA-256 и зеркалами; скачивается и проверяется только подходящий. В меню появился экран «Что не хватает» со скачиванием группы кликом.
@@ -13,6 +28,9 @@
 - Меню «Библиотеки плагинов»: сначала выбор плагина (сколько у него библиотек, модулей, какой размер, есть ли конфликт версий) или «Все библиотеки» одним списком; у библиотеки «Принадлежит» (плагину или модулю плагина), «Файл» и «Папка» считаются от папки сервера, а не обрезанный хвост пути.
 - Диск: `/pn modules disk` и кнопка «Диск плагинов» в меню показывают, сколько места занимает каждый плагин сервера (jar, настройки, библиотеки, журналы, данные), сколько свободно на диске. У библиотек плагинов видны размер и место, где лежит jar.
 - Библиотеки: на плагин (`PluginRegistration.libraries`) и на модуль, `title` и `description` у библиотеки и у модуля (`metadata { description(...) }`), `loadClass`, `find`, `remove`, `PluginRegistry.allModules()` и `libraryUsage()`, `/pn modules libs|plugins`, экраны «Библиотеки». `shared()` на Bukkit и BungeeCord грузит в загрузчик плагина-владельца.
+- Версии Minecraft плагина и модуля: `supportedMinecraft(от, до)`, `supportedMinecraft(версия)`, `supportedMinecraftOnly(...)`, `supportedMinecraftFrom`, `supportedMinecraftUpTo` (константой `MinecraftVersion` или текстом) на `registration` и в `registerModule`, `onNewerMinecraft(NewerAction)`, `onUnsupportedMinecraft(UnsupportedAction)`, результат `ModuleContext.minecraft` (`MinecraftSupport`), `/pn modules mc force`. Версии сравниваются числами, поэтому новый релиз не ломает «от версии».
+- Управление библиотекой, как у модуля: состояние `LibraryState` (загружена, выключена, ошибка, пропущена), `ModuleLibraries.statuses/status/setAutoLoad/retry`, выбор администратора сохраняется между перезапусками, команда `/pn modules lib enable|disable|retry`, состояния в `/pn modules libs`. Общие настройки `setup.libraryDefaults {}` и условие `setup.library(lib) { … }`.
+- Библиотеки в регистрации: `setup.library(...)` и `setup.libraries(...)` в билдере `registerModule` (по координатам, готовой `ModuleLibrary` или с настройкой), без блока `libraries:` в `plugin.yml`.
 - Библиотеки модуля: `PluginModule.libraries()` и `ModuleLibrary`. Откуда качать: один список мест `source { link(...) | repository(...) }`, у каждого своя сумма и имя, сколько угодно; пробуются по порядку, затем Maven Central, первое рабочее побеждает. `LibraryScope` (плагин, отдельный загрузчик, pnLibrary), `platforms`, необязательность, классификатор.
 - Модули: `registerModule(id, PluginModule)` с методами `onEnable`/`onDisable`/`onReload`, `ModuleContext.control` (`enable`, `disable`, `restart`, `reload`, `autoStart`), команда `/pn modules` и экраны меню «Модули плагинов» (также кнопка «Модули» в карточке плагина). Выключенные навсегда модули хранятся в `data/modules/preferences.json`. Подробности в `docs/modules.md`.
 - Обновления: в карточке продукта можно выбрать сборку Java (`UpdateService.setJavaBuild`, `UpdateSnapshot.javaBuilds/javaBuild/recommendedJava`, команда `/pn updates set <плагин> java <n|default>`). Без выбора берётся сборка, как у установленного продукта.
@@ -253,7 +271,7 @@
 
 - `playSound`, `showTitle`, `applyEffect`, `spawnParticle` и `runCommand` возвращают `Delivery` вместо `Boolean`:
   `Delivered`, `Unsupported` или `Failed(причина)`. Проверка успеха — `delivery.isDelivered`. Нужно поправить свои реализации
-  `LibraryPlayer` и `LibraryAudience`.
+  `OnlinePlayer` и `LibraryAudience`.
 - У билдеров `PlaceholderAccess`, `RemotePolicyContext`, `ConfigOptions`, `ConfigTypeAccess`, `CurrencyAccess` и
   `CurrencyDescriptor` конструктор стал `internal`: создавайте их через `builder()`. Тест архитектуры следит, чтобы публичных
   конструкторов у билдеров больше не появлялось.
@@ -376,7 +394,7 @@
   `ActionService.context(..., checks = ...)`. `check(context)` — только ответ, `test(context)` — ответ и действия.
 
 **Пакеты**
-- `LibraryPlayer`, `LibraryAudience`, `PlayerEffect`, `PlayerParticle`, `ItemQuery` → `api.audiences`.
+- `OnlinePlayer`, `LibraryAudience`, `PlayerEffect`, `PlayerParticle`, `ItemQuery` → `api.audiences`.
 - `DependencyBuilder`, `PluginDependency`, `DownloadPolicy`, `VersionConstraint`, `ExternalPluginDependency`,
   `ExternalArtifact`, `ManagedProductDependency` → `api.dependencies`.
 - `MetricsBuilder`, `MetricsController` → `api.metrics`; `RemotePolicySettings`, `DenyAction`,

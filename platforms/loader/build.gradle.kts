@@ -1,5 +1,5 @@
 // pnlibrary-loader — Java-only helper that downloads the runtime libraries a light JAR leaves out.
-// Nothing here may need Kotlin: it runs before Kotlin is on the classpath.
+// Nothing here may need Adventure: it runs before Adventure is on the classpath.
 import java.security.MessageDigest
 import java.util.Base64
 import org.gradle.api.artifacts.ResolvedArtifact
@@ -34,14 +34,14 @@ val platformLibraries: Map<String, List<Root>> = mapOf(
     // The runtime uses MiniMessage, the plain-text and Gson serializers; the light JAR packs no net.kyori, so they come from here.
     // Velocity brings all of them with Adventure itself.
     "BUKKIT" to listOf(
-        lib(libs.kotlin.stdlib), lib(libs.adventure.legacy), lib(libs.adventure.platform.bukkit),
+        lib(libs.adventure.legacy), lib(libs.adventure.platform.bukkit),
         lib(libs.adventure.minimessage), lib(libs.adventure.plain),
     ),
     "BUNGEE" to listOf(
-        lib(libs.kotlin.stdlib), lib(libs.adventure.legacy),
+        lib(libs.adventure.legacy),
         lib(libs.adventure.minimessage), lib(libs.adventure.plain), lib(libs.adventure.gson),
     ),
-    "VELOCITY" to listOf(lib(libs.kotlin.stdlib)),
+    "VELOCITY" to emptyList(),
     // The compiler for remote policies, loaded only on a server that runs a JRE without javac.
     "COMPILER_LEGACY" to listOf(lib(libs.ecj.legacy)),
     "COMPILER_MODERN" to listOf(lib(libs.ecj.modern)),
@@ -127,5 +127,3 @@ sourceSets.named("main") { java.srcDir(generatedSources) }
 tasks.named("compileJava") { dependsOn(generateRuntimeLibraries) }
 tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(generateRuntimeLibraries) }
 
-// This module has no Kotlin plugin, so the shared test setup does not reach it.
-tasks.test { useJUnitPlatform() }

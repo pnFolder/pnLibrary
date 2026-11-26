@@ -19,7 +19,7 @@ class RuntimeLibrariesTest {
         Set<String> names = names(RuntimeLibraries.BUKKIT);
         for (String required : new String[] {
             "adventure-api", "adventure-text-minimessage", "adventure-text-serializer-plain",
-            "adventure-text-serializer-legacy", "adventure-text-serializer-gson", "adventure-platform-bukkit", "kotlin-stdlib"
+            "adventure-text-serializer-legacy", "adventure-text-serializer-gson", "adventure-platform-bukkit"
         }) {
             assertTrue(names.contains(required), "Bukkit list lacks " + required);
         }
@@ -30,7 +30,7 @@ class RuntimeLibrariesTest {
         Set<String> names = names(RuntimeLibraries.BUNGEE);
         for (String required : new String[] {
             "adventure-api", "adventure-text-minimessage", "adventure-text-serializer-plain",
-            "adventure-text-serializer-legacy", "adventure-text-serializer-gson", "kotlin-stdlib"
+            "adventure-text-serializer-legacy", "adventure-text-serializer-gson"
         }) {
             assertTrue(names.contains(required), "BungeeCord list lacks " + required);
         }

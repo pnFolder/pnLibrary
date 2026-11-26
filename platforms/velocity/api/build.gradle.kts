@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     `java-library`
     alias(libs.plugins.maven.publish)
 }
@@ -32,8 +31,8 @@ base { archivesName = "${rootProject.property("pnlibrary.name")}-velocity-api" }
 
 dependencies {
     api(project(":modules:api"))
-    api(libs.kotlin.stdlib)
     compileOnly(libs.velocity.api)
+    compileOnly(libs.jetbrains.annotations)
 }
 
 java {

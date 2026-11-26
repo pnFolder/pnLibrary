@@ -1,41 +1,14 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import kotlinx.validation.KotlinApiBuildTask
+import kotlinx.validation.KotlinApiCompareTask
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
+    base
     jacoco
-    alias(libs.plugins.kotlin.jvm) apply false
-    id("com.diffplug.spotless") version "8.10.4"
     alias(libs.plugins.shadow)     apply false
-    alias(libs.plugins.dokka)
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
-}
-
-// Source style is enforced by ktlint with only the rules named in .editorconfig, and runs as part of `check`.
-// `./gradlew spotlessApply` fixes what can be fixed automatically (imports, whitespace, blank lines).
-spotless {
-    kotlin {
-        target("modules/**/*.kt", "platforms/**/*.kt")
-        targetExclude("**/build/**")
-        ktlint()
-    }
-}
-
-apiValidation {
-    ignoredProjects.addAll(
-        listOf(
-            "core",
-            "updates",
-            "distribution",
-            "runtime",
-            "faststats",
-            "paper",
-            "currency-runtime",
-            "config-runtime",
-        ),
-    )
 }
 
 repositories {
@@ -75,38 +48,41 @@ subprojects {
         }
     }
 
-    // Wire up Kotlin source sets for all subprojects that apply kotlin("jvm")
-    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-        pluginManager.apply("org.jetbrains.dokka")
+    // The binary-compatibility-validator plugin only wires itself into Kotlin projects, and there is no Kotlin plugin
+    // any more, so its tasks are registered here for every module that keeps a golden dump in `api/<name>.api`.
+    // `apiDump` (rewrite the dump) and `apiCheck` (compare, part of `check`) behave as before.
+    val dumpName = "$name.api"
+    if (file("api/$dumpName").exists()) {
+        pluginManager.withPlugin("java") {
+            val bcvRuntime = configurations.create("bcvRuntime") {
+                isCanBeConsumed = false
+                // The metadata reader only has to parse class files, any 2.x release does.
+                listOf("org.ow2.asm:asm:9.6", "org.ow2.asm:asm-tree:9.6", "org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.21")
+                    .forEach { this@subprojects.dependencies.add(name, it) }
+            }
+            val main = extensions.getByType<SourceSetContainer>().getByName("main")
+            val apiBuild = tasks.register<KotlinApiBuildTask>("apiBuild") {
+                inputClassesDirs.from(main.output.classesDirs)
+                outputApiFile.set(layout.buildDirectory.file("api/$dumpName"))
+                runtimeClasspath.from(bcvRuntime)
+            }
+            tasks.register<KotlinApiCompareTask>("apiCheck") {
+                group = "verification"
+                description = "Compares the public API with the golden dump in api/$dumpName"
+                projectApiFile.set(layout.projectDirectory.file("api/$dumpName"))
+                generatedApiFile.set(apiBuild.flatMap { it.outputApiFile })
+            }
+            tasks.register<Copy>("apiDump") {
+                group = "other"
+                description = "Rewrites api/$dumpName from the compiled classes"
+                from(apiBuild.flatMap { it.outputApiFile })
+                into(layout.projectDirectory.dir("api"))
+            }
+            tasks.named("check") { dependsOn("apiCheck") }
+        }
+    }
 
-        extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
-            dokkaSourceSets.configureEach {
-                reportUndocumented.set(true)
-                perPackageOption {
-                    matchingRegex.set("org\\.bstats(?:\\..*)?")
-                    suppress.set(true)
-                }
-            }
-            dokkaPublications.configureEach {
-                suppressObviousFunctions.set(true)
-            }
-        }
-
-        tasks.withType<KotlinCompile>().configureEach {
-            compilerOptions {
-                jvmTarget.set(JvmTarget.fromTarget(if (javaRelease == 8) "1.8" else javaRelease.toString()))
-                freeCompilerArgs.addAll(
-                    "-Xjvm-default=all",
-                    "-opt-in=kotlin.RequiresOptIn"
-                )
-            }
-        }
-        // Bytecode target alone does not prevent calls to newer JDK APIs.
-        tasks.named<KotlinCompile>("compileKotlin") {
-            compilerOptions.freeCompilerArgs.add(
-                compilerOptions.jvmTarget.map { "-Xjdk-release=${it.target.removePrefix("1.")}" },
-            )
-        }
+    pluginManager.withPlugin("java") {
         tasks.withType<Test>().configureEach {
             useJUnitPlatform()
         }
@@ -181,25 +157,3 @@ tasks.named("check") {
     )
 }
 
-dependencies {
-    dokka(project(":modules:common"))
-    dokka(project(":modules:api"))
-    dokka(project(":modules:spi"))
-    dokka(project(":modules:core"))
-    dokka(project(":modules:updates"))
-    dokka(project(":modules:features:currency-api"))
-    dokka(project(":modules:features:currency-runtime"))
-    dokka(project(":modules:features:localization-api"))
-    dokka(project(":modules:bootstrap"))
-    dokka(project(":platforms:bukkit:bootstrap"))
-    dokka(project(":platforms:bungee:bootstrap"))
-    dokka(project(":platforms:velocity:bootstrap"))
-    dokka(project(":modules:console"))
-    dokka(project(":platforms:bukkit:api"))
-    dokka(project(":platforms:bukkit:localization"))
-    dokka(project(":platforms:bungee:api"))
-    dokka(project(":platforms:velocity:api"))
-    dokka(project(":platforms:bukkit:runtime"))
-    dokka(project(":platforms:bungee:runtime"))
-    dokka(project(":platforms:velocity:runtime"))
-}

@@ -1,160 +1,156 @@
 # Плейсхолдеры
 
-Плейсхолдер — именованное значение, которое плагин отдаёт другим плагинам и текстам. Есть два способа писать их:
+Плейсхолдер — значение, которое плагин отдаёт текстам, меню, сценариям и PlaceholderAPI. Значения описываются **классом с аннотациями**, а не строками регистрации.
 
-- **дерево** (рекомендуется): значения описываются как ветки с путями и аргументами, один блок на модуль;
-- **ключи** (`ModuleContext.placeholders.register(...)`): по одному плейсхолдеру, ниже в разделе «Ключи».
-
-Рабочий пример на все возможности: [placeholders-example.md](placeholders-example.md). Устройство и решения:
-[placeholders-plan.md](placeholders-plan.md).
+Код лежит в `api/placeholders`, движок в `core/placeholders`. Примеры кода (компилируются вместе с тестами): `modules/core/src/test/java/org/pnfolder/pnlibrary/core/placeholders/examples/`.
 
 ## Адрес
 
-Полный адрес: `плагин/модуль:путь`, например `pnclans/war:score.Alex.kills`. Внутри своего плагина можно коротко:
-`{score}` (ищется во всех модулях плагина). В тексте адрес пишут в фигурных скобках: `{pnclans/war:score}`.
-
-В PlaceholderAPI тот же плейсхолдер виден как `%префикс_модуль~путь%`, если его группа опубликована
-(`placeholders(papi = "clans") { ... }`): `%clans_war~score.Alex%`. Ветки с `inside()` наружу не выходят.
-
-## Как писать в тексте
-
-В тексте (сообщение действия, строка конфига) значения пишутся одним способом, в фигурных скобках:
-
-| Запись | Что читается |
-|---|---|
-| `{имя}` | сначала значение этого запуска (`player`, `price`, `error`), затем плейсхолдер pnLibrary своего плагина |
-| `{плагин/модуль:путь}` | плейсхолдер pnLibrary: свой, библиотеки или чужого плагина |
-| `{papi:имя}` | только PlaceholderAPI: `{papi:server_tps}` |
-| `{= выражение}` | расчёт: `{= level * 2}` |
-| `%имя%` | PlaceholderAPI в привычной записи; нужна, когда текст читают и другие плагины |
-
-После `|` идёт цепочка форматов: `{price|number:2}`, `{money|group}`. Если имя есть и среди значений запуска, и среди
-плейсхолдеров, побеждает значение запуска; чужой плейсхолдер можно взять полным адресом. Неизвестное имя остаётся в тексте
-как написано, чтобы опечатка была видна. Квадратные скобки ничего не значат: `[pnTest]` в префиксе остаётся текстом.
-В выражениях то же имя пишется без скобок: `level * 2`.
-
-## Дерево
+`{группа.ветка.аргумент.поле|формат|формат}`. Скобки в коде необязательны, в тексте обязательны.
 
 ```kotlin
-module.placeholders(papi = "clans") {
-    int("score") {                         // {pnclans/war:score}
-        value { clans.scoreOf(player) }    // player: для кого рендерим, может быть null
-        player("who") {                    // {pnclans/war:score.Alex}   ник или UUID
-            value { clans.scoreOf(arg) }
-            int("kills") { value { clans.killsOf(arg) } }
-        }
-        int("top") {                       // {pnclans/war:score.top}
-            value { clans.topScore(1) }
-            param("place", int, range = 1..100) {   // {pnclans/war:score.top.3}
-                value { clans.topScore(arg) }
-            }
-        }
-    }
+@Placeholders("clan")                       // группа
+class ClanValues {
+    @Placeholder("Уровень клана")                    // значение
+    fun level(@Viewer viewer: ViewerInfo): Reply<Int> = Reply.of(Clans.of(viewer.requirePlayerId())?.level)
+
+    @Placeholder fun top(@Argument(range = "1..100") place: ArgumentValue<Int>): Reply<Clan> = Reply.next(Clans.top(place.required()))
+
+    @Placeholder val tag: Reply<String> = Reply.of("WLF")
 }
 ```
 
-Слово ветки: `int`, `number`, `text`, `bool`, `value(name, Class)`. Аргумент из пути: `player(name)`, `param(name, тип)`,
-`param(name, int, range)`, `choice(name, "a", "b")`. Внутри ветки:
+Подключение в `onEnable` модуля, закрывается вместе с модулем:
 
-| Что | Для чего |
-|---|---|
-| `value { ... }` | значение; `null` значит «нет значения». `valueAsync` — через `CompletionStage` |
-| `arg`, `argOf("имя")` | последний аргумент пути, или любой по имени |
-| `player`, `caller`, `values` | для кого рендерим, какой плагин спрашивает, значения от вызывающего |
-| `format("имя")`, `format(none)` | формат ветки |
-| `access { ... }` | кто может читать |
-| `update(allowOnly("плагин")) { текст -> ... }` | разрешить запись значения |
-| `inside()` | только для `{...}`, в PlaceholderAPI не публиковать |
+```kotlin
+module.placeholders.formats(ClanFormats())
+module.placeholders.registerPublished("pnclans", ClanValues())   // без PlaceholderAPI: register(ClanValues())
+```
 
-Ветка без `value` только группирует: `{score}` ничего не вернёт, а `{score.kills}` вернёт.
+## Что можно в методе
 
-## Генерация из данных
+- `@Viewer viewer: ViewerInfo` в параметрах (аннотация обязательна): кто спрашивает (`playerId`, `language`, `viaPapi`). Без игрока `viewer.requirePlayerId()` тихо оставляет плейсхолдер пустым.
+- `ArgumentValue<T>`: часть адреса. `value`, `text`, `error`, `required()`, `orMe(viewer)`, `orElse(...)`. Параметры уточняет `@Argument(range, choices, name)`; несколько аргументов собираются в класс, параметр с ним помечается `@Group`: `fun kills(@Group query: KillsQuery)`.
+- `Reply.none()` (или `Reply.of(null)`) значит «значения нет». Что показать вместо него, решает `@Placeholder(onInvalid = KEEP/DEFAULT/EMPTY, defaultText = "...")`.
+- `Reply.next(объект)`: объект с такими же `@Placeholder`: так получаются ветки `clan.war.score`. `CompletableFuture` годится для асинхронных значений.
+- `@Hide` прячет значение из списков и из PlaceholderAPI.
 
-| Вызов | Что получится |
-|---|---|
-| `from<Clan>("clan") { clans.clanOf(player) }` | ветка на каждое свойство класса: `clan.name`, `clan.tag`; вложенный объект раскрывается на один уровень: `clan.leader.name` |
-| `from<Clan>("clanof", by = "who") { clans.clanOf(arg) }` | то же, но игрок берётся из пути: `clanof.Alex.name` |
-| `table("price", keys = { shop.items() }) { item -> shop.priceOf(item) }` | `price.sword`, `price.apple` |
-| `list("top5", size = { 5 }) { place -> clans.topName(place) }` | `top5.1` … `top5.5` |
-
-У результата `from` можно убрать лишнее и переименовать: `.only(Clan::name, Clan::members).rename(Clan::members, "size")`.
-Простыми считаются поля `java.*`, `kotlin.*`, `net.kyori.*`, перечисления и массивы; остальное раскрывается.
+Типы аргументов: числа, `Boolean`, `UUID`, `Duration` (`1h30m`), `PlayerRef` (имя или UUID, `me`), перечисления. Свой тип: `placeholders.converter(Clan::class.java, ClanByName())` в модуле (он снимается вместе с модулем); для всего сервера есть `ArgumentAdapters.register`.
 
 ## Форматы
 
-Формат превращает значение в текст: `{score|group}` даёт `1 234`. Они выстраиваются цепочкой: `{score|round:1|pad:6}`.
-
-Встроенные: `number`, `round`, `percent`, `money`, `group`, `short`, `duration`, `date`, `upper`, `lower`, `title`,
-`capitalize`, `pad`, `trim`, `default`, `plural`, `boolean`. Аргументы пишутся после `:` через запятую: `{score|round:1}`,
-`{score|pad:5,0}`.
-
-Свои форматы модуля:
+Формат после чёрточки: `{clan.money|short}`, цепочкой `{clan.money|round:1|group}`. Свой формат пишется методом:
 
 ```kotlin
-module.formats {
-    format<Int>("rank") { "#$it" }
-    format<Int>("pad0") { n, args -> n.toString().padStart(args.first().toInt(), '0') }
+class ClanFormats {
+    @Format("rank") fun rank(n: Int): String = "#$n"
+    @Format("pad0") fun pad0(n: Int, @Argument width: ArgumentValue<Int>): String = n.toString().padStart(width.required(), '0')
 }
 ```
 
-Чужой формат вызывается по адресу: `{pnshop/main:price|pnclans/war:rank}`, с аргументами `|pnclans/war:pad0:3`.
+`@UseFormat("имя")` на методе или классе задаёт формат по умолчанию, `|raw` его отключает. Формат модуля главнее встроенного.
 
-Какой формат применится, решают четыре уровня, каждый следующий сильнее: нет формата → формат группы
-(`format("group")` в блоке) → формат ветки → формат в тексте. `format(none)` отключает формат по умолчанию,
-`|raw` в тексте отключает его для одного значения.
+Встроенные (числа и время зависят от языка зрителя): `group`, `short`, `round`, `percent`, `pad`, `sign`, `roman`, `ifpos`, `upper`, `lower`, `title`, `cut`, `wrap`, `default`, `yesno`, `icon`, `map`, `left`, `hms`. Список: `/pn placeholders formats`.
 
-## Доступ
+## Имена, которые известны только во время работы
 
-По умолчанию читать может любой плагин библиотеки. Меняется в `access { ... }` на группе или ветке:
-`allowAll()`, `denyAll()`, `allowOnly("pnshop", "pnbank")`, `deny("pnspy")`. Запрет всегда сильнее разрешения. Отказ не
-ломает текст: плейсхолдер остаётся в нём как есть, причина попадает в `/pn events`.
+Для валют, настроек и т. п. без класса:
 
-## Чтение и подстановка
+```kotlin
+val handle = module.placeholders.value("shop.coins", "Монеты игрока") { viewer -> coins(viewer.playerId) }
+handle.close()   // убрать раньше времени
+```
 
-`ModuleContext.placeholders` (`PlaceholderService`) читает и подставляет:
+## Текст и значения запуска
 
-| Метод | Что делает |
+```kotlin
+module.placeholders.render("Клан {clan.tag}, монет {amount|group}", playerId, mapOf("amount" to 1500))
+```
+
+Имя из `values` главнее зарегистрированных. После подстановки PlaceholderAPI заполняет свои `%токены%`.
+
+## PlaceholderAPI
+
+С `registerPublished("pnclans", ...)` адрес `clan.war.score` виден как `%pnclans_clan_war_score%` (`_` разделяет части; настоящий `_` в аргументе пишется `~5F`). Префикс: 2–32 символа `a-z 0-9 -`. Выключить для модуля целиком: `placeholderApi(false)` в настройках модуля.
+
+Части адреса с точкой, чёрточкой, двоеточием или запятой берут в кавычки (`clan.friend."a.b"`); код `~XX` пишет символ по его шестнадцатеричному коду (`~7C` — `|`).
+
+## Команды и меню
+
+`/pn placeholders [страница]` список (адрес, тип, формат, описание, имена в PlaceholderAPI), `/pn placeholders info <адрес>` (владелец, видимость и все формы адреса: как есть, этот модуль, весь плагин, мой модуль, мой плагин, с форматом), `/pn placeholders formats`, `/pn placeholders test <адрес> [uuid]`. Право `pnlibrary.placeholders`. Тот же список в `/pn gui`.
+
+Свои значения библиотеки: `{pnlibrary.version}`, `{pnlibrary.plugins}`, `{pnlibrary.uptime}`, `{pnlibrary.server.platform}`, `{pnlibrary.stats.errors}` и другие.
+
+## Маршрут и ранний ответ
+
+- `@Route route: RouteInfo` отдаёт методу весь адрес по частям. Каждая часть помечена: `GROUP` (группа), `BRANCH` (ветка), `ARGUMENT` (аргумент), `FIELD` (поле, последнее слово со значением), `FORMAT` (формат, с аргументами после двоеточия). Есть `route.path`, `route.field`, `route.of(kind)`, `route.after("war")`, `route.hasFormat("pad0")`.
+- `Reply.stop(значение)` внутри метода-ветки обрывает адрес и отдаёт это значение: ниже методы не вызываются.
+- `@Placeholder(onInvalid = EMPTY)` на ветке действует на все текстовые листья под ней, у которых своего `onInvalid` нет.
+- Без `@Route` и `@Viewer` параметры типов `RouteInfo` и `ViewerInfo` не принимаются: при регистрации будет ошибка.
+
+## Свой разбор аргумента
+
+`ArgumentConverter<T>` превращает текст аргумента в объект: `read(input)` (синхронно) или `readLater(input)` (когда ответ приходит позже, например из базы). Указывается на параметре: `@Argument(converter = ClanByName::class) clan: ArgumentValue<Clan>`, а для типа целиком: `placeholders.converter(Clan::class.java, ClanByName())`. В `ArgumentInput` лежат `text`, `viewer`, `route`, `name`, `position`, `previous` (аргументы слева); `input.fail("причина")` говорит, почему текст не подошёл: причина попадёт в `ArgumentValue.error`. `suggest(input)` отдаёт подходящие слова для подсказок. Примеры: `modules/core/src/test/.../placeholders/examples/ClanByName.java`.
+
+## Асинхронные значения и ветки
+
+Метод (лист) и ветка могут вернуть `CompletableFuture`: `fun stats(): CompletableFuture<ServerStats>`. Следующие методы адреса ждут ответа, поток вызова не блокируется. Ветка, которая позже оказалась пустой (`null`), заканчивает адрес тихо; `answer(...)` внутри работает так же. Блокирующий вызов в обычном методе (без `CompletableFuture`) блокирует вызывающего: из PlaceholderAPI на главном потоке ответ пропадёт.
+
+## Reply: ответ, продолжение или ничего
+
+Каждый метод и свойство с `@Placeholder` возвращает `Reply<T>` или `CompletableFuture<Reply<T>>`; обычный тип возврата (`Int`, объект) при регистрации класса отвергается ошибкой.
+
+- `Reply.value(x)`: ответ, адрес заканчивается. `Reply.value(x, format = "coins")`: ответ со своим форматом (адрес без формата использует его, `|raw` отключает).
+- `Reply.next(объект)`: продолжение, дальше методы объекта с `@Placeholder`.
+- `Reply.stop(x)`: ответ из ветки, ниже ничего не вызывается.
+- `Reply.none()`: значения нет, адрес остаётся как написан. `Reply.of(x)`: ответ, если `x` есть, иначе `none`.
+
+Тип внутри решает, что это: `Reply<Int>` лист, `Reply<WarInfo>` ветка. Асинхронно: `CompletableFuture<Reply<WarInfo>>`. Для `Duration` по умолчанию формат `left` (`1ч 35м`, а не `PT1H35M`). `@Placeholder(onInvalid = DEFAULT/EMPTY)` теперь работает и на числовых листьях: вместо адреса подставляется текст.
+
+## Владелец и видимость
+
+Каждый плейсхолдер, формат и конвертер принадлежит модулю (`плагин/модуль`) и снимается, когда модуль закрывается. Кто может пользоваться плейсхолдером, задаёт `Visibility` на свойстве, методе или классе (`@Placeholder(visibility = ...)`, `@Placeholders("shop", visibility = ...)`); если заданы оба, действует более узкий. Форматы и конвертеры всегда общие.
+
+| Значение | Кому видно |
 |---|---|
-| `resolve(expression, playerId, values)` | значение одного плейсхолдера; `null`, если он неизвестен |
-| `render(template, playerId, values)` | подставляет все плейсхолдеры в текст: сначала `{...}`, потом остаток `%...%` через PlaceholderAPI |
-| `update(expression, value, playerId, values)` | меняет записываемое значение |
-| `contains(expression)` | есть ли такой видимый плейсхолдер |
-| `provider(pluginId)` | доступ к ключам одного плагина |
-
-Все методы возвращают `CompletionStage` и безопасны из любых потоков. Резолверы и форматы могут вызываться параллельно,
-поэтому должны быть потокобезопасны. Неизвестный плейсхолдер остаётся в тексте как есть и один раз попадает в журнал.
-
-Встроенные плейсхолдеры библиотеки (`pnlibrary/main:`): `version`, `plugins`, `uptime` (секунды), `stats.errors`, `stats.warnings`, `stats.tasks`, `stats.tasks.failed`, `stats.events`.
-
-## Команда `/pn placeholders`
-
-Нужно право `pnlibrary.placeholders`.
-
-- `/pn placeholders [страница]` — список всех плейсхолдеров с типом, форматом и именами в PlaceholderAPI;
-- `/pn placeholders test <адрес> [uuid игрока]` — посчитать значение и показать, что получилось;
-- то же есть на странице `/pn gui`.
-
-## Ключи
-
-Ключ типизирован: `PlaceholderKey.of("balance", Long::class.java)`. Значение настраивается в билдере
-(`PlaceholderBuilder`): откуда брать, кто может читать (`PluginAccess`), как кэшировать (`PlaceholderCachePolicy`,
-`PlaceholderCacheScope`).
+| `MODULE` | только модулю, который зарегистрировал |
+| `PLUGIN` | всем модулям этого же плагина |
+| `ALL` (по умолчанию) | всем плагинам и PlaceholderAPI |
 
 ```kotlin
-val registration = context.placeholders.register("balance", Long::class.java) { builder ->
-    // настройка резолвера, доступа и кэша
+@Placeholders("shop")
+class ShopValues {
+    @Placeholder("Цена")
+    val price: Reply<Int> get() = Reply.of(10)                          // ALL
+
+    @Placeholder("Счётчик", visibility = Visibility.MODULE)
+    val counter: Reply<Int> get() = Reply.of(42)                        // только этот модуль
 }
-// registration.close() снимает плейсхолдер
+
+module.placeholders.registerPublished("shop", ShopValues())
+module.placeholders.value("shop.level", "", null, Visibility.PLUGIN) { 10 }   // без аннотации
 ```
 
-Закрытие `PlaceholderService` снимает всё, что зарегистрировано через него.
+`/pn placeholders test` — для оператора: вычисляет и скрытые плейсхолдеры.
 
-В ключе можно объявить параметры в фигурных скобках: `player.stat.{name}` совпадёт с `player.stat.kills`, а резолвер
-получит `request.parameter("name")`. Параметр занимает ровно один сегмент между точками.
+Если имя встречается несколько раз, отвечает ближайший: свой модуль, свой плагин, остальные, встроенные. Одинаковые адреса у двух владельцев дают предупреждение. В `/pn placeholders` у адресов не `ALL` стоит пометка `[module]` или `[plugin]`.
 
-Если плейсхолдер опубликован в PlaceholderAPI (`publishToPlaceholderApi()`), всё после ключа приходит одним значением:
-`%pnrelog_player_Steve_Alex%` вызовет плейсхолдер `player`, а резолвер получит `request.parameter("value")` = `Steve_Alex`.
-Выбирается самый длинный подходящий ключ, поэтому ключи не должны без нужды начинаться друг с друга.
+### Владелец в адресе
 
-Именованный формат для значений типа: `formatter(name, type, formatter)`. Адаптеры к внешним системам (например,
-PlaceholderAPI): `adapters()`; возможности и состояние описывают `PlaceholderAdapterCapabilities` и `PlaceholderAdapterState`.
+Перед адресом и перед форматом можно написать владельца и `@`:
+
+```
+{shop.price}                  ближайший
+{shop/main@shop.price}        именно этот модуль
+{shop@shop.price}             любой модуль плагина shop
+{~@shop.price}                только мой плагин
+{~~@shop.price}               только мой модуль
+{~~~@shop.price}              только библиотека
+{shop/main@shop.name|~~~@upper}   владелец у плейсхолдера и у формата
+```
+
+`~` (плагин), `~~` (модуль), `~~~` (библиотека): чем больше знаков, тем ближе к модулю, три знака это библиотека. Они не могут совпасть с именем плагина. Если владелец написан, значения запуска (`values`) не читаются, ищется только среди зарегистрированного. Если такого владельца нет или он не виден, адрес остаётся в тексте как написан, а формат пропускается.
+
+### Плейсхолдер внутри плейсхолдера
+
+Любая часть адреса может быть плейсхолдером: `{clan.of.{player.name}.level}`, аргумент формата `{score|pad:{width}}`, владелец `{{owner}@shop.price}`. Внутренний читается первым, его значение подставляется в кавычках (если в нём есть точка, пробел и т.п.). Вложенность до 16 уровней, больше отклоняется с предупреждением. Если внутренний не дал значения, внешний остаётся в тексте как написан. Значение с `{` внутри заново не разбирается.

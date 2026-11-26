@@ -12,7 +12,7 @@ public final class ConsoleTree {
 
     private ConsoleTree(Builder builder) {
         this.text = builder.text;
-        this.children = Collections.unmodifiableList(new ArrayList<ConsoleTree>(builder.children));
+        this.children = Collections.unmodifiableList(new ArrayList<>(builder.children));
     }
 
     /** Returns this node's text.
@@ -34,7 +34,7 @@ public final class ConsoleTree {
     /** Fluent builder for immutable console explanation trees. */
     public static final class Builder {
         private final String text;
-        private final List<ConsoleTree> children = new ArrayList<ConsoleTree>();
+        private final List<ConsoleTree> children = new ArrayList<>();
 
         private Builder(String text) {
             if (text == null || text.trim().isEmpty()) throw new IllegalArgumentException("tree text is required");

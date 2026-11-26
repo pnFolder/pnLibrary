@@ -1,13 +1,10 @@
 package org.pnfolder.pnlibrary.api.architecture;
 
-import org.pnfolder.pnlibrary.api.plugin.PluginAccess;
-
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
-import org.pnfolder.pnlibrary.api.placeholders.PlaceholderRegistration;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderService;
-import org.pnfolder.pnlibrary.api.remote.DenyAction;
+import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
 import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
@@ -20,11 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ApiStyleJavaTest {
-    private static PlaceholderRegistration<String> registerPlaceholder(PlaceholderService service) {
-        return service.register("status", String.class, placeholder -> placeholder
-            .resolve(request -> "online")
-            .access(PluginAccess.ownerOnly())
-            .fallback("offline"));
+    private static AutoCloseable registerPlaceholder(PlaceholderService service) {
+        return service.value("status", viewer -> "online");
     }
 
     @Test
@@ -38,7 +32,6 @@ class ApiStyleJavaTest {
 
         PluginUpdateRequest updates = PluginUpdateRequest.builder()
             .repository("pnFolder", "pnLibrary")
-            .automaticDownload(false)
             .exactArtifact("pnLibrary.jar", 8, null)
             .build();
 
@@ -46,7 +39,7 @@ class ApiStyleJavaTest {
             .dataDirectory(Paths.get("plugins", "Example"))
             .file("rules", file -> file
                 .url("https://example.invalid/rules.json")
-                .destination(org.pnfolder.pnlibrary.api.downloads.DownloadDestination.DATA_FOLDER, "rules.json"))
+                .destination(org.pnfolder.pnlibrary.api.downloads.source.DownloadDestination.DATA_FOLDER, "rules.json"))
             .build();
 
         CommandDefinition command = CommandDefinition.builder("example")
