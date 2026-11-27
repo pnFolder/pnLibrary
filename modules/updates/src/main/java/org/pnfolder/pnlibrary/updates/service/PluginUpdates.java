@@ -1,5 +1,11 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestrator;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorRuntime;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateRuntimeResources;
+import org.pnfolder.pnlibrary.updates.service.report.UpdateAnnouncementRenderer;
 import org.pnfolder.pnlibrary.updates.service.registration.UpdateRegistrationStore;
 import org.pnfolder.pnlibrary.updates.service.registration.ValidatedRegistration;
 import org.pnfolder.pnlibrary.updates.service.registration.RegistrationValidator;
@@ -37,15 +43,15 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory;
-import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerMetadata;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPluginInventory;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseBackups;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseSources;
-import org.pnfolder.pnlibrary.updates.engine.FreezeStore;
-import org.pnfolder.pnlibrary.updates.engine.ResolutionResult;
-import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.FreezeStore;
+import org.pnfolder.pnlibrary.updates.engine.resolver.ResolutionResult;
+import org.pnfolder.pnlibrary.updates.engine.preferences.UpdatePreferencesStore;
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode;
 import org.pnfolder.pnlibrary.updates.install.UpdateGraphResolver;
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller;
@@ -110,7 +116,7 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
         this.graphResolver = new UpdateGraphResolver(inventory, identity, configuration, resources.getCatalogGateway(),
                 freezes, overrides, (message, error) -> logging.log(this, LogLevel.ERROR, message, error));
         this.runtime = new UpdateOrchestratorRuntime(configuration, paths, logging, readiness, installer,
-                registrations::snapshot, this::resolveGraph, this::stageGraph, this::announce,
+                registrations::snapshot, this::resolveGraph, this::stageGraph, this::announce, this::remind,
                 snapshot -> automaticUpdatesHealthy());
         this.plans = new PlanOperations(runtime);
         this.history = new HistoryReader(runtime);
@@ -239,6 +245,20 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
         } catch (IOException error) {
             throw new UncheckedIOException(error);
         }
+    }
+
+    /** One line instead of the whole card: the card was shown once, a reminder only says that the news is still true. */
+    private void remind(UpdatePlanSnapshot snapshot) {
+        List<String> changes = new ArrayList<>();
+        if (snapshot.getPlan() != null) {
+            for (ProductChange change : snapshot.getPlan().getChanges()) {
+                changes.add(change.getProduct().getValue() + " " + (change.getFrom() == null ? "новый" : change.getFrom())
+                        + " → " + change.getTo());
+            }
+        }
+        String what = changes.isEmpty() ? "" : ": " + String.join(", ", changes);
+        String next = snapshot.getState() == UpdateState.UPDATE_STAGED ? "Перезапустите сервер" : "Установить: /pn update <плагин>";
+        logging.log(this, LogLevel.INFO, "Обновление ещё ждёт" + what + ". " + next);
     }
 
     private void announce(UpdatePlanSnapshot snapshot) {

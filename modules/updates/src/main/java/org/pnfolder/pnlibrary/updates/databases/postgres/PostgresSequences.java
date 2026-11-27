@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.pnfolder.pnlibrary.updates.databases.TableMask;
+import org.pnfolder.pnlibrary.updates.databases.dump.TableMask;
 
 /** Reads the sequences of the current schema and writes them, and their positions, as statements. */
 final class PostgresSequences {

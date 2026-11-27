@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.install;
 
+import org.pnfolder.pnlibrary.updates.install.health.HealthReporter;
+import org.pnfolder.pnlibrary.updates.install.health.UpdateHealthVerifier;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,12 +32,12 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseBackups;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient;
-import org.pnfolder.pnlibrary.updates.engine.transaction.JournalArtifact;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.BackupStorage;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
-import org.pnfolder.pnlibrary.updates.history.PrivateFiles;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupStorage;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.backup.PrivateFiles;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 import org.pnfolder.pnlibrary.updates.policy.UpdateConfiguration;
 import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;

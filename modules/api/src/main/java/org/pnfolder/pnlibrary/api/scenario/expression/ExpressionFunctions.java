@@ -68,8 +68,8 @@ final class ExpressionFunctions {
                 (c, a) -> AudienceExtensions.hasPermission(c.getPlayer(), format(a.get(0))));
         map.put("permission", permission);
         map.put("perm", permission);
-        map.put("level", (c, a) -> orZero(c.getPlayer().experienceLevel()));
-        map.put("exp", (c, a) -> orZero(c.getPlayer().experiencePoints()));
+        map.put("level", (c, a) -> orZero(c.getPlayer().getExperienceLevel()));
+        map.put("exp", (c, a) -> orZero(c.getPlayer().getExperiencePoints()));
         map.put("items", arity(1, 1, "items", (c, a) -> items(c.getPlayer().countItems(matcher(format(a.get(0)))))));
         map.put("distance", arity(4, 4, "distance", (c, a) -> distance(c, a)));
         return map;
@@ -125,7 +125,7 @@ final class ExpressionFunctions {
     }
 
     private static Object distance(RequirementContext context, List<Object> a) {
-        Position here = context.getPlayer().position();
+        Position here = context.getPlayer().getPosition();
         Position there = new Position(format(a.get(0)), required(a.get(1)), required(a.get(2)), required(a.get(3)));
         Double blocks = here != null ? here.distanceTo(there) : null;
         return blocks != null ? blocks : Double.POSITIVE_INFINITY;

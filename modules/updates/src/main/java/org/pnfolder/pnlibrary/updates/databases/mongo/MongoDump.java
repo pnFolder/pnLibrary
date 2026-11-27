@@ -16,8 +16,8 @@ import org.bson.BsonDocument;
 import org.bson.json.JsonMode;
 import org.bson.json.JsonWriterSettings;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.updates.databases.TableMask;
-import org.pnfolder.pnlibrary.updates.history.PrivateFiles;
+import org.pnfolder.pnlibrary.updates.databases.dump.TableMask;
+import org.pnfolder.pnlibrary.updates.history.backup.PrivateFiles;
 
 /**
  * Writes every collection of a database into one compressed text file: a {@code #collection} line, its indexes as

@@ -17,14 +17,14 @@ import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter;
 import org.pnfolder.pnlibrary.bungee.network.BungeeNetworkProxy;
 import org.pnfolder.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory;
 import org.pnfolder.pnlibrary.bungee.tasks.BungeeTaskAdapter;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
-import org.pnfolder.pnlibrary.spi.platform.JulLogObserver;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogSink;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
-import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.logging.JulLogObserver;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogSink;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPlugins;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PluginSnapshot;
 import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter;
 
@@ -58,7 +58,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
         this.plugins = new PlatformPlugins<>("BungeeCord",
                 () -> plugin.getProxy().getPluginManager().getPlugins(),
                 owner -> owner instanceof Plugin ? (Plugin) owner : null,
-                BungeePlatformAdapter::describe);
+            installed -> installed != null ? describe(installed) : null);
         this.logObserver = new JulLogObserver(() -> plugin.getProxy().getLogger(), plugin,
                 loggerName -> JulLogObserver.matchPlugin(loggerName,
                         plugin.getProxy().getPluginManager().getPlugins(), p -> p.getDescription().getName()));

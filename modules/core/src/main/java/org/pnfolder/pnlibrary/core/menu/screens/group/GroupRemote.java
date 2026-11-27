@@ -2,13 +2,13 @@ package org.pnfolder.pnlibrary.core.menu.screens.group;
 
 import java.util.List;
 import java.util.function.BiConsumer;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.core.exceptions.Throwables;
 import org.pnfolder.pnlibrary.core.link.ServerGroup;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.remote.LinkNames;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.data.GroupEdit;
 import org.pnfolder.pnlibrary.core.menu.data.MenuData;
 import org.pnfolder.pnlibrary.core.menu.data.remote.RemoteMenuData;

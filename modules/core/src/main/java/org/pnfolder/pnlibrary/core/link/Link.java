@@ -30,6 +30,7 @@ public final class Link {
     private final DataClient data;
     private final RemoteControl control;
     private final ServerGroups groups;
+    private final LinkPeers peers = new LinkPeers();
     private volatile ReceivedNetwork network;
     private volatile DataHandler calls;
 
@@ -118,6 +119,11 @@ public final class Link {
     /** Sets what answers the data questions other servers ask of this one. */
     public void answerCallsWith(@NotNull DataHandler handler) {
         calls = handler;
+    }
+
+    /** The other ends that said hello, and whether their message formats match this one. */
+    public @NotNull LinkPeers getPeers() {
+        return peers;
     }
 
     /** The groups of the proxy; one instance, so its changes do not overwrite each other. */

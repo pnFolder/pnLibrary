@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateRegistration;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** Registers the library itself with the update service. */
 public final class RuntimeUpdateMonitor {

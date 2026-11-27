@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder;
@@ -32,8 +32,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.MountableCommands;
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
 import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.settings.SettingPickerHook;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogCommands;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 
 /**
  * The one Bukkit command of pnLibrary, {@code /pn}, expressed through the shared command builder.

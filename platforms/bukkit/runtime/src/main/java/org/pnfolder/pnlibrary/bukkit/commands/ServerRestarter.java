@@ -11,7 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.core.settings.RestartSettings;

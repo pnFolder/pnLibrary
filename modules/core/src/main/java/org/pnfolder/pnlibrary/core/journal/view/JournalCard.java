@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandSender;
 import org.pnfolder.pnlibrary.core.journal.JournalRecord;
 import org.pnfolder.pnlibrary.core.journal.store.JournalStore;

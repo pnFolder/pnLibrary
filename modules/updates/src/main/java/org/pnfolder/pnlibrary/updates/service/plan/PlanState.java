@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service.plan;
 
-import org.pnfolder.pnlibrary.updates.service.UpdateOrchestratorHooks;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorHooks;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,8 +18,8 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.updates.engine.ResolutionResult;
-import org.pnfolder.pnlibrary.updates.history.UpdateStateStore;
+import org.pnfolder.pnlibrary.updates.engine.resolver.ResolutionResult;
+import org.pnfolder.pnlibrary.updates.history.state.UpdateStateStore;
 
 /** The current plan, the plans of this session, and the publication of a new state to its observers. */
 public final class PlanState {

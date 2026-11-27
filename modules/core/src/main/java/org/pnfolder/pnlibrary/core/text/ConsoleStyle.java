@@ -5,8 +5,8 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
 
 /**

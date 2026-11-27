@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.bukkit.audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogCommands;
 
 /**
  * Titles in the chat palette for the Bukkit title API, which takes legacy strings on every version since 1.8;

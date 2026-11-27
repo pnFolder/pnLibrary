@@ -6,7 +6,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandSender;
 import org.pnfolder.pnlibrary.common.text.RussianText;
 import org.pnfolder.pnlibrary.core.journal.JournalRecord;

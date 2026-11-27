@@ -26,7 +26,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
-import org.pnfolder.pnlibrary.updates.install.ComponentOperation;
+import org.pnfolder.pnlibrary.updates.install.ledger.ComponentOperation;
 
 class UpdateHistoryViewTest {
     @Test

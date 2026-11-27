@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.api.chat;
 
+import org.pnfolder.pnlibrary.api.chat.page.CommandHint;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,8 +15,8 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 
 class ChatKitTest {
     private final ChatKit player = new ChatKit(ChatReader.PLAYER);

@@ -65,7 +65,8 @@
 | `pnlibrary.events.bus` | `/pn bus` |
 | `pnlibrary.groups` | `/pnproxy groups` |
 | `pnlibrary.servers` | `/pn servers` |
-| `pnlibrary.servers.manage` | `/pnproxy servers add` и `remove`: добавить сервер на прокси до перезапуска или убрать добавленный |
+| `pnlibrary.servers.send` | `/pnproxy servers send` и `sendall`: переместить игрока или всех с сервера на другой |
+| `pnlibrary.servers.manage` | `/pnproxy servers add` и `remove`: добавить сервер на прокси до перезапуска или убрать любой |
 | `pnlibrary.currency.list` | список валют в `/pn money` |
 
 Права обновлений (`pnlibrary.updates.*`) описаны в [docs/updates.md](docs/updates.md).

@@ -17,14 +17,14 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductId;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseBackups;
-import org.pnfolder.pnlibrary.updates.engine.transaction.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
 import org.pnfolder.pnlibrary.updates.engine.transaction.PendingTransaction;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.BackupItemText;
-import org.pnfolder.pnlibrary.updates.history.BackupStorage;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshotFile;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupItemText;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupStorage;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshotFile;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 
 /** The saved rollback sets: listing, retention, removal and handing their data back to the administrator. */

@@ -20,7 +20,7 @@ import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.updates.databases.Blank;
+import org.pnfolder.pnlibrary.updates.databases.dump.Blank;
 
 /** Puts a copy written by {@link MongoDump} back: collections named in the file are dropped and filled again, with their indexes. */
 public final class MongoRestore {

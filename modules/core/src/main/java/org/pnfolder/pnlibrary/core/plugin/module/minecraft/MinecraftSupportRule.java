@@ -11,6 +11,7 @@ public final class MinecraftSupportRule {
     private volatile MinecraftVersions versions = MinecraftVersions.NONE;
     private volatile UnsupportedAction unsupportedAction;
     private volatile NewerAction newerAction;
+    private volatile Boolean forceAllowed;
 
     public @NotNull MinecraftVersions getVersions() {
         return versions;
@@ -36,6 +37,15 @@ public final class MinecraftSupportRule {
 
     public void setNewerAction(@Nullable NewerAction action) {
         this.newerAction = action;
+    }
+
+    /** Whether "start anyway" is allowed, or {@code null} to take the plugin's choice, then {@code true}. */
+    public @Nullable Boolean getForceAllowed() {
+        return forceAllowed;
+    }
+
+    public void setForceAllowed(boolean allowed) {
+        this.forceAllowed = allowed;
     }
 
     public boolean isDeclared() {

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.UpdatePreferencesStore;
 
 /**
  * The channel and automatic-download choices an administrator makes with commands or in the menu: one per component,

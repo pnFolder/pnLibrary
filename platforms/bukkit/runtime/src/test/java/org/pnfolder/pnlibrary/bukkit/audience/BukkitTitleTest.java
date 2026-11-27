@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.bukkit.audience;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogCommands.SettingSaved;
 
 class BukkitTitleTest {
     @Test

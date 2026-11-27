@@ -42,14 +42,14 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionResult;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionState;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
-import org.pnfolder.pnlibrary.updates.history.UpdateEvent;
-import org.pnfolder.pnlibrary.updates.history.UpdateEventChange;
-import org.pnfolder.pnlibrary.updates.history.UpdateEventJournal;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.events.UpdateEvent;
+import org.pnfolder.pnlibrary.updates.history.events.UpdateEventChange;
+import org.pnfolder.pnlibrary.updates.history.events.UpdateEventJournal;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 
 /**

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

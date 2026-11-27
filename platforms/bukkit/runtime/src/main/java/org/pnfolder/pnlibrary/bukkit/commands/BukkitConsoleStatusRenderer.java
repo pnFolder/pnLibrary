@@ -37,14 +37,13 @@ final class BukkitConsoleStatusRenderer {
 
     static List<String> render(List<UpdateRegistration> entries) {
         ConsoleCard.Builder card = ConsoleCard.builder(ConsoleStyle.THEME, "СОСТОЯНИЕ PNFOLDER")
-            .mascot("^.^", PnLibraryIdentity.NAME, "библиотека платформы")
+            .owner("^.^", PnLibraryIdentity.NAME, null, PnLibraryIdentity.VERSION, "библиотека платформы")
             .blank()
             .firstDetail("Продукт", PnLibraryIdentity.NAME)
             .detail("Назначение", "общая библиотека pnFolder")
             .detail("Платформа", "Bukkit / Paper")
             .detail("Ядро", Bukkit.getBukkitVersion())
-            .detail("Java", BukkitStatusLabels.javaRuntime())
-            .lastDetail("Поддержка", PnLibraryIdentity.SUPPORT_URL)
+            .lastDetail("Java", BukkitStatusLabels.javaRuntime())
             .blank()
             .divider("ОБНОВЛЕНИЯ")
             .blank();
@@ -58,6 +57,7 @@ final class BukkitConsoleStatusRenderer {
             .blank()
             .firstDetail("Последняя проверка", UTC_DATE_TIME.format(Instant.now()))
             .lastDetail("Следующая проверка", "по расписанию библиотеки")
+            .support(PnLibraryIdentity.SUPPORT_URL)
             .blank()
             .status(status(entries))
             .build()

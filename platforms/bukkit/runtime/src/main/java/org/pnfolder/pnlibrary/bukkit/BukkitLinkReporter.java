@@ -1,15 +1,14 @@
 package org.pnfolder.pnlibrary.bukkit;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.messaging.PluginMessageListener;
+import org.pnfolder.pnlibrary.api.network.channel.ServerChannel;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
@@ -25,6 +24,7 @@ import org.pnfolder.pnlibrary.core.link.report.LinkReports;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.wire.DataChunks;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
+import org.pnfolder.pnlibrary.core.link.wire.LinkHello;
 
 /**
  * Sends this server's report to the proxy over the link channel, every half minute while a player is online.
@@ -32,22 +32,29 @@ import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
  * <p>A plugin message needs a player connection to travel on, so a server with nobody online stays silent and the
  * proxy marks it as out of touch. Without the shared {@code link.key} the reporter does nothing.
  */
-final class BukkitLinkReporter implements PluginMessageListener {
+final class BukkitLinkReporter {
     private static final long FIRST_DELAY_TICKS = 100L;
     private static final long PERIOD_TICKS = 600L;
+    private static final String PROXY = "Прокси";
 
     private final JavaPlugin plugin;
     private final PnLibrary library;
     private final Link link;
+    private final ServerNetwork network;
+    private final BukkitLink uplink;
     private final ServerScheduler scheduler;
     private final RemoteExecutor executor;
+    private ServerChannel channel;
     private ServerScheduler.Scheduled task;
     private boolean reportFailing;
 
-    BukkitLinkReporter(JavaPlugin plugin, PnLibrary library, Link link, ServerScheduler scheduler) {
+    BukkitLinkReporter(JavaPlugin plugin, PnLibrary library, ServerNetwork network, BukkitLink uplink,
+                       ServerScheduler scheduler) {
         this.plugin = plugin;
         this.library = library;
-        this.link = link;
+        this.network = network;
+        this.uplink = uplink;
+        this.link = uplink.link();
         this.scheduler = scheduler;
         this.executor = new RemoteExecutor(library, Instant::now);
     }
@@ -57,8 +64,9 @@ final class BukkitLinkReporter implements PluginMessageListener {
         if (key == null) {
             return;
         }
-        plugin.getServer().getMessenger().registerIncomingPluginChannel(plugin, LinkCodec.CHANNEL, this);
-        plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, LinkCodec.CHANNEL);
+        channel = network.channel(LinkCodec.CHANNEL);
+        channel.listen(this::receive);
+        uplink.attach(channel);
         task = scheduler.repeat(FIRST_DELAY_TICKS, PERIOD_TICKS, () -> report(key));
     }
 
@@ -67,33 +75,41 @@ final class BukkitLinkReporter implements PluginMessageListener {
             task.cancel();
             task = null;
         }
-        Failures.runCatchingNonFatal(() -> {
-            plugin.getServer().getMessenger().unregisterIncomingPluginChannel(plugin, LinkCodec.CHANNEL);
-            return null;
-        });
-        Failures.runCatchingNonFatal(() -> {
-            plugin.getServer().getMessenger().unregisterOutgoingPluginChannel(plugin, LinkCodec.CHANNEL);
-            return null;
-        });
+        uplink.detach();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     /**
-     * Handles what the proxy sent: the network map, a request, a menu question, a piece of data or a result. Anything
-     * not signed with the key is dropped.
+     * Handles what the proxy sent: the hello, the network map, a request, a menu question, a piece of data or a
+     * result. Anything not signed with the key is dropped.
      */
-    @Override
-    public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        if (!channel.equals(LinkCodec.CHANNEL) || link.getKey() == null) {
+    private void receive(byte[] message) {
+        byte[] key = link.getKey();
+        if (key == null) {
             return;
         }
-        byte[] key = link.getKey();
         Instant now = Instant.now();
-        if (!handleNetworkOrRequest(player, message, key, now)) {
-            handleDataOrResult(player, message, key, now);
+        if (!handleHello(message, key, now) && !handleNetworkOrRequest(message, key, now)) {
+            handleDataOrResult(message, key, now);
         }
     }
 
-    private boolean handleNetworkOrRequest(Player player, byte[] message, byte[] key, Instant now) {
+    private boolean handleHello(byte[] message, byte[] key, Instant now) {
+        LinkHello hello = LinkCodec.decodeHello(message, key, now);
+        if (hello == null) {
+            return false;
+        }
+        String news = link.getPeers().meet(PROXY, hello, library.getVersion());
+        if (news != null) {
+            library.getLogging().logger(plugin, "Link").warning(news);
+        }
+        return true;
+    }
+
+    private boolean handleNetworkOrRequest(byte[] message, byte[] key, Instant now) {
         NetworkReport network = LinkCodec.decodeNetwork(message, key, now);
         if (network != null) {
             link.remember(network, now);
@@ -103,14 +119,14 @@ final class BukkitLinkReporter implements PluginMessageListener {
         if (request == null) {
             return false;
         }
-        executor.run(request, result -> sendResult(player, result, key));
+        executor.run(request, result -> reply(Collections.singletonList(LinkCodec.encodeResult(result, key))));
         return true;
     }
 
-    private void handleDataOrResult(Player player, byte[] message, byte[] key, Instant now) {
+    private void handleDataOrResult(byte[] message, byte[] key, Instant now) {
         DataCall call = LinkCodec.decodeCall(message, key, now);
         if (call != null) {
-            answerCall(player, call, key);
+            answerCall(call, key);
             return;
         }
         DataChunk chunk = LinkCodec.decodeChunk(message, key, now);
@@ -124,54 +140,42 @@ final class BukkitLinkReporter implements PluginMessageListener {
         }
     }
 
-    private void sendResult(Player carrier, RemoteResult result, byte[] key) {
-        scheduler.nextTick(() -> {
-            Player sender = carrier.isOnline() ? carrier : firstOnline();
-            if (sender != null) {
-                sender.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encodeResult(result, key));
-            }
-        });
-    }
-
-    private void answerCall(Player player, DataCall call, byte[] key) {
+    private void answerCall(DataCall call, byte[] key) {
         DataHandler data = link.getCalls();
         if (data == null) {
-            answer(player, call.getId(), call.getOrigin(), false, "Меню этого сервера не готово.", key);
+            answer(call.getId(), call.getOrigin(), false, "Меню этого сервера не готово.", key);
         } else {
-            data.handle(call, (ok, text) -> answer(player, call.getId(), call.getOrigin(), ok, text, key));
+            data.handle(call, (ok, text) -> answer(call.getId(), call.getOrigin(), ok, text, key));
         }
     }
 
     /** Sends the answer to a question back through the proxy; it can be called from any thread. */
-    private void answer(Player carrier, UUID id, String to, boolean ok, String text, byte[] key) {
+    private void answer(UUID id, String to, boolean ok, String text, byte[] key) {
         List<byte[]> pieces = DataChunks.split(id, to, ok, text, key, Instant.now());
         if (pieces == null) {
             pieces = DataChunks.split(id, to, false, "Ответ слишком большой.", key, Instant.now());
         }
-        List<byte[]> toSend = pieces == null ? new ArrayList<>() : pieces;
+        reply(pieces == null ? Collections.<byte[]>emptyList() : pieces);
+    }
+
+    /** Sends the messages on the next tick, from the server thread; they are dropped when nobody is online. */
+    private void reply(List<byte[]> messages) {
         scheduler.nextTick(() -> {
-            Player sender = carrier.isOnline() ? carrier : firstOnline();
-            for (byte[] piece : toSend) {
-                if (sender != null) {
-                    sender.sendPluginMessage(plugin, LinkCodec.CHANNEL, piece);
-                }
+            for (byte[] message : messages) {
+                uplink.send(message);
             }
         });
     }
 
     private void report(byte[] key) {
-        if (library.isClosed()) {
-            return;
-        }
-        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-        Player carrier = firstOnline();
-        if (carrier == null) {
+        if (library.isClosed() || Bukkit.getOnlinePlayers().isEmpty()) {
             return;
         }
         String platform = Bukkit.getName() + " " + Bukkit.getBukkitVersion();
+        Instant now = Instant.now();
         Attempt<Void> sent = Failures.runCatchingNonFatal(() -> {
-            carrier.sendPluginMessage(plugin, LinkCodec.CHANNEL, LinkCodec.encode(
-                LinkReports.build(library, platform, players.size(), Instant.now()), key));
+            uplink.send(LinkCodec.encodeHello(LinkHello.current(LinkHello.SERVER, library.getVersion(), now), key));
+            uplink.send(LinkCodec.encode(LinkReports.build(library, platform, Bukkit.getOnlinePlayers().size(), now), key));
             return null;
         });
         if (sent.isSuccess()) {
@@ -184,12 +188,5 @@ final class BukkitLinkReporter implements PluginMessageListener {
                 .error("Could not send the status report to the proxy", sent.exceptionOrNull());
         }
         reportFailing = true;
-    }
-
-    private static Player firstOnline() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            return player;
-        }
-        return null;
     }
 }

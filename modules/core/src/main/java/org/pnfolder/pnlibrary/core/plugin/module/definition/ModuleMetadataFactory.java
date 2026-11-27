@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata;
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** Builds module metadata from the definition, falling back to the native plugin descriptor. */
 public final class ModuleMetadataFactory {

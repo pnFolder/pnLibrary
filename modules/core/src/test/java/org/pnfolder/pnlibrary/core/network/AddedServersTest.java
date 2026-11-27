@@ -65,9 +65,10 @@ class AddedServersTest {
     }
 
     @Test
-    void theProxysOwnServersCannotBeRemoved() {
-        assertFalse(added.remove(named("lobby")));
-        assertTrue(proxy.contains("lobby"));
+    void anyServerCanBeRemovedAlsoTheProxysOwn() {
+        assertTrue(added.remove(named("lobby")));
+        assertFalse(proxy.contains("lobby"));
+        assertFalse(added.remove(named("lobby")), "the second removal finds nothing");
     }
 
     @Test

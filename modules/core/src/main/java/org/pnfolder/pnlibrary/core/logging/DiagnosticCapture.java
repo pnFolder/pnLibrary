@@ -6,8 +6,8 @@ import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.common.concurrent.FailureThrottle;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 import java.util.Collections;
 import java.util.Map;

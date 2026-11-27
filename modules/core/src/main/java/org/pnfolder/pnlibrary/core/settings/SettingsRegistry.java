@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 public final class SettingsRegistry {
     private static final long SECOND = 1_000L;
     private static final long MINUTE = 60 * SECOND;
-    private static final long DAY = 24 * 60 * MINUTE;
 
     private static final List<SettingSpec> ALL = Collections.unmodifiableList(Arrays.asList(
         flag("privacy", "Приватность отчёта", "privacy", SettingApply.RESTART,
@@ -30,25 +29,12 @@ public final class SettingsRegistry {
         number("history-retention-days", "Хранение истории", "historyRetentionDays", SettingApply.RESTART, 30, 365,
             "Сколько дней хранить историю диагностики.",
             LibrarySettings::getHistoryRetentionDays, LibrarySettings::withHistoryRetentionDays),
-        flag("journal-foreign-plugins", "Журнал: чужие плагины", "journalForeignPlugins", SettingApply.RESTART,
-            "Писать ли в журнал предупреждения и ошибки плагинов, которые не подключены к pnLibrary.",
-            LibrarySettings::getJournalForeignPlugins, LibrarySettings::withJournalForeignPlugins),
         zone("time-zone", "Часовой пояс", "timeZone", SettingApply.LIVE,
             "Часовой пояс для всех времён, которые показывает pnLibrary. "
                 + "Хранится время всегда в UTC, смена пояса ничего не портит.",
             Arrays.asList("UTC", "Europe/Moscow"), LibrarySettings::getTimeZone, LibrarySettings::withTimeZone),
-        text("no-permission-message", "Текст без права", "noPermissionMessage", SettingApply.RESTART, 256,
-            "Что видит игрок без права на команду pnLibrary или другого плагина, у которого нет собственного сообщения.",
-            LibrarySettings::getNoPermissionMessage, LibrarySettings::withNoPermissionMessage),
-        flag("downloads.enabled", "Загрузки", "downloadsEnabled", SettingApply.LIVE,
-            "Система загрузок. Выключена: все запросы плагинов на загрузку файлов отклоняются.",
-            LibrarySettings::getDownloadsEnabled, LibrarySettings::withDownloadsEnabled),
-        flag("downloads.automatic", "Автозагрузка", "downloadsAutomatic", SettingApply.LIVE,
-            "Разрешить загрузки, которые плагин запускает сам, без команды администратора "
-                + "(в том числе недостающие плагины).",
-            LibrarySettings::getDownloadsAutomatic, LibrarySettings::withDownloadsAutomatic),
         time("updates.check-interval", "Проверка обновлений", "updateCheckInterval", SettingApply.RESTART,
-            15 * MINUTE, 7 * DAY,
+            15 * MINUTE, 6 * 60 * MINUTE,
             "Как часто опрашивать каталоги релизов о новых версиях; первая проверка идёт при запуске.",
             Arrays.asList("6h", "30m"),
             LibrarySettings::getUpdateCheckInterval, LibrarySettings::withUpdateCheckInterval),
@@ -74,7 +60,8 @@ public final class SettingsRegistry {
     /** Settings that became constants in code; an old file may still carry them and that is not worth a warning. */
     private static final List<String> RETIRED = Collections.unmodifiableList(Arrays.asList(
         "downloads.destinations.data-folder", "downloads.destinations.cache",
-        "updates.connect-timeout", "updates.read-timeout"));
+        "updates.connect-timeout", "updates.read-timeout", "downloads.automatic", "downloads.enabled",
+        "journal-foreign-plugins", "no-permission-message"));
 
     private static final Map<String, SettingSpec> BY_KEY = index();
 

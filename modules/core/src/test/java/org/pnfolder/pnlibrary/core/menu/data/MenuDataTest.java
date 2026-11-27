@@ -55,7 +55,7 @@ import org.pnfolder.pnlibrary.core.link.remote.DataCall;
 import org.pnfolder.pnlibrary.core.link.remote.DataClient;
 import org.pnfolder.pnlibrary.core.link.wire.DataChunks;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.tasks.TaskControl;
 

@@ -4,7 +4,7 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
-import org.pnfolder.pnlibrary.core.menu.MenuClickHandler;
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
 
 /** One menu row: an item and an optional click handler. */
 public final class Row {

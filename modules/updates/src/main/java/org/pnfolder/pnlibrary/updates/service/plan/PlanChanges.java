@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service.plan;
 
-import org.pnfolder.pnlibrary.updates.service.UpdateOrchestratorHooks;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorHooks;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;

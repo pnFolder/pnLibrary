@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** The platform of {@link FakeConfigOwner}: it gives each owner its own folder and logger. */
 public final class FakeOwnerPlatform implements PlatformOwnership {

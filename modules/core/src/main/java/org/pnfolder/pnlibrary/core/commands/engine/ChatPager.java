@@ -5,7 +5,7 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 
 /** Paging of long chat lists: how many pages there are, which slice a page shows, and the "back / next" line. */
 public final class ChatPager {

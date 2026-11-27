@@ -15,13 +15,13 @@ import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 import org.pnfolder.pnlibrary.updates.engine.UpdatePaths;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
-import org.pnfolder.pnlibrary.updates.engine.transaction.JournalArtifact;
-import org.pnfolder.pnlibrary.updates.engine.transaction.JournalVersion;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalVersion;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionState;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 
 /** A set whose files are checked and ready to be published. */
 final class PreparedUpdateSet {

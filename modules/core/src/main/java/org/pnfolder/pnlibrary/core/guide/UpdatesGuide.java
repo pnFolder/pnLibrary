@@ -41,7 +41,7 @@ final class UpdatesGuide {
                 GuideEntry.of(
                     "/pn updates settings <плагин>",
                     "pnlibrary.updates.view",
-                    "Настройки обновления плагина: канал, автозагрузка, пауза.")
+                    "Настройки обновления плагина: канал и пауза.")
                     .orAdmin(),
                 GuideEntry.of(
                     "/pn updates history [страница]",
@@ -59,17 +59,9 @@ final class UpdatesGuide {
                     "Выбрать канал выпусков; default возвращает выбор плагина.")
                     .note("Сейчас публикуется только канал dev."),
                 GuideEntry.of(
-                    "/pn updates set <плагин> auto <on|off>",
-                    "pnlibrary.updates.settings",
-                    "Включить или выключить автозагрузку обновлений одного плагина."),
-                GuideEntry.of(
                     "/pn updates set <плагин> hold <срок|off>",
                     "pnlibrary.updates.settings",
                     "Поставить обновления плагина на паузу от 1m до 5d (например 3d) или снять паузу."),
-                GuideEntry.of(
-                    "/pn updates set all auto <on|off>",
-                    "pnlibrary.updates.settings",
-                    "Включить или выключить автозагрузку сразу для всех плагинов."),
                 GuideEntry.of(
                     "/pn updates backups [plugin <плагин>] [since <7d|дата>] [sort <new|old|plugin>] [страница]",
                     "pnlibrary.updates.rollback",

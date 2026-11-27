@@ -1,5 +1,10 @@
 package org.pnfolder.pnlibrary.api.chat;
 
+import org.pnfolder.pnlibrary.api.chat.page.ChatAscii;
+import org.pnfolder.pnlibrary.api.chat.page.CommandHint;
+import org.pnfolder.pnlibrary.api.chat.page.CommandHintLines;
+import org.pnfolder.pnlibrary.api.chat.page.Confirmations;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import java.util.Objects;
 import java.net.URI;
 import java.util.ArrayList;
@@ -12,9 +17,9 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
-import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 
 /**

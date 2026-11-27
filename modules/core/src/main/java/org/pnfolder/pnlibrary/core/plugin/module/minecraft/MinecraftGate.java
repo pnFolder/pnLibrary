@@ -25,9 +25,10 @@ public final class MinecraftGate {
     private final String warning;
     private final String blockReason;
     private final UnsupportedAction unsupportedAction;
+    private final boolean forceAllowed;
 
     private MinecraftGate(String scope, ModulePreferences preferences, MinecraftSupport support, String declared, String server,
-                          String warning, String blockReason, UnsupportedAction unsupportedAction) {
+                          String warning, String blockReason, UnsupportedAction unsupportedAction, boolean forceAllowed) {
         this.scope = scope;
         this.preferences = preferences;
         this.support = support;
@@ -36,6 +37,7 @@ public final class MinecraftGate {
         this.warning = warning;
         this.blockReason = blockReason;
         this.unsupportedAction = unsupportedAction;
+        this.forceAllowed = forceAllowed;
     }
 
     /** A sentence for the log when the module starts but the version is doubtful, or {@code null}. */
@@ -47,8 +49,23 @@ public final class MinecraftGate {
         return unsupportedAction;
     }
 
+    /** Whether an administrator may start the module anyway; the author can forbid it with {@code allowForce(false)}. */
+    public boolean isForceAllowed() {
+        return forceAllowed;
+    }
+
+    /** What the module declared, as text, or {@code null}. */
+    public @Nullable String getDeclared() {
+        return declared;
+    }
+
+    /** The server's Minecraft version as text, or {@code null} when it is not known. */
+    public @Nullable String getServer() {
+        return server;
+    }
+
     public boolean isForced() {
-        return !preferences.autoStart(KEY + scope);
+        return forceAllowed && !preferences.autoStart(KEY + scope);
     }
 
     /** Why the module may not start now, or {@code null}. */
@@ -61,7 +78,11 @@ public final class MinecraftGate {
         return reason() != null && (unsupportedAction == UnsupportedAction.STOP_PLUGIN || !controllable);
     }
 
+    /** Turns "start anyway" on or off; turning it on is refused when the author forbade it. */
     public void setForced(boolean on) {
+        if (on && !forceAllowed) {
+            throw new IllegalStateException("The author of this plugin does not allow starting it on this Minecraft version");
+        }
         preferences.setAutoStart(KEY + scope, !on);
     }
 
@@ -77,6 +98,7 @@ public final class MinecraftGate {
         MinecraftSupportRule rule = moduleRule.isDeclared() ? moduleRule : pluginRule;
         UnsupportedAction unsupported = firstNonNull(moduleRule.getUnsupportedAction(), pluginRule.getUnsupportedAction(),
                 UnsupportedAction.DISABLE_MODULE);
+        boolean forceAllowed = firstNonNull(moduleRule.getForceAllowed(), pluginRule.getForceAllowed(), Boolean.TRUE);
         NewerAction newer = firstNonNull(moduleRule.getNewerAction(), pluginRule.getNewerAction(), NewerAction.ALLOW_WITH_WARNING);
         MinecraftVersionInfo info = server == null ? null : MinecraftVersion.parseInfo(server);
         if (info != null && !info.isNumeric()) {
@@ -87,7 +109,7 @@ public final class MinecraftGate {
         String declared = rule.getDescription();
         String[] verdict = judge(support, newer, unsupported, serverText, declared);
         return new MinecraftGate(scope, preferences, support, declared, serverText != null ? serverText : server, verdict[0], verdict[1],
-                unsupported);
+                unsupported, forceAllowed);
     }
 
     /** The warning and the block reason, either of which may be {@code null}. */

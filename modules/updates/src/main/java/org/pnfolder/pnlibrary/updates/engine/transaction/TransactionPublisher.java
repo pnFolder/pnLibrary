@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournalRepository;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 

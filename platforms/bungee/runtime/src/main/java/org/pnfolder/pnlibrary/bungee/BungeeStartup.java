@@ -4,8 +4,6 @@ import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.bungee.api.BungeePlatform;
-import org.pnfolder.pnlibrary.bungee.link.BungeeLinkListener;
-import org.pnfolder.pnlibrary.core.link.LinkReceiver;
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntime;
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost;
 import org.pnfolder.pnlibrary.core.runtime.ProxyRuntime;
@@ -36,7 +34,7 @@ final class BungeeStartup implements ProxyStartup {
     @NotNull
     @Override
     public ProxyRuntime createProxy() {
-        return new ProxyRuntime(adapter, this::registerLinkListener, adapter::ownerInfo);
+        return new ProxyRuntime(adapter, adapter::ownerInfo);
     }
 
     @NotNull
@@ -52,11 +50,5 @@ final class BungeeStartup implements ProxyStartup {
     // Read when the first metrics session opens, which is after the host exists: the adapter is built before it.
     private PnLogger metricsLogger() {
         return host.getLibrary().getLogging().logger(plugin, "Metrics");
-    }
-
-    private AutoCloseable registerLinkListener(LinkReceiver receiver) {
-        BungeeLinkListener listener = new BungeeLinkListener(receiver);
-        plugin.getProxy().getPluginManager().registerListener(plugin, listener);
-        return () -> plugin.getProxy().getPluginManager().unregisterListener(listener);
     }
 }

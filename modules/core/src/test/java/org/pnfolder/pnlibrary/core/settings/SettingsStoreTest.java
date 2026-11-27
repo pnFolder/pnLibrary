@@ -63,15 +63,15 @@ class SettingsStoreTest {
         SettingsStore first = store();
         first.set("privacy", "true");
         first.set("updates.check-interval", "90m");
-        first.set("downloads.automatic", "off");
+        first.set("updates.restart.auto", "on");
 
         SettingsStore second = store();
 
         assertTrue(second.current().getPrivacy());
         assertEquals(Duration.ofMinutes(90), second.current().getUpdateCheckInterval());
-        assertFalse(second.current().getDownloadsAutomatic());
+        assertTrue(second.current().getRestart().getAuto());
         Set<String> expected = new HashSet<>(
-            Arrays.asList("privacy", "updates.check-interval", "downloads.automatic"));
+            Arrays.asList("privacy", "updates.check-interval", "updates.restart.auto"));
         assertEquals(expected, changedKeys(second));
         JsonObject json = json();
         assertEquals(expected, json.keySet());
@@ -121,7 +121,7 @@ class SettingsStoreTest {
     void invalidValuesInTheFileFallBackToTheDefaultsWithAWarning() throws IOException {
         Files.createDirectories(file().getParent());
         Files.write(file(), ("{\"history-retention-days\": 7, \"privacy\": \"maybe\", \"time-zone\": \"Mars/Base\", "
-            + "\"mystery\": 1, \"journal-foreign-plugins\": true, \"downloads.enabled\": [1]}")
+            + "\"mystery\": 1, \"updates.restart.auto\": true, \"updates.restart.max-players\": [1]}")
             .getBytes(StandardCharsets.UTF_8));
 
         SettingsStore store = store();
@@ -129,8 +129,8 @@ class SettingsStoreTest {
         assertEquals(30, store.current().getHistoryRetentionDays());
         assertFalse(store.current().getPrivacy());
         assertEquals(new LibrarySettings().getTimeZone(), store.current().getTimeZone());
-        assertTrue(store.current().getDownloadsEnabled());
-        assertTrue(store.current().getJournalForeignPlugins(), "a valid value next to broken ones is kept");
+        assertEquals(0, store.current().getRestart().getMaxPlayers());
+        assertTrue(store.current().getRestart().getAuto(), "a valid value next to broken ones is kept");
         assertEquals(5, warnings.size(), warnings.toString());
         assertTrue(anyContains("history-retention-days"));
         assertTrue(anyContains("mystery"));

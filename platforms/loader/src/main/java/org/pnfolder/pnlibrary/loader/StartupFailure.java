@@ -25,7 +25,7 @@ public final class StartupFailure {
     public static ConsoleCard card(ConsoleTheme theme, LibrarySettings settings, Path dataFolder, Throwable error) {
         Throwable cause = unwrap(error);
         ConsoleCard.Builder card = ConsoleCard.builder(theme, "ОШИБКА ЗАПУСКА")
-                .mascot("( x.x )", ProductInfo.NAME + " не удалось запустить", "плагин остановлен")
+                .owner("( x.x )", ProductInfo.NAME, null, ProductInfo.VERSION, "не удалось запустить, плагин остановлен")
                 .blank()
                 .section("Причина");
         if (cause instanceof LibraryLoadException) {
@@ -48,8 +48,7 @@ public final class StartupFailure {
                 .item("Плагины, которым нужна " + ProductInfo.NAME + ", тоже не запустятся")
                 .item("Их ошибки вроде NoClassDefFoundError: PnLibraryProvider вторичны, чините только эту")
                 .lastItem("После исправления перезапустите сервер")
-                .section("Не получается?")
-                .lastItem("Напишите в поддержку: " + ProductInfo.SUPPORT_URL)
+                .support(ProductInfo.SUPPORT_URL)
                 .blank()
                 .status(ProductInfo.NAME + " не был запущен")
                 .build();

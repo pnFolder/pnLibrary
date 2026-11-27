@@ -11,8 +11,8 @@ import org.apache.logging.log4j.core.config.Property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
-import org.pnfolder.pnlibrary.spi.platform.OwnLogScope;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogSink;
+import org.pnfolder.pnlibrary.spi.platform.logging.OwnLogScope;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogSink;
 
 import java.util.Collection;
 import java.util.function.Function;

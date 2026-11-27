@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <pre>{@code
  * Position spawn = new Position("world", 0.0, 64.0, 0.0);
- * Double blocks = player.position() == null ? null : player.position().distanceTo(spawn);
+ * Double blocks = player.getPosition() == null ? null : player.getPosition().distanceTo(spawn);
  * }</pre>
  */
 public final class Position {

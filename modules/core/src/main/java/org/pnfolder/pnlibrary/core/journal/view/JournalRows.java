@@ -6,7 +6,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.core.journal.JournalLevel;
 import org.pnfolder.pnlibrary.core.journal.JournalRecord;
 import org.pnfolder.pnlibrary.core.text.CoreFormatting;

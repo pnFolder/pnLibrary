@@ -18,8 +18,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitControlCommand;
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateViews;
@@ -137,7 +137,7 @@ final class BukkitLifecycleListener implements Listener, AutoCloseable {
             return;
         }
         List<ChatNotice> notices = new ArrayList<>();
-        for (ImportantNotice notice : ImportantNotices.from(link.getNetwork(), Instant.now())) {
+        for (ImportantNotice notice : ImportantNotices.forServer(link, Instant.now())) {
             notices.add(new ChatNotice(ChatTone.WARNING, "Важное объявление", notice.line()));
         }
         Audience audience = notices.isEmpty() ? null : active.getAudiences().player(player.getUniqueId());

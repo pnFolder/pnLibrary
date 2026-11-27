@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service.plan;
 
-import org.pnfolder.pnlibrary.updates.service.UpdateOrchestratorHooks;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorHooks;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BooleanSupplier;
@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.updates.engine.ResolutionResult;
+import org.pnfolder.pnlibrary.updates.engine.resolver.ResolutionResult;
 
 /** One check for updates: resolve, publish the result and stage it when the policy allows. */
 public final class PlanCheck {

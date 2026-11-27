@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.core.updates.catalog;
 
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogScreen;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.HistoryScreen;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.ProductScreens;
 import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupsScreen;
 import org.pnfolder.pnlibrary.core.updates.catalog.backup.BackupQuery;
 import java.time.Instant;
@@ -14,8 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
 import org.pnfolder.pnlibrary.api.chat.ChatReader;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup;
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;

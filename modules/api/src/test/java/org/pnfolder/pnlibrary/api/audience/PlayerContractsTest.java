@@ -40,8 +40,8 @@ class PlayerContractsTest {
         assertEquals(Delivery.unsupported(), player.addEffect(new StatusEffect(Key.key("speed"))));
         assertEquals(Delivery.unsupported(), player.runCommand("home"));
         assertNull(player.countItems(new ItemMatcher(Key.key("diamond"))));
-        assertNull(player.experienceLevel());
-        assertNull(player.position());
+        assertNull(player.getExperienceLevel());
+        assertNull(player.getPosition());
     }
 
     @Test

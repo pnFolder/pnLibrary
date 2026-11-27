@@ -6,7 +6,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
 import org.pnfolder.pnlibrary.velocity.diagnostics.VelocityDiagnosticDetailsCollector;
 
 import java.net.InetSocketAddress;

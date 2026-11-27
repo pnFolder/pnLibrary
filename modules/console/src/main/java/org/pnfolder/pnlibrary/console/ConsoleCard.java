@@ -25,6 +25,22 @@ public final class ConsoleCard {
      */
     public static Builder builder(ConsoleTheme theme, String title) { return new Builder(theme, title); }
 
+    /**
+     * The label of whose message a card is, always {@code plugin@module version}. A message about the whole plugin,
+     * not about one module, names the default module {@code main}.
+     *
+     * @param plugin plugin name
+     * @param module module id, or {@code null} for the default module {@code main}
+     * @param version plugin version, or {@code null} when it is not known
+     * @return for example {@code ShopPlugin@main 2.4.1}
+     */
+    public static String label(String plugin, String module, String version) {
+        StringBuilder label = new StringBuilder(plugin).append('@')
+                .append(module == null || module.trim().isEmpty() ? "main" : module.trim());
+        if (version != null && !version.trim().isEmpty()) label.append(' ').append(version.trim());
+        return label.toString();
+    }
+
     /** Renders this card.
      * @return immutable, fully formatted lines ready for a console sink */
     public List<String> render() {
@@ -127,6 +143,32 @@ public final class ConsoleCard {
             lines.add(theme.accent + normalizedFace + "     " + theme.text + text(headline) + theme.reset);
             lines.add(theme.accent + " > ^ <" + theme.reset + (subtitle == null ? "" : "      " + theme.muted + subtitle + theme.reset));
             return this;
+        }
+
+        /**
+         * Adds the mascot whose headline says whose message this is: {@code plugin@module version}, for example
+         * {@code ShopPlugin@main 2.4.1}.
+         *
+         * @param face mascot face
+         * @param plugin plugin name
+         * @param module module id, or {@code null} for a message about the whole plugin (shown as {@code main})
+         * @param version plugin version, or {@code null} when it is not known
+         * @param subtitle what happened
+         * @return this builder
+         */
+        public Builder owner(String face, String plugin, String module, String version, String subtitle) {
+            return mascot(face, label(plugin, module, version), subtitle);
+        }
+
+        /**
+         * Adds the support block that every card ends with, before the status line.
+         *
+         * @param url support link
+         * @return this builder
+         */
+        public Builder support(String url) {
+            if (!lines.isEmpty() && !"".equals(lines.get(lines.size() - 1))) blank();
+            return section("Поддержка").lastItem("Вопросы и ошибки: " + text(url));
         }
 
         /** Adds a blank separator line.

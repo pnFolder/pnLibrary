@@ -1,8 +1,8 @@
 package org.pnfolder.pnlibrary.core.updates.catalog.backup;
 
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogSupport;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogSupport;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 import org.pnfolder.pnlibrary.core.updates.catalog.CatalogErrors;
 import java.time.Instant;
 import java.util.ArrayList;

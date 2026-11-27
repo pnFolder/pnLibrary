@@ -11,15 +11,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
-import org.pnfolder.pnlibrary.api.chat.notice.ConfirmChoice;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ConfirmChoice;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.bukkit.updates.UpdateViews;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
 
 /**

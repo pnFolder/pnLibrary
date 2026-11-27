@@ -23,18 +23,6 @@ final class LocalDependencyData {
         this.library = library;
     }
 
-    Boolean automatic() {
-        DownloadService downloads = RuntimeBridge.dependencyDownloads(library);
-        return downloads == null ? null : downloads.isAutomatic();
-    }
-
-    void setAutomatic(boolean value) {
-        DownloadService downloads = RuntimeBridge.dependencyDownloads(library);
-        if (downloads != null) {
-            downloads.setAutomatic(value);
-        }
-    }
-
     List<MissingPlugins> missing() {
         DownloadService downloads = RuntimeBridge.dependencyDownloads(library);
         List<MissingPlugins> result = new ArrayList<>();

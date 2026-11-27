@@ -8,7 +8,7 @@ import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
 import org.pnfolder.pnlibrary.api.version.PnLibraryApi;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** Resolves the product descriptor of a module from its definition or the native plugin. */
 public final class ModuleProductResolver {

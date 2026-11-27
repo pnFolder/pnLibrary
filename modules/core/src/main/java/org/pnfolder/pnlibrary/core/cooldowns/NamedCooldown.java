@@ -12,7 +12,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.cooldowns.Cooldown;
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownResult;
 import org.pnfolder.pnlibrary.api.cooldowns.CooldownService;

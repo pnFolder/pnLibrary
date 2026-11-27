@@ -57,6 +57,9 @@ permissions:
   pnlibrary.servers.manage:
     description: 'Добавлять и убирать серверы на прокси, пока он работает (/pnproxy servers add|remove)'
     default: op
+  pnlibrary.servers.send:
+    description: 'Перемещать игроков между серверами сети (/pnproxy servers send|sendall)'
+    default: op
   pnlibrary.currency.list:
     description: 'Список валют (/pn money list)'
     default: op

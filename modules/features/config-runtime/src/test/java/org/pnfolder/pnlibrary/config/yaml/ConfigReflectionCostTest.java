@@ -26,8 +26,8 @@ import org.pnfolder.pnlibrary.api.config.ConfigCodec;
 import org.pnfolder.pnlibrary.api.config.ConfigIgnore;
 import org.pnfolder.pnlibrary.api.config.ConfigNamingStrategy;
 import org.pnfolder.pnlibrary.api.config.ConfigOrder;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformPnLogger;
 
 class ConfigReflectionCostTest {
     public static class Base {

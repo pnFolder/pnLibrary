@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 
 /** Slots, sizes and permissions the menu screens share. */
 public final class MenuConstants {

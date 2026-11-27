@@ -4,8 +4,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.link.LinkEntry;
 import org.pnfolder.pnlibrary.core.link.ReceivedNetwork;
 import org.pnfolder.pnlibrary.core.link.report.LinkReport;
@@ -25,6 +27,13 @@ public final class ImportantNotices {
     private ImportantNotices() {
     }
 
+    /** The notices of the whole {@code link} on a game server: the network map and the ends it cannot talk to. */
+    public static @NotNull List<ImportantNotice> forServer(@NotNull Link link, @NotNull Instant now) {
+        List<ImportantNotice> notices = from(link.getNetwork(), now);
+        addProblems(notices, link);
+        return notices;
+    }
+
     /** The notices of {@code network} as of {@code now}; none when the map is missing or too old to trust. */
     public static @NotNull List<ImportantNotice> from(@Nullable ReceivedNetwork network, @NotNull Instant now) {
         List<ImportantNotice> notices = new ArrayList<>();
@@ -41,6 +50,13 @@ public final class ImportantNotices {
         return notices;
     }
 
+    /** What a proxy shows: {@link #fromReports(boolean, List, Instant)} and the servers it cannot talk to. */
+    public static @NotNull List<ImportantNotice> forProxy(boolean proxyWaiting, @NotNull Link link, @NotNull Instant now) {
+        List<ImportantNotice> notices = fromReports(proxyWaiting, link.getRegistry().all(), now);
+        addProblems(notices, link);
+        return notices;
+    }
+
     /** The notices a proxy builds from its own state and the reports of the game servers it heard from. */
     public static @NotNull List<ImportantNotice> fromReports(boolean proxyWaiting, @NotNull List<LinkEntry> entries,
                                                              @NotNull Instant now) {
@@ -54,6 +70,12 @@ public final class ImportantNotices {
             }
         }
         return notices;
+    }
+
+    private static void addProblems(List<ImportantNotice> notices, Link link) {
+        for (Map.Entry<String, String> problem : link.getPeers().problems().entrySet()) {
+            notices.add(new ImportantNotice(problem.getKey(), null, problem.getValue()));
+        }
     }
 
     private static void add(List<ImportantNotice> notices, String name, LinkReport report, String text) {

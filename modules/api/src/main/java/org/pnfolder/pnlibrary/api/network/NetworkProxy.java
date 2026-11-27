@@ -59,8 +59,9 @@ public interface NetworkProxy extends ForwardingAudience, Channels<NetworkChanne
     @NotNull NetworkServer addServer(@NotNull String name, @NotNull InetSocketAddress address);
 
     /**
-     * Removes a server that {@link #addServer} added. The proxy's own servers stay: it returns {@code false} for them
-     * and for a server that was already removed. Players on the removed server are not kicked by this call.
+     * Removes a server from the proxy while it runs, also one from the proxy's configuration or another plugin. It lasts
+     * until the restart: a configured server comes back then. Returns {@code false} for a server that is already gone.
+     * Players on the removed server are not kicked by this call.
      */
     boolean removeServer(@NotNull NetworkServer server);
 

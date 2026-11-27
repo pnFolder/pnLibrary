@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorRuntime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -10,7 +11,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateBackups;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 import org.pnfolder.pnlibrary.updates.install.UpdateInstaller;
 
 /** The saved rollback sets: listing, rolling back to one, and getting its data back. */

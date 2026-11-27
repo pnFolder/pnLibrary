@@ -40,7 +40,8 @@ public final class BukkitRuntime {
         PnLoggerBuffer logBuffer = new PnLoggerBuffer(plugin.getLogger(), startupLogger::get);
         BukkitAdventureTransport playerService = new BukkitAdventureTransport(plugin, logBuffer);
         audiences = playerService;
-        Link network = BukkitLink.open(plugin);
+        BukkitLink uplink = BukkitLink.open(plugin);
+        Link network = uplink.link();
         BukkitPlatformAdapter adapter = new BukkitPlatformAdapter(plugin, playerService, network, metricsLogger::get, logBuffer);
         try {
             PnLibraryRuntimeHost runtime = PnLibraryRuntimeHost.start(plugin, adapter);
@@ -50,7 +51,7 @@ public final class BukkitRuntime {
             metricsLogger.set(runtime.getLibrary().getLogging().logger(plugin, "Metrics"));
             logger = startupLogger.get();
             installServices(runtime, adapter, playerService);
-            startOptionalParts(runtime, adapter, network);
+            startOptionalParts(runtime, adapter, uplink);
         } catch (Throwable error) {
             stop();
             throw error;
@@ -71,12 +72,13 @@ public final class BukkitRuntime {
         logger = null;
     }
 
-    private void startOptionalParts(PnLibraryRuntimeHost runtime, BukkitPlatformAdapter adapter, Link network) {
+    private void startOptionalParts(PnLibraryRuntimeHost runtime, BukkitPlatformAdapter adapter, BukkitLink uplink) {
         BukkitIntegrations optional = new BukkitIntegrations(plugin);
         integrations = optional;
         plugin.getServer().getPluginManager().registerEvents(optional, plugin);
         optional.start(runtime);
-        linkReporter = new BukkitLinkReporter(plugin, runtime.getLibrary(), network, adapter.getScheduler());
+        linkReporter = new BukkitLinkReporter(plugin, runtime.getLibrary(), adapter.getServerNetwork(), uplink,
+            adapter.getScheduler());
         linkReporter.start();
     }
 

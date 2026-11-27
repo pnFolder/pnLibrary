@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.data.MissingPlugins;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Icons;
@@ -58,12 +58,8 @@ public final class MissingPluginScreens extends MenuScreens {
         }));
     }
 
-    /** The two buttons of the settings screen about missing plugins. */
+    /** The button of the settings screen about missing plugins. */
     public void buttons(MenuBuilder builder) {
-        Boolean automatic = data().downloadsAutomatic();
-        if (automatic == null) {
-            return;
-        }
         List<MissingPlugins> missing = data().missingDependencies();
         if (!missing.isEmpty()) {
             builder.button(14, MenuItems.icon(Icons.SETTINGS, "CHEST", "Что не хватает", Style.lore(CoreFormatting.wrapText(
@@ -71,14 +67,5 @@ public final class MissingPluginScreens extends MenuScreens {
                 Fact.list("Групп", String.valueOf(missing.size())), Style.left("открыть")), Tone.DANGER),
                 go(who -> allowed(who, MenuConstants.SETTINGS, () -> missingPlugins(who, 0))));
         }
-        boolean on = automatic;
-        builder.button(13, MenuItems.icon(Icons.TOGGLE, "HOPPER", "Недостающие плагины", Style.lore(CoreFormatting.wrapText(
-            "Если плагину нужен другой плагин, скачать его самому. Иначе в консоль придут ссылки и код: /pn deps install <код>.",
-            CoreFormatting.WRAP_WIDTH, 4), Collections.emptyList(), Style.choices(java.util.Arrays.asList("скачивать самому",
-            "только сообщать"), on ? 0 : 1), Style.left(on ? "выключить" : "включить")), "REDSTONE_TORCH_ON",
-            Tone.of(false, false, on, !on)), go(who -> allowed(who, MenuConstants.SETTINGS, () -> {
-                data().setDownloadsAutomatic(!on);
-                routes.settings(who);
-            })));
     }
 }

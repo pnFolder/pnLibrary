@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.remote.RemotePolicySettings;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerControl;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerControl;
 
 /** One scheduled policy check: evaluates the policy off-thread, then acts on the result on the global thread. */
 final class PolicyCheckRun implements Runnable {

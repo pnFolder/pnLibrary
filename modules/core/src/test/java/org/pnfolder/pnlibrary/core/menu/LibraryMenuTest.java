@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;

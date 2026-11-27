@@ -24,7 +24,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.config.YamlConfigurations;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRunner;
 import org.pnfolder.pnlibrary.core.commands.engine.RecordingSender;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 class ConfigsCommandTest {
     @TempDir

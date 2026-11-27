@@ -21,9 +21,9 @@ import org.bukkit.plugin.Plugin;
 import org.pnfolder.pnlibrary.bukkit.compat.ServerCapabilities;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticSections;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticDetailsCollector;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticSections;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
 
 /** Collects actionable Bukkit state without enumerating private or high-volume server data. */
 final class BukkitDiagnosticDetailsCollector {

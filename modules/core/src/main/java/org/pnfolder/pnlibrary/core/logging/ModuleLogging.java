@@ -8,9 +8,9 @@ import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.logging.MessageBox;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshotProvider;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshotProvider;
 
 import java.util.Map;
 

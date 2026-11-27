@@ -149,19 +149,19 @@ final class BukkitOnlinePlayer implements OnlinePlayer {
 
     @Nullable
     @Override
-    public Double experienceLevel() {
+    public Double getExperienceLevel() {
         return (double) player.getLevel();
     }
 
     @Nullable
     @Override
-    public Double experiencePoints() {
+    public Double getExperiencePoints() {
         return (double) player.getTotalExperience();
     }
 
     @Nullable
     @Override
-    public Position position() {
+    public Position getPosition() {
         Location here = player.getLocation();
         String world = here.getWorld() == null ? "" : here.getWorld().getName();
         return new Position(world, here.getX(), here.getY(), here.getZ());

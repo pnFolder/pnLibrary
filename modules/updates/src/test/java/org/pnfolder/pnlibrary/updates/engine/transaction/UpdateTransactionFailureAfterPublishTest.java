@@ -23,7 +23,7 @@ import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 
 class UpdateTransactionFailureAfterPublishTest {
     @TempDir

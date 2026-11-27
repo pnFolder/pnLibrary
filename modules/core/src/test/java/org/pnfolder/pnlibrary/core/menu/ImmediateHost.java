@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

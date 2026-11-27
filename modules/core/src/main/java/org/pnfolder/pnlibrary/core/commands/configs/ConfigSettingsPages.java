@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.config.ConfigApply;
 import org.pnfolder.pnlibrary.api.config.ConfigEditException;

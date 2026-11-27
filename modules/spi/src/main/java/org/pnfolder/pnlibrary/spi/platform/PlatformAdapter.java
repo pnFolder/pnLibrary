@@ -1,5 +1,11 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnostics;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformShutdown;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogObservation;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;

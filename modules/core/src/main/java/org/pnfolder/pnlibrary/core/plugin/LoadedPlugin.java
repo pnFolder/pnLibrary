@@ -28,6 +28,7 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope;
 import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftBlockCard;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftGate;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftSupportRule;
 import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
@@ -106,6 +107,11 @@ final class LoadedPlugin implements PluginRegistration {
     }
 
     @Override
+    public void allowForce(boolean allowed) {
+        minecraftRule.setForceAllowed(allowed);
+    }
+
+    @Override
     public <E extends CommandError> void onCommandError(@NotNull Class<E> type, @NotNull CommandErrorHandler<E> handler) {
         commandFeedback.getHandlers().put(type, handler);
     }
@@ -162,7 +168,10 @@ final class LoadedPlugin implements PluginRegistration {
         MinecraftGate gate = MinecraftGate.open(scope, host.preferences, definition.getMinecraftRule(), minecraftRule,
                 host.identity.getMinecraftVersion());
         if (gate.mustFail(controllable)) {
-            throw new IllegalStateException(gate.reason() + " Запустить всё равно: /pn modules mc force " + scope + " on");
+            if (host.console != null) {
+                MinecraftBlockCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate).send(line -> host.console.console(owner, line));
+            }
+            throw new IllegalStateException(gate.reason());
         }
         return gate;
     }

@@ -11,8 +11,8 @@ import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu;
 import org.pnfolder.pnlibrary.core.menu.MenuHost;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.menu.data.remote.RemoteMenuData;
 
 /** What the portable menu needs from a Bukkit server. */

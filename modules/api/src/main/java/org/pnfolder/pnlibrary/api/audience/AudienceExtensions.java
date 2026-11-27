@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.api.audience;
 
 import java.util.Locale;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.kyori.adventure.audience.Audience;
@@ -14,7 +13,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.audience.delivery.Delivery;
 
 /**
  * Who an Audience is, read from the Adventure pointers every platform fills in. The console has a name but no UUID.
@@ -128,10 +126,5 @@ public final class AudienceExtensions {
                 return receivers.get();
             }
         };
-    }
-
-    /** Runs {@code operation} on this audience and reports it. See {@link Delivery#to(Audience, Consumer)}. */
-    public static @NotNull Delivery deliver(@NotNull Audience audience, @NotNull Consumer<Audience> operation) {
-        return Delivery.to(audience, operation);
     }
 }

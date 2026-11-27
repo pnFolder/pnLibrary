@@ -90,9 +90,9 @@ class SettingsCommandTest {
         assertTrue(first.contains("privacy = включено  (по умолчанию выключено)"), first);
         assertTrue(first.contains("history-retention-days = 30"), first);
         assertTrue(second.contains("страница 2/2"), second);
-        assertTrue(second.contains("updates.check-interval = 6ч"), second);
+        assertTrue(first.contains("updates.check-interval = 6ч"), first);
         assertTrue(second.contains("updates.restart.quiet-time = 2м"), second);
-        assertTrue(second.contains("updates.restart.auto = выключено"), second);
+        assertTrue(first.contains("updates.restart.auto = выключено"), first);
         assertEquals(first, run(), "the bare command is the list");
     }
 
@@ -104,30 +104,22 @@ class SettingsCommandTest {
         assertTrue(text.contains("значение: 30 (по умолчанию)"), text);
         assertTrue(text.contains("допустимо: от 30 до 365"), text);
         assertTrue(text.contains("заработает: после перезапуска"), text);
-        assertTrue(run("get", "downloads.enabled").contains("заработает: сразу"));
+        assertTrue(run("get", "updates.restart.auto").contains("заработает: сразу"));
         assertTrue(run("get", "nope").contains("Такой настройки нет"));
     }
 
     @Test
     @DisplayName("set saves the value and says when it starts to work")
     void setSavesTheValueAndSaysWhenItStartsToWork() {
-        String live = run("set", "downloads.automatic", "off");
+        String live = run("set", "updates.restart.auto", "on");
         String later = run("set", "history-retention-days", "90");
 
-        assertFalse(store.current().getDownloadsAutomatic());
+        assertTrue(store.current().getRestart().getAuto());
         assertEquals(90, store.current().getHistoryRetentionDays());
-        assertTrue(live.contains("downloads.automatic: включено → выключено. Сохранено."), live);
+        assertTrue(live.contains("updates.restart.auto: выключено → включено. Сохранено."), live);
         assertFalse(live.contains("перезапуска"), live);
         assertTrue(later.contains("30 → 90"), later);
         assertTrue(later.contains("после перезапуска"), later);
-    }
-
-    @Test
-    @DisplayName("a text with spaces is taken whole")
-    void aTextWithSpacesIsTakenWhole() {
-        run("set", "no-permission-message", "Нет", "права", "на", "это");
-
-        assertEquals("Нет права на это", store.current().getNoPermissionMessage());
     }
 
     @Test
@@ -135,7 +127,7 @@ class SettingsCommandTest {
     void aWrongValueOrKeyIsAnsweredWithTheReasonAndNothingChanges() {
         String range = run("set", "history-retention-days", "7");
         String word = run("set", "privacy", "maybe");
-        String time = run("set", "updates.check-interval", "5m");
+        String time = run("set", "updates.check-interval", "7h");
         String key = run("set", "nope", "1");
 
         assertTrue(range.contains("Не изменено") && range.contains("от 30 до 365"), range);
@@ -161,9 +153,9 @@ class SettingsCommandTest {
     @DisplayName("keys and values are suggested")
     void keysAndValuesAreSuggested() {
         List<String> keys = suggest("set", "");
-        assertTrue(keys.contains("downloads.enabled") && keys.contains("privacy") && keys.contains("updates.check-interval"), keys.toString());
-        assertEquals(Arrays.asList("downloads.automatic", "downloads.enabled"),
-                sorted(suggest("get", "downloads.")));
+        assertTrue(keys.contains("updates.restart.auto") && keys.contains("privacy") && keys.contains("updates.check-interval"), keys.toString());
+        assertEquals(Arrays.asList("history-retention-days"),
+                sorted(suggest("get", "history")));
         assertEquals(Arrays.asList("включено", "выключено"), sorted(suggest("set", "privacy", "")));
         assertTrue(suggest("set", "updates.check-interval", "").contains("6h"));
         run("set", "privacy", "true");

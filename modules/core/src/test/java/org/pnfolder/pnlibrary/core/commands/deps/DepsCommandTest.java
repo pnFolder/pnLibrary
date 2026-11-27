@@ -1,6 +1,7 @@
 package org.pnfolder.pnlibrary.core.commands.deps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,7 +34,6 @@ class DepsCommandTest {
 
     DepsCommandTest() {
         when(((RuntimeResources) library).dependencyDownloads()).thenReturn(downloads);
-        when(downloads.isAutomatic()).thenReturn(false);
     }
 
     private String run(String... words) {
@@ -55,7 +55,6 @@ class DepsCommandTest {
 
         String text = run();
 
-        assertTrue(text.contains("выключена"), text);
         assertTrue(text.contains("Всё нужное установлено"), text);
     }
 
@@ -83,16 +82,6 @@ class DepsCommandTest {
     }
 
     @Test
-    @DisplayName("auto on and off save the choice")
-    void autoOnAndOffSaveTheChoice() {
-        run("auto", "on");
-        run("auto", "off");
-
-        verify(downloads).setAutomatic(true);
-        verify(downloads).setAutomatic(false);
-    }
-
-    @Test
     @DisplayName("an unknown code is refused")
     void anUnknownCodeIsRefused() {
         when(downloads.installGroup("zzz")).thenReturn(null);
@@ -101,13 +90,14 @@ class DepsCommandTest {
     }
 
     @Test
-    @DisplayName("the command is named deps and has install and auto")
-    void theCommandIsNamedDepsAndHasInstallAndAuto() {
+    @DisplayName("the command is named deps and has install but no switch for the automatic download")
+    void theCommandIsNamedDepsAndHasInstallButNoSwitchForTheAutomaticDownload() {
         assertEquals("deps", definition.getName());
         List<String> names = new java.util.ArrayList<String>();
         for (CommandNode child : definition.getRoot().getChildren()) {
             names.add(child.getName());
         }
-        assertTrue(names.containsAll(Arrays.asList("install", "auto")));
+        assertTrue(names.contains("install"));
+        assertFalse(names.contains("auto"), names.toString());
     }
 }

@@ -21,7 +21,7 @@ import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandDispatcher;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandRegistration;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 
 /** Registers portable commands with the platform and runs them: routing, error answers, suggestions, counters. */
 public final class CommandRegistry implements CommandService, PlatformCommandDispatcher, AutoCloseable {

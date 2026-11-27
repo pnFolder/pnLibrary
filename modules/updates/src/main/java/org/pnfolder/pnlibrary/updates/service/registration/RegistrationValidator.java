@@ -15,7 +15,7 @@ import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 import org.pnfolder.pnlibrary.common.jvm.JavaRuntime;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerMetadata;
 
 /** Checks that a registering plugin can be updated and finds the files the update pipeline works with. */
 public final class RegistrationValidator {

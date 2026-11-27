@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import java.util.Objects;
 import java.time.Duration;
 import java.util.List;

@@ -25,10 +25,10 @@ import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.core.downloads.fetch.DownloadVerifier;
 import org.pnfolder.pnlibrary.core.downloads.fetch.PluginJarVerifier;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory;
-import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerMetadata;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPluginInventory;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
 
 /** Finds the plugin dependencies a plugin lacks, tells the administrator, and registers their download. */
 public final class DependencyDownloads {
@@ -50,7 +50,7 @@ public final class DependencyDownloads {
     private final DependencyDownloadReporter reporter;
     private final DownloadedDependencyStore store;
     private final PluginJarVerifier jarVerifier;
-    private final BooleanSupplier automatic;
+    private final DependencyModules modules;
     private final MissingDependencies missing = new MissingDependencies();
 
     /** Creates the part that handles dependencies; every collaborator is built by the download service. */
@@ -58,7 +58,7 @@ public final class DependencyDownloads {
                                @NotNull PlatformReadiness readiness, @NotNull PlatformLogging logging,
                                @NotNull DependencyDownloadRequestFactory requests,
                                @NotNull DependencyDownloadReporter reporter, @NotNull DownloadedDependencyStore store,
-                               @NotNull PluginJarVerifier jarVerifier, @NotNull BooleanSupplier automatic) {
+                               @NotNull PluginJarVerifier jarVerifier, @NotNull DependencyModules modules) {
         this.ownership = Objects.requireNonNull(ownership, "ownership");
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.readiness = Objects.requireNonNull(readiness, "readiness");
@@ -67,16 +67,17 @@ public final class DependencyDownloads {
         this.reporter = Objects.requireNonNull(reporter, "reporter");
         this.store = Objects.requireNonNull(store, "store");
         this.jarVerifier = Objects.requireNonNull(jarVerifier, "jarVerifier");
-        this.automatic = Objects.requireNonNull(automatic, "automatic");
+        this.modules = Objects.requireNonNull(modules, "modules");
     }
 
     /**
      * Registers the missing external {@code dependencies} through {@code registrar}, announces what is missing and
      * returns the registration; null when nothing can be downloaded.
      */
-    public @Nullable DownloadRegistration register(@NotNull Object owner,
+    public @Nullable DownloadRegistration register(@NotNull Object owner, @NotNull String module,
                                                    @NotNull List<? extends PluginDependency> dependencies,
                                                    @NotNull Registrar registrar) {
+        modules.add(owner, module);
         Map<String, String> installed = installedPlugins(owner);
         readiness.whenServerReady(() -> confirmDownloaded(owner, installedPlugins(owner)));
         List<ExternalPluginDependency> lacking = requests.missing(dependencies, installed);
@@ -158,7 +159,7 @@ public final class DependencyDownloads {
             items.add(describe(dependency));
         }
         MissingGroup group = missing.add(ownerName(owner), items, registration);
-        boolean installingNow = registration != null && automatic.getAsBoolean();
+        boolean installingNow = registration != null;
         Failures.runCatchingNonFatal(() -> {
             reporter.missing(owner, group, installingNow);
             return null;

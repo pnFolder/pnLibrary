@@ -5,8 +5,8 @@ import java.util.Arrays;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins;
-import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPlugins;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PluginSnapshot;
 
 /** The installed Bukkit plugins as the shared platform contract sees them. */
 final class BukkitPlugins {

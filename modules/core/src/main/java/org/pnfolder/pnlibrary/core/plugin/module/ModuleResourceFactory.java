@@ -167,7 +167,7 @@ public final class ModuleResourceFactory {
             }
             // Retain the first registration immediately so a later failure can roll it back.
             if (downloadService != null) {
-                downloadRegistration = downloadService.registerDependencies(owner, definition.getDependencies());
+                downloadRegistration = downloadService.registerDependencies(owner, moduleId.getValue(), definition.getDependencies());
             }
             DownloadRegistration fileDownloads = null;
             if (definition.getDownloadsRequest() != null && downloadService != null) {

@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.updates.policy;
 import java.util.Locale;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
 
 /** Names, colors and descriptions of update channels. */

@@ -7,7 +7,7 @@ import java.util.concurrent.TimeoutException;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.audience.OnlinePlayer;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;

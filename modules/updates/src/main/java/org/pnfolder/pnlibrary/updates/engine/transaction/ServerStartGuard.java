@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;

@@ -18,7 +18,7 @@ import org.pnfolder.pnlibrary.core.settings.SettingsStore;
 import org.pnfolder.pnlibrary.core.text.ConsoleStyle;
 import org.pnfolder.pnlibrary.currency.CurrencyFeature;
 import org.pnfolder.pnlibrary.currency.CurrencyRuntime;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 import org.pnfolder.pnlibrary.updates.policy.UpdateTiming;
 import org.pnfolder.pnlibrary.updates.service.PluginUpdates;
@@ -40,8 +40,7 @@ public final class RuntimeFeatureSet {
         this.configurations = new YamlConfigurations(platform.getOwnership(), logging);
         this.updates = createUpdates(platform, paths, logging, settings);
         this.downloads = new DownloadService(platform.getIdentity(), platform.getOwnership(), platform.getOwnership(),
-                platform.getReadiness(), logging, paths, () -> DownloadConfiguration.of(settings.current()),
-                value -> settings.set("downloads.automatic", value.toString()));
+                platform.getReadiness(), logging, paths, () -> DownloadConfiguration.of(settings.current()));
         this.placeholders = new PlaceholderEngine(problem -> logging.log(owner, LogLevel.WARNING, problem));
         this.currency = new CurrencyFeature((message, error) -> logging.log(owner, LogLevel.ERROR, message, error));
         // Expansions of plugins are public; the library's own ones are seen by no plugin and reached only through a module context.

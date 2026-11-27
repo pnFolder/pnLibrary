@@ -40,8 +40,8 @@ import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
 import org.pnfolder.pnlibrary.core.network.ChannelNames;
 import org.pnfolder.pnlibrary.core.link.ServerGroup;
 import org.pnfolder.pnlibrary.core.link.ServerGroups;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
-import org.pnfolder.pnlibrary.core.menu.PluginDirectory;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.PluginDirectory;
 import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot;
@@ -87,16 +87,6 @@ public final class LocalMenuData extends LocalMenuUpdates {
 
     public LocalMenuData(@NotNull PnLibrary library, @NotNull PluginDirectory directory) {
         this(library, directory, (viewer, line) -> Collections.emptyList(), null);
-    }
-
-    @Override
-    public @Nullable Boolean downloadsAutomatic() {
-        return dependencies.automatic();
-    }
-
-    @Override
-    public void setDownloadsAutomatic(boolean value) {
-        dependencies.setAutomatic(value);
     }
 
     @Override

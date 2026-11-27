@@ -5,9 +5,9 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticReport;
 
 /** Renders diagnostics state once for every native platform, as notices in the shared chat style. */

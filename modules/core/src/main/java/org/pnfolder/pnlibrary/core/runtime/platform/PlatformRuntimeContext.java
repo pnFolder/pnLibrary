@@ -10,14 +10,14 @@ import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
 import org.pnfolder.pnlibrary.spi.platform.PlatformBinding;
-import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnostics;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnostics;
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogObservation;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
-import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness;
-import org.pnfolder.pnlibrary.spi.platform.PlatformShutdown;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogObservation;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformShutdown;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter;
 
 /** All platform adapters the runtime needs, gathered in one place. */

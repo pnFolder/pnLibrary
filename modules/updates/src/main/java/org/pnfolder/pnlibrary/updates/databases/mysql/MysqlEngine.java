@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseConnection;
 import org.pnfolder.pnlibrary.updates.databases.DatabaseEngine;
 import org.pnfolder.pnlibrary.updates.databases.JdbcConnections;
-import org.pnfolder.pnlibrary.updates.databases.SqlScriptRestore;
+import org.pnfolder.pnlibrary.updates.databases.dump.SqlScriptRestore;
 
 /** MySQL and MariaDB through JDBC. */
 public final class MysqlEngine implements DatabaseEngine {

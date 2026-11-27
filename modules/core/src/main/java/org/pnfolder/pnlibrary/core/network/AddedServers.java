@@ -11,9 +11,10 @@ import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.network.NetworkServer;
 
 /**
- * The servers added to a proxy while it runs. It checks the name and the address, refuses a name that is taken and
- * remembers what it added, so that only those servers can be removed again and none is left behind when it closes.
- * The proxy platforms only say how to register and unregister a server natively.
+ * The servers added to a proxy while it runs, and the removal of any server. It checks the name and the address of a
+ * new server, refuses a name that is taken and remembers what it added, so that none is left behind when it closes.
+ * Any registered server can be removed, also the proxy's own and those of other plugins; the proxy platforms only say
+ * how to register and unregister a server natively.
  */
 public final class AddedServers {
     /** What a proxy platform does natively. */
@@ -24,7 +25,7 @@ public final class AddedServers {
         /** Registers the server and returns it. */
         NetworkServer register(String name, InetSocketAddress address);
 
-        /** Unregisters the server of that name. */
+        /** Unregisters the server of that name, whoever registered it. */
         void unregister(String name);
     }
 
@@ -55,14 +56,15 @@ public final class AddedServers {
         return server;
     }
 
-    /** Removes {@code server} if it was added here; the proxy's own servers stay. */
+    /** Removes {@code server}, whoever registered it; false when the proxy does not know it. */
     public synchronized boolean remove(@NotNull NetworkServer server) {
         String name = server.getName();
-        if (!added.remove(name.toLowerCase(Locale.ROOT))) {
+        if (!platform.exists(name)) {
             return false;
         }
-        order.remove(name);
         platform.unregister(name);
+        added.remove(name.toLowerCase(Locale.ROOT));
+        order.removeIf(known -> known.equalsIgnoreCase(name));
         return true;
     }
 

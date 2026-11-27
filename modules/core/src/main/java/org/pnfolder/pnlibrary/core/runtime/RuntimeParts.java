@@ -196,7 +196,8 @@ final class RuntimeParts {
         return new LoadedPlugins(platform.getOwnership(), platform.getIdentity(), remotePolicies, eventService, tasks,
                 features.getServices(), logging, metricsService, diagnostics, features.getUpdates(), shared,
                 features.getConfigurations(), platformServices.getCommands(), features.getDownloads(), version,
-                new ModulePreferences(dataFolder.resolve("modules").resolve("preferences.json")), LibraryFetcher.THROUGH_LIBBY);
+                new ModulePreferences(dataFolder.resolve("modules").resolve("preferences.json")), LibraryFetcher.THROUGH_LIBBY,
+                support.getCapture());
     }
 
     private RuntimeDiagnosticsAssembler createRuntimeDiagnostics(BooleanSupplier closed) {

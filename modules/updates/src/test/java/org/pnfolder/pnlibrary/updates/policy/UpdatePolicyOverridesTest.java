@@ -14,7 +14,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
-import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.UpdatePreferencesStore;
 
 class UpdatePolicyOverridesTest {
     @TempDir

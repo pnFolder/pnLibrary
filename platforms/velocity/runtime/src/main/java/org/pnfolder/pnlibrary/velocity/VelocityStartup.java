@@ -4,13 +4,11 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
-import org.pnfolder.pnlibrary.core.link.LinkReceiver;
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntime;
 import org.pnfolder.pnlibrary.core.runtime.PnLibraryRuntimeHost;
 import org.pnfolder.pnlibrary.core.runtime.ProxyRuntime;
 import org.pnfolder.pnlibrary.core.runtime.ProxyStartup;
 import org.pnfolder.pnlibrary.velocity.api.VelocityPlatform;
-import org.pnfolder.pnlibrary.velocity.link.VelocityLinkListener;
 import org.pnfolder.pnlibrary.velocity.metrics.VelocityMetricsFactory;
 
 /** The Velocity side of the start: the adapter, the native platform object and the listeners. */
@@ -43,7 +41,7 @@ final class VelocityStartup implements ProxyStartup {
     @NotNull
     @Override
     public ProxyRuntime createProxy() {
-        return new ProxyRuntime(adapter, this::registerLinkListener, adapter::ownerInfo);
+        return new ProxyRuntime(adapter, adapter::ownerInfo);
     }
 
     @NotNull
@@ -59,11 +57,5 @@ final class VelocityStartup implements ProxyStartup {
 
     private PnLogger metricsLogger() {
         return host.getLibrary().getLogging().logger(owner, "Metrics");
-    }
-
-    private AutoCloseable registerLinkListener(LinkReceiver receiver) {
-        VelocityLinkListener listener = new VelocityLinkListener(receiver);
-        server.getEventManager().register(owner, listener);
-        return () -> server.getEventManager().unregisterListener(owner, listener);
     }
 }

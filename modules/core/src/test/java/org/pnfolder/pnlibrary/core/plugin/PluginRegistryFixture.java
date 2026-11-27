@@ -127,7 +127,7 @@ public final class PluginRegistryFixture {
         return new LoadedPlugins(platform, identity, new RemotePolicyMonitor(platform, platform, new RemotePolicyNoticeRenderer(platform)),
             events, tasks, new ServiceRegistry(), logging, metrics, emptyProxy(DiagnosticsService.class), updates,
             new SharedFeatures(new PlaceholderEngine(), new CurrencyFeature(), expansions, libraryExpansions),
-            new YamlConfigurations(platform), commands, downloadService, libraryVersion, new ModulePreferences(), libraryFetcher);
+            new YamlConfigurations(platform), commands, downloadService, libraryVersion, new ModulePreferences(), libraryFetcher, platform);
     }
 
     private static PlatformIdentity withMinecraftVersion(PlatformAdapter platform, String version) {

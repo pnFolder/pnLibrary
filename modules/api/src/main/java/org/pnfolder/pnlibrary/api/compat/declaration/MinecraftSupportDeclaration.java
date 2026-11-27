@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <pre>{@code
  * registration.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4));
+ * registration.allowForce(false);   // no "start anyway" for this plugin
  * registration.registerModule(MODULE_ID, setup -> {
  *     setup.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_20_5));
  *     setup.onNewerMinecraft(NewerAction.ALLOW);
@@ -23,4 +24,10 @@ public interface MinecraftSupportDeclaration {
 
     /** Chooses what happens above the newest declared version; {@link NewerAction#ALLOW_WITH_WARNING} by default. */
     void onNewerMinecraft(@NotNull NewerAction action);
+
+    /**
+     * Chooses whether an administrator may start this anyway with {@code /pn modules mc force}, although the server
+     * version is outside the declared ones. Allowed by default; pass {@code false} for code that cannot work there.
+     */
+    void allowForce(boolean allowed);
 }

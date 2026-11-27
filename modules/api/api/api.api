@@ -1,5 +1,4 @@
 public final class org/pnfolder/pnlibrary/api/audience/AudienceExtensions {
-	public static fun deliver (Lnet/kyori/adventure/audience/Audience;Ljava/util/function/Consumer;)Lorg/pnfolder/pnlibrary/api/audience/delivery/Delivery;
 	public static fun displayName (Lnet/kyori/adventure/audience/Audience;)Lnet/kyori/adventure/text/Component;
 	public static fun dynamicAudience (Ljava/util/function/Supplier;)Lnet/kyori/adventure/audience/Audience;
 	public static fun hasPermission (Lnet/kyori/adventure/audience/Audience;Ljava/lang/String;)Z
@@ -29,11 +28,11 @@ public abstract interface class org/pnfolder/pnlibrary/api/audience/Console : ne
 public abstract interface class org/pnfolder/pnlibrary/api/audience/OnlinePlayer : net/kyori/adventure/audience/Audience {
 	public fun addEffect (Lorg/pnfolder/pnlibrary/api/world/StatusEffect;)Lorg/pnfolder/pnlibrary/api/audience/delivery/Delivery;
 	public fun countItems (Lorg/pnfolder/pnlibrary/api/world/ItemMatcher;)Ljava/lang/Integer;
-	public fun experienceLevel ()Ljava/lang/Double;
-	public fun experiencePoints ()Ljava/lang/Double;
+	public fun getExperienceLevel ()Ljava/lang/Double;
+	public fun getExperiencePoints ()Ljava/lang/Double;
+	public fun getPosition ()Lorg/pnfolder/pnlibrary/api/world/Position;
 	public abstract fun getUniqueId ()Ljava/util/UUID;
 	public abstract fun pointers ()Lnet/kyori/adventure/pointer/Pointers;
-	public fun position ()Lorg/pnfolder/pnlibrary/api/world/Position;
 	public fun runCommand (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audience/delivery/Delivery;
 	public fun runConsoleCommand (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/audience/delivery/Delivery;
 	public fun spawnParticle (Lorg/pnfolder/pnlibrary/api/world/Particle;)Lorg/pnfolder/pnlibrary/api/audience/delivery/Delivery;
@@ -95,7 +94,7 @@ public class org/pnfolder/pnlibrary/api/chat/ChatKit {
 	public fun bracketed (Ljava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
 	public fun button (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
 	public fun chip (ILjava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
-	public fun commandHints ([Lorg/pnfolder/pnlibrary/api/chat/CommandHint;)Ljava/util/List;
+	public fun commandHints ([Lorg/pnfolder/pnlibrary/api/chat/page/CommandHint;)Ljava/util/List;
 	public fun confirmation (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
 	public fun confirmationChoices (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/util/List;
 	public fun dot ()Lnet/kyori/adventure/text/Component;
@@ -107,10 +106,10 @@ public class org/pnfolder/pnlibrary/api/chat/ChatKit {
 	public fun header (Ljava/lang/String;Lnet/kyori/adventure/text/Component;)Lnet/kyori/adventure/text/Component;
 	public fun hoverField (Ljava/lang/String;Lnet/kyori/adventure/text/Component;)Lnet/kyori/adventure/text/Component;
 	public fun linkButton (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
-	public fun mark (Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;)Lnet/kyori/adventure/text/Component;
+	public fun mark (Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;)Lnet/kyori/adventure/text/Component;
 	public fun note (Ljava/lang/String;)Lnet/kyori/adventure/text/Component;
 	public fun note (Ljava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
-	public fun notice (Lorg/pnfolder/pnlibrary/api/chat/notice/ChatNotice;)Ljava/util/List;
+	public fun notice (Lorg/pnfolder/pnlibrary/api/chat/ChatNotice;)Ljava/util/List;
 	public fun option (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lnet/kyori/adventure/text/format/TextColor;)Lnet/kyori/adventure/text/Component;
 	public fun safeLink (Ljava/lang/String;)Z
 	public fun section (Ljava/lang/String;)Lnet/kyori/adventure/text/Component;
@@ -123,17 +122,15 @@ public class org/pnfolder/pnlibrary/api/chat/ChatKit {
 	public fun tooltip ([Lnet/kyori/adventure/text/Component;)Lnet/kyori/adventure/text/event/HoverEvent;
 }
 
-public final class org/pnfolder/pnlibrary/api/chat/ChatPalette {
-	public static final field ACCENT Lnet/kyori/adventure/text/format/TextColor;
-	public static final field DANGER Lnet/kyori/adventure/text/format/TextColor;
-	public static final field FAINT Lnet/kyori/adventure/text/format/TextColor;
-	public static final field INFO Lnet/kyori/adventure/text/format/TextColor;
-	public static final field LABEL Lnet/kyori/adventure/text/format/TextColor;
-	public static final field OK Lnet/kyori/adventure/text/format/TextColor;
-	public static final field ORANGE Lnet/kyori/adventure/text/format/TextColor;
-	public static final field SOFT Lnet/kyori/adventure/text/format/TextColor;
-	public static final field TEXT Lnet/kyori/adventure/text/format/TextColor;
-	public static final field WARN Lnet/kyori/adventure/text/format/TextColor;
+public final class org/pnfolder/pnlibrary/api/chat/ChatNotice {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;Ljava/lang/String;)V
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDetail ()Ljava/lang/String;
+	public fun getText ()Ljava/lang/String;
+	public fun getTone ()Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/pnfolder/pnlibrary/api/chat/ChatReader {
@@ -149,7 +146,21 @@ public final class org/pnfolder/pnlibrary/api/chat/ChatReader {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/chat/CommandHint {
+public final class org/pnfolder/pnlibrary/api/chat/ConfirmChoice {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCommand ()Ljava/lang/String;
+	public fun getHint ()Ljava/lang/String;
+	public fun getLabel ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/chat/page/ChatAscii {
+	public static fun of (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class org/pnfolder/pnlibrary/api/chat/page/CommandHint {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getCommand ()Ljava/lang/String;
@@ -158,36 +169,39 @@ public final class org/pnfolder/pnlibrary/api/chat/CommandHint {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class org/pnfolder/pnlibrary/api/chat/notice/ChatNotice {
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;Ljava/lang/String;)V
-	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;Ljava/lang/String;Ljava/lang/String;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getDetail ()Ljava/lang/String;
-	public fun getText ()Ljava/lang/String;
-	public fun getTone ()Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
+public final class org/pnfolder/pnlibrary/api/chat/page/CommandHintLines {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/ChatKit;)V
+	public fun of ([Lorg/pnfolder/pnlibrary/api/chat/page/CommandHint;)Ljava/util/List;
 }
 
-public final class org/pnfolder/pnlibrary/api/chat/notice/ChatTone : java/lang/Enum {
-	public static final field FAILURE Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public static final field INFO Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public static final field PROGRESS Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public static final field SUCCESS Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public static final field WARNING Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
+public final class org/pnfolder/pnlibrary/api/chat/page/Confirmations {
+	public fun <init> (Lorg/pnfolder/pnlibrary/api/chat/ChatKit;)V
+	public fun choices (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/util/List;
+	public fun single (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class org/pnfolder/pnlibrary/api/chat/style/ChatPalette {
+	public static final field ACCENT Lnet/kyori/adventure/text/format/TextColor;
+	public static final field DANGER Lnet/kyori/adventure/text/format/TextColor;
+	public static final field FAINT Lnet/kyori/adventure/text/format/TextColor;
+	public static final field INFO Lnet/kyori/adventure/text/format/TextColor;
+	public static final field LABEL Lnet/kyori/adventure/text/format/TextColor;
+	public static final field OK Lnet/kyori/adventure/text/format/TextColor;
+	public static final field ORANGE Lnet/kyori/adventure/text/format/TextColor;
+	public static final field SOFT Lnet/kyori/adventure/text/format/TextColor;
+	public static final field TEXT Lnet/kyori/adventure/text/format/TextColor;
+	public static final field WARN Lnet/kyori/adventure/text/format/TextColor;
+}
+
+public final class org/pnfolder/pnlibrary/api/chat/style/ChatTone : java/lang/Enum {
+	public static final field FAILURE Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public static final field INFO Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public static final field PROGRESS Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public static final field SUCCESS Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public static final field WARNING Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
 	public fun getColor ()Lnet/kyori/adventure/text/format/TextColor;
-	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-	public static fun values ()[Lorg/pnfolder/pnlibrary/api/chat/notice/ChatTone;
-}
-
-public final class org/pnfolder/pnlibrary/api/chat/notice/ConfirmChoice {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getCommand ()Ljava/lang/String;
-	public fun getHint ()Ljava/lang/String;
-	public fun getLabel ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/chat/style/ChatTone;
 }
 
 public final class org/pnfolder/pnlibrary/api/commands/CommandContext {
@@ -473,6 +487,7 @@ public final class org/pnfolder/pnlibrary/api/compat/MinecraftSupport : java/lan
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportDeclaration {
+	public abstract fun allowForce (Z)V
 	public abstract fun onNewerMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/NewerAction;)V
 	public abstract fun onUnsupportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/UnsupportedAction;)V
 	public abstract fun supportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftVersions;)V
@@ -1514,7 +1529,19 @@ public final class org/pnfolder/pnlibrary/api/metrics/provider/MetricsProviderCo
 	public fun withToken (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/metrics/provider/MetricsProviderConfiguration;
 }
 
+public final class org/pnfolder/pnlibrary/api/network/ConnectResult : java/lang/Enum {
+	public static final field ALREADY_THERE Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public static final field BUSY Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public static final field CONNECTED Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public static final field DENIED Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public static final field FAILED Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public fun isOnTarget ()Z
+	public static fun valueOf (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+	public static fun values ()[Lorg/pnfolder/pnlibrary/api/network/ConnectResult;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkPlayer : org/pnfolder/pnlibrary/api/audience/OnlinePlayer {
+	public abstract fun connect (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;)Ljava/util/concurrent/CompletionStage;
 	public fun disconnect ()V
 	public abstract fun disconnect (Lnet/kyori/adventure/text/Component;)V
 	public abstract fun getAddress ()Ljava/net/InetSocketAddress;
@@ -1546,8 +1573,10 @@ public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkServer
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getOnlinePlayers ()I
 	public abstract fun getPing ()Ljava/time/Duration;
+	public abstract fun getPlayers ()Ljava/util/List;
 	public fun isRestricted ()Z
 	public abstract fun send (Ljava/lang/String;[B)Z
+	public fun sendPlayers (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;)Ljava/util/concurrent/CompletionStage;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/network/channel/Channels {

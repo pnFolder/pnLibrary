@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.core.runtime;
 
-import net.kyori.adventure.key.Key;
 import java.util.Objects;
 import java.time.Duration;
 import java.util.function.Function;
@@ -9,11 +8,11 @@ import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
 import org.pnfolder.pnlibrary.api.network.NetworkServer;
+import org.pnfolder.pnlibrary.api.network.channel.NetworkChannel;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
-import org.pnfolder.pnlibrary.core.link.LinkReceiver;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.proxy.ProxyLink;
 import org.pnfolder.pnlibrary.core.updates.catalog.proxy.ProxyUpdateReminder;
 import org.pnfolder.pnlibrary.spi.platform.ProxyPlatformAdapter;
@@ -27,17 +26,14 @@ import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle;
  */
 public final class ProxyRuntime implements AutoCloseable {
     private final ProxyPlatformAdapter adapter;
-    private final Function<LinkReceiver, AutoCloseable> registerLinkReceiver;
     private final Function<Object, OwnerInfo> describe;
     private ProxyLink link;
-    private AutoCloseable linkListener;
+    private NetworkChannel linkChannel;
     private PlatformTaskHandle networkTask;
     private PlatformTaskHandle reminderTask;
 
-    public ProxyRuntime(@NotNull ProxyPlatformAdapter adapter, @NotNull Function<LinkReceiver, AutoCloseable> registerLinkReceiver,
-                        @NotNull Function<Object, OwnerInfo> describe) {
+    public ProxyRuntime(@NotNull ProxyPlatformAdapter adapter, @NotNull Function<Object, OwnerInfo> describe) {
         this.adapter = Objects.requireNonNull(adapter, "adapter");
-        this.registerLinkReceiver = Objects.requireNonNull(registerLinkReceiver, "registerLinkReceiver");
         this.describe = Objects.requireNonNull(describe, "describe");
     }
 
@@ -52,9 +48,10 @@ public final class ProxyRuntime implements AutoCloseable {
     }
 
     private void connectLink(PnLibraryRuntimeHost host) {
-        ProxyLink proxyLink = createLink(host);
-        proxy().registerChannel(Key.key(LinkCodec.CHANNEL));
-        linkListener = registerLinkReceiver.apply(proxyLink.getReceiver());
+        NetworkChannel channel = proxy().channel(LinkCodec.CHANNEL);
+        linkChannel = channel;
+        ProxyLink proxyLink = createLink(host, channel);
+        channel.listen((from, data) -> proxyLink.getReceiver().receive(from.getName(), data));
         link = proxyLink;
         if (!proxyLink.getAnnounces()) {
             return;
@@ -66,11 +63,11 @@ public final class ProxyRuntime implements AutoCloseable {
                 .schedule();
     }
 
-    private ProxyLink createLink(PnLibraryRuntimeHost host) {
+    private ProxyLink createLink(PnLibraryRuntimeHost host, NetworkChannel channel) {
         return new ProxyLink(host.getLibrary(), adapter.getDataFolder(), adapter::warn,
                 (name, bytes) -> {
                     NetworkServer server = proxy().server(name);
-                    return server != null && server.send(LinkCodec.CHANNEL, bytes);
+                    return server != null && channel.send(server, bytes);
                 },
                 describe,
                 (viewer, permission) -> {
@@ -81,7 +78,7 @@ public final class ProxyRuntime implements AutoCloseable {
                 () -> proxy().getPlayerCount(),
                 bytes -> {
                     for (NetworkServer server : proxy().getServers()) {
-                        Failures.runCatchingNonFatal(() -> server.send(LinkCodec.CHANNEL, bytes));
+                        Failures.runCatchingNonFatal(() -> channel.send(server, bytes));
                     }
                 },
                 name -> {
@@ -105,26 +102,25 @@ public final class ProxyRuntime implements AutoCloseable {
                 .schedule();
     }
 
-    /** Stops scheduled tasks, unregisters the link listener and channel, then closes the link. */
+    /** Stops scheduled tasks, closes the link channel, then closes the link. */
     @Override
     public void close() {
         final PlatformTaskHandle network = networkTask;
         final PlatformTaskHandle reminder = reminderTask;
-        final AutoCloseable listener = linkListener;
+        final NetworkChannel channel = linkChannel;
         final ProxyLink proxyLink = link;
         networkTask = null;
         reminderTask = null;
-        linkListener = null;
+        linkChannel = null;
         link = null;
         ResourceCleanup.closeAll(
                 () -> cancel(network),
                 () -> cancel(reminder),
                 () -> {
-                    if (listener != null) {
-                        listener.close();
+                    if (channel != null) {
+                        channel.close();
                     }
                 },
-                () -> proxy().unregisterChannel(Key.key(LinkCodec.CHANNEL)),
                 () -> {
                     if (proxyLink != null) {
                         proxyLink.close();

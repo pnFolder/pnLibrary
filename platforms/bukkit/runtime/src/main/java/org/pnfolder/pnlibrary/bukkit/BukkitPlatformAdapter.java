@@ -35,14 +35,14 @@ import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
-import org.pnfolder.pnlibrary.spi.platform.JulLogObserver;
+import org.pnfolder.pnlibrary.spi.platform.logging.JulLogObserver;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLifecycle;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogSink;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPlugins;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
-import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
-import org.pnfolder.pnlibrary.spi.platform.UncaughtExceptionLogObserver;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformLifecycle;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogSink;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPlugins;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PluginSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.logging.UncaughtExceptionLogObserver;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter;
 
 /**

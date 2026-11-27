@@ -15,8 +15,8 @@ import org.pnfolder.pnlibrary.core.link.LinkReceiver;
 import org.pnfolder.pnlibrary.core.link.remote.LinkTransport;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteExecutor;
 import org.pnfolder.pnlibrary.core.link.report.NetworkPublisher;
-import org.pnfolder.pnlibrary.core.link.wire.LinkSecret;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.link.wire.seal.LinkSecret;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.menu.ProxyMenu;
 import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer;
 
@@ -55,7 +55,7 @@ public final class ProxyLink implements AutoCloseable {
         ProxyControlCommand control = new ProxyControlCommand(library, link);
         this.data = ProxyMenu.server(library, link, control, describe, holds);
         this.publisher = link.getEnabled() ? new NetworkPublisher(library, link, platformName, players, addresses) : null;
-        this.receiver = new LinkReceiver(link, new RemoteExecutor(library), data);
+        this.receiver = new LinkReceiver(link, new RemoteExecutor(library), data, warn, library::getVersion);
         control.register();
     }
 
@@ -69,9 +69,10 @@ public final class ProxyLink implements AutoCloseable {
         return publisher != null;
     }
 
-    /** Sends the current network map to every game server. The platform calls it every {@link #NETWORK_PERIOD_SECONDS}. */
+    /** Sends the hello and the current network map to every game server. The platform calls it every {@link #NETWORK_PERIOD_SECONDS}. */
     public void announce() {
         if (publisher != null) {
+            broadcast.accept(publisher.hello());
             broadcast.accept(publisher.message());
         }
     }

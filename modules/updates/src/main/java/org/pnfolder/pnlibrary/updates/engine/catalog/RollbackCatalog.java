@@ -3,8 +3,8 @@ package org.pnfolder.pnlibrary.updates.engine.catalog;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournalRepository;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournalRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;

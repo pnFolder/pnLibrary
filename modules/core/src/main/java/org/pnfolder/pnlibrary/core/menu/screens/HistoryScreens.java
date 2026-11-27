@@ -13,8 +13,8 @@ import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.Menus;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Icons;
@@ -25,7 +25,7 @@ import org.pnfolder.pnlibrary.core.menu.style.Row;
 import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
 import org.pnfolder.pnlibrary.core.text.CoreFormatting;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogLabels;
 
 /** Menu screens showing the history of updates and changes. */
 public final class HistoryScreens extends MenuScreens {

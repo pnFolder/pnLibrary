@@ -124,6 +124,7 @@ registration.registerModule(MODULE_ID) { setup ->
     setup.supportedMinecraft(MinecraftVersions.upTo("1.21.4"))              // до этой включительно
     setup.supportedMinecraft(MinecraftVersions.LEGACY)                      // 1.12.2 и старше; ещё готовые: MODERN (1.13 и новее), ANY (любая)
     setup.onNewerMinecraft(NewerAction.ALLOW_WITH_WARNING)                  // ALLOW, ALLOW_WITH_WARNING, BLOCK
+    setup.allowForce(false)                                                 // запретить «запустить всё равно» (по умолчанию можно)
     setup.onUnsupportedMinecraft(UnsupportedAction.DISABLE_MODULE)          // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
 }
 ```
@@ -135,7 +136,7 @@ registration.registerModule(MODULE_ID) { setup ->
 - Новее объявленного: по умолчанию запускается с предупреждением в логе (`NewerAction.ALLOW_WITH_WARNING`).
 - Старее или не из списка: модуль выключается с причиной (`DISABLE_MODULE`). Модуль без методов включения выключить нельзя,
   поэтому `registerModule` бросает исключение, как и при `STOP_PLUGIN`. `WARN_ONLY` только предупреждает.
-- Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется.
+- Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется. Автор плагина может запретить это: `allowForce(false)` на плагине или модуле (побеждает ближайший). Тогда команда отказывает, а сохранённый ранее выбор не действует. Когда плагин остановлен проверкой версии, в консоль выходит карточка: что нужно, что на сервере, что сделано и как запустить (или что автор это запретил).
 - На прокси (BungeeCord, Velocity) версия Minecraft неизвестна: результат `UNKNOWN`, ничто не блокируется.
 
 ### Управление библиотекой: выключить, включить, повторить

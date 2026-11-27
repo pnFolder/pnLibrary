@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.PluginDirectory;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.core.link.Link;
 

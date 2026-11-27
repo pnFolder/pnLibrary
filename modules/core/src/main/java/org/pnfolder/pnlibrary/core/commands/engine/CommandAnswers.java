@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNode;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind;
@@ -13,7 +13,7 @@ import org.pnfolder.pnlibrary.api.commands.error.CommandError;
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler;
 import org.pnfolder.pnlibrary.api.commands.error.NoPermission;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 
 /** The error waterfall: deepest node, parent nodes, module, plugin, then the library standard. */
 final class CommandAnswers {

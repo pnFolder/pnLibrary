@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PluginSnapshot;
 
 /** The questions the adapter asks about installed Velocity plugins, in the terms of the shared platform contract. */
 final class VelocityPluginLookup {

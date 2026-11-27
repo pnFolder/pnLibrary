@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.dependencies.Dependencies;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 class ModuleProductResolverTest {
     private final Object owner = new Object();

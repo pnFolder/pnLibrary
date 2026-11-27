@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.common.lang.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.common.time.DisplayZone;
 import org.pnfolder.pnlibrary.core.journal.view.JournalTime;
 

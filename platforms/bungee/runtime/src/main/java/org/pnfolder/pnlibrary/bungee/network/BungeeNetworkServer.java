@@ -51,6 +51,22 @@ public final class BungeeNetworkServer implements NetworkServer {
         return server.getAddress();
     }
 
+    /** Returns the wrapped native server. */
+    @NotNull
+    public ServerInfo getNativeServer() {
+        return server;
+    }
+
+    @NotNull
+    @Override
+    public List<NetworkPlayer> getPlayers() {
+        List<NetworkPlayer> players = new ArrayList<>();
+        for (ProxiedPlayer player : server.getPlayers()) {
+            players.add(BungeeNetworkPlayer.of(player));
+        }
+        return players;
+    }
+
     @Override
     public int getOnlinePlayers() {
         return server.getPlayers().size();

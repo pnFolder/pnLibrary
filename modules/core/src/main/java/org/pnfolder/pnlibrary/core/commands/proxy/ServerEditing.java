@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder;
@@ -19,9 +19,9 @@ import org.pnfolder.pnlibrary.core.network.ServerAddress;
  * The part of {@code /pn servers} that changes the proxy's list of servers while it runs:
  * <pre>
  * /pn servers add &lt;name&gt; &lt;host:port&gt;     adds a server until the restart
- * /pn servers remove &lt;name&gt;              removes a server that was added that way
+ * /pn servers remove &lt;name&gt;              removes any server until the restart, also one from the configuration
  * </pre>
- * The proxy's own servers cannot be removed here, the same as through {@link NetworkProxy#removeServer}.
+ * The same as {@link NetworkProxy#removeServer}: a configured server comes back at the restart.
  */
 final class ServerEditing {
     static final String PERMISSION = "pnlibrary.servers.manage";
@@ -75,11 +75,10 @@ final class ServerEditing {
         if (server == null) {
             context.getSender().sendMessage(kit.text("Такого сервера нет: " + name, ChatPalette.DANGER));
         } else if (proxy.removeServer(server)) {
-            context.getSender().sendMessage(kit.text("Сервер " + server.getName() + " удалён. Игроков на нём это не выгоняет.",
-                    ChatPalette.ACCENT));
+            context.getSender().sendMessage(kit.text("Сервер " + server.getName() + " убран до перезапуска прокси: если он "
+                    + "задан в настройке, после перезапуска вернётся. Игроков на нём это не выгоняет.", ChatPalette.ACCENT));
         } else {
-            context.getSender().sendMessage(kit.text("Сервер " + server.getName()
-                    + " не добавлен командой или плагином: его задаёт настройка прокси, убрать его можно только там.", ChatPalette.DANGER));
+            context.getSender().sendMessage(kit.text("Сервер " + server.getName() + " уже убран.", ChatPalette.DANGER));
         }
     }
 }

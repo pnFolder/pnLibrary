@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.chat.ChatReader;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;

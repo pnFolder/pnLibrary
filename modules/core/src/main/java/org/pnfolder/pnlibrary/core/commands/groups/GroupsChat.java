@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.commands.groups;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandOutput;
 import org.pnfolder.pnlibrary.core.commands.engine.SenderNotices;

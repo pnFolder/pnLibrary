@@ -23,7 +23,7 @@ import org.pnfolder.pnlibrary.core.link.report.LinkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.link.wire.LinkSecret;
+import org.pnfolder.pnlibrary.core.link.wire.seal.LinkSecret;
 
 class LinkLimitsTest {
     private final byte[] key = sequence(32, 1);

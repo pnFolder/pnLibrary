@@ -7,13 +7,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.bukkit.commands.BukkitCommandReplies;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.menu.LibraryMenu;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.data.local.LocalMenuData;
 import org.pnfolder.pnlibrary.core.menu.data.MenuDataServer;
 

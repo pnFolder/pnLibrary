@@ -4,8 +4,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.core.text.ConsoleStyle;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
-import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PluginSnapshot;
 
 /**
  * The look of one startup card: colours, the product facts and the blocks printed in order. It keeps its own

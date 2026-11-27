@@ -121,6 +121,8 @@ public final class PnLibraryBootstrap {
         String name = proxy.getPluginManager().fromInstance(plugin)
                 .map(container -> container.getDescription().getName().orElse(container.getDescription().getId()))
                 .orElse(plugin.getClass().getSimpleName());
+        String version = proxy.getPluginManager().fromInstance(plugin)
+                .flatMap(container -> container.getDescription().getVersion()).orElse(null);
         BootstrapConsole console = new BootstrapConsole() {
             @Override
             public ConsoleTheme theme(Tone tone) {
@@ -132,6 +134,6 @@ public final class PnLibraryBootstrap {
                 proxy.getConsoleCommandSource().sendMessage(Component.text(line));
             }
         };
-        return new LibraryInstaller(BootstrapPlatform.VELOCITY, options, name, console);
+        return new LibraryInstaller(BootstrapPlatform.VELOCITY, options, name, version, console);
     }
 }

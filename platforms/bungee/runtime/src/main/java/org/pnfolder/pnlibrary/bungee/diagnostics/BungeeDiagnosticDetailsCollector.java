@@ -7,9 +7,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticSections;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticDetailsCollector;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticSections;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
 import org.pnfolder.pnlibrary.spi.platform.ProxyBackend;
 
 import java.util.ArrayList;

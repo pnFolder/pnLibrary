@@ -23,9 +23,9 @@ import org.pnfolder.pnlibrary.api.config.ManagedConfig;
 import org.pnfolder.pnlibrary.api.plugin.ModuleId;
 import org.pnfolder.pnlibrary.api.plugin.PluginId;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformPnLogger;
 
 /**
  * Hands out one configuration scope per module, rooted at the plugin's data folder, and closes them with their owner.

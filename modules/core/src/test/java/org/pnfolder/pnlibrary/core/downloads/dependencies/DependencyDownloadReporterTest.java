@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.downloads.dependencies;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -81,7 +82,7 @@ class DependencyDownloadReporterTest {
         new DependencyDownloadReporter(serverPlatform, serverPlatform).missing(new Object(), group(), false);
 
         assertTrue(any(onProxy, "pnproxy deps install abc123"));
-        assertTrue(any(onProxy, "pnproxy deps auto on"));
+        assertFalse(any(onProxy, "deps auto"));
         boolean serverAdvice = false;
         for (String line : onServer) {
             serverAdvice |= line.contains("pn deps install abc123") && !line.contains("pnproxy");
@@ -113,5 +114,38 @@ class DependencyDownloadReporterTest {
         assertTrue(text.contains("mirror.example.org/Vault.jar"));
         assertTrue(text.contains("SHA-256 автора"));
         assertTrue(text.contains("Essentials 2.20.0+"));
+    }
+
+    @Test
+    void everyCardNamesThePluginWithItsVersionAndEndsWithTheSupportLink() {
+        List<String> output = new ArrayList<>();
+        PlatformAdapter platform = (PlatformAdapter) Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {PlatformAdapter.class}, (proxy, method, arguments) -> {
+                switch (method.getName()) {
+                    case "getType":
+                        return PlatformType.BUKKIT;
+                    case "ownerDetails":
+                        java.util.Map<String, String> details = new java.util.HashMap<>();
+                        details.put("name", "Demo");
+                        details.put("version", "1.4.0");
+                        return details;
+                    case "console":
+                        output.add((String) arguments[1]);
+                        return null;
+                    default:
+                        return null;
+                }
+            });
+        DependencyDownloadReporter reporter = new DependencyDownloadReporter(platform, platform);
+        reporter.failure(new Object(), new IllegalArgumentException("x"), LogLevel.ERROR);
+        reporter.missing(new Object(), group(), false);
+        reporter.connected(new Object(), Arrays.asList(new DownloadedDependency("Vault", "1.7.3")));
+
+        assertTrue(any(output, "Demo@main 1.4.0"));
+        int supports = 0;
+        for (String line : output) {
+            supports += line.contains("Вопросы и ошибки: https://discord.gg/") ? 1 : 0;
+        }
+        assertTrue(supports == 3, "support links: " + supports);
     }
 }

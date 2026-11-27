@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.ClickType;
+import org.pnfolder.pnlibrary.core.menu.session.MenuClick;
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.updates.backup.BackupKind;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent;
@@ -19,8 +19,8 @@ import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.Menus;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Icons;
@@ -30,7 +30,7 @@ import org.pnfolder.pnlibrary.core.menu.style.MenuText;
 import org.pnfolder.pnlibrary.core.menu.style.Row;
 import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
-import org.pnfolder.pnlibrary.updates.history.BackupItemText;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupItemText;
 
 /** Menu screens of the saved backups: the plugins that have copies, their copies by date and the rollback choices. */
 public final class BackupScreens extends MenuScreens {
