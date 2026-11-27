@@ -125,6 +125,7 @@ registration.registerModule(MODULE_ID) { setup ->
     setup.supportedMinecraft(MinecraftVersions.LEGACY)                      // 1.12.2 и старше; ещё готовые: MODERN (1.13 и новее), ANY (любая)
     setup.onNewerMinecraft(NewerAction.ALLOW_WITH_WARNING)                  // ALLOW, ALLOW_WITH_WARNING, BLOCK
     setup.allowForce(false)                                                 // запретить «запустить всё равно» (по умолчанию можно)
+    setup.allowForceNewer(true)                                             // но выше проверенных версий можно (только для новее)
     setup.onUnsupportedMinecraft(UnsupportedAction.DISABLE_MODULE)          // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
 }
 ```
@@ -137,6 +138,7 @@ registration.registerModule(MODULE_ID) { setup ->
 - Старее или не из списка: модуль выключается с причиной (`DISABLE_MODULE`). Модуль без методов включения выключить нельзя,
   поэтому `registerModule` бросает исключение, как и при `STOP_PLUGIN`. `WARN_ONLY` только предупреждает.
 - Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется. Автор плагина может запретить это: `allowForce(false)` на плагине или модуле (побеждает ближайший). Тогда команда отказывает, а сохранённый ранее выбор не действует. Когда плагин остановлен проверкой версии, в консоль выходит карточка: что нужно, что на сервере, что сделано и как запустить (или что автор это запретил).
+- В консоль для каждого модуля печатается карточка в общем стиле (`Плагин@модуль версия`, версии, что делать, поддержка): остановка («ВЕРСИЯ MINECRAFT НЕ ПОДХОДИТ», в том числе когда отключён только модуль), запуск на версии новее проверенных («НОВАЯ ВЕРСИЯ MINECRAFT»), на версии ниже нужной при `WARN_ONLY` («СТАРАЯ ВЕРСИЯ MINECRAFT») и ручной запуск («ЗАПУСК НА СВОЙ РИСК»). `NewerAction.BLOCK` блокирует и при `WARN_ONLY` для старых версий. На Velocity и BungeeCord версия Minecraft неизвестна, проверка не выполняется.
 - На прокси (BungeeCord, Velocity) версия Minecraft неизвестна: результат `UNKNOWN`, ничто не блокируется.
 
 ### Управление библиотекой: выключить, включить, повторить

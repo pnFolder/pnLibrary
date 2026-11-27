@@ -28,7 +28,9 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope;
 import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
+import org.pnfolder.pnlibrary.console.ConsoleCard;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftBlockCard;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftNoticeCard;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftGate;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftSupportRule;
 import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
@@ -112,6 +114,11 @@ final class LoadedPlugin implements PluginRegistration {
     }
 
     @Override
+    public void allowForceNewer(boolean allowed) {
+        minecraftRule.setForceNewerAllowed(allowed);
+    }
+
+    @Override
     public <E extends CommandError> void onCommandError(@NotNull Class<E> type, @NotNull CommandErrorHandler<E> handler) {
         commandFeedback.getHandlers().put(type, handler);
     }
@@ -167,10 +174,12 @@ final class LoadedPlugin implements PluginRegistration {
         String scope = nativeId.getValue() + ":" + id.getValue();
         MinecraftGate gate = MinecraftGate.open(scope, host.preferences, definition.getMinecraftRule(), minecraftRule,
                 host.identity.getMinecraftVersion());
-        if (gate.mustFail(controllable)) {
-            if (host.console != null) {
-                MinecraftBlockCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate).send(line -> host.console.console(owner, line));
-            }
+        boolean fails = gate.mustFail(controllable);
+        if (gate.reason() != null && host.console != null) {
+            MinecraftBlockCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate, fails)
+                .send(line -> host.console.console(owner, line));
+        }
+        if (fails) {
             throw new IllegalStateException(gate.reason());
         }
         return gate;
@@ -188,9 +197,9 @@ final class LoadedPlugin implements PluginRegistration {
             host.productDescriptors.put(descriptor.getId().getValue(), descriptor);
         }
         try {
-            String note = gate.getWarning() != null ? gate.getWarning() : gate.isForced() ? gate.reason() : null;
-            if (note != null) {
-                context.getLogger().warning(note);
+            ConsoleCard notice = MinecraftNoticeCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate);
+            if (notice != null && host.console != null) {
+                notice.send(line -> host.console.console(owner, line));
             }
             loadDeclaredLibraries(context, definition);
             if (definition.getRemotePolicy() != null) {

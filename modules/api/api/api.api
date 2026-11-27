@@ -488,6 +488,7 @@ public final class org/pnfolder/pnlibrary/api/compat/MinecraftSupport : java/lan
 
 public abstract interface class org/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportDeclaration {
 	public abstract fun allowForce (Z)V
+	public abstract fun allowForceNewer (Z)V
 	public abstract fun onNewerMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/NewerAction;)V
 	public abstract fun onUnsupportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/UnsupportedAction;)V
 	public abstract fun supportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftVersions;)V

@@ -2,6 +2,8 @@ package org.pnfolder.pnlibrary.core.plugin.module.minecraft;
 
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.pnfolder.pnlibrary.api.compat.MinecraftSupport;
+import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction;
 import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.console.ConsoleCard;
 import org.pnfolder.pnlibrary.console.ConsoleTree;
@@ -18,6 +20,12 @@ public final class MinecraftBlockCard {
      * {@code PlatformOwnership.ownerDetails} gives them) that {@code gate} stopped.
      */
     public static @NotNull ConsoleCard of(@NotNull String module, @NotNull Map<String, String> plugin, @NotNull MinecraftGate gate) {
+        return of(module, plugin, gate, gate.getUnsupportedAction() == UnsupportedAction.STOP_PLUGIN);
+    }
+
+    /** The same, saying in the last line whether the whole plugin stops ({@code stopsPlugin}) or only this module. */
+    public static @NotNull ConsoleCard of(@NotNull String module, @NotNull Map<String, String> plugin, @NotNull MinecraftGate gate,
+                                          boolean stopsPlugin) {
         String name = plugin.containsKey("name") ? plugin.get("name") : "Плагин";
         String version = plugin.get("version");
         String scope = (plugin.containsKey("id") ? plugin.get("id") : name) + ":" + module;
@@ -32,17 +40,18 @@ public final class MinecraftBlockCard {
                 .child("Запуск вручную запретил автор плагина");
         }
         return ConsoleCard.builder(ConsoleStyle.theme(ChatTone.FAILURE), "ВЕРСИЯ MINECRAFT НЕ ПОДХОДИТ")
-            .owner("x.x", name, module, version, "модуль не запущен: другая версия Minecraft")
+            .owner("x.x", name, module, version, gate.getSupport() == MinecraftSupport.NEWER_THAN_DECLARED
+                ? "модуль не запущен: версия новее проверенных" : "модуль не запущен: другая версия Minecraft")
             .blank()
             .tree(ConsoleTree.builder("Версии")
-                .child("Нужно: " + gate.getDeclared())
+                .child((gate.getSupport() == MinecraftSupport.NEWER_THAN_DECLARED ? "Проверено: " : "Нужно: ") + gate.getDeclared())
                 .child("На сервере: " + gate.getServer())
                 .build())
             .blank()
             .tree(way.build())
             .support(PnLibraryIdentity.SUPPORT_URL)
             .blank()
-            .status("Плагин остановлен, сервер продолжает запуск")
+            .status(stopsPlugin ? "Плагин остановлен, сервер продолжает запуск" : "Модуль остановлен, остальные модули работают")
             .build();
     }
 }

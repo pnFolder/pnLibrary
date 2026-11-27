@@ -45,6 +45,11 @@ public final class MinecraftGate {
         return warning;
     }
 
+    /** Where the server version stands against what the module declared. */
+    public @NotNull MinecraftSupport getSupport() {
+        return support;
+    }
+
     public @NotNull UnsupportedAction getUnsupportedAction() {
         return unsupportedAction;
     }
@@ -62,6 +67,11 @@ public final class MinecraftGate {
     /** The server's Minecraft version as text, or {@code null} when it is not known. */
     public @Nullable String getServer() {
         return server;
+    }
+
+    /** Whether the module runs only because the administrator chose to start it on a version it does not fit. */
+    public boolean isOverriding() {
+        return isForced() && blockReason != null;
     }
 
     public boolean isForced() {
@@ -98,6 +108,7 @@ public final class MinecraftGate {
         MinecraftSupportRule rule = moduleRule.isDeclared() ? moduleRule : pluginRule;
         UnsupportedAction unsupported = firstNonNull(moduleRule.getUnsupportedAction(), pluginRule.getUnsupportedAction(),
                 UnsupportedAction.DISABLE_MODULE);
+        Boolean forceNewer = firstNonNull(moduleRule.getForceNewerAllowed(), pluginRule.getForceNewerAllowed(), null);
         boolean forceAllowed = firstNonNull(moduleRule.getForceAllowed(), pluginRule.getForceAllowed(), Boolean.TRUE);
         NewerAction newer = firstNonNull(moduleRule.getNewerAction(), pluginRule.getNewerAction(), NewerAction.ALLOW_WITH_WARNING);
         MinecraftVersionInfo info = server == null ? null : MinecraftVersion.parseInfo(server);
@@ -107,6 +118,9 @@ public final class MinecraftGate {
         String serverText = info == null ? null : describe(info);
         MinecraftSupport support = rule.getVersions().check(info);
         String declared = rule.getDescription();
+        if (support == MinecraftSupport.NEWER_THAN_DECLARED && forceNewer != null) {
+            forceAllowed = forceNewer;
+        }
         String[] verdict = judge(support, newer, unsupported, serverText, declared);
         return new MinecraftGate(scope, preferences, support, declared, serverText != null ? serverText : server, verdict[0], verdict[1],
                 unsupported, forceAllowed);
@@ -126,7 +140,7 @@ public final class MinecraftGate {
         } else if (support == MinecraftSupport.OLDER_THAN_DECLARED || support == MinecraftSupport.EXCLUDED) {
             block = "Нужен Minecraft " + declared + ", на сервере " + serverText + ".";
         }
-        if (block != null && unsupported == UnsupportedAction.WARN_ONLY) {
+        if (block != null && unsupported == UnsupportedAction.WARN_ONLY && support != MinecraftSupport.NEWER_THAN_DECLARED) {
             return new String[] {block, null};
         }
         return new String[] {warning, block};

@@ -131,6 +131,11 @@ public final class ModuleDefinitionBuilder implements PluginBuilder {
     }
 
     @Override
+    public void allowForceNewer(boolean allowed) {
+        minecraftRule.setForceNewerAllowed(allowed);
+    }
+
+    @Override
     public @NotNull PluginBuilder library(@NotNull ModuleLibrary library) {
         return library(library, () -> true);
     }
