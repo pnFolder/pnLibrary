@@ -23,6 +23,7 @@ import org.pnfolder.pnlibrary.updates.history.UpdateStateStore;
 
 /** The current plan, the plans of this session, and the publication of a new state to its observers. */
 public final class PlanState {
+    static final String FORCE_STAGE = "FORCE_STAGE";
     private static final int SESSION_HISTORY = 100;
 
     private final UpdateStateStore store;
@@ -32,6 +33,7 @@ public final class PlanState {
     private final AtomicLong revision;
     private final ArrayDeque<UpdatePlanSnapshot> sessionHistory = new ArrayDeque<>();
     private UpdatePlanSnapshot current;
+    private UUID forcedStage;
     private String announcedFingerprint;
 
     public PlanState(UpdateStateStore store, UpdateOrchestratorHooks hooks, BooleanSupplier closed) throws IOException {
@@ -51,6 +53,14 @@ public final class PlanState {
 
     public Optional<UpdatePlanSnapshot> currentPlan() {
         return Optional.ofNullable(current());
+    }
+
+    @Nullable
+    UpdatePlanSnapshot forcedStage() {
+        synchronized (lock) {
+            return current != null && current.getState() == UpdateState.UPDATE_STAGED && current.getId().equals(forcedStage)
+                    ? current : null;
+        }
     }
 
     UUID currentIdOrRandom() {
@@ -114,6 +124,9 @@ public final class PlanState {
     void publish(UpdatePlanSnapshot snapshot, UpdateActor actor, String operation) throws IOException {
         synchronized (lock) {
             current = snapshot;
+            if (FORCE_STAGE.equals(operation)) {
+                forcedStage = snapshot.getId();
+            }
             sessionHistory.addFirst(snapshot);
             while (sessionHistory.size() > SESSION_HISTORY) {
                 sessionHistory.removeLast();

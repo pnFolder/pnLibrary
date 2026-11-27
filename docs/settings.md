@@ -156,6 +156,7 @@
 | `/pn deps` | `pnlibrary.deps` | недостающие плагины, установка по коду |
 | `/pn stats` | `pnlibrary.stats` | сводная статистика |
 | `/pn placeholders` | `pnlibrary.placeholders` | плейсхолдеры (`info <адрес>`: как писать) |
+| `/pnproxy channels`, `/pn channels` | `pnlibrary.channels` | каналы сообщений, открытые плагинами на прокси и на игровом сервере |
 | `/pn actions` | `pnlibrary.actions` | именованные действия, требования и функции |
 | `/pn registry` | `pnlibrary.registry` | один список для всех реестров: `/pn registry <вид>`, `/pn registry find <текст>` |
 | `/pn cooldowns` | `pnlibrary.cooldowns` | кулдауны игрока по всем плагинам, `clear` сбрасывает |
@@ -165,6 +166,7 @@
 | `/pn configs` | `pnlibrary.configs` | конфигурации плагинов; менять: `pnlibrary.configs.edit` |
 | `/pn groups` | `pnlibrary.groups` | группы серверов сети |
 | `/pn servers` | `pnlibrary.servers` | серверы сети и удалённые действия |
+| `/pnproxy servers add\|remove` | `pnlibrary.servers.manage` | добавить сервер на прокси до перезапуска или убрать добавленный |
 | `/pn notices` | `pnlibrary.updates.restart` | важные объявления сети: кому нужен перезапуск |
 | `/pn money list` | `pnlibrary.currency.list` | список валют |
 

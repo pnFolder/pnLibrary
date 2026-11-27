@@ -8,6 +8,10 @@ plugins {
     base
     jacoco
     alias(libs.plugins.shadow)     apply false
+    // Declared here so every module that uses them shares one plugin classloader (a Kotlin module next to the Java ones
+    // otherwise gets a second copy of the publish plugin and its shared build service fails).
+    alias(libs.plugins.maven.publish) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
 }
 
@@ -52,7 +56,7 @@ subprojects {
     // any more, so its tasks are registered here for every module that keeps a golden dump in `api/<name>.api`.
     // `apiDump` (rewrite the dump) and `apiCheck` (compare, part of `check`) behave as before.
     val dumpName = "$name.api"
-    if (file("api/$dumpName").exists()) {
+    if (file("api/$dumpName").exists() && findProperty("pn.kotlin") == null) {
         pluginManager.withPlugin("java") {
             val bcvRuntime = configurations.create("bcvRuntime") {
                 isCanBeConsumed = false

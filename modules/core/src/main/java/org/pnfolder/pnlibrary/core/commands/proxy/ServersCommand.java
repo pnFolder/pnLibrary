@@ -40,6 +40,8 @@ import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
  * /pn servers &lt;name&gt; check                    asks the server to look for updates now
  * /pn servers &lt;name&gt; update &lt;plugin&gt;         asks the server to download the update of a plugin
  * /pn servers &lt;name&gt; auto &lt;plugin&gt; on|off    turns automatic download of a plugin on or off there
+ * /pn servers add &lt;name&gt; &lt;host:port&gt;      (proxy) adds a server until the restart
+ * /pn servers remove &lt;name&gt;               (proxy) removes a server that was added
  * </pre>
  *
  * On a proxy the list comes from the reports of the game servers; on a game server it comes from the map of the
@@ -52,11 +54,21 @@ public final class ServersCommand {
 
     private final Link link;
     private final Supplier<List<NetworkServer>> servers;
+    private final ServerEditing editing;
 
     /** The command over {@code servers}, which is asked again each time the list is needed. */
     public ServersCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers) {
         this.link = Objects.requireNonNull(link, "link");
         this.servers = Objects.requireNonNull(servers, "servers");
+        this.editing = null;
+    }
+
+    /** The same on a proxy, with {@code add} and {@code remove} for the servers of {@code proxy}; without one there are none. */
+    public ServersCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers,
+                          @org.jetbrains.annotations.Nullable org.pnfolder.pnlibrary.api.network.NetworkProxy proxy) {
+        this.link = Objects.requireNonNull(link, "link");
+        this.servers = Objects.requireNonNull(servers, "servers");
+        this.editing = proxy == null ? null : new ServerEditing(proxy);
     }
 
     /** The servers that reported to this proxy; one that has been silent for two minutes is offline. */
@@ -91,6 +103,9 @@ public final class ServersCommand {
         return CommandDefinition.command("servers", root -> {
             root.permission(PERMISSION, "pnlibrary.admin");
             root.executes(this::list);
+            if (editing != null) {
+                editing.install(root);
+            }
             root.argument("server", ArgumentType.string(), server -> {
                 server.suggests(context -> serverNames());
                 server.executes(context -> view(context, context.<String>get("server")));

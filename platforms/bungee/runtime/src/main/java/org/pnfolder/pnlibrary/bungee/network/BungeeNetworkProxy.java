@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.bungee.network;
 
+import org.pnfolder.pnlibrary.core.network.AddedServers;
+import java.net.InetSocketAddress;
 import java.util.Objects;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -8,29 +10,63 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.api.plugin.PluginDescription;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.network.channel.NetworkChannel;
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
 import org.pnfolder.pnlibrary.api.network.NetworkServer;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.network.proxy.ProxyChannels;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /** {@link NetworkProxy} backed by the BungeeCord proxy. */
 public final class BungeeNetworkProxy implements NetworkProxy {
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     private final ProxyServer proxy;
+    private final ProxyChannels channels;
+    private final AddedServers added;
 
     /** Wraps the native {@code proxy}. */
-    public BungeeNetworkProxy(@NotNull ProxyServer proxy) {
+    public BungeeNetworkProxy(@NotNull ProxyServer proxy, @NotNull BiConsumer<String, Throwable> failures) {
         this.proxy = Objects.requireNonNull(proxy, "proxy");
+        this.channels = new ProxyChannels(this::registerChannel, this::unregisterChannel, this::getServers, failures);
+        this.added = new AddedServers(new AddedServers.Platform() {
+            @Override
+            public boolean exists(String name) {
+                return server(name) != null;
+            }
+
+            @Override
+            public NetworkServer register(String name, InetSocketAddress address) {
+                ServerInfo info = proxy.constructServerInfo(name, address, "", false);
+                proxy.getServers().put(name, info);
+                return new BungeeNetworkServer(info);
+            }
+
+            @Override
+            public void unregister(String name) {
+                proxy.getServers().remove(name);
+            }
+        });
+    }
+
+    /** Starts passing plugin messages to the channels; the returned handle stops that and closes the channels. */
+    @NotNull
+    public AutoCloseable listenFor(@NotNull Plugin owner) {
+        BungeeChannelListener listener = new BungeeChannelListener(channels);
+        proxy.getPluginManager().registerListener(owner, listener);
+        return () -> {
+            proxy.getPluginManager().unregisterListener(listener);
+            channels.close();
+            added.close();
+        };
     }
 
     @NotNull
@@ -59,7 +95,7 @@ public final class BungeeNetworkProxy implements NetworkProxy {
     @NotNull
     @Override
     public List<NetworkPlayer> getPlayers() {
-        List<NetworkPlayer> players = new ArrayList<>();
+        List<NetworkPlayer> players = new ArrayList<>(proxy.getOnlineCount());
         for (ProxiedPlayer player : proxy.getPlayers()) {
             players.add(new BungeeNetworkPlayer(player));
         }
@@ -69,8 +105,9 @@ public final class BungeeNetworkProxy implements NetworkProxy {
     @NotNull
     @Override
     public List<NetworkServer> getServers() {
-        List<NetworkServer> servers = new ArrayList<>();
-        for (ServerInfo server : proxy.getServers().values()) {
+        Map<String, ServerInfo> all = proxy.getServers();
+        List<NetworkServer> servers = new ArrayList<>(all.size());
+        for (ServerInfo server : all.values()) {
             servers.add(new BungeeNetworkServer(server));
         }
         return servers;
@@ -101,14 +138,37 @@ public final class BungeeNetworkProxy implements NetworkProxy {
         return null;
     }
 
+    @NotNull
     @Override
-    public void registerChannel(@NotNull String channel) {
-        proxy.registerChannel(channel);
+    public NetworkServer addServer(@NotNull String name, @NotNull InetSocketAddress address) {
+        return added.add(name, address);
     }
 
     @Override
-    public void unregisterChannel(@NotNull String channel) {
-        proxy.unregisterChannel(channel);
+    public boolean removeServer(@NotNull NetworkServer server) {
+        return added.remove(server);
+    }
+
+    @NotNull
+    @Override
+    public NetworkChannel channel(@NotNull Key key) {
+        return channels.channel(key);
+    }
+
+    @NotNull
+    @Override
+    public List<NetworkChannel> channels() {
+        return new ArrayList<>(channels.channels());
+    }
+
+    @Override
+    public void registerChannel(@NotNull Key channel) {
+        proxy.registerChannel(channel.asString());
+    }
+
+    @Override
+    public void unregisterChannel(@NotNull Key channel) {
+        proxy.unregisterChannel(channel.asString());
     }
 
     @Override
@@ -118,21 +178,5 @@ public final class BungeeNetworkProxy implements NetworkProxy {
         } else {
             proxy.stop();
         }
-    }
-
-    /** Returns the pnLibrary owner info of a Bungee plugin instance, or null when {@code instance} is not one. */
-    @Nullable
-    public OwnerInfo describePlugin(@Nullable Object instance) {
-        if (!(instance instanceof Plugin)) {
-            return null;
-        }
-        PluginDescription description = ((Plugin) instance).getDescription();
-        if (description == null) {
-            return null;
-        }
-        String author = description.getAuthor();
-        List<String> authors = author == null
-                ? Collections.emptyList() : Collections.singletonList(author);
-        return new OwnerInfo(description.getName(), description.getVersion(), authors);
     }
 }

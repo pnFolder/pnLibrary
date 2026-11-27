@@ -8,11 +8,11 @@ import javax.sql.DataSource;
 
 /** Creates supported persistent storage implementations without exposing core classes. */
 public interface CurrencyStorageFactory {
-    /** Creates a JSON file storage retaining its default number of ledger rows. */
+    /** Creates a JSON file storage with the default history limit. Receipts for idempotent retries outlive the history. */
     @NotNull
     CurrencyStorage file(@NotNull Path path);
 
-    /** Creates a JSON file storage retaining at most {@code maximumTransactions} ledger rows. */
+    /** Creates a JSON file storage showing at most {@code maximumTransactions} rows in its history. */
     @NotNull
     CurrencyStorage file(@NotNull Path path, int maximumTransactions);
 

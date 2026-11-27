@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.currency.storage;
 
 import java.util.Objects;
-import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Map;
@@ -58,6 +57,9 @@ final class FileLedgerImport {
         int imported = 0;
         int skipped = 0;
         Set<UUID> ids = new HashSet<>();
+        for (CurrencyTransaction receipt : state.archivedReceipts()) {
+            ids.add(receipt.getId());
+        }
         for (CurrencyTransaction transaction : state.getTransactions()) {
             ids.add(transaction.getId());
         }

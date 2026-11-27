@@ -45,8 +45,8 @@ import org.pnfolder.pnlibrary.api.plugin.PluginId;
 import org.pnfolder.pnlibrary.common.io.AtomicFiles;
 
 class FileCurrencyStorageBatchTest {
-    private static final String GOLDEN = "b2d6d39db3fda0f3a53ba7c27164e601886a2b5ad36b8f117abdb25c69c59d54";
-    private static final String GOLDEN_FAILING = "66c00db1263b8b105cfe6a9a3a73e6f4fd76d3c1f1f355d321a7831f94647e14";
+    private static final String GOLDEN = "26c8b77c6b9bc7ba09427a2762c2f6f149498c9d1008740b21e4c680458320d2";
+    private static final String GOLDEN_FAILING = "6a42fcd68862c7d5fe706eec2d4fd093e7943967ee01837e36e089dcdf9555f5";
 
     private final CurrencyKey currency = new CurrencyKey(PluginId.of("test"), "coins");
     private final CurrencyDescriptor descriptor = new CurrencyDescriptor("Coins", "C", 2, RoundingMode.DOWN);

@@ -99,6 +99,7 @@ public final class MenuDataServer implements DataHandler, AutoCloseable {
         Map<String, String> needed = new HashMap<>();
         needed.put(MenuCalls.CHECK_ALL, MenuPermissions.UPDATES_DOWNLOAD);
         needed.put(MenuCalls.CHECK_ONE, MenuPermissions.UPDATES_DOWNLOAD);
+        needed.put(MenuCalls.FORCE_LIBRARY, MenuPermissions.UPDATES_DOWNLOAD);
         needed.put(MenuCalls.SET_CHANNEL, MenuConstants.SETTINGS);
         needed.put(MenuCalls.SET_HELD, MenuConstants.SETTINGS);
         needed.put(MenuCalls.ROLLBACK, MenuConstants.ROLLBACK);

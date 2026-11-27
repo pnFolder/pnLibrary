@@ -99,6 +99,22 @@ public final class UpdateGraphResolver {
                 identity.getType(), JavaRuntime.getFeature(), resolverPolicy());
     }
 
+    /** Looks up only pnLibrary's own catalog for a manual upgrade. */
+    @NotNull
+    public UpdatePlan forceLibrary(@NotNull List<RegisteredUpdate> registrations) {
+        ProductId product = ProductId.of(PnLibraryIdentity.PRODUCT_ID);
+        for (RegisteredUpdate registration : registrations) {
+            if (product.equals(registration.getDescriptor().getId())) {
+                List<ProductRelease> releases = loadReleases(Collections.singletonList(registration), RefreshMode.FORCE_REMOTE);
+                UpdateChannel channel = channelFor(registration);
+                registration.observe(releases, channel);
+                return new UpdateResolver(product).forceLibrary(registration.installedProduct(PnLibraryApi.VERSION),
+                        releases, channel, identity.getType(), JavaRuntime.getFeature());
+            }
+        }
+        throw new IllegalStateException("pnLibrary ещё не зарегистрировалась для обновлений.");
+    }
+
     /** The channel of {@code registration}: an administrator's override, the library's own setting, or what the plugin asked for. */
     @NotNull
     public UpdateChannel channelFor(@NotNull RegisteredUpdate registration) {

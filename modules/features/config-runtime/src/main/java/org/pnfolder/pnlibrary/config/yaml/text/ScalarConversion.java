@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.config.yaml.text;
 
+import java.math.BigDecimal;
 import org.jetbrains.annotations.NotNull;
 
 /** Turns a YAML scalar into the Java scalar a field declares. */
@@ -20,16 +21,16 @@ public final class ScalarConversion {
             return (Boolean) value;
         }
         if (rawType == byte.class || rawType == Byte.class) {
-            return ((Number) value).byteValue();
+            return decimal((Number) value).byteValueExact();
         }
         if (rawType == short.class || rawType == Short.class) {
-            return ((Number) value).shortValue();
+            return decimal((Number) value).shortValueExact();
         }
         if (rawType == int.class || rawType == Integer.class) {
-            return ((Number) value).intValue();
+            return decimal((Number) value).intValueExact();
         }
         if (rawType == long.class || rawType == Long.class) {
-            return ((Number) value).longValue();
+            return decimal((Number) value).longValueExact();
         }
         if (rawType == float.class || rawType == Float.class) {
             return ((Number) value).floatValue();
@@ -46,5 +47,9 @@ public final class ScalarConversion {
             throw new IllegalArgumentException("Unknown " + rawType.getSimpleName() + " value: " + value);
         }
         return NOT_SCALAR;
+    }
+
+    private static BigDecimal decimal(Number value) {
+        return new BigDecimal(value.toString());
     }
 }

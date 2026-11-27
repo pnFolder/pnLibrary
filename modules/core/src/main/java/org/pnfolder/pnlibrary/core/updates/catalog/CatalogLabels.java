@@ -92,6 +92,8 @@ public final class CatalogLabels {
                 return "проверка";
             case "STAGE":
                 return "обновление";
+            case "FORCE_STAGE":
+                return "принудительное обновление pnLibrary";
             case "ROLLBACK":
                 return "откат";
             case "HEALTH":

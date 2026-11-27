@@ -4,6 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
 
@@ -40,6 +41,10 @@ public interface RuntimeInfo {
     /** The proxy layer; null when running on a game server instead of a proxy. */
     @Nullable
     NetworkProxy getProxy();
+
+    /** The game server's side of the network; null when running on a proxy. */
+    @Nullable
+    ServerNetwork getServerNetwork();
 
     /** Whether the runtime has begun closing and no longer accepts normal work. */
     boolean isClosed();

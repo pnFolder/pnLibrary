@@ -80,18 +80,7 @@ final class YamlMigrationEngine {
      */
     @NotNull
     Result migrate(@NotNull String content, @NotNull ConfigSteps<?> steps) {
-        Object loaded = yaml.load(content);
-        if (loaded == null) {
-            loaded = Collections.emptyMap();
-        }
-        if (!(loaded instanceof Map)) {
-            throw new IllegalArgumentException("Configuration root must be a YAML object");
-        }
-        Map<String, Object> root = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> entry : ((Map<?, ?>) loaded).entrySet()) {
-            root.put(String.valueOf(entry.getKey()), entry.getValue());
-        }
-        ConfigDocument document = new ConfigDocument(root);
+        ConfigDocument document = readDocument(content);
         int fileVersion = versionOf(document);
         if (fileVersion > steps.getLatestVersion()) {
             return new Result(content, Collections.emptyList(), true);
@@ -106,6 +95,25 @@ final class YamlMigrationEngine {
             labels.add("v" + version);
         }
         return new Result(stampDefaults(dumped, steps), labels, false);
+    }
+
+    boolean isNewerThanCode(String content, ConfigSteps<?> steps) {
+        return versionOf(readDocument(content)) > steps.getLatestVersion();
+    }
+
+    private ConfigDocument readDocument(String content) {
+        Object loaded = yaml.load(content);
+        if (loaded == null) {
+            loaded = Collections.emptyMap();
+        }
+        if (!(loaded instanceof Map)) {
+            throw new IllegalArgumentException("Configuration root must be a YAML object");
+        }
+        Map<String, Object> root = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) loaded).entrySet()) {
+            root.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return new ConfigDocument(root);
     }
 
     private static int versionOf(ConfigDocument document) {

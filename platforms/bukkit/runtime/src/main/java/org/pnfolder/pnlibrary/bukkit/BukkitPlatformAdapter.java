@@ -16,6 +16,7 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
 import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAdventureTransport;
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitAudienceAdapter;
@@ -67,6 +68,7 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
     private final ServerScheduler scheduler;
     private final BukkitDispatcher dispatcher;
     private final Path dataPath;
+    private final BukkitServerNetwork serverNetwork;
     private volatile ServerInfo serverInfo;
     private BukkitLifecycleListener lifecycleListener;
 
@@ -79,6 +81,7 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
         this.dispatcher = new BukkitDispatcher(scheduler, lifecycle::isClosed,
             error -> log(plugin, LogLevel.ERROR, "Не удалось передать задачу планировщику сервера", error));
         this.dataPath = plugin.getDataFolder().toPath();
+        this.serverNetwork = new BukkitServerNetwork(plugin, pnLogger);
         this.logObserver = new JulLogObserver(Bukkit::getLogger, plugin,
             loggerName -> JulLogObserver.matchPlugin(loggerName, Arrays.asList(Bukkit.getPluginManager().getPlugins()),
                 Plugin::getName));
@@ -89,6 +92,11 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
         this.taskAdapter = new BukkitTaskAdapter(plugin);
         // Writes to the owning plugin's logger, falling back to pnLibrary's own.
         this.logHandler = logObserver.logHandler(owner -> owner instanceof Plugin ? ((Plugin) owner).getLogger() : plugin.getLogger());
+    }
+
+    @Override
+    public ServerNetwork getServerNetwork() {
+        return serverNetwork;
     }
 
     /** Where pnLibrary's own work runs: the main thread, or on Folia the global region or a player's region. */
@@ -282,6 +290,7 @@ final class BukkitPlatformAdapter implements PlatformAdapter {
     /** Releases registrations, cancels native tasks and stops native log observation once. */
     @Override
     public void close() {
+        serverNetwork.close();
         lifecycle.closeAdapter(null, taskAdapter, () -> observeNativeLogs(null));
         lifecycleListener = null;
     }

@@ -1,17 +1,23 @@
 package org.pnfolder.pnlibrary.velocity;
 
-import java.util.Objects;
 import com.velocitypowered.api.plugin.PluginContainer;
-import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.util.ProxyVersion;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
+import org.pnfolder.pnlibrary.api.logging.PnLogger;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
 import org.pnfolder.pnlibrary.api.remote.context.RemotePolicyContext;
+import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
 import org.pnfolder.pnlibrary.spi.platform.PlatformLogSink;
@@ -30,13 +36,6 @@ import org.pnfolder.pnlibrary.velocity.tasks.VelocityTaskAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 /**
  * Runtime adapter for Velocity proxy servers.
  *
@@ -46,71 +45,56 @@ import java.util.Map;
  */
 final class VelocityPlatformAdapter extends ProxyPlatformAdapter {
     private final ProxyServer proxy;
-    private final PlatformMetricsFactory nativeMetricsFactory;
-    private final Path dataPath;
-    private final Logger nativeLogger;
-    private final VelocityDiagnosticDetailsCollector diagnosticDetailsCollector;
+    private final PlatformMetricsFactory metricsFactory;
+    private final Path dataFolder;
+    private final Logger logger;
+    private final VelocityDiagnosticDetailsCollector diagnostics;
     private final LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacySection();
+    private final VelocityPluginLookup lookup;
     private final PlatformPlugins<PluginContainer> plugins;
     private final VelocityLogObserver logObserver;
-    private final VelocityNetworkProxy nativeNetworkProxy;
-    private final VelocityAudienceAdapter nativeAudienceAdapter;
-    private final PlatformCommandAdapter nativeCommandAdapter;
-    private final PlatformTaskAdapter nativeTaskAdapter;
-    private final PlatformLogSink nativeLogHandler = this::forwardToNativeLogger;
+    private final VelocityNetworkProxy networkProxy;
+    private final VelocityAudienceAdapter audienceAdapter;
+    private final PlatformCommandAdapter commandAdapter;
+    private final PlatformTaskAdapter taskAdapter;
+    private final PlatformLogSink logSink = this::forwardToNativeLogger;
 
     /** Creates the adapter; {@code plugin} is the pnLibrary plugin on whose behalf all tasks run. */
-    VelocityPlatformAdapter(
-            @NotNull Object plugin,
-            @NotNull ProxyServer proxy,
-            @NotNull PlatformMetricsFactory metricsFactory,
-            @NotNull Path dataFolder) {
+    VelocityPlatformAdapter(@NotNull Object plugin, @NotNull ProxyServer proxy,
+                            @NotNull PlatformMetricsFactory metricsFactory, @NotNull Path dataFolder,
+                            @NotNull Supplier<PnLogger> pnLogger) {
         super(plugin);
         this.proxy = Objects.requireNonNull(proxy, "proxy");
-        this.nativeMetricsFactory = Objects.requireNonNull(metricsFactory, "metricsFactory");
-        this.dataPath = Objects.requireNonNull(dataFolder, "dataFolder");
-        this.nativeLogger = LoggerFactory.getLogger(plugin.getClass());
-        this.diagnosticDetailsCollector = new VelocityDiagnosticDetailsCollector(proxy);
-        this.plugins = new PlatformPlugins<>("Velocity",
-                () -> proxy.getPluginManager().getPlugins(),
-                owner -> proxy.getPluginManager().fromInstance(owner).orElse(null),
-            container -> container != null ? describe(container) : null);
-        this.logObserver = new VelocityLogObserver(plugin,
-                id -> proxy.getPluginManager().getPlugin(id.toLowerCase(Locale.ROOT))
-                        .flatMap(PluginContainer::getInstance).orElse(null),
-                () -> instances(proxy));
-        this.nativeNetworkProxy = new VelocityNetworkProxy(proxy);
-        this.nativeAudienceAdapter = new VelocityAudienceAdapter(proxy);
-        this.nativeCommandAdapter = new VelocityCommandAdapter(proxy, nativeAudienceAdapter);
-        this.nativeTaskAdapter = new VelocityTaskAdapter(proxy, plugin, this::warn);
+        this.metricsFactory = Objects.requireNonNull(metricsFactory, "metricsFactory");
+        this.dataFolder = Objects.requireNonNull(dataFolder, "dataFolder");
+        this.logger = LoggerFactory.getLogger(plugin.getClass());
+        this.diagnostics = new VelocityDiagnosticDetailsCollector(proxy);
+        this.lookup = new VelocityPluginLookup(proxy.getPluginManager());
+        this.plugins = new PlatformPlugins<>("Velocity", lookup::all, lookup::containerOf, lookup::describe);
+        this.logObserver = new VelocityLogObserver(plugin, lookup::instanceById, lookup::instances);
+        this.networkProxy = new VelocityNetworkProxy(proxy, (message, error) -> pnLogger.get().warning(message, error));
+        this.audienceAdapter = new VelocityAudienceAdapter(proxy);
+        this.commandAdapter = new VelocityCommandAdapter(proxy, audienceAdapter);
+        this.taskAdapter = new VelocityTaskAdapter(proxy, plugin, this::warn);
     }
 
-    private static PluginSnapshot describe(PluginContainer container) {
-        PluginDescription description = container.getDescription();
-        return new PluginSnapshot(description.getId(), description.getName().orElse(description.getId()),
-                description.getVersion().orElse("unknown"), description.getAuthors());
+    /** The owner shown in menus for the plugin whose main object is {@code instance}; null when it is none. */
+    @Nullable
+    OwnerInfo ownerInfo(@Nullable Object instance) {
+        return instance == null ? null : OwnerInfo.of(lookup.describe(plugins.find(instance)));
     }
 
-    private static Collection<Object> instances(ProxyServer proxy) {
-        List<Object> instances = new ArrayList<>();
-        for (PluginContainer container : proxy.getPluginManager().getPlugins()) {
-            container.getInstance().ifPresent(instances::add);
-        }
-        return instances;
-    }
-
-    private void forwardToNativeLogger(Object owner, LogLevel level,
-                                       String message, Throwable error) {
+    private void forwardToNativeLogger(Object owner, LogLevel level, String message, Throwable error) {
         switch (level) {
             case WARNING:
-                nativeLogger.warn(message, error);
+                logger.warn(message, error);
                 break;
             case ERROR:
             case CRITICAL:
-                nativeLogger.error(message, error);
+                logger.error(message, error);
                 break;
             default:
-                nativeLogger.info(message, error);
+                logger.info(message, error);
         }
     }
 
@@ -123,7 +107,7 @@ final class VelocityPlatformAdapter extends ProxyPlatformAdapter {
     @NotNull
     @Override
     public Path getDataFolder() {
-        return dataPath;
+        return dataFolder;
     }
 
     @NotNull
@@ -136,37 +120,37 @@ final class VelocityPlatformAdapter extends ProxyPlatformAdapter {
     @NotNull
     @Override
     public PlatformMetricsFactory getMetricsFactory() {
-        return nativeMetricsFactory;
+        return metricsFactory;
     }
 
     @NotNull
     @Override
     public VelocityNetworkProxy getNetworkProxy() {
-        return nativeNetworkProxy;
+        return networkProxy;
     }
 
     @NotNull
     @Override
     public VelocityAudienceAdapter getPlayerAdapter() {
-        return nativeAudienceAdapter;
+        return audienceAdapter;
     }
 
     @NotNull
     @Override
     public PlatformCommandAdapter getCommandAdapter() {
-        return nativeCommandAdapter;
+        return commandAdapter;
     }
 
     @NotNull
     @Override
     public PlatformTaskAdapter getTaskAdapter() {
-        return nativeTaskAdapter;
+        return taskAdapter;
     }
 
     @NotNull
     @Override
     public PlatformLogSink getLogHandler() {
-        return nativeLogHandler;
+        return logSink;
     }
 
     @Override
@@ -206,7 +190,7 @@ final class VelocityPlatformAdapter extends ProxyPlatformAdapter {
     @NotNull
     @Override
     public Map<String, Object> diagnosticDetails(boolean includeSensitive) {
-        return diagnosticDetailsCollector.collect(snapshot(), includeSensitive);
+        return diagnostics.collect(snapshot(), includeSensitive);
     }
 
     @NotNull

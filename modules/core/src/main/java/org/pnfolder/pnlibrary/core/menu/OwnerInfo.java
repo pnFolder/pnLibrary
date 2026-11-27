@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.spi.platform.PluginSnapshot;
 
 /** Name, version and authors of the plugin that owns something. */
 public final class OwnerInfo {
@@ -15,6 +16,11 @@ public final class OwnerInfo {
         this.name = Objects.requireNonNull(name, "name");
         this.version = version;
         this.authors = Objects.requireNonNull(authors, "authors");
+    }
+
+    /** The owner a platform described as {@code plugin}; null stays null. */
+    public static @Nullable OwnerInfo of(@Nullable PluginSnapshot plugin) {
+        return plugin == null ? null : new OwnerInfo(plugin.getName(), plugin.getVersion(), plugin.getAuthors());
     }
 
     public @NotNull String getName() {

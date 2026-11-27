@@ -59,6 +59,21 @@ public final class UpdateResolver {
         return resolveLibraryDomain(installed, allowed, libraryDomain, currentLibrary, frozen, policy);
     }
 
+    /** Builds a manual library-only upgrade using a release from the selected channel with a usable artifact. */
+    @NotNull
+    public UpdatePlan forceLibrary(@NotNull InstalledProduct installed, @NotNull List<ProductRelease> releases,
+                                   @NotNull UpdateChannel channel, @NotNull PlatformType platform, int javaFeature) {
+        List<ProductRelease> allowed = allowedReleases(releases, Collections.emptyMap(), channel, platform, javaFeature);
+        for (ProductRelease release : libraryDomain(installed, allowed, Collections.emptySet())) {
+            if (!release.getArtifacts().isEmpty() && release.getVersion().compareTo(installed.getVersion()) > 0) {
+                ProductChange change = new ProductChange(libraryComponent, installed.getVersion(), release.getVersion());
+                return new UpdatePlan(release.getProvidesApi(), Collections.singletonList(change),
+                        Collections.singletonList(release));
+            }
+        }
+        throw new IllegalStateException("В этом канале нет более новой сборки pnLibrary для текущей платформы и Java.");
+    }
+
     private InstalledProduct requireLibrary(List<InstalledProduct> installed) {
         if (installed.isEmpty()) {
             throw new IllegalArgumentException("At least one installed component is required");
@@ -190,7 +205,7 @@ public final class UpdateResolver {
         if (solution == null) {
             return new Attempt(null, ResolverReasons.dependency(domains, libraryComponent, targetApi), advisories);
         }
-        return plan(installed, releases, domains, solution, targetApi, policy, advisories);
+        return plan(installed, releases, domains, solution, targetApi, frozen, policy, advisories);
     }
 
     private List<BlockedReason> libraryRaise(List<InstalledProduct> installed, int targetApi) {
@@ -231,7 +246,7 @@ public final class UpdateResolver {
 
     private Attempt plan(List<InstalledProduct> installed, List<ProductRelease> releases,
                          Map<ProductId, List<ProductRelease>> domains, LinkedHashMap<ProductId, ProductRelease> solution,
-                         int targetApi, ResolverPolicy policy, List<BlockedReason> advisories) {
+                         int targetApi, Set<ProductId> frozen, ResolverPolicy policy, List<BlockedReason> advisories) {
         Map<ProductId, InstalledProduct> installedById = new HashMap<ProductId, InstalledProduct>();
         for (InstalledProduct product : installed) {
             installedById.put(product.getProduct(), product);
@@ -245,7 +260,7 @@ public final class UpdateResolver {
                 changes.add(new ProductChange(target.getProduct(), current == null ? null : current.getVersion(), target.getVersion()));
             }
         }
-        List<ProductRelease> upgrades = ResolverReasons.upgradableCandidates(releases, installedById, targetApi);
+        List<ProductRelease> upgrades = ResolverReasons.upgradableCandidates(releases, installedById, targetApi, frozen);
         Set<BlockedReason> reasons = new LinkedHashSet<BlockedReason>();
         if (!policy.getAllowManagedInstalls()) {
             reasons.addAll(ResolverReasons.missingDependency(upgrades, domains));

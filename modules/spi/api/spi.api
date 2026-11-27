@@ -132,6 +132,7 @@ public abstract interface class org/pnfolder/pnlibrary/spi/platform/PlatformAdap
 	public fun getMetricsFactory ()Lorg/pnfolder/pnlibrary/spi/metrics/PlatformMetricsFactory;
 	public fun getNetworkProxy ()Lorg/pnfolder/pnlibrary/api/network/NetworkProxy;
 	public fun getPlayerAdapter ()Lorg/pnfolder/pnlibrary/spi/audience/PlatformAudienceAdapter;
+	public fun getServerNetwork ()Lorg/pnfolder/pnlibrary/api/network/channel/ServerNetwork;
 	public fun getTaskAdapter ()Lorg/pnfolder/pnlibrary/spi/tasks/PlatformTaskAdapter;
 }
 

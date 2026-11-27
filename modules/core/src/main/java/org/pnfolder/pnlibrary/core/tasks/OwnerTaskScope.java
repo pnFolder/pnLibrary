@@ -8,6 +8,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskQuery;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot;
+import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskHandle;
@@ -48,45 +49,42 @@ final class OwnerTaskScope implements TaskScope {
             throw new IllegalStateException("TaskScope is closed");
         }
         synchronized (service.getLock()) {
-            ManagedTask existing = resolveConflict(spec);
+            ManagedTask existing = spec.getKey() == null ? null : byKey(spec.getKey());
             if (existing != null) {
-                return existing;
+                if (spec.getConflictPolicy() == TaskConflictPolicy.REJECT) {
+                    throw new IllegalStateException("Task key '" + spec.getKey() + "' is already active for this owner");
+                }
+                if (spec.getConflictPolicy() == TaskConflictPolicy.KEEP_EXISTING) {
+                    return existing;
+                }
             }
             ManagedTask managed = service.newTask(owner, scopeToken, spec, this, parent);
+            Replacement replacement = existing == null ? null : new Replacement(managed);
             service.getActive().put(managed.getId(), managed);
-            PlatformTaskHandle platform = register(managed, spec);
+            PlatformTaskHandle platform = register(managed, spec, replacement == null ? managed::invoke : replacement);
             if (scopeClosed.get() || service.isClosed()) {
                 service.getActive().remove(managed.getId());
                 platform.cancel();
                 throw new IllegalStateException("TaskScope is closed");
             }
             managed.attach(platform);
+            if (replacement != null) {
+                try {
+                    existing.cancel();
+                } catch (RuntimeException error) {
+                    managed.log("Could not clean up the replaced task " + existing.getLabel(), error);
+                } finally {
+                    replacement.activate();
+                }
+            }
             return managed;
         }
     }
 
-    /** The task to return instead of scheduling {@code spec}, or {@code null} to go on; may cancel the one it replaces. */
-    @Nullable
-    private ManagedTask resolveConflict(TaskSpec spec) {
-        ManagedTask existing = spec.getKey() == null ? null : byKey(spec.getKey());
-        if (existing == null) {
-            return null;
-        }
-        switch (spec.getConflictPolicy()) {
-            case REJECT:
-                throw new IllegalStateException("Task key '" + spec.getKey() + "' is already active for this owner");
-            case KEEP_EXISTING:
-                return existing;
-            default:
-                existing.cancel();
-                return null;
-        }
-    }
-
-    private PlatformTaskHandle register(ManagedTask managed, TaskSpec spec) {
+    private PlatformTaskHandle register(ManagedTask managed, TaskSpec spec, Runnable callback) {
         try {
             PlatformTaskBuilder builder = service.getAdapter().buildTask()
-                    .task(managed::invoke)
+                    .task(callback)
                     .execution(spec.getExecution().getKind(), spec.getExecution().getTarget())
                     .delay(spec.getDelay());
             if (spec.getInterval() != null) {
@@ -101,7 +99,7 @@ final class OwnerTaskScope implements TaskScope {
 
     private ManagedTask byKey(String key) {
         for (ManagedTask task : service.getActive().values()) {
-            if (task.getScopeToken() == scopeToken && key.equals(task.getSpec().getKey())) {
+            if (!task.getStatus().isTerminal() && task.getScopeToken() == scopeToken && key.equals(task.getSpec().getKey())) {
                 return task;
             }
         }
@@ -148,6 +146,37 @@ final class OwnerTaskScope implements TaskScope {
             TaskCleanup.closeAll(steps);
         } finally {
             service.forgetScope(owner, scopeId, this);
+        }
+    }
+
+    /** Keeps an immediate callback from running before the native scheduler accepts the replacement. */
+    private final class Replacement implements Runnable {
+        private final ManagedTask task;
+        private volatile boolean active;
+        private boolean invokedInline;
+
+        Replacement(ManagedTask task) {
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            if (!active) {
+                synchronized (service.getLock()) {
+                    if (!active) {
+                        invokedInline = true;
+                        return;
+                    }
+                }
+            }
+            task.invoke();
+        }
+
+        void activate() {
+            active = true;
+            if (invokedInline) {
+                task.invoke();
+            }
         }
     }
 }

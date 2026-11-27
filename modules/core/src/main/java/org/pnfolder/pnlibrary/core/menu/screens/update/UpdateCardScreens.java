@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
@@ -117,6 +118,12 @@ final class UpdateCardScreens extends MenuScreens {
         builder.button(11, MenuItems.icon(Icons.CHECK, "COMPASS", "Проверить", Style.lore(
             Collections.singletonList("Проверить обновления этого плагина."), Collections.emptyList(), Style.left("проверить"))),
             go(who -> updates.checkOne(who, snapshot.getProduct())));
+        if (PnLibraryIdentity.PRODUCT_ID.equalsIgnoreCase(snapshot.getProduct())) {
+            builder.button(12, MenuItems.icon(null, "BLAZE_POWDER", "Обновить pnLibrary принудительно", Style.lore(
+                java.util.Arrays.asList("Подготовить только pnLibrary, даже если план заблокирован.",
+                    "Применится после перезапуска."), Collections.emptyList(), Style.left("подготовить")), Tone.WARN),
+                go(who -> allowed(who, MenuPermissions.UPDATES_DOWNLOAD, () -> updates.forceLibrary(who))));
+        }
     }
 
     private ItemSpec holdItem(UpdateSnapshot snapshot) {

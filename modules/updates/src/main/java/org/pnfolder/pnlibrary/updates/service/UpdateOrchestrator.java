@@ -19,8 +19,11 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
@@ -199,12 +202,22 @@ public final class UpdateOrchestrator implements AutoCloseable {
     /** Downloads and prepares the plan with {@code planId} on behalf of {@code actor}. */
     @NotNull
     public CompletionStage<UpdatePlanSnapshot> stage(@NotNull UUID planId, @NotNull UpdateActor actor) {
+        return queueStage(promise -> changes.stageRequested(promise, planId, actor));
+    }
+
+    /** Resolves and stages an administrator's library-only upgrade on the update executor. */
+    @NotNull
+    public CompletionStage<UpdatePlanSnapshot> stageLibrary(@NotNull Supplier<UpdatePlan> resolve, @NotNull UpdateActor actor) {
+        return queueStage(promise -> changes.stageLibraryRequested(promise, resolve, actor));
+    }
+
+    private CompletionStage<UpdatePlanSnapshot> queueStage(Consumer<CompletableFuture<UpdatePlanSnapshot>> action) {
         CompletableFuture<UpdatePlanSnapshot> promise = operationPromise();
         if (promise.isDone()) {
             return promise;
         }
         try {
-            executor.execute(() -> changes.stageRequested(promise, planId, actor));
+            executor.execute(() -> action.accept(promise));
         } catch (Throwable error) {
             promise.completeExceptionally(error);
         }

@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.bukkit.commands;
 
+import org.pnfolder.pnlibrary.core.network.ChannelNames;
+import org.pnfolder.pnlibrary.core.commands.proxy.ChannelsCommand;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,6 +162,7 @@ public final class BukkitControlCommand implements AutoCloseable {
         root.mount("deps", new DepsCommand(library).definition());
         root.mount("servers", new ServersCommand(link, ServersCommand.fromNetworkMap(link)).definition());
         root.mount("notices", new NoticesCommand(NoticesCommand.fromNetworkMap(link)).definition());
+        root.mount("channels", ChannelsCommand.ofServer(() -> ChannelNames.of(library.getServerNetwork())).definition());
         root.mount("money", new CurrencyCommandExecutor(currencies, scheduler).definition());
     }
 

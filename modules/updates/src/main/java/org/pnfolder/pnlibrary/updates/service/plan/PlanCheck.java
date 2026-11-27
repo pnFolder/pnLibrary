@@ -56,6 +56,11 @@ public final class PlanCheck {
     }
 
     private UpdatePlanSnapshot resolveAndStage(boolean forceRemote, UpdateActor actor) throws IOException {
+        // Until restart, the library-only transaction takes precedence over the ordinary graph.
+        UpdatePlanSnapshot staged = state.forcedStage();
+        if (staged != null) {
+            return staged;
+        }
         hooks.getBeforeCheck().run();
         UpdatePlanSnapshot checked = state.snapshotOf(resolve(forceRemote));
         if (closed.getAsBoolean()) {

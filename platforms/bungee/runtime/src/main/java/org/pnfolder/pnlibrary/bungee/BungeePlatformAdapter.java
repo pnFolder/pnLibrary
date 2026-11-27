@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.bungee.network.BungeeAudienceAdapter;
 import org.pnfolder.pnlibrary.bungee.network.BungeeNetworkProxy;
 import org.pnfolder.pnlibrary.bungee.remote.BungeeRemotePolicyContextFactory;
 import org.pnfolder.pnlibrary.bungee.tasks.BungeeTaskAdapter;
+import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
 import org.pnfolder.pnlibrary.spi.platform.JulLogObserver;
@@ -41,6 +42,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
     private final BungeeDiagnosticDetailsCollector diagnosticDetailsCollector;
     private final PlatformPlugins<Plugin> plugins;
     private final JulLogObserver logObserver;
+    private final Supplier<PnLogger> pnLogger;
     private final Path dataPath;
     private final PlatformMetricsFactory nativeMetricsFactory;
     private final BungeeAudienceAdapter nativeAudienceAdapter;
@@ -61,6 +63,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
                 loggerName -> JulLogObserver.matchPlugin(loggerName,
                         plugin.getProxy().getPluginManager().getPlugins(), p -> p.getDescription().getName()));
         this.dataPath = plugin.getDataFolder().toPath();
+        this.pnLogger = pnLogger;
         this.nativeMetricsFactory = new BungeeMetricsFactory(pnLogger);
         this.nativeAudienceAdapter = new BungeeAudienceAdapter(plugin);
         this.nativeCommandAdapter = new BungeeCommandAdapter(nativeAudienceAdapter);
@@ -75,6 +78,13 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
                 ? Collections.emptyList() : Collections.singletonList(author);
         return new PluginSnapshot(description.getName(), description.getName(), description.getVersion(), authors,
                 description.getMain());
+    }
+
+    /** The owner shown in menus for {@code instance}; null when it is not a plugin that has a description. */
+    @Nullable
+    OwnerInfo ownerInfo(@Nullable Object instance) {
+        Plugin installed = instance == null ? null : plugins.find(instance);
+        return installed == null || installed.getDescription() == null ? null : OwnerInfo.of(describe(installed));
     }
 
     private Logger loggerFor(Object owner) {
@@ -112,7 +122,7 @@ final class BungeePlatformAdapter extends ProxyPlatformAdapter {
     @Override
     public synchronized BungeeNetworkProxy getNetworkProxy() {
         if (nativeNetworkProxy == null) {
-            nativeNetworkProxy = new BungeeNetworkProxy(plugin.getProxy());
+            nativeNetworkProxy = new BungeeNetworkProxy(plugin.getProxy(), (message, error) -> pnLogger.get().warning(message, error));
         }
         return nativeNetworkProxy;
     }

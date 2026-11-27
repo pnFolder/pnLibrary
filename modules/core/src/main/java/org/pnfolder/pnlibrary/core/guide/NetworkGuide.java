@@ -24,6 +24,18 @@ final class NetworkGuide {
                     "Один сервер: платформа и состояние обновления каждого плагина.")
                     .orAdmin(),
                 GuideEntry.of(
+                    "/pnproxy servers add <имя> <хост:порт>",
+                    "pnlibrary.servers.manage",
+                    "Добавить сервер на прокси, пока он работает (после перезапуска пропадёт).")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
+                    "/pnproxy servers remove <имя>",
+                    "pnlibrary.servers.manage",
+                    "Убрать сервер, добавленный командой или плагином. Свои серверы прокси не убираются.")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
                     "/pn servers <сервер> check",
                     "pnlibrary.updates.view",
                     "Попросить сервер проверить обновления.")

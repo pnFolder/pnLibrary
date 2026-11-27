@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.currency.storage;
 
-import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
 import java.util.ArrayList;
 import java.util.List;
 

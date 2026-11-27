@@ -37,6 +37,7 @@ import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow;
 import org.pnfolder.pnlibrary.core.journal.JournalDetail;
 import org.pnfolder.pnlibrary.core.journal.JournalGroup;
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
+import org.pnfolder.pnlibrary.core.network.ChannelNames;
 import org.pnfolder.pnlibrary.core.link.ServerGroup;
 import org.pnfolder.pnlibrary.core.link.ServerGroups;
 import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
@@ -179,6 +180,11 @@ public final class LocalMenuData extends LocalMenuUpdates {
     @Override
     public @NotNull StatsSnapshot stats() {
         return RuntimeBridge.statsSnapshot(library);
+    }
+
+    @Override
+    public @NotNull List<String> channels() {
+        return ChannelNames.of(library.getProxy());
     }
 
     @Override

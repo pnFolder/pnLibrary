@@ -36,6 +36,7 @@ val context = registration.registerModule("main")      // ModuleContext моду
 | Локализация | названия предметов и сущностей Minecraft | [localization.md](localization.md) |
 | Хранилища | какие файлы библиотека держит на диске | [storage.md](storage.md) |
 | Сеть | прокси, ключ связи, группы серверов | [network.md](network.md) |
+| Каналы | плагинные сообщения прокси и серверов, кодеки | [channels.md](channels.md) |
 | Кулдауны, чат, меню, предметы | общие инструменты (меню и предметы только Bukkit) | пакеты `api.cooldowns`, `api.chat`, `platforms/bukkit` |
 | Расширения | свои модули поверх библиотеки | [expansions.md](expansions.md) |
 

@@ -91,7 +91,7 @@ public final class UpdateEventJournal {
 
     private static Set<String> operations() {
         Set<String> all = new HashSet<>(Arrays.asList(
-            "STATE_OBSERVED", "CHECK", "STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK"));
+            "STATE_OBSERVED", "CHECK", "STAGE", "FORCE_STAGE", "ROLLBACK", "HEALTH", "HEALTH_ROLLBACK"));
         all.addAll(COMPONENT_OPERATIONS);
         return Collections.unmodifiableSet(all);
     }

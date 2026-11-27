@@ -11,20 +11,23 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
+import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeBuilder;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.updates.UpdateRegistration;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
+import org.pnfolder.pnlibrary.core.exceptions.Throwables;
 
 /**
- * The catalog commands {@code list}, {@code available}, {@code info}, {@code settings}, {@code set}, {@code history}
+ * The catalog commands {@code list}, {@code available}, {@code info}, {@code settings}, {@code set}, {@code force}, {@code history}
  * and {@code backups}, shared by the Bukkit {@code /pn updates} tree and the console-only {@code /pn update} command
  * of the proxies.
  *
  * <p>Platforms own what differs: the permissions, who may use the command (the guard) and which thread results are
- * delivered on. The commands that prepare, confirm or restore updates stay with the platform because their
+ * delivered on. The commands that use platform-specific confirmation or restart stay with the platform because their
  * confirmation flows differ. Output adapts to the sender: a sender that cannot click gets text without buttons and a
  * list of commands, and the console gets ASCII only.
  */
@@ -145,6 +148,10 @@ public final class UpdateCatalogCommands {
     public void install(@NotNull BiConsumer<String, Consumer<CommandNodeBuilder>> addLiteral) {
         addLiteral.accept("list", node -> pagedList(node, false));
         addLiteral.accept("available", node -> pagedList(node, true));
+        addLiteral.accept("force", node -> {
+            node.permission("pnlibrary.updates.download", "pnlibrary.admin");
+            node.executes(this::forceLibrary);
+        });
         addLiteral.accept("info", node -> {
             permission(node, viewPermission);
             node.argument("plugin", ArgumentType.string(), plugin -> {
@@ -162,6 +169,23 @@ public final class UpdateCatalogCommands {
         addLiteral.accept("set", this::installSettings);
         addLiteral.accept("history", this.history::install);
         backups.install(addLiteral, backupsPermission != null ? backupsPermission : viewPermission, managePermission);
+    }
+
+    private void forceLibrary(CommandContext context) {
+        if (!ready(context)) {
+            return;
+        }
+        UpdateCatalogRoutes reader = routesFor(context);
+        UpdateCatalogView.notice(new ChatNotice(ChatTone.PROGRESS, "Готовлю принудительное обновление pnLibrary…"), reader)
+                .forEach(context.getSender()::sendMessage);
+        UpdateCatalogSupport.forceLibrary(library, UpdateCatalogSupport.actorOf(context.getSender()))
+                .whenComplete((done, error) -> deliver.accept(() -> {
+                    ChatNotice notice = error == null
+                            ? new ChatNotice(ChatTone.SUCCESS, "Обновление pnLibrary подготовлено.",
+                                    "Версия " + done.getPlan().getChanges().get(0).getTo() + " применится после перезапуска.")
+                            : new ChatNotice(ChatTone.FAILURE, "Не удалось подготовить обновление pnLibrary.", Throwables.rootMessage(error));
+                    UpdateCatalogView.notice(notice, reader).forEach(context.getSender()::sendMessage);
+                }));
     }
 
     private void pagedList(CommandNodeBuilder node, boolean updatesOnly) {

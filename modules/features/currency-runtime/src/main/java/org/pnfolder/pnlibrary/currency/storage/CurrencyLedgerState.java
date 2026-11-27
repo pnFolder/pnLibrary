@@ -2,7 +2,6 @@ package org.pnfolder.pnlibrary.currency.storage;
 
 import org.pnfolder.pnlibrary.currency.CurrencyMutationEngine;
 import org.pnfolder.pnlibrary.currency.CurrencyMutation;
-import org.pnfolder.pnlibrary.currency.storage.LedgerUndo;
 import java.math.BigDecimal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,6 +22,7 @@ import org.pnfolder.pnlibrary.api.currency.CurrencyTransactionRequest;
 public final class CurrencyLedgerState {
     private final Map<String, BigDecimal> balances = new LinkedHashMap<>();
     private final ArrayDeque<CurrencyTransaction> transactions = new ArrayDeque<>();
+    private final ArrayDeque<CurrencyTransaction> archivedReceipts = new ArrayDeque<>();
     private final Map<String, CurrencyTransaction> idempotency = new HashMap<>();
 
     /** Map key of one account balance: {@code currency|playerId}. */
@@ -41,6 +41,19 @@ public final class CurrencyLedgerState {
 
     public ArrayDeque<CurrencyTransaction> getTransactions() {
         return transactions;
+    }
+
+    ArrayDeque<CurrencyTransaction> archivedReceipts() {
+        return archivedReceipts;
+    }
+
+    void recordArchivedReceipt(CurrencyTransaction transaction) {
+        String key = transaction.getIdempotencyKey();
+        if (key == null) {
+            throw new IllegalArgumentException("An archived currency receipt requires an idempotency key");
+        }
+        archivedReceipts.addLast(transaction);
+        idempotency.put(idempotencyKey(transaction.getCurrency(), key), transaction);
     }
 
     /** The earlier transaction recorded under the request's idempotency key, if any. */
@@ -107,7 +120,7 @@ public final class CurrencyLedgerState {
         }
     }
 
-    /** Drops the oldest transactions beyond {@code maximumTransactions}, together with their idempotency keys. */
+    /** Drops the oldest history entries beyond {@code maximumTransactions}, retaining receipts for retries. */
     void trim(int maximumTransactions) {
         trim(maximumTransactions, null);
     }
@@ -116,13 +129,15 @@ public final class CurrencyLedgerState {
     void trim(int maximumTransactions, @Nullable LedgerUndo undo) {
         while (transactions.size() > maximumTransactions) {
             CurrencyTransaction old = transactions.removeFirst();
-            String key = old.getIdempotencyKey() == null ? null : idempotencyKey(old.getCurrency(), old.getIdempotencyKey());
-            String indexedKey = key != null && idempotency.remove(key, old) ? key : null;
+            boolean keepReceipt = old.getIdempotencyKey() != null;
+            if (keepReceipt) {
+                archivedReceipts.addLast(old);
+            }
             if (undo != null) {
                 undo.add(() -> {
                     transactions.addFirst(old);
-                    if (indexedKey != null) {
-                        idempotency.put(indexedKey, old);
+                    if (keepReceipt) {
+                        archivedReceipts.removeLast();
                     }
                 });
             }
@@ -134,6 +149,7 @@ public final class CurrencyLedgerState {
         String prefix = currency + "|";
         balances.keySet().removeIf(key -> key.startsWith(prefix));
         transactions.removeIf(transaction -> transaction.getCurrency().equals(currency));
+        archivedReceipts.removeIf(transaction -> transaction.getCurrency().equals(currency));
         idempotency.keySet().removeIf(key -> key.startsWith(prefix));
     }
 
@@ -141,7 +157,7 @@ public final class CurrencyLedgerState {
     @NotNull
     public Copy copy() {
         return new Copy(new LinkedHashMap<>(balances), new ArrayList<>(transactions),
-                new HashMap<>(idempotency));
+                new ArrayList<>(archivedReceipts), new HashMap<>(idempotency));
     }
 
     void restore(@NotNull Copy copy) {
@@ -149,6 +165,8 @@ public final class CurrencyLedgerState {
         balances.putAll(copy.balances);
         transactions.clear();
         transactions.addAll(copy.transactions);
+        archivedReceipts.clear();
+        archivedReceipts.addAll(copy.archivedReceipts);
         idempotency.clear();
         idempotency.putAll(copy.idempotency);
     }
@@ -168,12 +186,14 @@ public final class CurrencyLedgerState {
     static final class Copy {
         private final Map<String, BigDecimal> balances;
         private final List<CurrencyTransaction> transactions;
+        private final List<CurrencyTransaction> archivedReceipts;
         private final Map<String, CurrencyTransaction> idempotency;
 
         Copy(Map<String, BigDecimal> balances, List<CurrencyTransaction> transactions,
-             Map<String, CurrencyTransaction> idempotency) {
+             List<CurrencyTransaction> archivedReceipts, Map<String, CurrencyTransaction> idempotency) {
             this.balances = balances;
             this.transactions = transactions;
+            this.archivedReceipts = archivedReceipts;
             this.idempotency = idempotency;
         }
     }

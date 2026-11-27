@@ -143,22 +143,32 @@ class FileCurrencyStorageTest {
     }
 
     @Test
-    void theOldestTransactionsAreEvictedAndTheirIdempotencyKeysReleased(@TempDir Path directory) {
+    void oldReceiptsPreventDuplicateCreditsAfterEvictionReopenAndImport(@TempDir Path directory) {
         CurrencyAccount account = new CurrencyAccount(UUID.randomUUID());
-        FileCurrencyStorage storage = new FileCurrencyStorage(directory.resolve("currency.json"), 100);
-        try {
-            credit(storage, account, "1", "oldest");
+        Path file = directory.resolve("currency.json");
+        CurrencyTransaction original;
+        try (FileCurrencyStorage storage = new FileCurrencyStorage(file, 100)) {
+            original = credit(storage, account, "1", "oldest");
             for (int index = 0; index < 100; index++) {
                 credit(storage, account, "1");
             }
 
-            assertEquals(100, history(storage, CurrencyHistoryQuery.builder().limit(500).build()).getItems().size());
-            // "oldest" was evicted, so the same key now creates a new transaction instead of replaying.
-            CurrencyTransaction again = credit(storage, account, "1", "oldest");
-            assertEquals(0, new BigDecimal("102").compareTo(balanceOf(storage, account)));
-            assertEquals("oldest", again.getIdempotencyKey());
-        } finally {
-            storage.close();
+            CurrencyHistoryPage page = history(storage, CurrencyHistoryQuery.builder().limit(500).build());
+            assertEquals(100, page.getItems().size());
+            assertFalse(keysOf(page).contains("oldest"));
+            assertEquals(original, credit(storage, account, "1", "oldest"));
+        }
+
+        CurrencyStorageSnapshot snapshot;
+        try (FileCurrencyStorage reopened = new FileCurrencyStorage(file, 100)) {
+            assertEquals(original, credit(reopened, account, "1", "oldest"));
+            assertEquals(0, new BigDecimal("101").compareTo(balanceOf(reopened, account)));
+            snapshot = reopened.export(currency).toCompletableFuture().join();
+        }
+        try (FileCurrencyStorage imported = new FileCurrencyStorage(directory.resolve("imported.json"), 100)) {
+            imported.importSnapshot(snapshot, CurrencyImportMode.REPLACE).toCompletableFuture().join();
+            assertEquals(original, credit(imported, account, "1", "oldest"));
+            assertEquals(0, new BigDecimal("101").compareTo(balanceOf(imported, account)));
         }
     }
 

@@ -1522,7 +1522,8 @@ public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkPlayer
 	public abstract fun getPing ()Ljava/time/Duration;
 }
 
-public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkProxy : net/kyori/adventure/audience/ForwardingAudience {
+public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkProxy : net/kyori/adventure/audience/ForwardingAudience, org/pnfolder/pnlibrary/api/network/channel/Channels {
+	public abstract fun addServer (Ljava/lang/String;Ljava/net/InetSocketAddress;)Lorg/pnfolder/pnlibrary/api/network/NetworkServer;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getPlayerCount ()I
 	public abstract fun getPlayers ()Ljava/util/Collection;
@@ -1530,11 +1531,12 @@ public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkProxy 
 	public abstract fun getVersion ()Ljava/lang/String;
 	public abstract fun player (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/network/NetworkPlayer;
 	public abstract fun player (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/network/NetworkPlayer;
-	public abstract fun registerChannel (Ljava/lang/String;)V
+	public abstract fun registerChannel (Lnet/kyori/adventure/key/Key;)V
+	public abstract fun removeServer (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;)Z
 	public abstract fun server (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/network/NetworkServer;
 	public fun stop ()V
 	public abstract fun stop (Lnet/kyori/adventure/text/Component;)V
-	public abstract fun unregisterChannel (Ljava/lang/String;)V
+	public abstract fun unregisterChannel (Lnet/kyori/adventure/key/Key;)V
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkServer : net/kyori/adventure/audience/ForwardingAudience {
@@ -1546,6 +1548,99 @@ public abstract interface class org/pnfolder/pnlibrary/api/network/NetworkServer
 	public abstract fun getPing ()Ljava/time/Duration;
 	public fun isRestricted ()Z
 	public abstract fun send (Ljava/lang/String;[B)Z
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/Channels {
+	public abstract fun channel (Lnet/kyori/adventure/key/Key;)Lorg/pnfolder/pnlibrary/api/network/channel/MessageChannel;
+	public abstract fun channels ()Ljava/util/List;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/MessageChannel : net/kyori/adventure/key/Keyed {
+	public static final field MAX_MESSAGE_BYTES I
+	public abstract fun close ()V
+	public abstract fun isOpen ()Z
+	public abstract fun key ()Lnet/kyori/adventure/key/Key;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/NetworkChannel : org/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf {
+	public fun broadcast (Ljava/lang/String;Ljava/util/function/Consumer;)I
+	public fun on (Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/network/channel/typed/MessageListener;)Ljava/lang/Runnable;
+	public fun send (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;Ljava/lang/String;Ljava/util/function/Consumer;)Z
+	public abstract fun with (Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;)Lorg/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/ServerChannel : org/pnfolder/pnlibrary/api/network/channel/typed/ServerChannelOf {
+	public fun on (Ljava/lang/String;Ljava/util/function/Consumer;)Ljava/lang/Runnable;
+	public fun send (Ljava/lang/String;Ljava/util/function/Consumer;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun with (Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;)Lorg/pnfolder/pnlibrary/api/network/channel/typed/ServerChannelOf;
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/ServerNetwork : org/pnfolder/pnlibrary/api/network/channel/Channels {
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/typed/MessageListener {
+	public abstract fun onMessage (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;Lorg/pnfolder/pnlibrary/api/network/message/MessageReader;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf : org/pnfolder/pnlibrary/api/network/channel/MessageChannel {
+	public abstract fun broadcast (Ljava/lang/Object;)I
+	public abstract fun listen (Lorg/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf$Listener;)V
+	public abstract fun send (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;Ljava/lang/Object;)Z
+	public abstract fun unlisten (Lorg/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf$Listener;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/typed/NetworkChannelOf$Listener {
+	public abstract fun onMessage (Lorg/pnfolder/pnlibrary/api/network/NetworkServer;Ljava/lang/Object;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/channel/typed/ServerChannelOf : org/pnfolder/pnlibrary/api/network/channel/MessageChannel {
+	public abstract fun listen (Ljava/util/function/Consumer;)V
+	public abstract fun send (Ljava/lang/Object;)Ljava/util/concurrent/CompletionStage;
+	public abstract fun unlisten (Ljava/util/function/Consumer;)V
+}
+
+public abstract interface class org/pnfolder/pnlibrary/api/network/message/MessageCodec {
+	public static fun compressed (Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;)Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;
+	public abstract fun decode (Lorg/pnfolder/pnlibrary/api/network/message/MessageReader;)Ljava/lang/Object;
+	public abstract fun encode (Ljava/lang/Object;Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;)V
+	public fun fromBytes ([B)Ljava/lang/Object;
+	public static fun listOf (Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;)Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;
+	public fun split (Ljava/util/List;)Ljava/util/List;
+	public fun toBytes (Ljava/lang/Object;)[B
+}
+
+public final class org/pnfolder/pnlibrary/api/network/message/MessageReader {
+	public fun getType ()Ljava/lang/String;
+	public static fun of ([B)Lorg/pnfolder/pnlibrary/api/network/message/MessageReader;
+	public static fun raw ([B)Lorg/pnfolder/pnlibrary/api/network/message/MessageReader;
+	public fun readBlock ()[B
+	public fun readBoolean ()Z
+	public fun readByte ()B
+	public fun readDouble ()D
+	public fun readFloat ()F
+	public fun readInt ()I
+	public fun readLong ()J
+	public fun readShort ()S
+	public fun readText ()Ljava/lang/String;
+	public fun readUuid ()Ljava/util/UUID;
+	public fun readVarInt ()I
+	public fun remaining ()I
+}
+
+public final class org/pnfolder/pnlibrary/api/network/message/MessageWriter {
+	public static fun encode (Ljava/lang/String;Ljava/util/function/Consumer;)[B
+	public static fun encodeRaw (Ljava/util/function/Consumer;)[B
+	public fun writeBlock ([B)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeBoolean (Z)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeByte (I)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeDouble (D)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeFloat (F)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeInt (I)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeLong (J)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeShort (I)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeText (Ljava/lang/String;)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeUuid (Ljava/util/UUID;)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
+	public fun writeVarInt (I)Lorg/pnfolder/pnlibrary/api/network/message/MessageWriter;
 }
 
 public abstract interface class org/pnfolder/pnlibrary/api/observability/ObservabilityService : java/lang/AutoCloseable {
@@ -2333,6 +2428,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/runtime/PnLibrary : j
 	public abstract fun getProxy ()Lorg/pnfolder/pnlibrary/api/network/NetworkProxy;
 	public fun getRegistry ()Lorg/pnfolder/pnlibrary/api/runtime/group/Registrations;
 	public fun getRuntime ()Lorg/pnfolder/pnlibrary/api/runtime/group/RuntimeInfo;
+	public abstract fun getServerNetwork ()Lorg/pnfolder/pnlibrary/api/network/channel/ServerNetwork;
 	public abstract fun getServices ()Lorg/pnfolder/pnlibrary/api/services/ServiceManager;
 	public abstract fun getUpdates ()Lorg/pnfolder/pnlibrary/api/updates/UpdateService;
 	public abstract fun getVersion ()Ljava/lang/String;
@@ -2467,6 +2563,7 @@ public abstract interface class org/pnfolder/pnlibrary/api/runtime/group/Runtime
 	public abstract fun getOwner ()Ljava/lang/Object;
 	public abstract fun getPlatforms ()Lorg/pnfolder/pnlibrary/api/platform/PlatformProvider;
 	public abstract fun getProxy ()Lorg/pnfolder/pnlibrary/api/network/NetworkProxy;
+	public abstract fun getServerNetwork ()Lorg/pnfolder/pnlibrary/api/network/channel/ServerNetwork;
 	public abstract fun getVersion ()Ljava/lang/String;
 	public abstract fun isAtLeastVersion (Ljava/lang/String;)Z
 	public abstract fun isClosed ()Z

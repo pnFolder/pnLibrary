@@ -5,6 +5,8 @@ include(
     ":modules:common",
     ":modules:api",
     ":modules:spi",
+    // Optional Kotlin helpers over the Java API; not part of the runtime jars.
+    ":modules:kotlin",
     ":modules:console",
     // Runtime.
     ":modules:core",

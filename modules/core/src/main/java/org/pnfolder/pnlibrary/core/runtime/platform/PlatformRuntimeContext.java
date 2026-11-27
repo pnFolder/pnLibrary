@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
 import org.pnfolder.pnlibrary.spi.metrics.PlatformMetricsFactory;
@@ -36,12 +37,14 @@ public final class PlatformRuntimeContext {
     private final PlatformBinding binding;
     private final PlatformShutdown shutdown;
     private final NetworkProxy networkProxy;
+    private final ServerNetwork serverNetwork;
 
     public PlatformRuntimeContext(PlatformIdentity identity, PlatformExecution execution, PlatformReadiness readiness,
                                   PlatformOwnership ownership, PlatformDiagnostics diagnostics, PlatformLogObservation logObservation,
                                   PlatformLogging logging, PlatformMetricsFactory metricsFactory, PlatformCommandAdapter commandAdapter,
                                   PlatformAudienceAdapter playerAdapter, PlatformTaskAdapter taskAdapter, Path dataFolder,
-                                  PlatformBinding binding, PlatformShutdown shutdown, @Nullable NetworkProxy networkProxy) {
+                                  PlatformBinding binding, PlatformShutdown shutdown, @Nullable NetworkProxy networkProxy,
+                                  @Nullable ServerNetwork serverNetwork) {
         this.identity = identity;
         this.execution = execution;
         this.readiness = readiness;
@@ -57,13 +60,14 @@ public final class PlatformRuntimeContext {
         this.binding = binding;
         this.shutdown = shutdown;
         this.networkProxy = networkProxy;
+        this.serverNetwork = serverNetwork;
     }
 
     /** Takes every adapter from one platform adapter, which implements all of them. */
     public static @NotNull PlatformRuntimeContext from(@NotNull PlatformAdapter adapter) {
         return new PlatformRuntimeContext(adapter, adapter, adapter, adapter, adapter, adapter, adapter, adapter.getMetricsFactory(),
                 adapter.getCommandAdapter(), adapter.getPlayerAdapter(), adapter.getTaskAdapter(), adapter.getDataFolder(), adapter,
-                adapter, adapter.getNetworkProxy());
+                adapter, adapter.getNetworkProxy(), adapter.getServerNetwork());
     }
 
     public @NotNull PlatformIdentity getIdentity() {
@@ -124,6 +128,10 @@ public final class PlatformRuntimeContext {
 
     public @Nullable NetworkProxy getNetworkProxy() {
         return networkProxy;
+    }
+
+    public @Nullable ServerNetwork getServerNetwork() {
+        return serverNetwork;
     }
 
     public @NotNull String getSummaryName() {

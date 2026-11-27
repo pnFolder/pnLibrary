@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -19,6 +20,7 @@ import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskConflictPolicy;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
+import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskBuilder;
 
 class ManagedTaskTest {
     private final RecordingTaskAdapter adapter = new RecordingTaskAdapter();
@@ -104,6 +106,46 @@ class ManagedTaskTest {
         assertEquals(TaskStatus.CANCELLED, first.getStatus());
         assertEquals(TaskStatus.SCHEDULED, replaced.getStatus());
         service.close();
+    }
+
+    @Test
+    void aRejectedReplacementLeavesTheExistingTaskScheduled() {
+        AtomicInteger registrations = new AtomicInteger();
+        AtomicInteger replacementRuns = new AtomicInteger();
+        try (ScheduledTasks service = new ScheduledTasks(() -> new PlatformTaskBuilder(request -> {
+            if (registrations.incrementAndGet() == 2) {
+                request.getCallback().run();
+                throw new IllegalStateException("scheduler rejected the replacement");
+            }
+            return () -> true;
+        }))) {
+            TaskScope scope = service.scope(new Object());
+            TaskHandle existing = scope.schedule(TaskSpec.builder().key("k").action(context -> { }).build());
+            assertThrows(IllegalStateException.class, () -> scope.schedule(TaskSpec.builder().key("k")
+                    .conflictPolicy(TaskConflictPolicy.REPLACE).action(context -> replacementRuns.incrementAndGet()).build()));
+            assertSame(existing, scope.getByKey("k"));
+            assertEquals(TaskStatus.SCHEDULED, existing.getStatus());
+            assertEquals(0, replacementRuns.get());
+        }
+    }
+
+    @Test
+    void anImmediateReplacementRunsAfterTheExistingTaskIsCancelled() {
+        AtomicInteger registrations = new AtomicInteger();
+        try (ScheduledTasks service = new ScheduledTasks(() -> new PlatformTaskBuilder(request -> {
+            if (registrations.incrementAndGet() == 2) {
+                request.getCallback().run();
+            }
+            return () -> true;
+        }))) {
+            TaskScope scope = service.scope(new Object());
+            TaskHandle existing = scope.schedule(TaskSpec.builder().key("k").action(context -> { }).build());
+            AtomicReference<TaskStatus> originalStatus = new AtomicReference<>();
+            TaskHandle next = scope.schedule(TaskSpec.builder().key("k").conflictPolicy(TaskConflictPolicy.REPLACE)
+                    .action(context -> originalStatus.set(existing.getStatus())).build());
+            assertEquals(TaskStatus.CANCELLED, originalStatus.get());
+            assertEquals(TaskStatus.COMPLETED, next.getStatus());
+        }
     }
 
     @Test

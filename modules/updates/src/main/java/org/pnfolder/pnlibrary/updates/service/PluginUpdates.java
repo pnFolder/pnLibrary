@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletionStage;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
@@ -31,6 +32,7 @@ import org.pnfolder.pnlibrary.api.updates.UpdateSettings;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.api.updates.product.ProductId;
 import org.pnfolder.pnlibrary.api.updates.request.PluginUpdateRequest;
+import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
@@ -223,6 +225,12 @@ public final class PluginUpdates implements UpdateService, AutoCloseable {
 
     private ResolutionResult resolveGraph(RefreshMode refreshMode) {
         return graphResolver.resolve(registrations.snapshot(), refreshMode);
+    }
+
+    /** Prepares a library-only release requested by an administrator. */
+    @NotNull
+    public CompletionStage<UpdatePlanSnapshot> forceLibrary(@NotNull UpdateActor actor) {
+        return runtime.getOrchestrator().stageLibrary(() -> graphResolver.forceLibrary(registrations.snapshot()), actor);
     }
 
     private void stageGraph(UpdatePlanSnapshot snapshot) {

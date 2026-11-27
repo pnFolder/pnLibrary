@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.runtime;
 
+import net.kyori.adventure.key.Key;
 import java.util.Objects;
 import java.time.Duration;
 import java.util.function.Function;
@@ -52,7 +53,7 @@ public final class ProxyRuntime implements AutoCloseable {
 
     private void connectLink(PnLibraryRuntimeHost host) {
         ProxyLink proxyLink = createLink(host);
-        proxy().registerChannel(LinkCodec.CHANNEL);
+        proxy().registerChannel(Key.key(LinkCodec.CHANNEL));
         linkListener = registerLinkReceiver.apply(proxyLink.getReceiver());
         link = proxyLink;
         if (!proxyLink.getAnnounces()) {
@@ -123,7 +124,7 @@ public final class ProxyRuntime implements AutoCloseable {
                         listener.close();
                     }
                 },
-                () -> proxy().unregisterChannel(LinkCodec.CHANNEL),
+                () -> proxy().unregisterChannel(Key.key(LinkCodec.CHANNEL)),
                 () -> {
                     if (proxyLink != null) {
                         proxyLink.close();

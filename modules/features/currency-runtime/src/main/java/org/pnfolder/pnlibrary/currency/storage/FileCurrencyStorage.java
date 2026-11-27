@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.currency.storage;
 
 import org.pnfolder.pnlibrary.currency.HistoryFilter;
-import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -125,6 +124,11 @@ public final class FileCurrencyStorage implements CurrencyStorage {
                 }
             }
             List<CurrencyTransaction> exportedTransactions = new ArrayList<>();
+            for (CurrencyTransaction receipt : state.archivedReceipts()) {
+                if (receipt.getCurrency().equals(currency)) {
+                    exportedTransactions.add(receipt);
+                }
+            }
             for (CurrencyTransaction transaction : state.getTransactions()) {
                 if (transaction.getCurrency().equals(currency)) {
                     exportedTransactions.add(transaction);

@@ -34,6 +34,7 @@ public final class HomeScreens extends MenuScreens {
     private static final int NETWORK_SLOT = 37;
     private static final int SUPPORT_SLOT = 38;
     private static final int NOTICES_SLOT = 39;
+    private static final int CHANNELS_SLOT = 40;
     private static final int RESTART_SLOT = 41;
     private static final int ROLLBACK_SLOT = 42;
 
@@ -57,6 +58,7 @@ public final class HomeScreens extends MenuScreens {
         sections(builder, pending, problems, errors);
         network(builder);
         notices(builder);
+        channels(builder);
         builder.button(MenuConstants.HOME_CLOSE, MenuItems.closeItem(), go(MenuViewer::close));
         planButtons(builder, data().plan());
         show(player, builder.build());
@@ -141,6 +143,17 @@ public final class HomeScreens extends MenuScreens {
                 new Fact("Серверов", String.valueOf(received.getReport().getServers().size() + 1)),
                 new Fact("Данные", MenuText.ago(received.getReceivedAt())));
         builder.button(NETWORK_SLOT, item, go(who -> routes.network(who, 0)));
+    }
+
+    private void channels(MenuBuilder builder) {
+        List<String> names = data().channels();
+        if (names.isEmpty()) {
+            return;
+        }
+        ItemSpec item = MenuItems.icon(Icons.OVERVIEW, "ENDER_PEARL", "Каналы прокси", Style.lore(
+            Collections.singletonList("Каналы сообщений плагинов, открытые на прокси."),
+            Fact.list("Открыто", String.valueOf(names.size())), Style.left("открыть")));
+        builder.button(CHANNELS_SLOT, item, go(who -> allowed(who, MenuConstants.CHANNELS, () -> routes.channels(who, 0))));
     }
 
     private void notices(MenuBuilder builder) {

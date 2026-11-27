@@ -86,6 +86,10 @@ final class PluginsGuide {
                     "pnlibrary.placeholders",
                     "Вычислить плейсхолдер вручную."),
                 GuideEntry.of(
+                    "/pnproxy channels, /pn channels",
+                    "pnlibrary.channels",
+                    "Каналы сообщений, которые плагины открыли на прокси или на игровом сервере."),
+                GuideEntry.of(
                     "/pn actions [страница]",
                     "pnlibrary.actions",
                     "Именованные действия, требования и функции плагинов: владелец и видимость."),

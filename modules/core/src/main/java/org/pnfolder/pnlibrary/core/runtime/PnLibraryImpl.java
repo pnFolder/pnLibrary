@@ -21,6 +21,7 @@ import org.pnfolder.pnlibrary.api.expansions.ExpansionManager;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.metrics.MetricsService;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry;
 import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo;
@@ -158,6 +159,11 @@ public final class PnLibraryImpl implements PnLibrary, PlatformRegistration, Run
     @Override
     public @Nullable NetworkProxy getProxy() {
         return parts.proxy;
+    }
+
+    @Override
+    public @Nullable ServerNetwork getServerNetwork() {
+        return parts.serverNetwork;
     }
 
     @Override

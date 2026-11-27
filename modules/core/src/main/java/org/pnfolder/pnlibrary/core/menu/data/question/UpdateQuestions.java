@@ -63,6 +63,9 @@ public final class UpdateQuestions {
                 data.checkOne(product, ask.actor);
                 ask.give(true);
                 return true;
+            case MenuCalls.FORCE_LIBRARY:
+                ask.finish(data.forceLibrary(ask.actor));
+                return true;
             case MenuCalls.SET_CHANNEL:
                 ask.finish(data.setChannel(product, channel(ask.text("channel")), ask.actor));
                 return true;

@@ -33,6 +33,7 @@ public final class MenuConstants {
     public static final String TASKS = MenuPermissions.TASKS;
     public static final String STATS = MenuPermissions.STATS;
     public static final String PLACEHOLDERS = MenuPermissions.PLACEHOLDERS;
+    public static final String CHANNELS = MenuPermissions.CHANNELS;
     public static final String ACTIONS = MenuPermissions.ACTIONS;
     public static final String CONFIGS = "pnlibrary.configs";
     public static final int DETAIL_ROWS = 5;

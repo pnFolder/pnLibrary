@@ -15,8 +15,6 @@ import org.pnfolder.pnlibrary.common.jvm.JavaRuntime;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
 import org.pnfolder.pnlibrary.core.remote.report.PolicyDeniedException;
-import org.pnfolder.pnlibrary.core.remote.monitor.RemotePolicyMonitor;
-import org.pnfolder.pnlibrary.core.remote.monitor.StartupCheck;
 import org.pnfolder.pnlibrary.core.remote.report.RemotePolicyNoticeRenderer;
 import org.pnfolder.pnlibrary.spi.platform.PlatformAdapter;
 

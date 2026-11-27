@@ -111,6 +111,22 @@ public final class UpdateScreens extends MenuScreens {
         });
     }
 
+    void forceLibrary(MenuViewer player) {
+        player.close();
+        tell(player, ChatTone.PROGRESS, "Готовлю принудительное обновление pnLibrary…");
+        data().forceLibrary(player.getActor()).whenComplete((version, error) -> sync(() -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            if (error == null) {
+                tell(player, ChatTone.SUCCESS, "Обновление pnLibrary подготовлено.",
+                    "Версия " + version + " применится после перезапуска.");
+            } else {
+                tell(player, ChatTone.FAILURE, "Не удалось подготовить обновление pnLibrary.", Throwables.rootMessage(error));
+            }
+        }));
+    }
+
     public void everyone(MenuViewer player, String done, Function<UpdateSnapshot, CompletionStage<?>> change) {
         List<CompletableFuture<?>> stages = new ArrayList<>();
         for (UpdateSnapshot snapshot : snapshots()) {

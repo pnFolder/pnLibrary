@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.updates.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import org.pnfolder.pnlibrary.api.updates.release.InstalledProduct;
 import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
 import org.pnfolder.pnlibrary.api.updates.release.ProductDependency;
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease;
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan;
 import org.pnfolder.pnlibrary.api.updates.state.ApiRaised;
 import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
 import org.pnfolder.pnlibrary.api.updates.state.UnsupportedApi;
@@ -262,6 +264,56 @@ class UpdateResolverTest {
             products.add(change.getProduct());
         }
         return products;
+    }
+
+    @Test
+    void pausedPluginDependenciesDoNotBlockALibraryUpgrade() {
+        ProductDependency missingManaged = new ProductDependency(economy, version("2.0.0"));
+        ExternalPluginDependency missingExternal = ExternalPluginDependency.builder("Vault", "1.7.3")
+                .downloadPage("https://example.com/releases").build();
+        List<InstalledProduct> installed = list(installed(library, "1.0.0", range(1), 1),
+                installed(market, "1.0.0", range(1)));
+        List<ProductRelease> releases = list(release(library, "2.0.0", range(1), 1),
+                release(market, "2.0.0", range(1), null, UpdateChannel.STABLE, list(missingManaged),
+                        list(missingExternal), Collections.emptyList()));
+        UpdateResolver resolver = new UpdateResolver(library);
+
+        assertTrue(resolver.resolve(installed, releases) instanceof ResolutionResult.Blocked);
+        ResolutionResult.Ready ready = (ResolutionResult.Ready) resolver.resolve(installed, releases,
+                Collections.emptyMap(), UpdateChannel.STABLE, Collections.singleton(market), PlatformType.BUKKIT, 17,
+                new ResolverPolicy());
+
+        assertEquals(Collections.singleton(library), changed(ready));
+        assertEquals(version("1.0.0"), selected(ready.getPlan(), market).getVersion());
+    }
+
+    @Test
+    void forcedPlanContainsOnlyTheNewestLibraryBuildForTheSelectedChannelAndPlatform() {
+        ArtifactDescriptor bukkit = new ArtifactDescriptor("library.jar", PlatformType.BUKKIT, 8,
+                null, 10L, repeat("00", 32), null);
+        ArtifactDescriptor velocity = new ArtifactDescriptor("library.jar", PlatformType.VELOCITY, 17,
+                null, 10L, repeat("00", 32), null);
+        ArtifactDescriptor modernBukkit = new ArtifactDescriptor("library.jar", PlatformType.BUKKIT, 21,
+                null, 10L, repeat("00", 32), null);
+        List<ProductRelease> releases = list(
+                release(library, "2.0.0", range(2), 2, UpdateChannel.STABLE,
+                        list(new ProductDependency(economy, version("2.0.0"))), Collections.emptyList(), list(bukkit)),
+                release(library, "3.0.0-dev.1", range(3), 3, UpdateChannel.DEV, Collections.emptyList(),
+                        Collections.emptyList(), list(bukkit)),
+                release(library, "4.0.0", range(3), 3, UpdateChannel.STABLE, Collections.emptyList(),
+                        Collections.emptyList(), list(velocity)),
+                release(library, "5.0.0", range(3), 3, UpdateChannel.STABLE, Collections.emptyList(),
+                        Collections.emptyList(), list(modernBukkit)),
+                release(market, "6.0.0", range(2)));
+        InstalledProduct current = installed(library, "1.0.0", range(1), 1);
+        UpdateResolver resolver = new UpdateResolver(library);
+
+        UpdatePlan plan = resolver.forceLibrary(current, releases, UpdateChannel.STABLE, PlatformType.BUKKIT, 17);
+        assertEquals(2, plan.getTargetApi());
+        assertEquals(Collections.singletonList(new ProductChange(library, version("1.0.0"), version("2.0.0"))), plan.getChanges());
+        assertEquals(1, plan.getSelected().size());
+        assertThrows(IllegalStateException.class,
+                () -> resolver.forceLibrary(current, releases, UpdateChannel.STABLE, PlatformType.BUNGEECORD, 17));
     }
 
     private static String repeat(String text, int times) {

@@ -21,13 +21,14 @@ final class ResolverReasons {
     private ResolverReasons() {
     }
 
-    /** Newer releases of installed products that the target API supports. */
+    /** Newer releases of unpaused products that the target API supports. */
     static List<ProductRelease> upgradableCandidates(List<ProductRelease> releases, Map<ProductId, InstalledProduct> installedById,
-                                                     int targetApi) {
+                                                     int targetApi, Set<ProductId> frozen) {
         List<ProductRelease> upgrades = new ArrayList<>();
         for (ProductRelease candidate : releases) {
             InstalledProduct current = installedById.get(candidate.getProduct());
-            if (current != null && candidate.getVersion().compareTo(current.getVersion()) > 0
+            if (current != null && !frozen.contains(candidate.getProduct())
+                && candidate.getVersion().compareTo(current.getVersion()) > 0
                 && candidate.getSupportedApi().supports(targetApi)) {
                 upgrades.add(candidate);
             }

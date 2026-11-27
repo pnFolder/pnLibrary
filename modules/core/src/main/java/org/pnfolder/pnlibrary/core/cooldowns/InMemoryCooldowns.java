@@ -117,6 +117,7 @@ public final class InMemoryCooldowns implements CooldownService {
     public @NotNull Duration extend(@NotNull UUID subject, @NotNull String action, @NotNull Duration duration) {
         validate(action, duration);
         checkOpen();
+        sweepSometimes();
         Key key = new Key(subject, normalized(action));
         long now = System.nanoTime();
         // The remapping function never returns null, so compute always stores and returns a deadline.

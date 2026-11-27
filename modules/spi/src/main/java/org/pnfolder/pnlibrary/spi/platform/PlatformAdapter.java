@@ -3,6 +3,7 @@ package org.pnfolder.pnlibrary.spi.platform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.audience.UnsupportedPlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
@@ -57,6 +58,12 @@ public interface PlatformAdapter extends PlatformShutdown, PlatformIdentity, Pla
     /** Proxy layer; null on game-server platforms. */
     @Nullable
     default NetworkProxy getNetworkProxy() {
+        return null;
+    }
+
+    /** Game-server side of the network; null on proxy platforms. */
+    @Nullable
+    default ServerNetwork getServerNetwork() {
         return null;
     }
 }

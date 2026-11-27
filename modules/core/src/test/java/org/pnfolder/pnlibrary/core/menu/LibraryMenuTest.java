@@ -8,6 +8,9 @@ import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.clickable;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.click;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.plain;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.title;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -17,9 +20,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.placeholders.info.PlaceholderInfo;
+import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
+import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.core.menu.data.MenuData;
+import org.pnfolder.pnlibrary.core.menu.data.PlanInfo;
 import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.menu.style.MenuConstants;
 
@@ -77,6 +84,28 @@ class LibraryMenuTest {
         assertTrue(home.getItems().containsKey(MenuConstants.HOME_CLOSE));
         assertNotNull(home.getItems().get(23).getHandler());
         assertNotNull(home.getItems().get(25).getHandler());
+    }
+
+    @Test
+    void theBlockedLibraryCardCanPrepareAForcedUpgrade() {
+        TestMenuViewer viewer = viewer("pnlibrary.updates.download");
+        MenuData data = mock(MenuData.class);
+        UpdateSnapshot snapshot = mock(UpdateSnapshot.class);
+        when(snapshot.getProduct()).thenReturn("pnlibrary");
+        when(snapshot.getState()).thenReturn(UpdateState.BLOCKED);
+        when(snapshot.getCurrentVersion()).thenReturn("1.0.0");
+        when(snapshot.getLatestVersion()).thenReturn("2.0.0");
+        when(snapshot.getChannel()).thenReturn(org.pnfolder.pnlibrary.api.updates.product.UpdateChannel.STABLE);
+        when(data.snapshot("pnlibrary")).thenReturn(snapshot);
+        when(data.plan()).thenReturn(new PlanInfo(UpdateState.BLOCKED, true, Collections.emptyList()));
+        when(data.forceLibrary(viewer.getActor())).thenReturn(CompletableFuture.completedFuture("2.0.0"));
+
+        new MenuRouter(new MenuSession(data, new ImmediateHost())).card(viewer, "pnlibrary");
+        click(viewer, last(viewer), 12);
+
+        verify(data).forceLibrary(viewer.getActor());
+        assertTrue(viewer.sent.stream().map(PlainTextComponentSerializer.plainText()::serialize)
+                .anyMatch(line -> line.contains("2.0.0")));
     }
 
     @Test

@@ -69,6 +69,8 @@ public interface MenuData {
 
     @NotNull CompletionStage<Boolean> checkAll(@NotNull UpdateActor actor);
 
+    @NotNull CompletionStage<String> forceLibrary(@NotNull UpdateActor actor);
+
     /** Asks the catalog of one plugin for a new version; it does not wait for the answer. */
     void checkOne(@NotNull String product, @NotNull UpdateActor actor);
 
@@ -100,6 +102,11 @@ public interface MenuData {
     @NotNull StatsSnapshot stats();
 
     @NotNull List<PlaceholderInfo> placeholders();
+
+    /** The plugin-message channels open on this proxy; a game server has none. */
+    default @NotNull List<String> channels() {
+        return Collections.emptyList();
+    }
 
     /** Every named action, requirement and function with its owner and visibility. */
     @NotNull List<ScenarioDefinitionInfo> scenarioDefinitions();

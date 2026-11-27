@@ -35,6 +35,7 @@ import org.pnfolder.pnlibrary.api.updates.release.ProductChange;
 import org.pnfolder.pnlibrary.api.updates.release.ProductRelease;
 import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
+import org.pnfolder.pnlibrary.api.updates.state.BlockedReason;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.api.version.ApiVersionRange;
@@ -61,6 +62,38 @@ class UpdateOrchestratorTest {
 
     private static Map.Entry<String, UpdateActor> observed(String operation, UpdateActor actor) {
         return new AbstractMap.SimpleEntry<>(operation, actor);
+    }
+
+    @Test
+    void forcingAStagedLibraryBypassesABlockedGraphAndSurvivesChecksUntilRestart() throws Exception {
+        List<UpdatePlanSnapshot> staged = new ArrayList<>();
+        List<Map.Entry<String, UpdateActor>> observations = new ArrayList<>();
+        ProductId library = ProductId.of("pnlibrary");
+        UpdatePlan libraryOnly = new UpdatePlan(2, Collections.singletonList(new ProductChange(library,
+                SemanticVersion.parse("1.0.0"), SemanticVersion.parse("2.0.0"))), Collections.emptyList());
+        UpdateActor admin = new UpdateActor(UpdateActor.Kind.CONSOLE, "console", "Console");
+        UpdateOrchestratorHooks hooks = UpdateOrchestratorHooks.builder(
+                () -> new ResolutionResult.Blocked(Collections.singletonList(new BlockedReason.Frozen(library)), null),
+                staged::add, snapshot -> { })
+                .observeState((snapshot, actor, operation) -> observations.add(observed(operation, actor))).build();
+
+        try (UpdateOrchestrator orchestrator = orchestrator(MANUAL, Executors.newSingleThreadScheduledExecutor(), hooks)) {
+            UpdatePlanSnapshot blocked = orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS);
+            assertEquals(UpdateState.BLOCKED, blocked.getState());
+            UpdatePlanSnapshot prepared = orchestrator.stageLibrary(() -> libraryOnly, admin)
+                    .toCompletableFuture().get(2, TimeUnit.SECONDS);
+            assertEquals(UpdateState.UPDATE_STAGED, prepared.getState());
+            assertEquals(libraryOnly, prepared.getPlan());
+            assertEquals(prepared, orchestrator.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS));
+            assertEquals(prepared, orchestrator.stageLibrary(() -> {
+                throw new AssertionError("the already prepared transaction must be reused");
+            }, admin).toCompletableFuture().get(2, TimeUnit.SECONDS));
+            assertEquals(1, staged.size());
+            assertTrue(observations.contains(observed("FORCE_STAGE", admin)));
+        }
+        try (UpdateOrchestrator reopened = orchestrator(MANUAL, Executors.newSingleThreadScheduledExecutor(), hooks)) {
+            assertEquals(UpdateState.BLOCKED, reopened.checkNow().toCompletableFuture().get(2, TimeUnit.SECONDS).getState());
+        }
     }
 
     @Test

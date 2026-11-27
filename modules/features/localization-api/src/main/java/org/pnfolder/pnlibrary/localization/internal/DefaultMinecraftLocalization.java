@@ -51,8 +51,7 @@ public final class DefaultMinecraftLocalization implements MinecraftLocalization
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Object lifecycle = new Object();
     private final Set<CompletableFuture<?>> pending = new HashSet<CompletableFuture<?>>();
-    private final Map<CacheKey, CompletableFuture<LoadedLocale>> inFlight =
-            new ConcurrentHashMap<CacheKey, CompletableFuture<LoadedLocale>>();
+    private final Map<CacheKey, LocaleLoad> inFlight = new ConcurrentHashMap<>();
     private final Map<CacheKey, LoadedLocale> memory;
 
     /** Creates a service; plugin code uses {@link MinecraftLocalization#builder()} instead. */
@@ -174,26 +173,41 @@ public final class DefaultMinecraftLocalization implements MinecraftLocalization
                 return CompletableFuture.completedFuture(cached.withSource(TranslationSource.MEMORY));
             }
         }
-        CompletableFuture<LoadedLocale> running = inFlight.get(key);
-        if (running != null) {
-            return running;
-        }
-        final CompletableFuture<LoadedLocale> promise = new CompletableFuture<LoadedLocale>();
-        CompletableFuture<LoadedLocale> existing = inFlight.putIfAbsent(key, promise);
-        if (existing != null) {
-            return existing;
-        }
-        return submit(promise, () -> inFlight.remove(key, promise), new Operation<LoadedLocale>() {
-            @Override
-            public LoadedLocale run() throws Exception {
-                permits.acquire();
-                try {
-                    return loadLocaleNow(key, refresh);
-                } finally {
-                    permits.release();
+        LocaleLoad requested = new LocaleLoad(refresh);
+        while (true) {
+            LocaleLoad running = inFlight.get(key);
+            if (running == null) {
+                if (inFlight.putIfAbsent(key, requested) == null) {
+                    startLocaleLoad(key, requested);
+                    return requested.result;
                 }
+            } else if (!refresh || running.refresh) {
+                return running.result;
+            } else if (inFlight.replace(key, running, requested)) {
+                running.result.whenComplete((result, error) -> startLocaleLoad(key, requested));
+                return requested.result;
+            }
+        }
+    }
+
+    private void startLocaleLoad(CacheKey key, LocaleLoad load) {
+        submit(load.result, () -> inFlight.remove(key, load), () -> {
+            permits.acquire();
+            try {
+                return loadLocaleNow(key, load.refresh);
+            } finally {
+                permits.release();
             }
         });
+    }
+
+    private static final class LocaleLoad {
+        private final boolean refresh;
+        private final CompletableFuture<LoadedLocale> result = new CompletableFuture<>();
+
+        LocaleLoad(boolean refresh) {
+            this.refresh = refresh;
+        }
     }
 
     /** Reads the locale from disk, else downloads it; on a failed refresh falls back to the stale disk copy. */

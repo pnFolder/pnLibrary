@@ -85,6 +85,11 @@ public final class RemoteMenuData extends RemoteSystemData {
     }
 
     @Override
+    public @NotNull CompletionStage<String> forceLibrary(@NotNull UpdateActor actor) {
+        return later(() -> this.<String>ask(MenuCalls.FORCE_LIBRARY, String.class, args(), actor.getName()));
+    }
+
+    @Override
     public void checkOne(@NotNull String product, @NotNull UpdateActor actor) {
         ask(MenuCalls.CHECK_ONE, Boolean.class, args("product", product), actor.getName());
     }

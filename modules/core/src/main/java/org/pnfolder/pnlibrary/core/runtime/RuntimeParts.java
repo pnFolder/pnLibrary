@@ -17,6 +17,7 @@ import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.metrics.PluginMetrics;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot;
 import org.pnfolder.pnlibrary.common.time.DisplayZone;
@@ -79,6 +80,7 @@ final class RuntimeParts {
     final EventDispatcher eventService;
     final NativePlatform platformProvider = new NativePlatform();
     final @Nullable NetworkProxy proxy;
+    final @Nullable ServerNetwork serverNetwork;
     final LoadedPlugins plugins;
     final StatsRuntime stats;
     final SettingPickerHook settingPicker = new SettingPickerHook();
@@ -111,6 +113,7 @@ final class RuntimeParts {
         this.tasks = platformServices.getTasks();
         this.eventService = createEvents();
         this.proxy = platform.getNetworkProxy();
+        this.serverNetwork = platform.getServerNetwork();
         this.plugins = createPlugins();
         this.runtimeDiagnostics = createRuntimeDiagnostics(closed);
         this.stats = new StatsRuntime(this::taskSnapshots, () -> eventService.getInspector().events(), journalRuntime.getStore(),

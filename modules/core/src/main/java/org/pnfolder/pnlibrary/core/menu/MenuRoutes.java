@@ -77,6 +77,8 @@ public interface MenuRoutes {
 
     void placeholders(@NotNull MenuViewer player, int page);
 
+    void channels(@NotNull MenuViewer player, int page);
+
     void actions(@NotNull MenuViewer player, int page);
 
     void plugins(@NotNull MenuViewer player, @NotNull Filter filter, int page);

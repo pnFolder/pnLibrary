@@ -14,6 +14,20 @@ import org.junit.jupiter.api.Test;
 
 class InMemoryCooldownsTest {
     @Test
+    void extendingAlsoSweepsExpiredEntries() {
+        try (InMemoryCooldowns service = new InMemoryCooldowns()) {
+            UUID dormant = UUID.randomUUID();
+            service.extend(dormant, "once", Duration.ZERO);
+            UUID active = UUID.randomUUID();
+            for (int index = 0; index < 256; index++) {
+                service.extend(active, "active", Duration.ofSeconds(1));
+            }
+            assertFalse(service.reset(dormant, "once"));
+            assertTrue(service.has(active, "active"));
+        }
+    }
+
+    @Test
     void allOperationsUseTheSameTrimmedCaseInsensitiveActionKey() {
         InMemoryCooldowns service = new InMemoryCooldowns();
         UUID player = UUID.randomUUID();
