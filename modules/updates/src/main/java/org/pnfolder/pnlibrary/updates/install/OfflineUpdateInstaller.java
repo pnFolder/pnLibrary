@@ -15,11 +15,11 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationRestorer;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationRestorer;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 import org.pnfolder.pnlibrary.updates.paths.LegacyPathsMigration;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
-import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateInstallationLock;
 
 /** Pre-start installer. Run from its separate updater JAR, never from a loaded server plugin JAR. */
 public final class OfflineUpdateInstaller {

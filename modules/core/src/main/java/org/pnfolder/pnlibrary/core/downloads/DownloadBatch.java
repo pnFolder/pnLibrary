@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy;
 import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration;
@@ -29,15 +28,12 @@ public final class DownloadBatch implements DownloadRegistration {
     private static final String CLOSED_MESSAGE = "Download registration is closed";
 
     private final FileDownloads request;
-    private final Supplier<DownloadConfiguration> configuration;
     private final Executor executor;
     private final BooleanSupplier managerIsClosed;
     private final DownloadInstaller install;
-    private final Consumer<String> onBlocked;
     private final Consumer<List<FileDownload>> dependenciesStaged;
     private final BiConsumer<List<FileDownload>, Throwable> failed;
     private final Consumer<DownloadBatch> remove;
-    private final BooleanSupplier automaticAllowed;
     private final Object stateLock = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicReference<CompletableFuture<List<DownloadSnapshot>>> activeDownload =
@@ -45,34 +41,19 @@ public final class DownloadBatch implements DownloadRegistration {
     private final AtomicReference<List<DownloadSnapshot>> currentSnapshots;
     private final BatchSnapshots snapshotBoard;
 
-    /** Creates a batch whose automatic start follows {@code configuration}. */
-    public DownloadBatch(@NotNull FileDownloads request, @NotNull Supplier<DownloadConfiguration> configuration,
-                         @NotNull Executor executor, @NotNull BooleanSupplier managerIsClosed,
-                         @NotNull DownloadInstaller install, @NotNull Consumer<String> onBlocked,
+    /** Creates a batch; files that start by themselves are those whose policy is not {@code MANUAL}. */
+    public DownloadBatch(@NotNull FileDownloads request, @NotNull Executor executor, @NotNull BooleanSupplier managerIsClosed,
+                         @NotNull DownloadInstaller install,
                          @NotNull Consumer<List<FileDownload>> dependenciesStaged,
                          @NotNull BiConsumer<List<FileDownload>, Throwable> failed,
                          @NotNull Consumer<DownloadBatch> remove) {
-        this(request, configuration, executor, managerIsClosed, install, onBlocked, dependenciesStaged, failed, remove,
-            () -> configuration.get().isAutomatic());
-    }
-
-    /** Creates a batch; {@code automaticAllowed} says whether downloads that start by themselves may run. */
-    public DownloadBatch(@NotNull FileDownloads request, @NotNull Supplier<DownloadConfiguration> configuration,
-                         @NotNull Executor executor, @NotNull BooleanSupplier managerIsClosed,
-                         @NotNull DownloadInstaller install, @NotNull Consumer<String> onBlocked,
-                         @NotNull Consumer<List<FileDownload>> dependenciesStaged,
-                         @NotNull BiConsumer<List<FileDownload>, Throwable> failed,
-                         @NotNull Consumer<DownloadBatch> remove, @NotNull BooleanSupplier automaticAllowed) {
         this.request = Objects.requireNonNull(request, "request");
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.executor = Objects.requireNonNull(executor, "executor");
         this.managerIsClosed = Objects.requireNonNull(managerIsClosed, "managerIsClosed");
         this.install = Objects.requireNonNull(install, "install");
-        this.onBlocked = Objects.requireNonNull(onBlocked, "onBlocked");
         this.dependenciesStaged = Objects.requireNonNull(dependenciesStaged, "dependenciesStaged");
         this.failed = Objects.requireNonNull(failed, "failed");
         this.remove = Objects.requireNonNull(remove, "remove");
-        this.automaticAllowed = automaticAllowed;
         this.snapshotBoard = new BatchSnapshots(request.getFiles());
         this.currentSnapshots = new AtomicReference<>(
             snapshotBoard.all(DownloadState.DECLARED, null));
@@ -90,7 +71,7 @@ public final class DownloadBatch implements DownloadRegistration {
 
     @Override
     public @NotNull CompletionStage<List<DownloadSnapshot>> downloadNow() {
-        return start(request.getFiles(), false);
+        return start(request.getFiles());
     }
 
     /** Starts the files whose policy allows it without a command. */
@@ -102,7 +83,7 @@ public final class DownloadBatch implements DownloadRegistration {
             }
         }
         if (!automaticFiles.isEmpty()) {
-            start(automaticFiles, true);
+            start(automaticFiles);
         }
     }
 
@@ -127,20 +108,13 @@ public final class DownloadBatch implements DownloadRegistration {
         remove.accept(this);
     }
 
-    private CompletableFuture<List<DownloadSnapshot>> start(List<FileDownload> declarations, boolean automaticPolicy) {
+    private CompletableFuture<List<DownloadSnapshot>> start(List<FileDownload> selected) {
         CompletableFuture<List<DownloadSnapshot>> promise = new CompletableFuture<>();
         if (isShutDown()) {
             promise.completeExceptionally(new IllegalStateException(CLOSED_MESSAGE));
             return promise;
         }
-        List<FileDownload> selected = selectFiles(declarations, automaticPolicy);
-        if (!configuration.get().isEnabled()) {
-            return blocked(promise, "система загрузок отключена");
-        }
         if (selected.isEmpty()) {
-            if (automaticPolicy && !declarations.isEmpty()) {
-                return blocked(promise, "автозагрузка выключена (включить: /pn deps auto on)");
-            }
             promise.complete(snapshots());
             return promise;
         }
@@ -182,39 +156,6 @@ public final class DownloadBatch implements DownloadRegistration {
             activeDownload.compareAndSet(promise, null);
         }
         promise.completeExceptionally(error);
-    }
-
-    private List<FileDownload> selectFiles(List<FileDownload> declarations, boolean automaticPolicy) {
-        if (!automaticPolicy || automaticAllowed.getAsBoolean()) {
-            return declarations;
-        }
-        List<FileDownload> forced = new ArrayList<>();
-        for (FileDownload file : declarations) {
-            if (file.getPolicy() == DownloadPolicy.FORCED) {
-                forced.add(file);
-            }
-        }
-        return forced;
-    }
-
-    private CompletableFuture<List<DownloadSnapshot>> blocked(CompletableFuture<List<DownloadSnapshot>> promise,
-                                                             String reason) {
-        List<DownloadSnapshot> result;
-        synchronized (stateLock) {
-            if (isShutDown()) {
-                promise.completeExceptionally(new IllegalStateException(CLOSED_MESSAGE));
-                return promise;
-            }
-            currentSnapshots.set(snapshotBoard.all(DownloadState.BLOCKED, reason));
-            result = snapshots();
-        }
-        promise.complete(result);
-        snapshotBoard.notifyFinished(result);
-        Failures.runCatchingNonFatal(() -> {
-            onBlocked.accept(reason);
-            return null;
-        });
-        return promise;
     }
 
     private void execute(List<FileDownload> declarations, CompletableFuture<List<DownloadSnapshot>> promise) {

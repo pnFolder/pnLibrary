@@ -86,6 +86,10 @@ final class PluginsGuide {
                     "pnlibrary.placeholders",
                     "Вычислить плейсхолдер вручную."),
                 GuideEntry.of(
+                    "/pnproxy channels, /pn channels",
+                    "pnlibrary.channels",
+                    "Каналы сообщений, которые плагины открыли на прокси или на игровом сервере."),
+                GuideEntry.of(
                     "/pn actions [страница]",
                     "pnlibrary.actions",
                     "Именованные действия, требования и функции плагинов: владелец и видимость."),
@@ -100,10 +104,6 @@ final class PluginsGuide {
                 GuideEntry.of(
                     "/pn deps install <код>",
                     "pnlibrary.deps",
-                    "Скачать недостающие плагины по коду; потом перезапустите сервер."),
-                GuideEntry.of(
-                    "/pn deps auto <on|off>",
-                    "pnlibrary.deps",
-                    "Скачивать недостающие плагины самим или только по команде.")));
+                    "Скачать недостающие плагины по коду; потом перезапустите сервер.")));
     }
 }

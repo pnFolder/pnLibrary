@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +16,7 @@ import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
 
 /** Draws one page of a paged list: the rows, the footer with its pager and the buttons every list shares. */
-final class MenuList {
+public final class MenuList {
     private static final int LIST_ROWS = 6;
     private static final int REFRESH = 49;
     private static final int CLOSE = 53;
@@ -22,11 +24,11 @@ final class MenuList {
 
     private final MenuSession session;
 
-    MenuList(MenuSession session) {
+    public MenuList(MenuSession session) {
         this.session = session;
     }
 
-    void show(MenuViewer player, String title, List<Row> rows, int page, int perPage,
+    public void show(MenuViewer player, String title, List<Row> rows, int page, int perPage,
               BiConsumer<MenuViewer, Integer> reopen, Consumer<MenuViewer> back, String emptyText, int total,
               Consumer<MenuBuilder> extra) {
         int pages = Math.max((total - 1) / perPage + 1, 1);

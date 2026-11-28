@@ -222,7 +222,7 @@ class LibraryInfoFilesTest {
         String text = files().settingsText();
 
         assertTrue(text.contains("Сейчас: выключено  (по умолчанию)"), text);
-        assertTrue(text.contains("По умолчанию: включено"), text);
+        assertTrue(text.contains("По умолчанию: выключено"), text);
         assertTrue(text.contains("/pn settings set privacy включено"), text);
         assertFalse(Pattern.compile("(Сейчас|По умолчанию): (true|false)").matcher(text).find(), text);
     }

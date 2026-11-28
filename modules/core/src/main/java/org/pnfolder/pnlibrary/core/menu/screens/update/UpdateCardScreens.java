@@ -8,17 +8,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.api.updates.release.ReleaseSummary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder;
-import org.pnfolder.pnlibrary.core.menu.MenuClickHandler;
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.Menus;
 import org.pnfolder.pnlibrary.core.menu.data.ModuleInfo;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
@@ -117,6 +118,12 @@ final class UpdateCardScreens extends MenuScreens {
         builder.button(11, MenuItems.icon(Icons.CHECK, "COMPASS", "Проверить", Style.lore(
             Collections.singletonList("Проверить обновления этого плагина."), Collections.emptyList(), Style.left("проверить"))),
             go(who -> updates.checkOne(who, snapshot.getProduct())));
+        if (PnLibraryIdentity.PRODUCT_ID.equalsIgnoreCase(snapshot.getProduct())) {
+            builder.button(12, MenuItems.icon(null, "BLAZE_POWDER", "Обновить pnLibrary принудительно", Style.lore(
+                java.util.Arrays.asList("Подготовить только pnLibrary, даже если план заблокирован.",
+                    "Применится после перезапуска."), Collections.emptyList(), Style.left("подготовить")), Tone.WARN),
+                go(who -> allowed(who, MenuPermissions.UPDATES_DOWNLOAD, () -> updates.forceLibrary(who))));
+        }
     }
 
     private ItemSpec holdItem(UpdateSnapshot snapshot) {

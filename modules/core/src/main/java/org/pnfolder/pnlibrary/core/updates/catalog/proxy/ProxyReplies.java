@@ -1,14 +1,14 @@
 package org.pnfolder.pnlibrary.core.updates.catalog.proxy;
 
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 import java.util.Collections;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandSender;
 import org.pnfolder.pnlibrary.core.exceptions.Throwables;
 

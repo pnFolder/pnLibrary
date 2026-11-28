@@ -1,7 +1,20 @@
 package org.pnfolder.pnlibrary.core.link.wire;
 
+import org.pnfolder.pnlibrary.core.link.wire.frame.CallFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ChunkFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.HelloFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.LinkFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ReportFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.RequestFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ResultFrame;
+import org.pnfolder.pnlibrary.core.link.wire.seal.CachedHmac;
+import org.pnfolder.pnlibrary.core.link.wire.seal.FrameSeal;
+import org.pnfolder.pnlibrary.core.link.wire.seal.FrameSigner;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.core.link.remote.DataCall;
@@ -16,7 +29,7 @@ import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
  * message is dropped, so a player sending raw bytes on the channel cannot pose as a server.
  */
 public final class LinkCodec {
-    public static final String CHANNEL = "pnlibrary:link";
+    public static final Key CHANNEL = Key.key("pnlibrary", "link");
     public static final int MAX_PLUGINS = 150;
     public static final int MAX_NETWORK_PLUGINS = 40;
     public static final int MAX_FRAME_BYTES = 32_000;
@@ -26,16 +39,50 @@ public final class LinkCodec {
 
     static final int MAX_GROUPS = 30;
     static final int MAX_GROUP_ITEMS = 60;
+    /** First byte of a hello. It and the layout below must never change: every version has to read every other's hello. */
+    private static final int HELLO = 1;
     private static final int VERSION = 7;
     private static final int NETWORK_VERSION = 8;
     private static final int REQUEST_VERSION = 3;
     private static final int RESULT_VERSION = 4;
     private static final int CALL_VERSION = 5;
     private static final int CHUNK_VERSION = 6;
+    /** The versions of all formats in one text: the hello carries it, and ends with different ones cannot talk. */
+    public static final String PROFILE = VERSION + "." + NETWORK_VERSION + "." + REQUEST_VERSION + "." + RESULT_VERSION
+        + "." + CALL_VERSION + "." + CHUNK_VERSION;
     private static final Duration TOLERANCE = Duration.ofMinutes(2);
     private static final FrameSigner HMAC = new CachedHmac();
 
     private LinkCodec() {
+    }
+
+    /** The hello: byte 1, the time, then the role, the format profile and the library version as text. */
+    public static @NotNull byte[] encodeHello(@NotNull LinkHello hello, @NotNull byte[] key) {
+        return FrameSeal.signed(HMAC, key, out -> {
+            out.writeByte(HELLO);
+            out.writeLong(hello.getSentAt().toEpochMilli());
+            out.writeUTF(hello.getRole());
+            out.writeUTF(hello.getProfile());
+            out.writeUTF(hello.getLibraryVersion());
+        });
+    }
+
+    public static @Nullable LinkHello decodeHello(@NotNull byte[] message, @NotNull byte[] key) {
+        return decodeHello(message, key, Instant.now());
+    }
+
+    public static @Nullable LinkHello decodeHello(@NotNull byte[] message, @NotNull byte[] key, @NotNull Instant now) {
+        return FrameSeal.verified(message, key, HMAC, in -> readHello(in, now));
+    }
+
+    private static LinkHello readHello(DataInputStream in, Instant now) throws IOException {
+        return in.readUnsignedByte() == HELLO ? helloBody(in, now) : null;
+    }
+
+    private static LinkHello helloBody(DataInputStream in, Instant now) throws IOException {
+        Instant sentAt = Instant.ofEpochMilli(in.readLong());
+        LinkHello hello = new LinkHello(in.readUTF(), in.readUTF(), in.readUTF(), sentAt);
+        return fresh(sentAt, now) ? hello : null;
     }
 
     public static @NotNull byte[] encode(@NotNull LinkReport report, @NotNull byte[] key) {
@@ -178,6 +225,10 @@ public final class LinkCodec {
                                                   @NotNull FrameSigner signer) {
         return FrameSeal.verified(message, key, signer, in -> {
             int version = in.readUnsignedByte();
+            if (version == HELLO) {
+                LinkHello hello = helloBody(in, now);
+                return hello == null ? null : new HelloFrame(hello);
+            }
             if (version == VERSION) {
                 LinkReport report = ReportWire.read(in);
                 return fresh(report.getSentAt(), now) ? new ReportFrame(report) : null;

@@ -14,7 +14,7 @@ import java.util.Set;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskId;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskSnapshot;
 import org.pnfolder.pnlibrary.api.tasks.info.TaskStatus;

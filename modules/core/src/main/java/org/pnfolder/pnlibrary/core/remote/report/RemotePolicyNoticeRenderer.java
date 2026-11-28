@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.plugin.metadata.PluginMetadata;
 import org.pnfolder.pnlibrary.api.remote.result.DenyAction;
 import org.pnfolder.pnlibrary.api.remote.result.RemotePolicyExplanation;
@@ -18,12 +18,11 @@ import org.pnfolder.pnlibrary.console.ConsoleCard;
 import org.pnfolder.pnlibrary.console.ConsoleTheme;
 import org.pnfolder.pnlibrary.console.ConsoleTree;
 import org.pnfolder.pnlibrary.core.text.ConsoleStyle;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 
 /** Prints the console card with the result of a remote compatibility check. */
 public final class RemotePolicyNoticeRenderer {
     private static final String TITLE = "ПРОВЕРКА СОВМЕСТИМОСТИ";
-    private static final String SUPPORT = "Напишите в поддержку: ";
 
     private final PlatformLogging logging;
 
@@ -46,7 +45,7 @@ public final class RemotePolicyNoticeRenderer {
                       RemotePolicyExplanation explanation, @Nullable RemotePolicyResult result) {
         ConsoleTheme theme = ConsoleStyle.theme(allowed ? ChatTone.SUCCESS : ChatTone.FAILURE);
         ConsoleCard.Builder card = ConsoleCard.builder(theme, TITLE)
-            .mascot(allowed ? "^.^" : "x.x", metadata.getName(), headline(allowed, result))
+            .owner(allowed ? "^.^" : "x.x", metadata.getName(), metadata.getId().getValue(), metadata.getVersion(), headline(allowed, result))
             .blank()
             .detail("Установлена", metadata.getVersion());
         if (result != null) {
@@ -62,10 +61,7 @@ public final class RemotePolicyNoticeRenderer {
             steps(card, result.getSteps());
             links(card, result.getLinks());
         }
-        if (!allowed) {
-            card.section("Не получается?").lastItem(SUPPORT + PnLibraryIdentity.SUPPORT_URL);
-        }
-        card.blank().status(action(allowed, policy)).build().send(line -> logging.console(owner, line));
+        card.support(PnLibraryIdentity.SUPPORT_URL).blank().status(action(allowed, policy)).build().send(line -> logging.console(owner, line));
     }
 
     private static String headline(boolean allowed, RemotePolicyResult result) {
@@ -122,7 +118,7 @@ public final class RemotePolicyNoticeRenderer {
     public void unchecked(@NotNull Object owner, @NotNull PluginMetadata metadata, @NotNull RemotePolicySettings policy,
                           @NotNull String reason, boolean network) {
         ConsoleCard.Builder card = ConsoleCard.builder(ConsoleStyle.theme(ChatTone.WARNING), TITLE)
-            .mascot("o.o", metadata.getName(), "проверку выполнить не удалось")
+            .owner("o.o", metadata.getName(), metadata.getId().getValue(), metadata.getVersion(), "проверку выполнить не удалось")
             .blank()
             .detail("Установлена", metadata.getVersion())
             .lastDetail("Следующая попытка", "через " + RussianText.period(policy.getCheckEvery()))
@@ -135,8 +131,7 @@ public final class RemotePolicyNoticeRenderer {
         } else {
             card.lastItem("Пришлите этот лог автору плагина");
         }
-        card.section("Не получается?").lastItem(SUPPORT + PnLibraryIdentity.SUPPORT_URL);
-        card.blank().status("Плагин продолжает работу").build().send(line -> logging.console(owner, line));
+        card.support(PnLibraryIdentity.SUPPORT_URL).blank().status("Плагин продолжает работу").build().send(line -> logging.console(owner, line));
     }
 
     private static ConsoleTree toConsoleTree(RemotePolicyExplanation explanation) {

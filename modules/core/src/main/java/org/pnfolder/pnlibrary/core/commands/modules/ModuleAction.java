@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.commands.modules;
 import java.util.concurrent.CompletionStage;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.plugin.control.ModuleControl;
 
 /** A switch of {@code /pn modules}: the command word, the button text and what it does to a module. */

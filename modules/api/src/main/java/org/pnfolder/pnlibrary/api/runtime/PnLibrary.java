@@ -13,6 +13,7 @@ import org.pnfolder.pnlibrary.api.expansions.ExpansionManager;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
 import org.pnfolder.pnlibrary.api.metrics.MetricsService;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.api.observability.ObservabilityService;
 import org.pnfolder.pnlibrary.api.placeholders.PlaceholderAdapterRegistry;
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider;
@@ -99,6 +100,10 @@ public interface PnLibrary extends Closeable {
     /** The proxy layer; null when running on a game server instead of a proxy. */
     @Nullable
     NetworkProxy getProxy();
+
+    /** The game server's side of the network; null when running on a proxy instead of a game server. */
+    @Nullable
+    ServerNetwork getServerNetwork();
 
     /**
      * Runtime-detected placeholder bridges such as PlaceholderAPI.
@@ -214,6 +219,12 @@ public interface PnLibrary extends Closeable {
             @Override
             public NetworkProxy getProxy() {
                 return library.getProxy();
+            }
+
+            @Nullable
+            @Override
+            public ServerNetwork getServerNetwork() {
+                return library.getServerNetwork();
             }
 
             @Override

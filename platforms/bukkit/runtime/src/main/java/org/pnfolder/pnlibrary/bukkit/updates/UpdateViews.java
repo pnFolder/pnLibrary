@@ -4,10 +4,10 @@ import java.time.Instant;
 import java.util.List;
 
 import net.kyori.adventure.text.Component;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.common.time.DisplayZone;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
 
 /** The catalog renderer of core with the time and zone that every Bukkit caller wants filled in. */

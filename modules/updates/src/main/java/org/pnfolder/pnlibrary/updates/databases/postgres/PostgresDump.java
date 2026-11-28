@@ -10,11 +10,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.updates.databases.DumpBody;
-import org.pnfolder.pnlibrary.updates.databases.DumpFiles;
-import org.pnfolder.pnlibrary.updates.databases.RowLiteral;
-import org.pnfolder.pnlibrary.updates.databases.SqlRowWriter;
-import org.pnfolder.pnlibrary.updates.databases.TableMask;
+import org.pnfolder.pnlibrary.updates.databases.dump.DumpBody;
+import org.pnfolder.pnlibrary.updates.databases.dump.DumpFiles;
+import org.pnfolder.pnlibrary.updates.databases.dump.RowLiteral;
+import org.pnfolder.pnlibrary.updates.databases.dump.SqlRowWriter;
+import org.pnfolder.pnlibrary.updates.databases.dump.TableMask;
 
 /**
  * Writes the tables of the current schema into one compressed text file of SQL statements, one per line: sequences,

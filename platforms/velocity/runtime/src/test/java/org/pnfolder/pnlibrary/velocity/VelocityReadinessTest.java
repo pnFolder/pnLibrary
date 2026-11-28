@@ -65,6 +65,6 @@ class VelocityReadinessTest {
             callbacks.add(invocation.getArgument(1));
             return builder;
         });
-        return new VelocityPlatformAdapter(owner, proxy, NoopMetricsFactory.INSTANCE, directory);
+        return new VelocityPlatformAdapter(owner, proxy, NoopMetricsFactory.INSTANCE, directory, () -> null);
     }
 }

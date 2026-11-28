@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticDetailsCollector;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;

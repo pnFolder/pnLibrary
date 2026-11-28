@@ -60,6 +60,16 @@ class ProxyUpdateCommandTest {
     }
 
     @Test
+    void theForceCommandRequiresPermissionToDownloadUpdates() {
+        FakeUpdates updates = new FakeUpdates();
+        Sender reader = new Sender("reader", false, Collections.singleton("pnlibrary.updates.view"));
+        Sender operator = new Sender("operator", false, new java.util.HashSet<>(Arrays.asList(
+                "pnlibrary.updates.view", "pnlibrary.updates.download")));
+        assertFalse(route(updates, reader, "updates", "force") instanceof ExecutableRoute);
+        assertTrue(route(updates, operator, "updates", "force") instanceof ExecutableRoute);
+    }
+
+    @Test
     void thereIsNoAutomaticDownloadSwitchAnyMore() {
         assertFalse(route(new FakeUpdates(), new Sender("player", true, null), "updates", "set", "pnlibrary", "auto", "on") instanceof ExecutableRoute);
         assertFalse(route(new FakeUpdates(), new Sender("player", true, null), "updates", "set", "all", "auto", "on") instanceof ExecutableRoute);

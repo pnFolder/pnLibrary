@@ -9,7 +9,7 @@
 4. **Фабрики рядом с типом** (`Type.of(...)`, `Type.builder()`), без `*Factory`. В Java это статический метод самого типа.
 5. **Модель неизменяема**, к ней вложенный `Builder` и короткая перегрузка: `Lore.of(lines)` = `Lore.builder().lines(lines).build()`.
 6. **Ключ знает свой реестр.** `TypedKey<T>` вместо строки; константы лежат в final-объекте `*Keys` (`FormatKeys.ROUND`) с Javadoc на каждой.
-7. **Необязательное умение — метод с умолчанием «не умею»**, как у Adventure: `OnlinePlayer.addEffect` даёт `Delivery.unsupported()`, `position()` даёт `null`, платформа переопределяет. Игрок на прокси — тот же `OnlinePlayer`. Отдельных интерфейсов-способностей и `feature<T>()` нет.
+7. **Необязательное умение — метод с умолчанием «не умею»**, как у Adventure: `OnlinePlayer.addEffect` даёт `Delivery.unsupported()`, `getPosition()` даёт `null`, платформа переопределяет. Игрок на прокси — тот же `OnlinePlayer`. Отдельных интерфейсов-способностей и `feature<T>()` нет.
    **Понятие получает свой тип, если живёт без игрока** (`PotionEffect`, `Particle`, `Location` у Paper): у нас `api.world` — `StatusEffect`, `Particle`, `Position`, `ItemMatcher`, без приставки `Player`.
 8. **События по области** (`events/player`, `events/server`), конструктор `internal`, общее в `Abstract*Event`.
 9. **Регистрация принадлежит владельцу** (плагин или модуль) и снимается вместе с ним; владелец и видимость видны в списках.

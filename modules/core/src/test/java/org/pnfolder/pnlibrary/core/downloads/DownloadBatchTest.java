@@ -40,8 +40,8 @@ class DownloadBatchTest {
                                               BooleanSupplier managerIsClosed) {
         FileDownloads request = FileDownloads.builder().file(key, file -> file
             .url("https://example.org/manual.bin").destination(DownloadDestination.DATA_FOLDER, "manual.bin")).build();
-        return new DownloadBatch(request, DownloadConfiguration::new, executor, managerIsClosed, install,
-            reason -> { }, dependenciesStaged, failed, batch -> { });
+        return new DownloadBatch(request, executor, managerIsClosed, install,
+            dependenciesStaged, failed, batch -> { });
     }
 
     private static DownloadBatch registration(Executor executor) {
@@ -188,12 +188,12 @@ class DownloadBatchTest {
         AtomicBoolean removed = new AtomicBoolean();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            DownloadBatch registration = new DownloadBatch(request, DownloadConfiguration::new, executor, () -> false,
+            DownloadBatch registration = new DownloadBatch(request, executor, () -> false,
                 (declarations, beforePublish) -> {
                     for (FileDownload declaration : declarations) {
                         installed.add(declaration.getKey());
                     }
-                }, reason -> { }, declarations -> { }, (declarations, error) -> {
+                }, declarations -> { }, (declarations, error) -> {
                     throw new IllegalStateException(error);
                 }, batch -> removed.set(true));
 

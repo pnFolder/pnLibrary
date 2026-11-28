@@ -14,8 +14,8 @@ import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuBuilder;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.Menus;
 import org.pnfolder.pnlibrary.core.menu.data.PlanInfo;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
@@ -26,7 +26,7 @@ import org.pnfolder.pnlibrary.core.menu.style.MenuPermissions;
 import org.pnfolder.pnlibrary.core.menu.style.MenuText;
 import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogLabels;
 import org.pnfolder.pnlibrary.core.updates.restart.ImportantNotices;
 
 /** Menu home page with the main sections. */
@@ -34,6 +34,7 @@ public final class HomeScreens extends MenuScreens {
     private static final int NETWORK_SLOT = 37;
     private static final int SUPPORT_SLOT = 38;
     private static final int NOTICES_SLOT = 39;
+    private static final int CHANNELS_SLOT = 40;
     private static final int RESTART_SLOT = 41;
     private static final int ROLLBACK_SLOT = 42;
 
@@ -57,6 +58,7 @@ public final class HomeScreens extends MenuScreens {
         sections(builder, pending, problems, errors);
         network(builder);
         notices(builder);
+        channels(builder);
         builder.button(MenuConstants.HOME_CLOSE, MenuItems.closeItem(), go(MenuViewer::close));
         planButtons(builder, data().plan());
         show(player, builder.build());
@@ -143,11 +145,22 @@ public final class HomeScreens extends MenuScreens {
         builder.button(NETWORK_SLOT, item, go(who -> routes.network(who, 0)));
     }
 
+    private void channels(MenuBuilder builder) {
+        List<String> names = data().channels();
+        if (names.isEmpty()) {
+            return;
+        }
+        ItemSpec item = MenuItems.icon(Icons.OVERVIEW, "ENDER_PEARL", "Каналы прокси", Style.lore(
+            Collections.singletonList("Каналы сообщений плагинов, открытые на прокси."),
+            Fact.list("Открыто", String.valueOf(names.size())), Style.left("открыть")));
+        builder.button(CHANNELS_SLOT, item, go(who -> allowed(who, MenuConstants.CHANNELS, () -> routes.channels(who, 0))));
+    }
+
     private void notices(MenuBuilder builder) {
         if (remote()) {
             return;
         }
-        int count = ImportantNotices.from(host().getLink().getNetwork(), Instant.now()).size();
+        int count = ImportantNotices.forServer(host().getLink(), Instant.now()).size();
         ItemSpec item = MenuItems.icon(Icons.RESTART, "BELL", "Важные объявления", Style.lore(
             Collections.singletonList("Что нужно сделать на прокси и серверах сети, например перезапустить."),
             Fact.list("Сейчас", count > 0 ? "✦ " + count : "✔ ничего"), Style.left("открыть")),

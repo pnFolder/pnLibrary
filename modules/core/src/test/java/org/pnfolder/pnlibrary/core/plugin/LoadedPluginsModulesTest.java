@@ -136,6 +136,19 @@ class LoadedPluginsModulesTest {
     }
 
     @Test
+    void aModuleIsKeyedByPluginAtModuleAndOnePluginNameCannotBeLiveTwice() {
+        LoadedPlugins registry = PluginRegistryFixture.builder().platform(platform(true, "shop")).build();
+        Object first = new Object();
+        ModuleContext module = registry.register(first).registerModule("core", it -> { });
+
+        assertEquals("shop@core", ((LoadedModule) module).getKey().getValue());
+        assertThrows(IllegalArgumentException.class, () -> registry.register(new Object()));
+
+        registry.unregister(first);
+        assertEquals("shop@core", ((LoadedModule) registry.register(new Object()).registerModule("core", it -> { })).getKey().getValue());
+    }
+
+    @Test
     void componentIdentityRemainsUniqueAcrossDifferentPluginContexts() {
         LoadedPlugins registry = PluginRegistryFixture.registry();
         ProductDescriptor descriptor = ProductDescriptor.builder().version("1.0.0").pnLibraryApi(1, 1).build();

@@ -2,6 +2,10 @@ package org.pnfolder.pnlibrary.api.network;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +32,29 @@ public interface NetworkServer extends ForwardingAudience {
 
     /** The number of players currently on this server. */
     int getOnlinePlayers();
+
+    /** The players on this server right now. */
+    @NotNull List<NetworkPlayer> getPlayers();
+
+    /**
+     * Moves every player on this server to {@code target}, for example before the server is removed. The stage
+     * completes with the number of players that are on the target afterwards, never exceptionally.
+     */
+    default @NotNull CompletionStage<Integer> sendPlayers(@NotNull NetworkServer target) {
+        List<CompletableFuture<ConnectResult>> moves = new ArrayList<>();
+        for (NetworkPlayer player : getPlayers()) {
+            moves.add(player.connect(target).toCompletableFuture());
+        }
+        return CompletableFuture.allOf(moves.toArray(new CompletableFuture<?>[0])).handle((ignored, error) -> {
+            int moved = 0;
+            for (CompletableFuture<ConnectResult> move : moves) {
+                if (!move.isCompletedExceptionally() && move.join().isOnTarget()) {
+                    moved++;
+                }
+            }
+            return moved;
+        });
+    }
 
     /** The average latency of the players on this server; {@code null} while nobody is on it. */
     @Nullable Duration getPing();

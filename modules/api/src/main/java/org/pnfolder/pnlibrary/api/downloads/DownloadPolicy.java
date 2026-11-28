@@ -5,9 +5,9 @@ public enum DownloadPolicy {
     /** Only when an administrator asks ({@code /pn deps}, {@code /pn downloads now}, the menu). */
     MANUAL,
 
-    /** By itself, while the setting {@code downloads.automatic} is on. */
+    /** By itself, as soon as the plugin registers the file. */
     AUTOMATIC,
 
-    /** By itself even when {@code downloads.automatic} is off. */
+    /** The same as {@link #AUTOMATIC}: downloads always start by themselves now; kept for plugins that name it. */
     FORCED
 }

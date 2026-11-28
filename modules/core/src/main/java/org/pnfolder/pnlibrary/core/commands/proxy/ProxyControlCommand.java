@@ -19,14 +19,15 @@ import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
 import org.pnfolder.pnlibrary.api.chat.ChatReader;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.CommandRegistration;
 import org.pnfolder.pnlibrary.api.commands.CommandSender;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
+import org.pnfolder.pnlibrary.core.network.ChannelNames;
 import org.pnfolder.pnlibrary.core.commands.configs.ConfigsCommand;
 import org.pnfolder.pnlibrary.core.commands.deps.DepsCommand;
 import org.pnfolder.pnlibrary.core.commands.events.EventBusCommand;
@@ -75,6 +76,7 @@ public final class ProxyControlCommand {
             new Pair<>("/pn settings", "pnlibrary.settings"),
             new Pair<>("/pn servers", ServersCommand.PERMISSION),
             new Pair<>("/pn notices", NoticesCommand.PERMISSION),
+            new Pair<>("/pn channels", ChannelsCommand.PERMISSION),
             new Pair<>("/pn groups", GroupsCommand.PERMISSION),
             new Pair<>("/pn debug", "pnlibrary.debug"));
 
@@ -152,8 +154,9 @@ public final class ProxyControlCommand {
             root.mount("modules", new ModulesCommand(library).definition());
             root.mount("configs", new ConfigsCommand(library).definition());
             root.mount("deps", new DepsCommand(library).definition());
-            root.mount("servers", new ServersCommand(link, ServersCommand.fromReports(link)).definition());
+            root.mount("servers", new ServersCommand(link, ServersCommand.fromReports(link), library.getProxy()).definition());
             root.mount("notices", new NoticesCommand(NoticesCommand.fromReports(library, link)).definition());
+            root.mount("channels", new ChannelsCommand(() -> ChannelNames.of(library.getProxy())).definition());
             root.mount("groups", new GroupsCommand(link, withProxy()).definition());
         });
     }

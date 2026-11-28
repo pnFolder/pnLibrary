@@ -16,6 +16,10 @@ import org.pnfolder.pnlibrary.api.network.NetworkServer;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import org.pnfolder.pnlibrary.api.network.ConnectResult;
 
 /** A player connected to the Velocity proxy. */
 public final class VelocityNetworkPlayer implements NetworkPlayer {
@@ -61,6 +65,18 @@ public final class VelocityNetworkPlayer implements NetworkPlayer {
     public NetworkServer getCurrentServer() {
         ServerConnection connection = player.getCurrentServer().orElse(null);
         return connection != null ? new VelocityNetworkServer(connection.getServer()) : null;
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<ConnectResult> connect(@NotNull NetworkServer target) {
+        RegisteredServer server = VelocityNetworkServers.nativeOf(target);
+        if (server == null) {
+            return CompletableFuture.completedFuture(ConnectResult.FAILED);
+        }
+        return player.createConnectionRequest(server).connect()
+                .thenApply(result -> VelocityNetworkServers.resultOf(result.getStatus()))
+                .exceptionally(error -> ConnectResult.FAILED);
     }
 
     @NotNull

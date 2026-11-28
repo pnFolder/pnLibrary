@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.databases;
 
+import org.pnfolder.pnlibrary.updates.databases.dump.Blank;
 import java.util.Objects;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

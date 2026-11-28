@@ -45,6 +45,9 @@ public final class SystemQuestions {
             case MenuCalls.STATS:
                 ask.give(data.stats());
                 return true;
+            case MenuCalls.CHANNELS:
+                ask.give(data.channels());
+                return true;
             case MenuCalls.PLACEHOLDERS:
                 ask.give(data.placeholders());
                 return true;

@@ -80,13 +80,41 @@ class ConfigStepsTest {
 
     @Test
     void aFileFromANewerVersionIsReadButNeverRewritten() throws IOException {
-        String text = "_config-version: 9\nhost: future\nport: 2\npool: 3\nfirst: a\nsecond: b\n";
+        String text = "_config-version: 9\nhost: future\nport: 2\npool: 3\nfirst: a\nsecond: b\nfuture-key: 42\n";
         write(text);
 
-        StepSettings loaded = open(new StepsForTest()).load().getValue();
+        ManagedConfig<StepSettings> config = open(new StepsForTest());
+        StepSettings loaded = config.load().getValue();
 
         assertEquals("future", loaded.host);
+        assertThrows(IllegalStateException.class, config::save);
+        assertThrows(IllegalStateException.class, config::resetToDefaults);
+        assertThrows(IllegalStateException.class, () -> config.update(value -> {
+            throw new AssertionError("update must not run for a file from a newer version");
+        }));
         assertEquals(text, read());
+    }
+
+    @Test
+    void aFileUpgradedOnDiskAfterLoadingCannotBeOverwritten() throws IOException {
+        write("_config-version: 4\nhost: old\nport: 2\npool: 3\nfirst: a\nsecond: b\n");
+        ManagedConfig<StepSettings> config = open(new StepsForTest());
+        config.load();
+        String text = "_config-version: 9\nhost: future\nfuture-key: 42\n";
+        write(text);
+
+        assertThrows(IllegalStateException.class, config::save);
+        assertEquals(text, read());
+    }
+
+    @Test
+    void anIntegerSettingRejectsFractionsAndOverflow() throws IOException {
+        for (String port : new String[] {"1.8", "4294967296"}) {
+            String text = "_config-version: 4\nhost: h\nport: " + port + "\npool: 3\nfirst: a\nsecond: b\n";
+            write(text);
+            assertThrows(IllegalArgumentException.class, () -> open(new StepsForTest()).load());
+            assertEquals(text, read());
+        }
     }
 
     @Test

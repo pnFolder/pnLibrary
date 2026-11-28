@@ -1,8 +1,9 @@
 package org.pnfolder.pnlibrary.velocity.network;
 
+import org.pnfolder.pnlibrary.core.network.AddedServers;
+import com.velocitypowered.api.proxy.server.ServerInfo;
+import java.net.InetSocketAddress;
 import java.util.Objects;
-import com.velocitypowered.api.plugin.PluginContainer;
-import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
@@ -10,24 +11,61 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.network.channel.NetworkChannel;
 import org.pnfolder.pnlibrary.api.network.NetworkPlayer;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
 import org.pnfolder.pnlibrary.api.network.NetworkServer;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.network.proxy.ProxyChannels;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /** {@link NetworkProxy} backed by a Velocity {@link ProxyServer}. */
 public final class VelocityNetworkProxy implements NetworkProxy, ForwardingAudience.Single {
     private final ProxyServer server;
+    private final ProxyChannels channels;
+    private final AddedServers added;
 
     /** Wraps the native {@code server}. */
-    public VelocityNetworkProxy(@NotNull ProxyServer server) {
+    public VelocityNetworkProxy(@NotNull ProxyServer server, @NotNull BiConsumer<String, Throwable> failures) {
         this.server = Objects.requireNonNull(server, "server");
+        this.channels = new ProxyChannels(this::registerChannel, this::unregisterChannel, this::getServers, failures);
+        this.added = new AddedServers(new AddedServers.Platform() {
+            @Override
+            public boolean exists(String name) {
+                return findServer(name) != null;
+            }
+
+            @Override
+            public NetworkServer register(String name, InetSocketAddress address) {
+                return new VelocityNetworkServer(server.registerServer(new ServerInfo(name, address)));
+            }
+
+            @Override
+            public void unregister(String name) {
+                RegisteredServer registered = findServer(name);
+                if (registered != null) {
+                    server.unregisterServer(registered.getServerInfo());
+                }
+            }
+        });
+    }
+
+    /** Starts passing plugin messages to the channels; the returned handle stops that and closes the channels. */
+    @NotNull
+    public AutoCloseable listenFor(@NotNull Object owner) {
+        VelocityChannelListener listener = new VelocityChannelListener(channels);
+        server.getEventManager().register(owner, listener);
+        return () -> {
+            server.getEventManager().unregisterListener(owner, listener);
+            channels.close();
+            added.close();
+        };
     }
 
     @NotNull
@@ -94,14 +132,45 @@ public final class VelocityNetworkProxy implements NetworkProxy, ForwardingAudie
         return registered != null ? new VelocityNetworkServer(registered) : null;
     }
 
+    @NotNull
     @Override
-    public void registerChannel(@NotNull String channel) {
-        server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(channel));
+    public NetworkServer addServer(@NotNull String name, @NotNull InetSocketAddress address) {
+        return added.add(name, address);
     }
 
     @Override
-    public void unregisterChannel(@NotNull String channel) {
-        server.getChannelRegistrar().unregister(MinecraftChannelIdentifier.from(channel));
+    public boolean removeServer(@NotNull NetworkServer server) {
+        return added.remove(server);
+    }
+
+    private RegisteredServer findServer(String name) {
+        return server.getServer(name).orElse(null);
+    }
+
+    @NotNull
+    @Override
+    public NetworkChannel channel(@NotNull Key key) {
+        return channels.channel(key);
+    }
+
+    @NotNull
+    @Override
+    public List<NetworkChannel> channels() {
+        return new ArrayList<NetworkChannel>(channels.channels());
+    }
+
+    @Override
+    public void registerChannel(@NotNull Key channel) {
+        server.getChannelRegistrar().register(identifier(channel));
+    }
+
+    @Override
+    public void unregisterChannel(@NotNull Key channel) {
+        server.getChannelRegistrar().unregister(identifier(channel));
+    }
+
+    MinecraftChannelIdentifier identifier(Key key) {
+        return MinecraftChannelIdentifier.from(key);
     }
 
     @Override
@@ -111,20 +180,5 @@ public final class VelocityNetworkProxy implements NetworkProxy, ForwardingAudie
         } else {
             server.shutdown();
         }
-    }
-
-    /** Returns the pnLibrary owner info of a Velocity plugin instance, or null when {@code instance} is not one. */
-    @Nullable
-    public OwnerInfo describePlugin(@Nullable Object instance) {
-        if (instance == null) {
-            return null;
-        }
-        PluginContainer container = server.getPluginManager().fromInstance(instance).orElse(null);
-        if (container == null) {
-            return null;
-        }
-        PluginDescription description = container.getDescription();
-        return new OwnerInfo(description.getName().orElse(description.getId()),
-                description.getVersion().orElse(null), description.getAuthors());
     }
 }

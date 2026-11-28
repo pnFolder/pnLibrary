@@ -117,29 +117,10 @@ public final class LegacySettingsImport {
         }
     }
 
-    /** The old {@code /pn deps auto} choice beat {@code downloads.yml}, so it beats it here too. */
+    /** The old {@code /pn deps auto} choice no longer means anything, since downloads always start by themselves: the file is only removed. */
     private void importDownloadChoice(SettingsStore store, Set<String> held) {
         Path file = paths.getDownloads().resolve("preferences.state");
-        if (!Files.isRegularFile(file)) {
-            return;
-        }
-        Boolean choice = Failures.runCatchingNonFatal(() -> readChoice(file)).getOrNull();
-        if (choice != null && !held.contains("downloads.automatic")) {
-            Failures.runCatchingNonFatal(() -> store.set("downloads.automatic", choice.toString()))
-                .onFailure(error -> warning.accept("Выбор автозагрузки не перенесён: " + error.getMessage()));
-        }
         Failures.runCatchingNonFatal(() -> Files.deleteIfExists(file));
-    }
-
-    private static Boolean readChoice(Path file) throws IOException {
-        List<String> lines = Files.readAllLines(file);
-        for (String line : lines) {
-            if (line.startsWith("automatic=")) {
-                String value = line.substring(line.indexOf('=') + 1).trim();
-                return "true".equals(value) ? Boolean.TRUE : "false".equals(value) ? Boolean.FALSE : null;
-            }
-        }
-        return null;
     }
 
     private void retire(Path file) {

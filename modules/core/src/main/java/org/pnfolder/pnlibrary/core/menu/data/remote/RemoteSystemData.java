@@ -71,6 +71,11 @@ abstract class RemoteSystemData extends RemoteEventData {
     }
 
     @Override
+    public @NotNull List<String> channels() {
+        return ask(MenuCalls.CHANNELS, MenuWire.listOf(String.class));
+    }
+
+    @Override
     public @NotNull List<PlaceholderInfo> placeholders() {
         return ask(MenuCalls.PLACEHOLDERS, MenuWire.listOf(PlaceholderInfo.class));
     }

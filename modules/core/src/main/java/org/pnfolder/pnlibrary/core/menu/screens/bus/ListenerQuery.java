@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 
 /** Which listeners a list shows and in what order. */
 final class ListenerQuery {

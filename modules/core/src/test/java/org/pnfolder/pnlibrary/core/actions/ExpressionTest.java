@@ -46,7 +46,7 @@ class ExpressionTest {
     private final List<String> log = new ArrayList<>();
 
     ExpressionTest() {
-        when(player.experienceLevel()).thenReturn(12.0);
+        when(player.getExperienceLevel()).thenReturn(12.0);
     }
 
     private ActionContext context(Object... namesAndValues) {

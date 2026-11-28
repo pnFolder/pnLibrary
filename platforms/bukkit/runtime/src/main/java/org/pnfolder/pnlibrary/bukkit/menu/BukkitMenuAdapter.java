@@ -18,8 +18,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
 import org.pnfolder.pnlibrary.api.chat.ChatReader;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.platform.PlatformProvider;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
@@ -32,11 +32,11 @@ import org.pnfolder.pnlibrary.bukkit.inventory.Menus;
 import org.pnfolder.pnlibrary.bukkit.item.PlayerHeads;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
-import org.pnfolder.pnlibrary.core.menu.ClickType;
+import org.pnfolder.pnlibrary.core.menu.session.ClickType;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.Menu;
 import org.pnfolder.pnlibrary.core.menu.MenuItem;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 
 /** Turns the portable menu into Bukkit inventories. */
 public final class BukkitMenuAdapter {
@@ -126,13 +126,13 @@ public final class BukkitMenuAdapter {
         for (Map.Entry<Integer, MenuItem> entry : menu.getItems().entrySet()) {
             int slot = entry.getKey();
             ItemStack item = entry.getValue().getItem() == null ? null : stack(entry.getValue().getItem());
-            org.pnfolder.pnlibrary.core.menu.MenuClickHandler handler = entry.getValue().getHandler();
+            org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler handler = entry.getValue().getHandler();
             if (handler == null) {
                 builder.slot(slot, item);
             } else if (item != null) {
                 builder.button(slot, item, click -> {
                     if (mayUse(click.getPlayer())) {
-                        handler.handle(new org.pnfolder.pnlibrary.core.menu.MenuClick(
+                        handler.handle(new org.pnfolder.pnlibrary.core.menu.session.MenuClick(
                             viewer(click.getPlayer()), slot, kind(click.getClick())));
                     } else {
                         revoke(click.getPlayer(), click.getSession());

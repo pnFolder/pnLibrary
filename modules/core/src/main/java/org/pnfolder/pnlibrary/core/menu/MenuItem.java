@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
 import org.jetbrains.annotations.Nullable;
 
 /** A slot of a menu: the item shown and the handler for clicks, either may be null. */

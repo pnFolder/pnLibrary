@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog.proxy;
 
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateConfirmationTokens;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogSupport;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogSupport;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.CommandSender;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;

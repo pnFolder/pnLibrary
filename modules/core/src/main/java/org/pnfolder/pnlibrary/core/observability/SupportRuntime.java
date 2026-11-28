@@ -23,9 +23,9 @@ import org.pnfolder.pnlibrary.core.observability.report.SupportDeliveryFactory;
 import org.pnfolder.pnlibrary.core.observability.report.SupportReportGenerator;
 import org.pnfolder.pnlibrary.core.upload.UploadLedger;
 import org.pnfolder.pnlibrary.core.upload.UploadProvider;
-import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnostics;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnostics;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogObservation;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogObservation;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 
 import java.io.IOException;
@@ -139,7 +139,7 @@ public final class SupportRuntime implements AutoCloseable {
         diagnostics.onEventsChanged(this::persistHistory);
         diagnostics.onActivityEvent(this::recordDiagnostic);
         platformLogObservation.observeNativeLogs((nativeOwner, level, message, error) -> {
-            if (config.isJournalForeignPlugins() || nativeOwner == owner) {
+            if (nativeOwner == owner) {
                 capture.observe(nativeOwner, level, message, error);
             } else {
                 capture.observeWithoutJournal(nativeOwner, level, message, error);

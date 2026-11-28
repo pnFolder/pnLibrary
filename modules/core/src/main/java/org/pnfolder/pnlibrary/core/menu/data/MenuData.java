@@ -29,7 +29,7 @@ import org.pnfolder.pnlibrary.core.commands.modules.LibraryRow;
 import org.pnfolder.pnlibrary.core.journal.JournalDetail;
 import org.pnfolder.pnlibrary.core.journal.JournalGroup;
 import org.pnfolder.pnlibrary.core.link.ServerGroup;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.menu.screens.config.ConfigRow;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.stats.StatsSnapshot;
@@ -69,6 +69,8 @@ public interface MenuData {
 
     @NotNull CompletionStage<Boolean> checkAll(@NotNull UpdateActor actor);
 
+    @NotNull CompletionStage<String> forceLibrary(@NotNull UpdateActor actor);
+
     /** Asks the catalog of one plugin for a new version; it does not wait for the answer. */
     void checkOne(@NotNull String product, @NotNull UpdateActor actor);
 
@@ -101,6 +103,11 @@ public interface MenuData {
 
     @NotNull List<PlaceholderInfo> placeholders();
 
+    /** The plugin-message channels open on this proxy; a game server has none. */
+    default @NotNull List<String> channels() {
+        return Collections.emptyList();
+    }
+
     /** Every named action, requirement and function with its owner and visibility. */
     @NotNull List<ScenarioDefinitionInfo> scenarioDefinitions();
 
@@ -127,14 +134,6 @@ public interface MenuData {
     /** Sets the setting {@code key} to {@code value}, or returns it to the default when {@code value} is null. */
     default @NotNull SettingOutcome changeSetting(@NotNull String key, @Nullable String value, @NotNull UpdateActor actor) {
         return new SettingOutcome(false, "Настройки меняются на самом сервере");
-    }
-
-    /** Whether missing plugins are downloaded without a command; null when this server has no such download. */
-    default @Nullable Boolean downloadsAutomatic() {
-        return null;
-    }
-
-    default void setDownloadsAutomatic(boolean value) {
     }
 
     /** Plugins other plugins need and the server lacks, grouped by who asks; none when nothing is missing or this server cannot say. */

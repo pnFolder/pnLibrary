@@ -1,6 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service.plan;
 
-import org.pnfolder.pnlibrary.updates.service.UpdateOrchestratorRuntime;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorRuntime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

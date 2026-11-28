@@ -1,0 +1,24 @@
+public final class org/pnfolder/pnlibrary/kotlin/ChannelsKt {
+	public static final fun broadcastMessage (Lorg/pnfolder/pnlibrary/api/network/channel/NetworkChannel;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)I
+	public static final fun sendMessage (Lorg/pnfolder/pnlibrary/api/network/channel/NetworkChannel;Lorg/pnfolder/pnlibrary/api/network/NetworkServer;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Z
+	public static final fun sendMessage (Lorg/pnfolder/pnlibrary/api/network/channel/ServerChannel;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletionStage;
+}
+
+public final class org/pnfolder/pnlibrary/kotlin/CodecsKt {
+	public static final fun messageCodec (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/network/message/MessageCodec;
+}
+
+public final class org/pnfolder/pnlibrary/kotlin/CommandsKt {
+	public static final fun arg (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandBuilder;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/definition/ArgumentType;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/definition/CommandBuilder;
+	public static final fun arg (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandNodeBuilder;Ljava/lang/String;Lorg/pnfolder/pnlibrary/api/commands/definition/ArgumentType;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/definition/CommandNodeBuilder;
+	public static final fun command (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/definition/CommandDefinition;
+	public static final fun sub (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandBuilder;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/definition/CommandBuilder;
+	public static final fun sub (Lorg/pnfolder/pnlibrary/api/commands/definition/CommandNodeBuilder;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/commands/definition/CommandNodeBuilder;
+}
+
+public final class org/pnfolder/pnlibrary/kotlin/CooldownsKt {
+	public static final fun define (Lorg/pnfolder/pnlibrary/api/cooldowns/CooldownService;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/pnfolder/pnlibrary/api/cooldowns/Cooldown;
+	public static final fun duration-HG0u8IE (Lorg/pnfolder/pnlibrary/api/cooldowns/Cooldown$Builder;J)Lorg/pnfolder/pnlibrary/api/cooldowns/Cooldown$Builder;
+	public static final fun tier-SxA4cEA (Lorg/pnfolder/pnlibrary/api/cooldowns/Cooldown$Builder;Ljava/lang/String;J)Lorg/pnfolder/pnlibrary/api/cooldowns/Cooldown$Builder;
+}
+

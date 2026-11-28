@@ -8,9 +8,9 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticDetailsCollector;
-import org.pnfolder.pnlibrary.spi.platform.DiagnosticSections;
-import org.pnfolder.pnlibrary.spi.platform.PlatformSnapshot;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticDetailsCollector;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticSections;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformSnapshot;
 import org.pnfolder.pnlibrary.spi.platform.ProxyBackend;
 
 import java.util.ArrayList;

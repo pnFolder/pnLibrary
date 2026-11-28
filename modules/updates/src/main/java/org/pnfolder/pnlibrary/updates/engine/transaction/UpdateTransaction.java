@@ -1,5 +1,9 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalArtifact;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.JournalRecords;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournalRepository;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

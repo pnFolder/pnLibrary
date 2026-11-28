@@ -117,7 +117,7 @@ public final class PnLibraryBootstrap {
                 plugin.getProxy().getConsole().sendMessage(TextComponent.fromLegacyText(line));
             }
         };
-        return new LibraryInstaller(BootstrapPlatform.BUNGEECORD, options, plugin.getDescription().getName(), console);
+        return new LibraryInstaller(BootstrapPlatform.BUNGEECORD, options, plugin.getDescription().getName(), plugin.getDescription().getVersion(), console);
     }
 
     private static ConsoleTheme theme(ChatColor border, ChatColor accent) {

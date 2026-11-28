@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
 import org.pnfolder.pnlibrary.core.journal.JournalRecord;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 class RuntimeJournalBatchTest {
     private final PlatformOwnership ownership = new PlatformOwnership() {

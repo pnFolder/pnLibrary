@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -277,6 +278,11 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
     /** Atomically saves {@code value} after decoding and semantic validation. */
     @Override
     public synchronized void save(T value) {
+        requireWritable();
+        saveValue(value);
+    }
+
+    private void requireWritable() {
         if (options.getReadOnly()) {
             throw new IllegalStateException("Configuration " + file.getName() + " is read-only");
         }
@@ -285,6 +291,21 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
                     + " has elements of an unknown type that are not in memory: "
                     + String.join("; ", skippedUnknownTypes) + ". Saving would delete them from the file");
         }
+        ConfigSteps<?> migrations = options.getMigrations();
+        if (migrations != null) {
+            try {
+                if (migrationEngine.isNewerThanCode(readFile(), migrations)) {
+                    throw new IllegalStateException("Configuration " + file.getName() + " was written by a newer plugin version");
+                }
+            } catch (NoSuchFileException missing) {
+                // An explicit save may create the file.
+            } catch (IOException error) {
+                throw new UncheckedIOException(error);
+            }
+        }
+    }
+
+    private void saveValue(T value) {
         String raw = fileStore.normalize(codec.encode(value));
         ConfigSteps<?> migrations = options.getMigrations();
         String encoded = migrations != null ? fileStore.normalize(migrationEngine.stampDefaults(raw, migrations)) : raw;
@@ -300,8 +321,9 @@ public final class CodeFirstYaml<T> implements ManagedConfig<T> {
     /** Applies {@code updater} to the loaded value and saves the result. */
     @Override
     public synchronized T update(@NotNull UnaryOperator<T> updater) {
+        requireWritable();
         T updated = updater.apply(get());
-        save(updated);
+        saveValue(updated);
         return updated;
     }
 

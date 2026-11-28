@@ -11,9 +11,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions;
-import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction;
-import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction;
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftSupportBuilder;
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency;
 import org.pnfolder.pnlibrary.api.diagnostics.report.DiagnosticContainer;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
@@ -111,18 +109,8 @@ public final class ModuleDefinitionBuilder implements PluginBuilder {
     }
 
     @Override
-    public void supportedMinecraft(@NotNull MinecraftVersions versions) {
-        minecraftRule.add(versions);
-    }
-
-    @Override
-    public void onUnsupportedMinecraft(@NotNull UnsupportedAction action) {
-        minecraftRule.setUnsupportedAction(action);
-    }
-
-    @Override
-    public void onNewerMinecraft(@NotNull NewerAction action) {
-        minecraftRule.setNewerAction(action);
+    public void minecraft(@NotNull Consumer<MinecraftSupportBuilder> setup) {
+        setup.accept(minecraftRule);
     }
 
     @Override

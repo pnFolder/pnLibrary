@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNode;
+import org.pnfolder.pnlibrary.api.network.NetworkProxy;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandRunner;
 import org.pnfolder.pnlibrary.core.commands.engine.RecordingSender;
 import org.pnfolder.pnlibrary.core.link.Link;
@@ -90,5 +91,65 @@ class ServersCommandTest {
         }
         assertTrue(names.containsAll(Arrays.asList("check", "update")));
         assertFalse(names.contains("auto"));
+    }
+
+    private String runOnProxy(NetworkProxy proxy, String... words) {
+        CommandDefinition definition = new ServersCommand(Link.OFF, () -> servers, proxy).definition();
+        return CommandRunner.run(definition, sender, "servers", words);
+    }
+
+    @Test
+    @DisplayName("send moves one player and sendall everyone, and both say how it ended")
+    void sendMovesOnePlayerAndSendallEveryoneAndBothSayHowItEnded() {
+        NetworkProxy proxy = org.mockito.Mockito.mock(NetworkProxy.class);
+        org.pnfolder.pnlibrary.api.network.NetworkServer lobby = org.mockito.Mockito.mock(org.pnfolder.pnlibrary.api.network.NetworkServer.class);
+        org.pnfolder.pnlibrary.api.network.NetworkServer arena = org.mockito.Mockito.mock(org.pnfolder.pnlibrary.api.network.NetworkServer.class);
+        org.pnfolder.pnlibrary.api.network.NetworkPlayer steve = org.mockito.Mockito.mock(org.pnfolder.pnlibrary.api.network.NetworkPlayer.class);
+        org.mockito.Mockito.when(lobby.getName()).thenReturn("lobby");
+        org.mockito.Mockito.when(arena.getName()).thenReturn("arena");
+        org.mockito.Mockito.when(proxy.server("lobby")).thenReturn(lobby);
+        org.mockito.Mockito.when(proxy.server("arena")).thenReturn(arena);
+        org.mockito.Mockito.when(proxy.player("Steve")).thenReturn(steve);
+        org.mockito.Mockito.when(steve.connect(lobby)).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(
+                org.pnfolder.pnlibrary.api.network.ConnectResult.CONNECTED));
+        org.mockito.Mockito.when(arena.getPlayers()).thenReturn(Collections.singletonList(steve));
+        org.mockito.Mockito.when(arena.sendPlayers(lobby)).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(1));
+
+        assertTrue(runOnProxy(proxy, "send", "Steve", "lobby").contains("перемещён на lobby"));
+        assertTrue(runOnProxy(proxy, "sendall", "arena", "lobby").contains("перемещено 1 из 1"));
+        assertTrue(runOnProxy(proxy, "send", "Alex", "lobby").contains("нет в сети"));
+        assertTrue(runOnProxy(proxy, "sendall", "arena", "arena").contains("один и тот же"));
+        assertTrue(runOnProxy(proxy, "send", "Steve", "ghost").contains("Такого сервера нет"));
+    }
+
+    @Test
+    @DisplayName("add and remove change the servers of the proxy and say what happened")
+    void addAndRemoveChangeTheServersOfTheProxyAndSayWhatHappened() {
+        NetworkProxy proxy = org.mockito.Mockito.mock(NetworkProxy.class);
+        org.pnfolder.pnlibrary.api.network.NetworkServer arena = org.mockito.Mockito.mock(org.pnfolder.pnlibrary.api.network.NetworkServer.class);
+        org.mockito.Mockito.when(arena.getName()).thenReturn("arena");
+        org.mockito.Mockito.when(proxy.addServer(org.mockito.ArgumentMatchers.eq("arena"), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(arena);
+        org.mockito.Mockito.when(proxy.server("arena")).thenReturn(arena);
+        org.mockito.Mockito.when(proxy.removeServer(arena)).thenReturn(true);
+
+        assertTrue(runOnProxy(proxy, "add", "arena", "127.0.0.1:25570").contains("добавлен"));
+        assertTrue(runOnProxy(proxy, "remove", "arena").contains("убран до перезапуска"));
+    }
+
+    @Test
+    @DisplayName("a bad address, a taken name, an unknown server and a server of the proxy's own configuration get a clear answer")
+    void refusalsAreExplained() {
+        NetworkProxy proxy = org.mockito.Mockito.mock(NetworkProxy.class);
+        org.pnfolder.pnlibrary.api.network.NetworkServer own = org.mockito.Mockito.mock(org.pnfolder.pnlibrary.api.network.NetworkServer.class);
+        org.mockito.Mockito.when(own.getName()).thenReturn("lobby");
+        org.mockito.Mockito.when(proxy.server("lobby")).thenReturn(own);
+        org.mockito.Mockito.when(proxy.addServer(org.mockito.ArgumentMatchers.eq("lobby"), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new IllegalArgumentException("A server named lobby already exists"));
+
+        assertTrue(runOnProxy(proxy, "add", "x", "not-an-address").contains("host:port"));
+        assertTrue(runOnProxy(proxy, "add", "lobby", "127.0.0.1:25570").contains("already exists"));
+        assertTrue(runOnProxy(proxy, "remove", "ghost").contains("нет"));
+        assertTrue(runOnProxy(proxy, "remove", "lobby").contains("уже убран"));
     }
 }

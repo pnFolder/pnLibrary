@@ -1,12 +1,16 @@
 package org.pnfolder.pnlibrary.api.network;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import net.kyori.adventure.audience.ForwardingAudience;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.network.channel.Channels;
+import org.pnfolder.pnlibrary.api.network.channel.NetworkChannel;
 
 /**
  * The proxy itself: its players, backend servers and plugin-message channels. Available on Velocity and BungeeCord
@@ -18,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * proxy.server("lobby").getOnlinePlayers();
  * }</pre>
  */
-public interface NetworkProxy extends ForwardingAudience {
+public interface NetworkProxy extends ForwardingAudience, Channels<NetworkChannel> {
     /** The proxy software name, such as {@code Velocity}. */
     @NotNull String getName();
 
@@ -43,11 +47,29 @@ public interface NetworkProxy extends ForwardingAudience {
     /** Returns the backend server registered as {@code name}, or {@code null}. */
     @Nullable NetworkServer server(@NotNull String name);
 
-    /** Starts receiving plugin messages on {@code channel}. */
-    void registerChannel(@NotNull String channel);
+    /**
+     * Adds a game server to the proxy while it runs, for example an arena or a lobby that starts on demand. It is not
+     * saved to the proxy's configuration and goes away at the restart, or when {@link #removeServer} is called.
+     * Players are not moved to it; they join it with the proxy's server command or a connection you make.
+     *
+     * @param name 1 to 64 letters, digits, {@code -} or {@code _}; it must not be used by another server (any case)
+     * @param address a resolved address, {@code new InetSocketAddress("10.0.0.5", 25570)}
+     * @throws IllegalArgumentException when the name is not valid or taken, or the address is not resolved
+     */
+    @NotNull NetworkServer addServer(@NotNull String name, @NotNull InetSocketAddress address);
 
-    /** Stops receiving plugin messages on {@code channel}. */
-    void unregisterChannel(@NotNull String channel);
+    /**
+     * Removes a server from the proxy while it runs, also one from the proxy's configuration or another plugin. It lasts
+     * until the restart: a configured server comes back then. Returns {@code false} for a server that is already gone.
+     * Players on the removed server are not kicked by this call.
+     */
+    boolean removeServer(@NotNull NetworkServer server);
+
+    /** Registers {@code channel} on the proxy only; nothing is delivered to you. Prefer {@link #channel(Key)}. */
+    void registerChannel(@NotNull Key channel);
+
+    /** Unregisters {@code channel} on the proxy; the counterpart of {@link #registerChannel(Key)}. */
+    void unregisterChannel(@NotNull Key channel);
 
     /** Shuts the proxy down, kicking players with {@code reason} when given. */
     void stop(@Nullable Component reason);

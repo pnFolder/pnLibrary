@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -76,6 +78,8 @@ public interface MenuRoutes {
     @NotNull List<Fact> ownerParameters(@Nullable OwnerInfo owner);
 
     void placeholders(@NotNull MenuViewer player, int page);
+
+    void channels(@NotNull MenuViewer player, int page);
 
     void actions(@NotNull MenuViewer player, int page);
 

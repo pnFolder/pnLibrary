@@ -64,17 +64,17 @@ public interface OnlinePlayer extends Audience {
     }
 
     /** The experience level, or {@code null} when the platform cannot tell. */
-    default @Nullable Double experienceLevel() {
+    default @Nullable Double getExperienceLevel() {
         return null;
     }
 
     /** The total experience points, or {@code null} when the platform cannot tell. */
-    default @Nullable Double experiencePoints() {
+    default @Nullable Double getExperiencePoints() {
         return null;
     }
 
     /** Where the player is now, or {@code null} when the platform cannot tell. */
-    default @Nullable Position position() {
+    default @Nullable Position getPosition() {
         return null;
     }
 }

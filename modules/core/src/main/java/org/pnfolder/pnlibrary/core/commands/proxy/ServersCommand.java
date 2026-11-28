@@ -11,7 +11,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.audience.AudienceExtensions;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
@@ -28,7 +28,7 @@ import org.pnfolder.pnlibrary.core.link.remote.RemoteAction;
 import org.pnfolder.pnlibrary.core.link.report.LinkPlugin;
 import org.pnfolder.pnlibrary.core.link.report.LinkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogLabels;
 
 /**
  * {@code /pn servers}: the servers of the network, with their pnLibrary version, players and plugins, and the update
@@ -39,7 +39,10 @@ import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
  * /pn servers &lt;name&gt;                          one server: platform, version, every plugin and its update state, and buttons
  * /pn servers &lt;name&gt; check                    asks the server to look for updates now
  * /pn servers &lt;name&gt; update &lt;plugin&gt;         asks the server to download the update of a plugin
- * /pn servers &lt;name&gt; auto &lt;plugin&gt; on|off    turns automatic download of a plugin on or off there
+ * /pn servers add &lt;name&gt; &lt;host:port&gt;      (proxy) adds a server until the restart
+ * /pn servers remove &lt;name&gt;               (proxy) removes a server that was added
+ * /pn servers send &lt;player&gt; &lt;server&gt;      (proxy) moves a player to a server
+ * /pn servers sendall &lt;from&gt; &lt;server&gt;     (proxy) moves everyone from one server to another
  * </pre>
  *
  * On a proxy the list comes from the reports of the game servers; on a game server it comes from the map of the
@@ -52,11 +55,24 @@ public final class ServersCommand {
 
     private final Link link;
     private final Supplier<List<NetworkServer>> servers;
+    private final ServerEditing editing;
+    private final PlayerSending sending;
 
     /** The command over {@code servers}, which is asked again each time the list is needed. */
     public ServersCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers) {
         this.link = Objects.requireNonNull(link, "link");
         this.servers = Objects.requireNonNull(servers, "servers");
+        this.editing = null;
+        this.sending = null;
+    }
+
+    /** The same on a proxy, with {@code add} and {@code remove} for the servers of {@code proxy}; without one there are none. */
+    public ServersCommand(@NotNull Link link, @NotNull Supplier<List<NetworkServer>> servers,
+                          @org.jetbrains.annotations.Nullable org.pnfolder.pnlibrary.api.network.NetworkProxy proxy) {
+        this.link = Objects.requireNonNull(link, "link");
+        this.servers = Objects.requireNonNull(servers, "servers");
+        this.editing = proxy == null ? null : new ServerEditing(proxy);
+        this.sending = proxy == null ? null : new PlayerSending(proxy);
     }
 
     /** The servers that reported to this proxy; one that has been silent for two minutes is offline. */
@@ -91,6 +107,10 @@ public final class ServersCommand {
         return CommandDefinition.command("servers", root -> {
             root.permission(PERMISSION, "pnlibrary.admin");
             root.executes(this::list);
+            if (editing != null) {
+                editing.install(root);
+                sending.install(root);
+            }
             root.argument("server", ArgumentType.string(), server -> {
                 server.suggests(context -> serverNames());
                 server.executes(context -> view(context, context.<String>get("server")));

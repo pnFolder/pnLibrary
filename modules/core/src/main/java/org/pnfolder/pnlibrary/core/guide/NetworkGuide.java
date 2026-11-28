@@ -24,6 +24,30 @@ final class NetworkGuide {
                     "Один сервер: платформа и состояние обновления каждого плагина.")
                     .orAdmin(),
                 GuideEntry.of(
+                    "/pnproxy servers add <имя> <хост:порт>",
+                    "pnlibrary.servers.manage",
+                    "Добавить сервер на прокси, пока он работает (после перезапуска пропадёт).")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
+                    "/pnproxy servers send <игрок> <сервер>",
+                    "pnlibrary.servers.send",
+                    "Переместить игрока на другой сервер сети.")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
+                    "/pnproxy servers sendall <с сервера> <на сервер>",
+                    "pnlibrary.servers.send",
+                    "Переместить всех игроков с одного сервера на другой, например перед его удалением.")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
+                    "/pnproxy servers remove <имя>",
+                    "pnlibrary.servers.manage",
+                    "Убрать любой сервер до перезапуска прокси, и из настройки тоже: после перезапуска он вернётся.")
+                    .orAdmin()
+                    .note("Нужно и право на /pn servers."),
+                GuideEntry.of(
                     "/pn servers <сервер> check",
                     "pnlibrary.updates.view",
                     "Попросить сервер проверить обновления.")
@@ -32,11 +56,6 @@ final class NetworkGuide {
                     "/pn servers <сервер> update <плагин>",
                     "pnlibrary.updates.download",
                     "Попросить сервер скачать обновление плагина.")
-                    .note("Нужно и право на /pn servers."),
-                GuideEntry.of(
-                    "/pn servers <сервер> auto <плагин> <on|off>",
-                    "pnlibrary.updates.settings",
-                    "Включить или выключить автозагрузку плагина на сервере.")
                     .note("Нужно и право на /pn servers."),
                 GuideEntry.of(
                     "/pn groups",

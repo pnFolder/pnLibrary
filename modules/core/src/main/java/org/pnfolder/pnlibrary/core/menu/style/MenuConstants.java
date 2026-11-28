@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
 
 /** Slots, sizes and permissions the menu screens share. */
 public final class MenuConstants {
@@ -33,6 +33,7 @@ public final class MenuConstants {
     public static final String TASKS = MenuPermissions.TASKS;
     public static final String STATS = MenuPermissions.STATS;
     public static final String PLACEHOLDERS = MenuPermissions.PLACEHOLDERS;
+    public static final String CHANNELS = MenuPermissions.CHANNELS;
     public static final String ACTIONS = MenuPermissions.ACTIONS;
     public static final String CONFIGS = "pnlibrary.configs";
     public static final int DETAIL_ROWS = 5;

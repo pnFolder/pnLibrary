@@ -25,13 +25,13 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactSpecification;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerificationException;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionResult;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionState;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
-import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateInstallationLock;
 
 class OfflineUpdateInstallerTest {
     @TempDir

@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

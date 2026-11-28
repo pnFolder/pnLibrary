@@ -1,12 +1,16 @@
 package org.pnfolder.pnlibrary.updates.service.plan;
 
-import org.pnfolder.pnlibrary.updates.service.UpdateOrchestratorHooks;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorHooks;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
+import org.pnfolder.pnlibrary.api.updates.release.UpdatePlan;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
@@ -33,7 +37,7 @@ public final class PlanChanges {
             return snapshot;
         }
         try {
-            stage(snapshot, UpdateActor.SYSTEM);
+            stage(snapshot, UpdateActor.SYSTEM, "STAGE");
         } catch (Throwable error) {
             state.observeFailure(snapshot.getId(), UpdateActor.SYSTEM, "STAGE", error);
             throw error;
@@ -54,10 +58,38 @@ public final class PlanChanges {
             if (selected.getState() != UpdateState.UPDATE_AVAILABLE) {
                 throw new IllegalArgumentException("Update plan is not available for staging");
             }
-            stage(selected, actor);
+            stage(selected, actor, "STAGE");
             promise.complete(state.current());
         } catch (Throwable error) {
             state.observeFailure(planId, actor, "STAGE", error);
+            promise.completeExceptionally(error);
+        }
+    }
+
+    /** Resolves a dedicated plan and uses the same installation transaction as ordinary staging. */
+    public void stageLibraryRequested(CompletableFuture<UpdatePlanSnapshot> promise, Supplier<UpdatePlan> resolve,
+                                      UpdateActor actor) {
+        if (promise.isDone()) {
+            return;
+        }
+        UpdatePlanSnapshot staged = state.forcedStage();
+        if (staged != null) {
+            promise.complete(staged);
+            return;
+        }
+        UUID id = UUID.randomUUID();
+        try {
+            UpdatePlan plan = resolve.get();
+            if (plan.getChanges().size() != 1
+                    || !PnLibraryIdentity.PRODUCT_ID.equals(plan.getChanges().get(0).getProduct().getValue())) {
+                throw new IllegalArgumentException("A forced plan must update pnLibrary alone");
+            }
+            UpdatePlanSnapshot selected = new UpdatePlanSnapshot(id, state.nextRevision(), UpdateState.UPDATE_AVAILABLE,
+                    plan, Collections.emptyList(), "Принудительное обновление pnLibrary.");
+            stage(selected, actor, PlanState.FORCE_STAGE);
+            promise.complete(state.current());
+        } catch (Throwable error) {
+            state.observeFailure(id, actor, PlanState.FORCE_STAGE, error);
             promise.completeExceptionally(error);
         }
     }
@@ -80,12 +112,12 @@ public final class PlanChanges {
         }
     }
 
-    private void stage(UpdatePlanSnapshot snapshot, UpdateActor actor) throws IOException {
+    private void stage(UpdatePlanSnapshot snapshot, UpdateActor actor, String operation) throws IOException {
         if (closed.getAsBoolean()) {
             throw new IllegalStateException("Update orchestrator is closed");
         }
         hooks.getStageAction().accept(snapshot);
         state.publish(new UpdatePlanSnapshot(snapshot.getId(), state.nextRevision(), UpdateState.UPDATE_STAGED,
-                snapshot.getPlan(), snapshot.getBlockers(), null), actor, "STAGE");
+                snapshot.getPlan(), snapshot.getBlockers(), snapshot.getMessage()), actor, operation);
     }
 }

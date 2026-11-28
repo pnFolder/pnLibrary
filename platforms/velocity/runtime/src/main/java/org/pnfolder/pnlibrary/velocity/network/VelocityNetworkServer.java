@@ -8,11 +8,14 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.network.NetworkPlayer;
 import org.pnfolder.pnlibrary.api.network.NetworkServer;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /** {@link NetworkServer} backed by a Velocity {@link RegisteredServer}. */
 public final class VelocityNetworkServer implements NetworkServer, ForwardingAudience.Single {
@@ -39,6 +42,22 @@ public final class VelocityNetworkServer implements NetworkServer, ForwardingAud
     @Override
     public InetSocketAddress getAddress() {
         return server.getServerInfo().getAddress();
+    }
+
+    /** Returns the wrapped native server. */
+    @NotNull
+    public RegisteredServer getNativeServer() {
+        return server;
+    }
+
+    @NotNull
+    @Override
+    public List<NetworkPlayer> getPlayers() {
+        List<NetworkPlayer> players = new ArrayList<>();
+        for (Player player : server.getPlayersConnected()) {
+            players.add(new VelocityNetworkPlayer(player));
+        }
+        return players;
     }
 
     @Override

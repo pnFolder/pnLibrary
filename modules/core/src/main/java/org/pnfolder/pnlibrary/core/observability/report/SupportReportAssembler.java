@@ -7,7 +7,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibraryConfig;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry;
 import org.pnfolder.pnlibrary.core.diagnostics.config.ConfigReader;
-import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnosticReport;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnosticReport;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
 
 import java.nio.file.Path;

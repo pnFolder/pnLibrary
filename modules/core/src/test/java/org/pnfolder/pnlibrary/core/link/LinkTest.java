@@ -38,7 +38,7 @@ import org.pnfolder.pnlibrary.core.link.report.NetworkReport;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
 import org.pnfolder.pnlibrary.core.link.wire.DataChunks;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.link.wire.LinkSecret;
+import org.pnfolder.pnlibrary.core.link.wire.seal.LinkSecret;
 
 class LinkTest {
     private final byte[] key = sequence();
@@ -103,20 +103,19 @@ class LinkTest {
     }
 
     @Test
-    void onlyAValidReportFromAServerIsRemembered() {
+    void onlyAValidReportIsRemembered() {
         Link link = new Link(key);
         LinkRegistry registry = link.getRegistry();
         LinkReceiver receiver = new LinkReceiver(link);
         byte[] message = LinkCodec.encode(report, key);
 
-        assertFalse(receiver.receive("lobby", false, message));
         byte[] broken = message.clone();
         broken[0] = 9;
-        assertFalse(receiver.receive("lobby", true, broken));
+        assertFalse(receiver.receive("lobby", broken));
         assertTrue(registry.all().isEmpty());
-        assertTrue(receiver.receive("lobby", true, message));
+        assertTrue(receiver.receive("lobby", message));
         assertNotNull(registry.get("LOBBY"));
-        assertFalse(new LinkReceiver(new Link(null)).receive("lobby", true, message));
+        assertFalse(new LinkReceiver(new Link(null)).receive("lobby", message));
     }
 
     @Test
@@ -173,25 +172,24 @@ class LinkTest {
         List<Sent> sent = new ArrayList<>();
         LinkReceiver receiver = new LinkReceiver(new Link(key, null, recording(sent, "gone")));
 
-        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeRequest(request, key)));
+        assertTrue(receiver.receive("lobby", LinkCodec.encodeRequest(request, key)));
         RemoteRequest forwarded = LinkCodec.decodeRequest(sent.get(0).bytes, key);
         assertEquals("games", sent.get(0).server);
         assertEquals("lobby", forwarded.getOrigin());
 
         sent.clear();
         RemoteResult reply = new RemoteResult(request.getId(), "lobby", true, "ok", Instant.now());
-        assertTrue(receiver.receive("games", true, LinkCodec.encodeResult(reply, key)));
+        assertTrue(receiver.receive("games", LinkCodec.encodeResult(reply, key)));
         assertEquals("lobby", sent.get(0).server);
 
         sent.clear();
         RemoteRequest toGone = new RemoteRequest(UUID.randomUUID(), "gone", request.getOrigin(), request.getActor(),
             request.getAction(), request.getProduct(), request.getSentAt());
-        receiver.receive("lobby", true, LinkCodec.encodeRequest(toGone, key));
+        receiver.receive("lobby", LinkCodec.encodeRequest(toGone, key));
         Sent last = sent.get(sent.size() - 1);
         RemoteResult failure = LinkCodec.decodeResult(last.bytes, key);
         assertEquals("lobby", last.server);
         assertFalse(failure.getOk());
-        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeRequest(request, key)));
     }
 
     @Test
@@ -201,7 +199,7 @@ class LinkTest {
         link.getReplies().expect(request.getId(), got::set);
         LinkReceiver receiver = new LinkReceiver(link);
 
-        receiver.receive("games", true, LinkCodec.encodeResult(
+        receiver.receive("games", LinkCodec.encodeResult(
             new RemoteResult(request.getId(), LinkNames.PROXY_ORIGIN, true, "ok", Instant.now()), key));
 
         assertEquals("ok", got.get().getText());
@@ -278,24 +276,23 @@ class LinkTest {
         List<Sent> sent = new ArrayList<>();
         LinkReceiver receiver = new LinkReceiver(new Link(key, null, recording(sent, "gone")));
 
-        assertTrue(receiver.receive("lobby", true, LinkCodec.encodeCall(call, key)));
+        assertTrue(receiver.receive("lobby", LinkCodec.encodeCall(call, key)));
         assertEquals("games", sent.get(0).server);
         assertEquals("lobby", LinkCodec.decodeCall(sent.get(0).bytes, key).getOrigin());
 
         sent.clear();
         byte[] answer = DataChunks.split(call.getId(), "lobby", true, "[]", key).get(0);
-        assertTrue(receiver.receive("games", true, answer));
+        assertTrue(receiver.receive("games", answer));
         assertEquals("lobby", sent.get(0).server);
 
         sent.clear();
         DataCall toGone = new DataCall(call.getId(), "gone", call.getOrigin(), call.getViewer(), call.getMethod(),
             call.getArgs(), call.getSentAt());
-        receiver.receive("lobby", true, LinkCodec.encodeCall(toGone, key));
+        receiver.receive("lobby", LinkCodec.encodeCall(toGone, key));
         Sent last = sent.get(sent.size() - 1);
         DataChunk refused = LinkCodec.decodeChunk(last.bytes, key);
         assertEquals("lobby", last.server);
         assertFalse(refused.getOk());
-        assertFalse(receiver.receive("lobby", false, LinkCodec.encodeCall(call, key)));
     }
 
     @Test
@@ -306,7 +303,7 @@ class LinkTest {
         DataCall toProxy = new DataCall(call.getId(), LinkNames.PROXY, call.getOrigin(), call.getViewer(),
             call.getMethod(), call.getArgs(), call.getSentAt());
 
-        receiver.receive("lobby", true, LinkCodec.encodeCall(toProxy, key));
+        receiver.receive("lobby", LinkCodec.encodeCall(toProxy, key));
 
         DataChunk chunk = LinkCodec.decodeChunk(sent.get(0).bytes, key);
         assertEquals("lobby", sent.get(0).server);

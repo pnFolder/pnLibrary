@@ -55,7 +55,7 @@ import org.pnfolder.pnlibrary.core.link.remote.DataCall;
 import org.pnfolder.pnlibrary.core.link.remote.DataClient;
 import org.pnfolder.pnlibrary.core.link.wire.DataChunks;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.tasks.TaskControl;
 
@@ -254,6 +254,18 @@ class MenuDataTest {
         RemoteMenuData granted = connected(answers("rollback", true),
             (viewer, permission) -> viewer.equals("Admin") && permission.equals("pnlibrary.updates.rollback"));
         assertTrue(granted.rollback(UUID.randomUUID(), false, actor).toCompletableFuture().get());
+    }
+
+    @Test
+    void remoteForceUpdateChecksDownloadPermissionOnTheTargetServer() throws Exception {
+        UpdateActor actor = new UpdateActor(UpdateActor.Kind.PLAYER, "id", "Admin");
+        RemoteMenuData denied = connected(answers(MenuCalls.FORCE_LIBRARY, "2.0.0"), (viewer, permission) -> false);
+        Exception error = assertThrows(Exception.class, () -> denied.forceLibrary(actor).toCompletableFuture().get());
+        assertTrue(mentions(error, "pnlibrary.updates.download"));
+
+        RemoteMenuData granted = connected(answers(MenuCalls.FORCE_LIBRARY, "2.0.0"),
+            (viewer, permission) -> viewer.equals("Admin") && permission.equals("pnlibrary.updates.download"));
+        assertEquals("2.0.0", granted.forceLibrary(actor).toCompletableFuture().get());
     }
 
     private static boolean mentions(Throwable error, String text) {

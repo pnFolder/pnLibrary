@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import org.pnfolder.pnlibrary.bukkit.audience.BukkitTitle;
 import org.pnfolder.pnlibrary.bukkit.tasks.ServerScheduler;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogCommands.SettingSaved;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogCommands.SettingSaved;
 
 /**
  * Short feedback after a setting was saved: the setting's name as the title and what changed, such as

@@ -93,4 +93,34 @@ class ConsoleCardTest {
         assertTrue(lines.stream().anyMatch(line -> line.contains("└ Проверка пройдена")));
         assertTrue(lines.stream().noneMatch(line -> line.contains("┌ Проверка пройдена")));
     }
+
+    @Test
+    void theHeadlineNamesPluginModuleAndVersion() {
+        assertEquals("ShopPlugin@main 2.4.1", ConsoleCard.label("ShopPlugin", "main", "2.4.1"));
+        assertEquals("ShopPlugin@main 2.4.1", ConsoleCard.label("ShopPlugin", null, "2.4.1"));
+        assertEquals("ShopPlugin@main", ConsoleCard.label("ShopPlugin", "main", null));
+
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "X")
+            .owner("x.x", "ShopPlugin", "main", "2.4.1", "модуль не запущен")
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("( x.x )     ShopPlugin@main 2.4.1")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("модуль не запущен")));
+    }
+
+    @Test
+    void theSupportBlockEndsEveryCardWithoutADoubleBlankLine() {
+        List<String> lines = ConsoleCard.builder(ConsoleTheme.plain(), "X")
+            .mascot("^.^", "A", null)
+            .blank()
+            .support("https://discord.gg/example")
+            .blank()
+            .status("готово")
+            .build().render();
+
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Вопросы и ошибки: https://discord.gg/example")));
+        for (int index = 1; index < lines.size(); index++) {
+            assertTrue(!(lines.get(index).isEmpty() && lines.get(index - 1).isEmpty()), "double blank at " + index);
+        }
+    }
 }

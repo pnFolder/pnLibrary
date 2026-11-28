@@ -2,7 +2,7 @@ package org.pnfolder.pnlibrary.core.updates.catalog;
 
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 
 /** The red chat line the catalog commands use for a refusal. */
 public final class CatalogErrors {

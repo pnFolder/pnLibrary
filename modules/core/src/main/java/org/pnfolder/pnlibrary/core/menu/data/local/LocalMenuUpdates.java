@@ -19,6 +19,7 @@ import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup;
 import org.pnfolder.pnlibrary.api.updates.history.UpdateHistoryEntry;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogSupport;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 
 /** The update facts of this server's library: products, history, backups and the settings an administrator changes. */
@@ -73,6 +74,12 @@ abstract class LocalMenuUpdates implements MenuData {
     @Override
     public @NotNull CompletionStage<Boolean> checkAll(@NotNull UpdateActor actor) {
         return LocalUpdateData.checkAll(library, actor);
+    }
+
+    @Override
+    public @NotNull CompletionStage<String> forceLibrary(@NotNull UpdateActor actor) {
+        return UpdateCatalogSupport.forceLibrary(library, actor)
+                .thenApply(staged -> staged.getPlan().getChanges().get(0).getTo().toString());
     }
 
     @Override

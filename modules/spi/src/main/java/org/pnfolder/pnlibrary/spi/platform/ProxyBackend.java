@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticSections;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 

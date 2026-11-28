@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.updates.service;
 
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateOrchestratorRuntime;
 import org.pnfolder.pnlibrary.updates.service.registration.UpdateRegistrationStore;
 import org.pnfolder.pnlibrary.updates.service.registration.RegisteredUpdate;
 import java.time.Duration;
@@ -22,8 +23,8 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateActor;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.common.time.DisplayZone;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.updates.engine.FreezeStore;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.updates.engine.preferences.FreezeStore;
 import org.pnfolder.pnlibrary.updates.install.UpdateGraphResolver;
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides;
 

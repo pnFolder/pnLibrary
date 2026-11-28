@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo;
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay;
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace;
 import org.pnfolder.pnlibrary.core.link.remote.DataClient;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 
 /** The event-bus questions of {@link RemoteMenuData}. */
 abstract class RemoteEventData extends RemoteCalls {

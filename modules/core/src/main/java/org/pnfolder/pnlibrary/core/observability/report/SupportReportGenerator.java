@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.core.diagnostics.DiagnosticsRegistry;
 import org.pnfolder.pnlibrary.core.upload.UploadLedger;
 import org.pnfolder.pnlibrary.core.upload.UploadProvider;
 import org.pnfolder.pnlibrary.core.upload.UploadReceipt;
-import org.pnfolder.pnlibrary.spi.platform.PlatformDiagnosticReport;
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnosticReport;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
 
 import java.io.IOException;

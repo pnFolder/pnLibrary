@@ -115,7 +115,7 @@ public final class PnLibraryBootstrap {
                 plugin.getServer().getConsoleSender().sendMessage(line);
             }
         };
-        return new LibraryInstaller(BootstrapPlatform.BUKKIT, options, plugin.getName(), console);
+        return new LibraryInstaller(BootstrapPlatform.BUKKIT, options, plugin.getName(), plugin.getDescription().getVersion(), console);
     }
 
     private static ConsoleTheme theme(ChatColor border, ChatColor accent) {

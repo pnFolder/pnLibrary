@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.ClickType;
+import org.pnfolder.pnlibrary.core.menu.session.MenuClickHandler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,10 +40,10 @@ class LibrarySettingsMenuTest extends LibrarySettingsMenuSupport {
 
     @Test
     void theDefaultMarkFollowsTheDefaultNotTheCurrentValue() {
-        String text = text(loreOf(settingsScreen(new TestMenuViewer(), rows(with("downloads.enabled", "false"))), "Загрузки"));
+        String text = text(loreOf(settingsScreen(new TestMenuViewer(), rows(with("updates.restart.auto", "true"))), "Перезапускать самой"));
 
-        assertTrue(text.contains("включено (по умолчанию)"), text);
-        assertTrue(text.contains("➤ выключено"), text);
+        assertTrue(text.contains("выключено (по умолчанию)"), text);
+        assertTrue(text.contains("➤ включено"), text);
     }
 
     @Test

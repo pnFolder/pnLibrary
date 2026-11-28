@@ -1,7 +1,6 @@
 package org.pnfolder.pnlibrary.currency.storage;
 
 import java.util.Objects;
-import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
@@ -11,7 +10,6 @@ import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.currency.CurrencyTransaction;
@@ -35,25 +33,27 @@ final class CurrencyFileWriter {
         for (Map.Entry<String, java.math.BigDecimal> entry : state.getBalances().entrySet()) {
             balances.addProperty(entry.getKey(), entry.getValue().toPlainString());
         }
-        if (state.getTransactions().isEmpty()) {
-            fragments.clear();
-            JsonObject root = new JsonObject();
-            root.add("balances", balances);
-            root.add("transactions", new JsonArray());
-            gson.toJson(root, target);
-            return;
-        }
         target.write("{\n  \"balances\": ");
         target.write(deeper(gson.toJson(balances), "  "));
-        target.write(",\n  \"transactions\": [");
-        int index = 0;
-        for (CurrencyTransaction transaction : state.getTransactions()) {
-            target.write(index == 0 ? "\n    " : ",\n    ");
-            target.write(fragment(transaction));
-            index++;
+        target.write(",\n  \"transactions\": ");
+        writeTransactions(target, state.getTransactions());
+        if (!state.archivedReceipts().isEmpty()) {
+            target.write(",\n  \"archivedReceipts\": ");
+            writeTransactions(target, state.archivedReceipts());
         }
-        target.write("\n  ]\n}");
+        target.write("\n}");
         forgetAbsent(state);
+    }
+
+    private void writeTransactions(Writer target, Iterable<CurrencyTransaction> transactions) throws IOException {
+        target.write("[");
+        boolean first = true;
+        for (CurrencyTransaction transaction : transactions) {
+            target.write(first ? "\n    " : ",\n    ");
+            target.write(fragment(transaction));
+            first = false;
+        }
+        target.write(first ? "]" : "\n  ]");
     }
 
     private String fragment(CurrencyTransaction transaction) {
@@ -72,13 +72,14 @@ final class CurrencyFileWriter {
         return text.replace("\n", "\n" + indent);
     }
 
-    /** Drops pieces of transactions that left the ledger: trimmed, replaced or rolled back. */
+    /** Drops pieces of transactions no longer held in the history or the receipt archive. */
     private void forgetAbsent(CurrencyLedgerState state) {
-        if (fragments.size() <= state.getTransactions().size()) {
+        if (fragments.size() <= state.getTransactions().size() + state.archivedReceipts().size()) {
             return;
         }
         Set<CurrencyTransaction> present = Collections.newSetFromMap(new IdentityHashMap<>());
         present.addAll(state.getTransactions());
+        present.addAll(state.archivedReceipts());
         fragments.keySet().retainAll(present);
     }
 }

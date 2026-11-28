@@ -117,8 +117,8 @@ class BungeeAudienceAdapterTest {
     void aPlayerCanReadMessagesAndTheActionBarButNothingABackendMustRender() {
         OnlinePlayer library = BungeeNetworkPlayer.of(player("Alex"));
 
-        assertNull(library.position());
-        assertNull(library.experienceLevel());
+        assertNull(library.getPosition());
+        assertNull(library.getExperienceLevel());
         library.playSound(mock(Sound.class));
     }
 }

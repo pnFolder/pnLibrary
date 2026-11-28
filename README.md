@@ -44,7 +44,7 @@
 | `/pn servers`, `/pn notices`, `/pn support` | серверы сети, важные объявления (кому нужен перезапуск), обращение в поддержку |
 | `/pn debug [all\|плагин]` | отчёт для поддержки |
 
-На BungeeCord и Velocity команда называется `/pnproxy` (коротко `/pnp`): каталог обновлений, `events`, `bus`, `tasks`, `stats`, `placeholders`, `debug`, `servers` и `groups` (группы серверов есть только на прокси). Все команды обновлений и права описаны
+На BungeeCord и Velocity команда называется `/pnproxy` (коротко `/pnp`): каталог обновлений, `events`, `bus`, `tasks`, `stats`, `placeholders`, `debug`, `servers`, `channels` и `groups` (группы серверов есть только на прокси). Все команды обновлений и права описаны
 в [docs/updates.md](docs/updates.md).
 
 Остальные права (по умолчанию у операторов):
@@ -54,6 +54,7 @@
 | `pnlibrary.admin` | всё управление pnLibrary |
 | `pnlibrary.events.view` | `/pn events` и сводку ошибок при входе |
 | `pnlibrary.stats` | `/pn stats` и страница статистики в меню |
+| `pnlibrary.channels` | `/pnproxy channels` и `/pn channels`: каналы сообщений, открытые плагинами на прокси и на игровом сервере |
 | `pnlibrary.placeholders` | `/pn placeholders`: список, `info` и проверка плейсхолдеров |
 | `pnlibrary.actions` | `/pn actions`: именованные действия, требования и функции плагинов |
 | `pnlibrary.registry` | `/pn registry`: просмотр реестров с владельцем и видимостью |
@@ -64,6 +65,8 @@
 | `pnlibrary.events.bus` | `/pn bus` |
 | `pnlibrary.groups` | `/pnproxy groups` |
 | `pnlibrary.servers` | `/pn servers` |
+| `pnlibrary.servers.send` | `/pnproxy servers send` и `sendall`: переместить игрока или всех с сервера на другой |
+| `pnlibrary.servers.manage` | `/pnproxy servers add` и `remove`: добавить сервер на прокси до перезапуска или убрать любой |
 | `pnlibrary.currency.list` | список валют в `/pn money` |
 
 Права обновлений (`pnlibrary.updates.*`) описаны в [docs/updates.md](docs/updates.md).
@@ -129,6 +132,8 @@ API состоит из интерфейсов, моделей и небольш
 - [Обновления: команды, права, откат](docs/updates.md)
 - [Зависимости плагинов: что не хватает, откуда качать, `/pn deps`](docs/dependencies.md)
 - [Сеть: прокси, ключ связи, группы серверов](docs/network.md)
+- [Каналы плагинных сообщений](docs/channels.md)
+- [Kotlin: расширения pnlibrary-kotlin](docs/kotlin.md)
 - [Подключение плагина к pnLibrary: для людей и ИИ](integration/README.md)
 - [Папка `.pnlibrary` в репозитории плагина](docs/repository.md)
 - [Действия и требования](docs/actions.md)

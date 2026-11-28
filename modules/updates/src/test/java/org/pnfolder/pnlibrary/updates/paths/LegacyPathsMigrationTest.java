@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pnfolder.pnlibrary.api.updates.product.ProductId;
 import org.pnfolder.pnlibrary.api.updates.product.UpdateChannel;
-import org.pnfolder.pnlibrary.updates.engine.FreezeStore;
-import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.FreezeStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.UpdatePreferencesStore;
 import org.pnfolder.pnlibrary.updates.policy.UpdatePolicyOverrides;
 
 class LegacyPathsMigrationTest {

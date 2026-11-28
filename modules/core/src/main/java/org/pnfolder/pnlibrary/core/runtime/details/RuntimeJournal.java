@@ -28,7 +28,7 @@ import org.pnfolder.pnlibrary.core.journal.JournalRecord;
 import org.pnfolder.pnlibrary.core.journal.store.JournalQueries;
 import org.pnfolder.pnlibrary.core.journal.store.JournalStore;
 import org.pnfolder.pnlibrary.core.journal.view.JournalCommand;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** Owns journal storage, asynchronous writes, failure counters and draining at shutdown. */
 public final class RuntimeJournal implements AutoCloseable {

@@ -1,6 +1,5 @@
 package org.pnfolder.pnlibrary.currency.storage;
 
-import org.pnfolder.pnlibrary.currency.storage.CurrencyLedgerState;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -39,6 +38,12 @@ final class CurrencyFileLoader {
         if (balances != null) {
             for (Map.Entry<String, JsonElement> entry : balances.entrySet()) {
                 state.getBalances().put(entry.getKey(), new BigDecimal(entry.getValue().getAsString()));
+            }
+        }
+        JsonArray receipts = root.getAsJsonArray("archivedReceipts");
+        if (receipts != null) {
+            for (JsonElement element : receipts) {
+                state.recordArchivedReceipt(CurrencyTransactionJson.decode(element.getAsJsonObject()));
             }
         }
         JsonArray transactions = root.getAsJsonArray("transactions");

@@ -132,8 +132,9 @@ class SettingsRegistryTest {
         assertEquals("1ч30м", spec.normalize("90m"));
         assertEquals("1ч30м", spec.normalize("1h 30 мин"));
         assertEquals("6ч", spec.normalize("6h"));
-        assertEquals(Duration.ofHours(12), spec.apply(new LibrarySettings(), "12h").getUpdateCheckInterval());
+        assertEquals(Duration.ofHours(5), spec.apply(new LibrarySettings(), "5h").getUpdateCheckInterval());
         assertThrows(SettingException.class, () -> spec.normalize("5m"));
+        assertThrows(SettingException.class, () -> spec.normalize("7h"));
         assertThrows(SettingException.class, () -> spec.normalize("8d"));
         assertThrows(SettingException.class, () -> spec.normalize("6"));
     }
@@ -163,17 +164,10 @@ class SettingsRegistryTest {
     }
 
     @Test
-    void aTimeZoneAndAMessageAreChecked() {
+    void aTimeZoneIsChecked() {
         SettingSpec zone = spec("time-zone");
         assertEquals("Europe/Moscow", zone.normalize(" Europe/Moscow "));
         assertThrows(SettingException.class, () -> zone.normalize("Mars/Base"));
-        SettingSpec message = spec("no-permission-message");
-        assertThrows(SettingException.class, () -> message.normalize("   "));
-        StringBuilder tooLong = new StringBuilder();
-        for (int index = 0; index < 257; index++) {
-            tooLong.append('я');
-        }
-        assertThrows(SettingException.class, () -> message.normalize(tooLong.toString()));
     }
 
     @Test

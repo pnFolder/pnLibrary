@@ -1,8 +1,15 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.PlatformDiagnostics;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformShutdown;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogObservation;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.network.NetworkProxy;
+import org.pnfolder.pnlibrary.api.network.channel.ServerNetwork;
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.audience.UnsupportedPlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
@@ -57,6 +64,12 @@ public interface PlatformAdapter extends PlatformShutdown, PlatformIdentity, Pla
     /** Proxy layer; null on game-server platforms. */
     @Nullable
     default NetworkProxy getNetworkProxy() {
+        return null;
+    }
+
+    /** Game-server side of the network; null on proxy platforms. */
+    @Nullable
+    default ServerNetwork getServerNetwork() {
         return null;
     }
 }

@@ -13,17 +13,17 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateSnapshot;
 import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.core.exceptions.Throwables;
-import org.pnfolder.pnlibrary.core.menu.ClickType;
+import org.pnfolder.pnlibrary.core.menu.session.ClickType;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.data.PluginRow;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Icons;
@@ -32,7 +32,7 @@ import org.pnfolder.pnlibrary.core.menu.style.MenuItems;
 import org.pnfolder.pnlibrary.core.menu.style.Row;
 import org.pnfolder.pnlibrary.core.menu.style.Style;
 import org.pnfolder.pnlibrary.core.menu.style.Tone;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogLabels;
 import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogView;
 
 /** Menu screens for plugin updates and problems. */
@@ -109,6 +109,22 @@ public final class UpdateScreens extends MenuScreens {
                 card(player, product);
             }
         });
+    }
+
+    void forceLibrary(MenuViewer player) {
+        player.close();
+        tell(player, ChatTone.PROGRESS, "Готовлю принудительное обновление pnLibrary…");
+        data().forceLibrary(player.getActor()).whenComplete((version, error) -> sync(() -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            if (error == null) {
+                tell(player, ChatTone.SUCCESS, "Обновление pnLibrary подготовлено.",
+                    "Версия " + version + " применится после перезапуска.");
+            } else {
+                tell(player, ChatTone.FAILURE, "Не удалось подготовить обновление pnLibrary.", Throwables.rootMessage(error));
+            }
+        }));
     }
 
     public void everyone(MenuViewer player, String done, Function<UpdateSnapshot, CompletionStage<?>> change) {

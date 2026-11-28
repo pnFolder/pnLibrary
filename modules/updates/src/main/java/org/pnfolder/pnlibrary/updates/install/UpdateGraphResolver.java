@@ -23,11 +23,11 @@ import org.pnfolder.pnlibrary.common.jvm.JavaRuntime;
 import org.pnfolder.pnlibrary.common.lang.Attempt;
 import org.pnfolder.pnlibrary.common.lang.Failures;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory;
-import org.pnfolder.pnlibrary.updates.engine.FreezeStore;
-import org.pnfolder.pnlibrary.updates.engine.ResolutionResult;
-import org.pnfolder.pnlibrary.updates.engine.ResolverPolicy;
-import org.pnfolder.pnlibrary.updates.engine.UpdateResolver;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPluginInventory;
+import org.pnfolder.pnlibrary.updates.engine.preferences.FreezeStore;
+import org.pnfolder.pnlibrary.updates.engine.resolver.ResolutionResult;
+import org.pnfolder.pnlibrary.updates.engine.resolver.ResolverPolicy;
+import org.pnfolder.pnlibrary.updates.engine.resolver.UpdateResolver;
 import org.pnfolder.pnlibrary.updates.engine.catalog.RefreshMode;
 import org.pnfolder.pnlibrary.updates.engine.catalog.ReleaseCatalog;
 import org.pnfolder.pnlibrary.updates.engine.catalog.CatalogRelease;
@@ -97,6 +97,22 @@ public final class UpdateGraphResolver {
         return new UpdateResolver(ProductId.of(PnLibraryIdentity.PRODUCT_ID)).resolve(
                 installedProducts(registrations), releases, channels, UpdateChannel.STABLE, frozenProducts(),
                 identity.getType(), JavaRuntime.getFeature(), resolverPolicy());
+    }
+
+    /** Looks up only pnLibrary's own catalog for a manual upgrade. */
+    @NotNull
+    public UpdatePlan forceLibrary(@NotNull List<RegisteredUpdate> registrations) {
+        ProductId product = ProductId.of(PnLibraryIdentity.PRODUCT_ID);
+        for (RegisteredUpdate registration : registrations) {
+            if (product.equals(registration.getDescriptor().getId())) {
+                List<ProductRelease> releases = loadReleases(Collections.singletonList(registration), RefreshMode.FORCE_REMOTE);
+                UpdateChannel channel = channelFor(registration);
+                registration.observe(releases, channel);
+                return new UpdateResolver(product).forceLibrary(registration.installedProduct(PnLibraryApi.VERSION),
+                        releases, channel, identity.getType(), JavaRuntime.getFeature());
+            }
+        }
+        throw new IllegalStateException("pnLibrary ещё не зарегистрировалась для обновлений.");
     }
 
     /** The channel of {@code registration}: an administrator's override, the library's own setting, or what the plugin asked for. */

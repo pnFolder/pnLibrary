@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.logging.JulLogObserver;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogSink;
 import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 

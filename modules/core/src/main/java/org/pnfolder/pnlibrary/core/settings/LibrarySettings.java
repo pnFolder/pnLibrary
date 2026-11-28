@@ -17,11 +17,7 @@ import org.pnfolder.pnlibrary.updates.policy.UpdateDefaults;
 public final class LibrarySettings {
     private final boolean privacy;
     private final int historyRetentionDays;
-    private final boolean journalForeignPlugins;
     private final String timeZone;
-    private final String noPermissionMessage;
-    private final boolean downloadsEnabled;
-    private final boolean downloadsAutomatic;
     private final Duration updateCheckInterval;
     private final RestartSettings restart;
 
@@ -29,20 +25,12 @@ public final class LibrarySettings {
     public LibrarySettings(
         boolean privacy,
         int historyRetentionDays,
-        boolean journalForeignPlugins,
         @NotNull String timeZone,
-        @NotNull String noPermissionMessage,
-        boolean downloadsEnabled,
-        boolean downloadsAutomatic,
         @NotNull Duration updateCheckInterval,
         @NotNull RestartSettings restart) {
         this.privacy = privacy;
         this.historyRetentionDays = historyRetentionDays;
-        this.journalForeignPlugins = journalForeignPlugins;
         this.timeZone = Objects.requireNonNull(timeZone, "timeZone");
-        this.noPermissionMessage = Objects.requireNonNull(noPermissionMessage, "noPermissionMessage");
-        this.downloadsEnabled = downloadsEnabled;
-        this.downloadsAutomatic = downloadsAutomatic;
         this.updateCheckInterval = Objects.requireNonNull(updateCheckInterval, "updateCheckInterval");
         this.restart = Objects.requireNonNull(restart, "restart");
     }
@@ -52,11 +40,7 @@ public final class LibrarySettings {
         this(
             false,
             30,
-            false,
             ZoneId.systemDefault().getId(),
-            "Недостаточно прав для этой команды.",
-            true,
-            true,
             UpdateDefaults.CHECK_INTERVAL,
             new RestartSettings());
     }
@@ -71,29 +55,9 @@ public final class LibrarySettings {
         return historyRetentionDays;
     }
 
-    /** Whether warnings and errors of plugins that are not connected to pnLibrary go to the journal too. */
-    public boolean getJournalForeignPlugins() {
-        return journalForeignPlugins;
-    }
-
     /** Zone id used for every time pnLibrary shows. */
     public @NotNull String getTimeZone() {
         return timeZone;
-    }
-
-    /** What a player sees without the permission for a command. */
-    public @NotNull String getNoPermissionMessage() {
-        return noPermissionMessage;
-    }
-
-    /** Whether plugins may download files through pnLibrary at all. */
-    public boolean getDownloadsEnabled() {
-        return downloadsEnabled;
-    }
-
-    /** Whether downloads that a plugin starts itself, without a command, are allowed. */
-    public boolean getDownloadsAutomatic() {
-        return downloadsAutomatic;
     }
 
     /** How often the release catalogs are asked for new versions. */
@@ -107,62 +71,29 @@ public final class LibrarySettings {
     }
 
     public @NotNull LibrarySettings withRestart(@NotNull RestartSettings value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, updateCheckInterval,
+        return new LibrarySettings(privacy, historyRetentionDays, timeZone, updateCheckInterval,
             value);
     }
 
     public @NotNull LibrarySettings withPrivacy(boolean value) {
-        return new LibrarySettings(value, historyRetentionDays, journalForeignPlugins, timeZone,
-            noPermissionMessage, downloadsEnabled,
-            downloadsAutomatic, updateCheckInterval,
+        return new LibrarySettings(value, historyRetentionDays, timeZone,
+            updateCheckInterval,
             restart);
     }
 
     public @NotNull LibrarySettings withHistoryRetentionDays(int value) {
-        return new LibrarySettings(privacy, value, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled,
-            downloadsAutomatic, updateCheckInterval,
-            restart);
-    }
-
-    public @NotNull LibrarySettings withJournalForeignPlugins(boolean value) {
-        return new LibrarySettings(privacy, historyRetentionDays, value, timeZone, noPermissionMessage,
-            downloadsEnabled,
-            downloadsAutomatic, updateCheckInterval,
+        return new LibrarySettings(privacy, value, timeZone, updateCheckInterval,
             restart);
     }
 
     public @NotNull LibrarySettings withTimeZone(@NotNull String value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, value,
-            noPermissionMessage, downloadsEnabled,
-            downloadsAutomatic, updateCheckInterval,
-            restart);
-    }
-
-    public @NotNull LibrarySettings withNoPermissionMessage(@NotNull String value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, value,
-            downloadsEnabled,
-            downloadsAutomatic, updateCheckInterval,
-            restart);
-    }
-
-    public @NotNull LibrarySettings withDownloadsEnabled(boolean value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone,
-            noPermissionMessage, value,
-            downloadsAutomatic, updateCheckInterval,
-            restart);
-    }
-
-    public @NotNull LibrarySettings withDownloadsAutomatic(boolean value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, value, updateCheckInterval,
+        return new LibrarySettings(privacy, historyRetentionDays, value,
+            updateCheckInterval,
             restart);
     }
 
     public @NotNull LibrarySettings withUpdateCheckInterval(@NotNull Duration value) {
-        return new LibrarySettings(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, value,
+        return new LibrarySettings(privacy, historyRetentionDays, timeZone, value,
             restart);
     }
 
@@ -171,8 +102,6 @@ public final class LibrarySettings {
         return PnLibraryConfig.builder()
             .historyRetentionDays(historyRetentionDays)
             .privacy(privacy)
-            .noPermissionMessage(noPermissionMessage)
-            .journalForeignPlugins(journalForeignPlugins)
             .timeZone(timeZone)
             .upload(true)
             .build();
@@ -186,19 +115,14 @@ public final class LibrarySettings {
         LibrarySettings that = (LibrarySettings) other;
         return privacy == that.privacy
             && historyRetentionDays == that.historyRetentionDays
-            && journalForeignPlugins == that.journalForeignPlugins
             && timeZone.equals(that.timeZone)
-            && noPermissionMessage.equals(that.noPermissionMessage)
-            && downloadsEnabled == that.downloadsEnabled
-            && downloadsAutomatic == that.downloadsAutomatic
             && updateCheckInterval.equals(that.updateCheckInterval)
             && restart.equals(that.restart);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(privacy, historyRetentionDays, journalForeignPlugins, timeZone, noPermissionMessage,
-            downloadsEnabled, downloadsAutomatic, updateCheckInterval,
+        return Objects.hash(privacy, historyRetentionDays, timeZone, updateCheckInterval,
             restart);
     }
 
@@ -206,11 +130,7 @@ public final class LibrarySettings {
     public String toString() {
         return "LibrarySettings(privacy=" + privacy + ", "
             + "historyRetentionDays=" + historyRetentionDays + ", "
-            + "journalForeignPlugins=" + journalForeignPlugins + ", "
             + "timeZone=" + timeZone + ", "
-            + "noPermissionMessage=" + noPermissionMessage + ", "
-            + "downloadsEnabled=" + downloadsEnabled + ", "
-            + "downloadsAutomatic=" + downloadsAutomatic + ", "
             + "updateCheckInterval=" + updateCheckInterval + ", "
             + "restart=" + restart + ")";
     }

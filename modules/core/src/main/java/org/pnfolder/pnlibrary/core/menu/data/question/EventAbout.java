@@ -3,7 +3,7 @@ package org.pnfolder.pnlibrary.core.menu.data.question;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.core.menu.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
 
 /** What an event is for, how to use it, and which plugin owns it. */
 public final class EventAbout {

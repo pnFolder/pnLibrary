@@ -102,7 +102,7 @@ class DownloadServiceTest {
 
         try (DownloadService service = manager(payload, true, null, null, Collections.emptyMap(),
             PlatformType.BUKKIT)) {
-            DownloadRegistration registration = service.registerDependencies(new Object(),
+            DownloadRegistration registration = service.registerDependencies(new Object(), "main",
                 only(vault("https://example.org/download")));
             registration.downloadNow().toCompletableFuture().get(5, TimeUnit.SECONDS);
             assertArrayEquals(payload, Files.readAllBytes(directory.resolve("plugins/update/Vault.jar")));
@@ -117,7 +117,7 @@ class DownloadServiceTest {
 
         try (DownloadService service = manager(pluginJar(entries), true, null, null,
             Collections.emptyMap(), PlatformType.BUNGEECORD)) {
-            DownloadRegistration registration = service.registerDependencies(new Object(),
+            DownloadRegistration registration = service.registerDependencies(new Object(), "main",
                 only(vault("https://example.org/Vault.jar")));
             assertEquals(DownloadState.FAILED,
                 registration.downloadNow().toCompletableFuture().get(5, TimeUnit.SECONDS).get(0).getState());
@@ -128,7 +128,7 @@ class DownloadServiceTest {
     void dependencyDownloadRejectsAJarWhoseDeclaredPluginIdentityDoesNotMatch() throws Exception {
         try (DownloadService service = manager(pluginJar("NotVault", "1.7.3"), true, null, null,
             Collections.emptyMap(), PlatformType.BUKKIT)) {
-            DownloadRegistration registration = service.registerDependencies(new Object(),
+            DownloadRegistration registration = service.registerDependencies(new Object(), "main",
                 only(vault("https://example.org/Vault.jar")));
             List<DownloadSnapshot> snapshots = registration.downloadNow().toCompletableFuture().join();
             assertEquals(DownloadState.FAILED, snapshots.get(0).getState());
@@ -140,7 +140,7 @@ class DownloadServiceTest {
     void dependencyAtMinimumVersionIsNotDownloadedAgain() throws Exception {
         try (DownloadService service = manager(pluginJar("Vault", "1.7.3"), true, null, null,
             Collections.singletonMap("Vault", "1.7.3"), PlatformType.BUKKIT)) {
-            assertNull(service.registerDependencies(new Object(), only(vault("https://example.org/Vault.jar"))));
+            assertNull(service.registerDependencies(new Object(), "main", only(vault("https://example.org/Vault.jar"))));
         }
     }
 
@@ -227,7 +227,7 @@ class DownloadServiceTest {
         };
         LibraryPaths paths = new LibraryPaths(directory.resolve("plugins/pnLibrary"));
         return new DownloadService(platform, platform, platform, platform, platform, paths,
-            () -> new DownloadConfiguration().withAutomatic(automatic), http);
+            DownloadConfiguration::new, http);
     }
 
     private static String descriptorOf(PlatformType type) {

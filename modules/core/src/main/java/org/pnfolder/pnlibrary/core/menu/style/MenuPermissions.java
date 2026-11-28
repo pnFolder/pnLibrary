@@ -19,6 +19,7 @@ public final class MenuPermissions {
     public static final String MODULES = "pnlibrary.modules";
     public static final String STATS = "pnlibrary.stats";
     public static final String PLACEHOLDERS = "pnlibrary.placeholders";
+    public static final String CHANNELS = "pnlibrary.channels";
     public static final String ACTIONS = "pnlibrary.actions";
     public static final String DEBUG = "pnlibrary.debug";
     public static final String CURRENCY_LIST = "pnlibrary.currency.list";
@@ -26,7 +27,7 @@ public final class MenuPermissions {
 
     public static final List<String> ALL = Collections.unmodifiableList(Arrays.asList(
         ADMIN, SERVERS, UPDATES_VIEW, UPDATES_DOWNLOAD, UPDATES_ROLLBACK, UPDATES_SETTINGS, UPDATES_RESTART,
-        EVENTS_VIEW, EVENTS_BUS, TASKS, MODULES, STATS, PLACEHOLDERS, ACTIONS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS));
+        EVENTS_VIEW, EVENTS_BUS, TASKS, MODULES, STATS, PLACEHOLDERS, CHANNELS, ACTIONS, DEBUG, CURRENCY_LIST, LIBRARY_SETTINGS));
 
     private MenuPermissions() {
     }

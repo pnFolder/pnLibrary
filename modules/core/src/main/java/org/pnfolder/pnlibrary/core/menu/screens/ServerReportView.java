@@ -4,7 +4,7 @@ import org.pnfolder.pnlibrary.api.updates.state.UpdateState;
 import org.pnfolder.pnlibrary.core.link.report.NetworkServer;
 import org.pnfolder.pnlibrary.core.link.report.LinkPlugin;
 import org.pnfolder.pnlibrary.core.link.report.LinkReport;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogLabels;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogLabels;
 
 /** What the network screen shows about one server, counted from its report. */
 final class LinkReportView {

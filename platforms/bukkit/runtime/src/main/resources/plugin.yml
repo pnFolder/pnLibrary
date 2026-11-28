@@ -36,6 +36,9 @@ permissions:
   pnlibrary.placeholders:
     description: 'Смотреть и проверять плейсхолдеры (/pn placeholders)'
     default: op
+  pnlibrary.channels:
+    description: 'Смотреть каналы сообщений прокси и сервера (/pnproxy channels, /pn channels)'
+    default: op
   pnlibrary.actions:
     description: 'Смотреть именованные действия, требования и функции плагинов (/pn actions)'
     default: op
@@ -50,6 +53,12 @@ permissions:
     default: op
   pnlibrary.servers:
     description: 'Серверы сети и удалённые действия обновлений (/pn servers)'
+    default: op
+  pnlibrary.servers.manage:
+    description: 'Добавлять и убирать серверы на прокси, пока он работает (/pnproxy servers add|remove)'
+    default: op
+  pnlibrary.servers.send:
+    description: 'Перемещать игроков между серверами сети (/pnproxy servers send|sendall)'
     default: op
   pnlibrary.currency.list:
     description: 'Список валют (/pn money list)'

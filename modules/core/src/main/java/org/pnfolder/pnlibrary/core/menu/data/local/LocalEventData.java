@@ -10,7 +10,7 @@ import org.pnfolder.pnlibrary.api.events.inspect.ListenerInfo;
 import org.pnfolder.pnlibrary.api.events.inspect.history.EventDay;
 import org.pnfolder.pnlibrary.api.events.inspect.trace.EventTrace;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
-import org.pnfolder.pnlibrary.core.menu.PluginDirectory;
+import org.pnfolder.pnlibrary.core.menu.owner.PluginDirectory;
 
 /** The event-bus facts of {@link LocalMenuData}. */
 final class LocalEventData {

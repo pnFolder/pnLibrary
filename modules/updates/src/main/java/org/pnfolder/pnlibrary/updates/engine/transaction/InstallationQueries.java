@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.updates.engine.transaction;
 
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournalRepository;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

@@ -28,9 +28,9 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionArtifact;
 import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionResult;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
-import org.pnfolder.pnlibrary.updates.history.ConfigurationSnapshots;
+import org.pnfolder.pnlibrary.updates.history.configuration.ConfigurationSnapshots;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
-import org.pnfolder.pnlibrary.updates.service.UpdateInstallationLock;
+import org.pnfolder.pnlibrary.updates.service.orchestrator.UpdateInstallationLock;
 
 /** Executed by distribution:verifyUpdaterProcess against the real shaded executable JAR. */
 class OfflineUpdaterJarTest {

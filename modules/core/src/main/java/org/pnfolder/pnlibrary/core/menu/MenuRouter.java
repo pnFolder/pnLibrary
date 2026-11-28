@@ -1,5 +1,8 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import java.util.Objects;
 import java.time.Duration;
 import java.util.List;
@@ -30,6 +33,7 @@ import org.pnfolder.pnlibrary.core.menu.screens.config.LibrarySettingsScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.ModuleScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.NetworkScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.NoticeScreens;
+import org.pnfolder.pnlibrary.core.menu.screens.ChannelScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.PlaceholderScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.config.SettingsScreens;
 import org.pnfolder.pnlibrary.core.menu.screens.StatsScreens;
@@ -56,6 +60,7 @@ public final class MenuRouter implements MenuRoutes {
     private final GroupScreens groupScreens;
     private final StatsScreens statsScreens;
     private final PlaceholderScreens placeholderScreens;
+    private final ChannelScreens channelScreens;
     private final ActionScreens actionScreens;
     private final BusScreens busScreens;
     private final BusHistoryScreens busHistoryScreens;
@@ -79,6 +84,7 @@ public final class MenuRouter implements MenuRoutes {
         this.groupScreens = new GroupScreens(session, this);
         this.statsScreens = new StatsScreens(session, this);
         this.placeholderScreens = new PlaceholderScreens(session, this);
+        this.channelScreens = new ChannelScreens(session, this);
         this.actionScreens = new ActionScreens(session, this);
         this.busScreens = new BusScreens(session, this);
         this.busHistoryScreens = new BusHistoryScreens(session, this);
@@ -219,6 +225,11 @@ public final class MenuRouter implements MenuRoutes {
     @Override
     public @NotNull List<Fact> ownerParameters(@Nullable OwnerInfo owner) {
         return taskScreens.ownerParameters(owner);
+    }
+
+    @Override
+    public void channels(@NotNull MenuViewer player, int page) {
+        channelScreens.channels(player, page);
     }
 
     @Override

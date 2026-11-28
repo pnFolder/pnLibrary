@@ -127,7 +127,7 @@ public final class PluginRegistryFixture {
         return new LoadedPlugins(platform, identity, new RemotePolicyMonitor(platform, platform, new RemotePolicyNoticeRenderer(platform)),
             events, tasks, new ServiceRegistry(), logging, metrics, emptyProxy(DiagnosticsService.class), updates,
             new SharedFeatures(new PlaceholderEngine(), new CurrencyFeature(), expansions, libraryExpansions),
-            new YamlConfigurations(platform), commands, downloadService, libraryVersion, new ModulePreferences(), libraryFetcher);
+            new YamlConfigurations(platform), commands, downloadService, libraryVersion, new ModulePreferences(), libraryFetcher, platform);
     }
 
     private static PlatformIdentity withMinecraftVersion(PlatformAdapter platform, String version) {
@@ -151,26 +151,34 @@ public final class PluginRegistryFixture {
         return (plugin != null ? plugin : registry.register(owner)).registerModule(id, configure);
     }
 
+    /** Every owner gets its own plugin ID (`example`, `example-2`, ...), as real platforms never give two plugins one name. */
     public static PlatformAdapter platform() {
+        Map<Object, Integer> numbers = new java.util.IdentityHashMap<>();
+        return (PlatformAdapter) Proxy.newProxyInstance(PlatformAdapter.class.getClassLoader(), new Class<?>[] {PlatformAdapter.class},
+            (proxy, method, args) -> {
+                switch (method.getName()) {
+                    case "getType":
+                        return PlatformType.BUKKIT;
+                    case "getImplementationName":
+                        return "Paper";
+                    case "acceptsOwner":
+                        return true;
+                    case "ownerDetails":
+                        return details(numbers, args[0]);
+                    default:
+                        return null;
+                }
+            });
+    }
+
+    private static synchronized Map<String, String> details(Map<Object, Integer> numbers, Object owner) {
+        int number = numbers.computeIfAbsent(owner, key -> numbers.size() + 1);
         Map<String, String> details = new HashMap<>();
-        details.put("id", "example");
+        details.put("id", number == 1 ? "example" : "example-" + number);
         details.put("name", "Example");
         details.put("version", "1.0.0");
         details.put("authors", "pnFolder");
-        return proxy(PlatformAdapter.class, name -> {
-            switch (name) {
-                case "getType":
-                    return PlatformType.BUKKIT;
-                case "getImplementationName":
-                    return "Paper";
-                case "acceptsOwner":
-                    return true;
-                case "ownerDetails":
-                    return details;
-                default:
-                    return null;
-            }
-        });
+        return details;
     }
 
     public static LoggingService loggingService() {

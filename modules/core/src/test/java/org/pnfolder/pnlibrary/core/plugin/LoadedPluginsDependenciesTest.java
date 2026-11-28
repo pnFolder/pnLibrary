@@ -41,7 +41,7 @@ class LoadedPluginsDependenciesTest {
         FileDownloads request = FileDownloads.builder().dataDirectory(Paths.get("plugins/example"))
             .file("asset", it -> it.url("https://example.org/asset.bin").destination(DownloadDestination.DATA_FOLDER, "asset.bin"))
             .build();
-        when(downloads.registerDependencies(owner, Collections.emptyList())).thenReturn(dependencyRegistration);
+        when(downloads.registerDependencies(org.mockito.ArgumentMatchers.eq(owner), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(Collections.emptyList()))).thenReturn(dependencyRegistration);
         when(downloads.register(owner, request)).thenThrow(failure);
         LoadedPlugins registry = PluginRegistryFixture.builder().downloadService(downloads).build();
 

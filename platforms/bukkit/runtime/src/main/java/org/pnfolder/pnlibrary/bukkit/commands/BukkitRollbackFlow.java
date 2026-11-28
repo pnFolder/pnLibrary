@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.bukkit.command.CommandSender;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.api.updates.state.UpdatePlanSnapshot;

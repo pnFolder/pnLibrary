@@ -19,7 +19,7 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.common.io.AtomicFiles;
 import org.pnfolder.pnlibrary.common.io.TextFiles;
-import org.pnfolder.pnlibrary.updates.engine.UpdatePreferencesStore;
+import org.pnfolder.pnlibrary.updates.engine.preferences.UpdatePreferencesStore;
 
 /**
  * Moves the state of older versions, which lay directly in the plugin folder, into {@code data}, and merges the two

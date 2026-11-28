@@ -1,10 +1,11 @@
 package org.pnfolder.pnlibrary.core.plugin;
 
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
@@ -25,6 +26,7 @@ import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
  * registry was built from and the state it guards. {@code plugins} is also the lock of every registration and removal.
  */
 final class ModuleHost {
+    final PlatformOwnership ownership;
     final PlatformIdentity identity;
     final ModulePreferences preferences;
     final LibraryFetcher libraryFetcher;
@@ -40,14 +42,15 @@ final class ModuleHost {
     final ModuleDependencyValidator dependencyValidator;
     final Map<Object, LoadedPlugin> plugins = new IdentityHashMap<>();
     final Map<String, ProductDescriptor> productDescriptors = new LinkedHashMap<>();
+    final @Nullable PlatformLogging console;
     final AtomicBoolean closed = new AtomicBoolean(false);
-    final AtomicLong registrationSequence = new AtomicLong();
 
-    ModuleHost(PlatformIdentity identity, ModulePreferences preferences, LibraryFetcher libraryFetcher,
+    ModuleHost(PlatformOwnership ownership, PlatformIdentity identity, ModulePreferences preferences, LibraryFetcher libraryFetcher,
                RemotePolicyMonitor remotePolicies, SharedFeatures shared, LoggingService logging, DiagnosticsService diagnostics,
                @Nullable CommandService commands, ScenarioDefinitions scenarios, ModuleProductResolver productResolver,
                ModuleMetadataFactory metadataFactory, ModuleResourceFactory resourceFactory,
-               ModuleDependencyValidator dependencyValidator) {
+               ModuleDependencyValidator dependencyValidator, @Nullable PlatformLogging console) {
+        this.ownership = ownership;
         this.identity = identity;
         this.preferences = preferences;
         this.libraryFetcher = libraryFetcher;
@@ -61,6 +64,7 @@ final class ModuleHost {
         this.metadataFactory = metadataFactory;
         this.resourceFactory = resourceFactory;
         this.dependencyValidator = dependencyValidator;
+        this.console = console;
     }
 
     LoadedPlugin detachPlugin(Object owner) {

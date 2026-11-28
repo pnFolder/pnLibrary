@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.session.ClickType;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.click;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.plain;
 import static org.pnfolder.pnlibrary.core.menu.MenuTestSupport.slotNamed;

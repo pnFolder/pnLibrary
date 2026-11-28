@@ -44,7 +44,7 @@ public final class ExperienceRequirement implements Requirement {
     @NotNull
     @Override
     public Verdict test(@NotNull RequirementContext context) {
-        Double have = level ? context.getPlayer().experienceLevel() : context.getPlayer().experiencePoints();
+        Double have = level ? context.getPlayer().getExperienceLevel() : context.getPlayer().getExperiencePoints();
         if (have == null) {
             return new Verdict.Unmet("experience is not available here");
         }

@@ -28,7 +28,7 @@ import org.pnfolder.pnlibrary.api.tasks.TaskScope;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskExecution;
 import org.pnfolder.pnlibrary.api.tasks.spec.TaskSpec;
 import org.pnfolder.pnlibrary.spi.platform.PlatformExecution;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerControl;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerControl;
 
 /** Periodically evaluates a remote policy and stops the module or plugin when the policy denies it. */
 public final class RemotePolicyMonitor {

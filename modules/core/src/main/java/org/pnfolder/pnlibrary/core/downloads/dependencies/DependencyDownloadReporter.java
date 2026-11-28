@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.downloads.FileDownload;
 import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.runtime.PnLibraryIdentity;
@@ -17,14 +17,15 @@ import org.pnfolder.pnlibrary.console.ConsoleTree;
 import org.pnfolder.pnlibrary.core.downloads.DownloadFailureDetails;
 import org.pnfolder.pnlibrary.core.downloads.DownloadFailureInterpreter;
 import org.pnfolder.pnlibrary.core.text.ConsoleStyle;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerMetadata;
 
 /** Reports dependency downloads to the console: failures with advice, staged files and dependencies confirmed after a restart. */
 public final class DependencyDownloadReporter {
     private final PlatformLogging logging;
     private final PlatformOwnerMetadata ownership;
     private final String root;
+    private final DependencyModules modules;
 
     /** Reports with the control command {@code pn}. */
     public DependencyDownloadReporter(@NotNull PlatformLogging logging, @NotNull PlatformOwnerMetadata ownership) {
@@ -37,6 +38,13 @@ public final class DependencyDownloadReporter {
      */
     public DependencyDownloadReporter(@NotNull PlatformLogging logging, @NotNull PlatformOwnerMetadata ownership,
                                       @NotNull String root) {
+        this(logging, ownership, root, new DependencyModules());
+    }
+
+    /** The same, naming the modules that declared the dependencies as {@code modules} knows them. */
+    public DependencyDownloadReporter(@NotNull PlatformLogging logging, @NotNull PlatformOwnerMetadata ownership,
+                                      @NotNull String root, @NotNull DependencyModules modules) {
+        this.modules = Objects.requireNonNull(modules, "modules");
         this.logging = Objects.requireNonNull(logging, "logging");
         this.ownership = Objects.requireNonNull(ownership, "ownership");
         this.root = root;
@@ -46,13 +54,14 @@ public final class DependencyDownloadReporter {
     public void failure(@NotNull Object owner, @NotNull Throwable error, @NotNull LogLevel level) {
         DownloadFailureDetails details = DownloadFailureInterpreter.explain(error);
         ConsoleCard.builder(ConsoleStyle.theme(ChatTone.FAILURE), "ЗАВИСИМОСТЬ НЕ ПОДГОТОВЛЕНА")
-            .mascot("x.x", ownerName(owner), details.getHeadline())
+            .owner("x.x", ownerName(owner), modules.of(owner), ownerVersion(owner), details.getHeadline())
             .blank()
             .tree(ConsoleTree.builder("Причина").child(details.getReason()).build())
             .blank()
             .tree(ConsoleTree.builder("Что может сделать пользователь").child(details.getUserAction()).build())
             .blank()
             .tree(ConsoleTree.builder("Что сообщить разработчику").child(details.getDeveloperAction()).build())
+            .support(PnLibraryIdentity.SUPPORT_URL)
             .blank()
             .status("Файл не установлен")
             .build()
@@ -71,11 +80,12 @@ public final class DependencyDownloadReporter {
             (item.getRequired() ? needed : optional).add(item);
         }
         ConsoleCard.Builder card = ConsoleCard.builder(ConsoleStyle.theme(ChatTone.WARNING), "НЕ ХВАТАЕТ ПЛАГИНОВ")
-            .mascot("o.o", group.getOwner(), "нужны другие плагины")
+            .owner("o.o", group.getOwner(), modules.of(owner), ownerVersion(owner), "нужны другие плагины")
             .blank();
         addList(card, "Обязательные", needed);
         addList(card, "Необязательные", optional);
-        card.tree(nextSteps(group, command, installingNow)).blank()
+        card.tree(nextSteps(group, command, installingNow))
+            .support(PnLibraryIdentity.SUPPORT_URL).blank()
             .status(needed.isEmpty()
                 ? "Без них " + group.getOwner() + " работает, но без части возможностей"
                 : "Без них " + group.getOwner() + " работает не полностью")
@@ -94,7 +104,7 @@ public final class DependencyDownloadReporter {
             files.child(Paths.get(declaration.getRelativePath()).getFileName().toString());
         }
         ConsoleCard.builder(ConsoleStyle.theme(ChatTone.SUCCESS), "ЗАВИСИМОСТИ ПОДГОТОВЛЕНЫ")
-            .mascot("^.^", ownerName(owner), "файлы готовы к запуску")
+            .owner("^.^", ownerName(owner), modules.of(owner), ownerVersion(owner), "файлы готовы к запуску")
             .blank()
             .tree(files.build())
             .blank()
@@ -102,6 +112,7 @@ public final class DependencyDownloadReporter {
                 .child("Перезапусти сервер")
                 .child("Плагины загрузятся при следующем запуске")
                 .build())
+            .support(PnLibraryIdentity.SUPPORT_URL)
             .blank()
             .status("Загрузка завершена")
             .build()
@@ -115,9 +126,10 @@ public final class DependencyDownloadReporter {
             tree.child(dependency.getName() + " " + dependency.getVersion());
         }
         ConsoleCard.builder(ConsoleStyle.theme(ChatTone.SUCCESS), "ЗАВИСИМОСТИ ПОДКЛЮЧЕНЫ")
-            .mascot("^.^", ownerName(owner), "сервер успешно перезапущен")
+            .owner("^.^", ownerName(owner), modules.of(owner), ownerVersion(owner), "сервер успешно перезапущен")
             .blank()
             .tree(tree.build())
+            .support(PnLibraryIdentity.SUPPORT_URL)
             .blank()
             .status("Зависимости загружены и работают")
             .build()
@@ -140,7 +152,7 @@ public final class DependencyDownloadReporter {
         if (installingNow) {
             tree.child("Скачиваю сам, это займёт несколько секунд; потом перезапустите сервер");
         } else if (group.getInstallable()) {
-            tree.child("Вставьте в консоль: " + command).child("Или включите автозагрузку: " + root + " deps auto on");
+            tree.child("Вставьте в консоль: " + command);
         } else {
             tree.child("Скачайте по ссылкам выше и положите в папку plugins");
         }
@@ -183,6 +195,10 @@ public final class DependencyDownloadReporter {
             names.append(item.getPlugin());
         }
         return names.toString();
+    }
+
+    private String ownerVersion(Object owner) {
+        return ownership.ownerDetails(owner).get("version");
     }
 
     private String ownerName(Object owner) {

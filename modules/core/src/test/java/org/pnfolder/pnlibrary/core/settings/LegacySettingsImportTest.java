@@ -67,8 +67,6 @@ class LegacySettingsImportTest {
         assertTrue(settings.getPrivacy());
         assertEquals(60, settings.getHistoryRetentionDays());
         assertEquals("Europe/Moscow", settings.getTimeZone());
-        assertEquals("Нельзя", settings.getNoPermissionMessage());
-        assertFalse(DownloadConfiguration.of(settings).isAutomatic());
         assertEquals(new HashSet<>(Arrays.asList(DownloadDestination.DATA_FOLDER, DownloadDestination.CACHE)),
             DownloadConfiguration.of(settings).getDestinations());
         assertFalse(Files.exists(paths().getLegacyConfig()));
@@ -81,8 +79,7 @@ class LegacySettingsImportTest {
                 changed.add(value.getSpec().getKey());
             }
         }
-        assertEquals(new HashSet<>(Arrays.asList("privacy", "history-retention-days", "time-zone",
-            "no-permission-message", "downloads.automatic")), changed);
+        assertEquals(new HashSet<>(Arrays.asList("privacy", "history-retention-days", "time-zone")), changed);
 
         SettingsStore again = new SettingsStore(paths().getSettings());
         new LegacySettingsImport(paths()).run(again);
@@ -90,13 +87,13 @@ class LegacySettingsImportTest {
     }
 
     @Test
-    void theDownloadChoiceMadeInGameBeatsTheOldFileAndIsRemoved() throws IOException {
+    void theOldDownloadChoiceMeansNothingAnyMoreAndIsRemoved() throws IOException {
         write(paths().getLegacyDownloadsConfig(), "automatic: true\n");
         write(paths().getDownloads().resolve("preferences.state"), "automatic=false\n");
 
         SettingsStore store = importAll();
 
-        assertFalse(store.current().getDownloadsAutomatic());
+        assertEquals(new LibrarySettings(), store.current());
         assertFalse(Files.exists(paths().getDownloads().resolve("preferences.state")));
     }
 

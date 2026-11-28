@@ -18,6 +18,7 @@ public final class MenuCalls {
     public static final String BACKUPS = "backups";
     public static final String CHECK_ALL = "checkAll";
     public static final String CHECK_ONE = "checkOne";
+    public static final String FORCE_LIBRARY = "forceLibrary";
     public static final String SET_CHANNEL = "setChannel";
     public static final String SET_JAVA_BUILD = "setJavaBuild";
     public static final String SET_HELD = "setHeld";
@@ -49,6 +50,7 @@ public final class MenuCalls {
     public static final String OWNER_NAMED = "ownerNamed";
     public static final String COMMAND = "command";
     public static final String GROUPS = "groups";
+    public static final String CHANNELS = "channels";
     public static final String EDIT_GROUP = "editGroup";
     public static final String SETTINGS = "settings";
     public static final String CHANGE_SETTING = "changeSetting";
@@ -57,7 +59,7 @@ public final class MenuCalls {
     public static final Set<String> READS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         GROUPS, VERSION, SNAPSHOTS, SNAPSHOT, PLUGINS, PLAN, HELD_UNTIL, HISTORY_COUNT, HISTORY_PAGE, BACKUPS,
         JOURNAL_GROUPS, JOURNAL_DETAIL, TASKS, MODULES, LIBRARIES, DISK, STATS, PLACEHOLDERS,
-        SCENARIO_DEFINITIONS, SETTINGS, EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS,
+        SCENARIO_DEFINITIONS, CHANNELS, SETTINGS, EVENTS, LISTENERS, EVENT_HISTORY, EVENT_HISTORY_DAYS, TRACED_EVENTS,
         TRACES, EVENT_ABOUT, OWNER_NAMED)));
 
     private MenuCalls() {

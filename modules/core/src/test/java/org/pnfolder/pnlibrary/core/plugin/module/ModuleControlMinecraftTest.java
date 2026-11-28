@@ -32,14 +32,13 @@ class ModuleControlMinecraftTest {
         LoadedPlugins registry = registryOn("1.21.11");
 
         ModuleContext context = registry.register(new Object()).registerModule("shop", new Hooked(),
-            it -> it.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4)));
+            it -> it.minecraft(mc -> mc.versions(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_20_4))));
         // the version 1.21.11 is newer than 1.20.4: the default only warns
         assertEquals(ModuleState.ENABLED, context.getControl().getState());
         assertEquals(MinecraftSupport.NEWER_THAN_DECLARED, context.getMinecraft().getSupport());
 
         ModuleContext strict = registry.register(new Object()).registerModule("strict", new Hooked(), it -> {
-            it.supportedMinecraft(MinecraftVersions.only("1.20.1"));
-            it.onNewerMinecraft(NewerAction.BLOCK);
+            it.minecraft(mc -> mc.versions(MinecraftVersions.only("1.20.1")).whenNewer(NewerAction.BLOCK));
         });
         assertEquals(ModuleState.DISABLED, strict.getControl().getState());
         assertTrue(strict.getMinecraft().isBlocked());
@@ -56,14 +55,12 @@ class ModuleControlMinecraftTest {
         LoadedPlugins registry = registryOn("1.12.2");
 
         assertThrows(IllegalStateException.class, () -> registry.register(new Object()).registerModule("plain",
-            it -> it.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_16_5))));
+            it -> it.minecraft(mc -> mc.versions(MinecraftVersions.from(MinecraftVersion.V1_16_5)))));
         assertThrows(IllegalStateException.class, () -> registry.register(new Object()).registerModule("stop", new Hooked(), it -> {
-            it.supportedMinecraft(MinecraftVersions.from("1.16.5"));
-            it.onUnsupportedMinecraft(UnsupportedAction.STOP_PLUGIN);
+            it.minecraft(mc -> mc.versions(MinecraftVersions.from("1.16.5")).whenOlder(UnsupportedAction.STOP_PLUGIN));
         }));
         ModuleContext warned = registry.register(new Object()).registerModule("soft", new Hooked(), it -> {
-            it.supportedMinecraft(MinecraftVersions.from("1.16.5"));
-            it.onUnsupportedMinecraft(UnsupportedAction.WARN_ONLY);
+            it.minecraft(mc -> mc.versions(MinecraftVersions.from("1.16.5")).whenOlder(UnsupportedAction.WARN_ONLY));
         });
         assertEquals(ModuleState.ENABLED, warned.getControl().getState());
         registry.close();
@@ -73,15 +70,28 @@ class ModuleControlMinecraftTest {
     void aModuleWithoutItsOwnVersionsUsesThePlugins() {
         LoadedPlugins registry = registryOn("1.12.2");
         PluginRegistration plugin = registry.register(new Object());
-        plugin.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_16_5));
+        plugin.minecraft(mc -> mc.versions(MinecraftVersions.from(MinecraftVersion.V1_16_5)));
 
         ModuleContext inherited = plugin.registerModule("a", new Hooked(), it -> { });
         ModuleContext own = plugin.registerModule("b", new Hooked(),
-            it -> it.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2)));
+            it -> it.minecraft(mc -> mc.versions(MinecraftVersions.between(MinecraftVersion.V1_8_8, MinecraftVersion.V1_12_2))));
 
         assertEquals(ModuleState.DISABLED, inherited.getControl().getState());
         assertEquals("1.16.5+", inherited.getMinecraft().getDeclared());
         assertEquals(ModuleState.ENABLED, own.getControl().getState());
+        registry.close();
+    }
+
+    @Test
+    void severalVersionsCallsAddUpInsteadOfReplacingEachOther() {
+        LoadedPlugins registry = registryOn("1.12.2");
+
+        ModuleContext both = registry.register(new Object()).registerModule("both", new Hooked(),
+            it -> it.minecraft(mc -> mc.versions(MinecraftVersions.from(MinecraftVersion.V1_16_5))
+                .versions(MinecraftVersions.only("1.12.2"))));
+
+        assertEquals(ModuleState.ENABLED, both.getControl().getState());
+        assertEquals(MinecraftSupport.SUPPORTED, both.getMinecraft().getSupport());
         registry.close();
     }
 }

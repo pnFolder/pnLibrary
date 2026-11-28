@@ -1,5 +1,6 @@
 package org.pnfolder.pnlibrary.spi.platform;
 
+import org.pnfolder.pnlibrary.spi.platform.diagnostics.DiagnosticSections;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;

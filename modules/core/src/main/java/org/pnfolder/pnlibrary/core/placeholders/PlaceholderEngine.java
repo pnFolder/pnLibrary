@@ -183,6 +183,10 @@ public final class PlaceholderEngine implements PlaceholderAdapterRegistry {
         adapters.reconcile();
     }
 
+    void requireFreeSlot(String owner, int incoming) {
+        groups.requireFreeSlot(owner, incoming);
+    }
+
     void remove(PlaceholderEntry entry) {
         groups.remove(entry);
         adapters.reconcile();

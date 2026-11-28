@@ -12,6 +12,7 @@ import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
 import org.pnfolder.pnlibrary.core.link.Link;
 import org.pnfolder.pnlibrary.core.link.LinkEntry;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
+import org.pnfolder.pnlibrary.core.link.wire.LinkHello;
 
 /** The proxy end that builds the signed network map sent to every game server. */
 public final class NetworkPublisher {
@@ -47,6 +48,11 @@ public final class NetworkPublisher {
         this.platform = platform;
         this.players = players;
         this.key = link.getKey();
+    }
+
+    /** The hello to send now; the same bytes go to every server. */
+    public @NotNull byte[] hello() {
+        return LinkCodec.encodeHello(LinkHello.current(LinkHello.PROXY, library.getVersion(), Instant.now()), key);
     }
 
     /** The message to send now; the same bytes go to every server. */

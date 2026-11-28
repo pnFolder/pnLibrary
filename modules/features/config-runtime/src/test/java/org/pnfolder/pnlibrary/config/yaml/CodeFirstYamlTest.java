@@ -21,8 +21,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pnfolder.pnlibrary.api.config.ConfigCodec;
 import org.pnfolder.pnlibrary.api.config.ConfigValidationException;
 import org.pnfolder.pnlibrary.api.config.ConfigValidatorBuilder;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPnLogger;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformPnLogger;
 
 class CodeFirstYamlTest {
     @TempDir

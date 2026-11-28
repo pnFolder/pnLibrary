@@ -1,5 +1,7 @@
 package org.pnfolder.pnlibrary.core.menu;
 
+import org.pnfolder.pnlibrary.core.menu.owner.OwnerInfo;
+import org.pnfolder.pnlibrary.core.menu.owner.PluginDirectory;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;

@@ -8,7 +8,7 @@ import java.util.concurrent.CompletionStage;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
@@ -26,12 +26,11 @@ import org.pnfolder.pnlibrary.core.lifecycle.RuntimeBridge;
  *
  * <pre>
  * /pn deps                     what is missing, with the links, and the code of each group
- * /pn deps install &lt;code&gt;     downloads that group now, even when automatic download is off
- * /pn deps auto on|off         whether missing plugins are downloaded without a command
+ * /pn deps install &lt;code&gt;     downloads that group now
  * </pre>
  *
- * The automatic switch is kept in the data folder and is the same one the game menu changes. Requires
- * {@code pnlibrary.deps}; the console always may use it.
+ * Missing plugins with a direct link are downloaded by themselves; the command is for those that were not, and for a
+ * retry. Requires {@code pnlibrary.deps}; the console always may use it.
  */
 public final class DepsCommand {
     public static final String PERMISSION = "pnlibrary.deps";
@@ -54,10 +53,6 @@ public final class DepsCommand {
                 code.suggests(context -> codes());
                 code.executes(context -> install(context, context.<String>get("code")));
             }));
-            root.literal("auto", auto -> {
-                auto.literal("on", on -> on.executes(context -> switchAutomatic(context, true)));
-                auto.literal("off", off -> off.executes(context -> switchAutomatic(context, false)));
-            });
         });
     }
 
@@ -83,7 +78,6 @@ public final class DepsCommand {
             say(context, UNAVAILABLE, ChatPalette.DANGER);
             return;
         }
-        say(context, "Автозагрузка недостающих плагинов: " + (downloads.isAutomatic() ? "включена" : "выключена") + ".", ChatPalette.ACCENT);
         List<MissingGroup> groups = downloads.missingGroups();
         if (groups.isEmpty()) {
             say(context, "Всё нужное установлено.", ChatPalette.LABEL);
@@ -158,16 +152,5 @@ public final class DepsCommand {
         } else {
             say(context, "Готово. Перезапустите сервер, чтобы плагины загрузились.", ChatPalette.ACCENT);
         }
-    }
-
-    private void switchAutomatic(CommandContext context, boolean value) {
-        DownloadService downloads = RuntimeBridge.dependencyDownloads(library);
-        if (downloads == null) {
-            say(context, UNAVAILABLE, ChatPalette.DANGER);
-            return;
-        }
-        downloads.setAutomatic(value);
-        say(context, value ? "Недостающие плагины теперь скачиваются сами." : "Автозагрузка выключена: ссылки и код будут в сообщении.",
-                ChatPalette.ACCENT);
     }
 }

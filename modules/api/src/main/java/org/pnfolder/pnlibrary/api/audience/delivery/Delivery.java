@@ -17,7 +17,7 @@ import org.pnfolder.pnlibrary.common.lang.Failures;
  * it, who could not, and why.
  *
  * <pre>{@code
- * Delivery sent = AudienceExtensions.deliver(admins, it -> it.sendMessage(Component.text("Shop reloaded")));
+ * Delivery sent = Delivery.to(admins, it -> it.sendMessage(Component.text("Shop reloaded")));
  * switch (sent.getStatus()) {
  *     case PARTIAL: logger.warning("Only " + sent.getDelivered() + " of " + sent.getReceipts().size() + " admins got it"); break;
  *     case UNSUPPORTED: logger.info("No admin is online"); break;

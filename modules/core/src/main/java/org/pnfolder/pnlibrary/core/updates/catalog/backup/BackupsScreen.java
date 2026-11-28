@@ -1,19 +1,19 @@
 package org.pnfolder.pnlibrary.core.updates.catalog.backup;
 
-import org.pnfolder.pnlibrary.core.updates.catalog.UpdateCatalogRoutes;
-import org.pnfolder.pnlibrary.core.updates.catalog.CatalogStyle;
+import org.pnfolder.pnlibrary.core.updates.catalog.commands.UpdateCatalogRoutes;
+import org.pnfolder.pnlibrary.core.updates.catalog.screens.CatalogStyle;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackup;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupComponent;
 import org.pnfolder.pnlibrary.api.updates.backup.UpdateBackupItem;
 import org.pnfolder.pnlibrary.common.text.RussianText;
-import org.pnfolder.pnlibrary.updates.history.BackupItemText;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupItemText;
 
 /** Retained rollback sets with their age; paths and file contents are never shown. */
 public final class BackupsScreen extends CatalogStyle {

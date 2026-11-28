@@ -35,8 +35,9 @@ import org.pnfolder.pnlibrary.core.scenario.ScenarioDefinitionInfo;
 import org.pnfolder.pnlibrary.core.services.ServiceRegistry;
 import org.pnfolder.pnlibrary.core.tasks.TaskService;
 import org.pnfolder.pnlibrary.core.text.ComponentCache;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /**
  * Owns plugin-scoped library services and coordinates their lifecycle.
@@ -57,16 +58,17 @@ public final class LoadedPlugins implements PluginRegistry {
                          @NotNull DiagnosticsService diagnostics, @NotNull UpdateService updates, @NotNull SharedFeatures shared,
                          @NotNull ConfigurationRuntime configurations, @Nullable CommandService commands,
                          @Nullable DownloadService downloadService, @Nullable String libraryVersion,
-                         @NotNull ModulePreferences modulePreferences, @NotNull LibraryFetcher libraryFetcher) {
+                         @NotNull ModulePreferences modulePreferences, @NotNull LibraryFetcher libraryFetcher,
+                         @Nullable PlatformLogging console) {
         this.ownership = Objects.requireNonNull(ownership, "ownership");
         this.identity = Objects.requireNonNull(identity, "identity");
         this.downloadService = downloadService;
         ModuleResourceFactory resourceFactory = new ModuleResourceFactory(events, tasks, services, logging, metrics, diagnostics,
                 updates, shared.getPlaceholders(), shared.getCurrency(), configurations, downloadService, new ComponentCache());
         ModuleDependencyValidator validator = new ModuleDependencyValidator(ownership, () -> downloadService != null);
-        this.host = new ModuleHost(identity, modulePreferences, libraryFetcher, remotePolicies, shared, logging, diagnostics, commands,
+        this.host = new ModuleHost(ownership, identity, modulePreferences, libraryFetcher, remotePolicies, shared, logging, diagnostics, commands,
                 scenarioDefinitions, new ModuleProductResolver(ownership), new ModuleMetadataFactory(ownership, identity),
-                resourceFactory, validator);
+                resourceFactory, validator, console);
         registerLibraryProduct(libraryVersion);
     }
 
@@ -76,7 +78,7 @@ public final class LoadedPlugins implements PluginRegistry {
                          @NotNull DiagnosticsService diagnostics, @NotNull UpdateService updates, @NotNull SharedFeatures shared,
                          @NotNull ConfigurationRuntime configurations) {
         this(ownership, identity, remotePolicies, events, tasks, services, logging, metrics, diagnostics, updates, shared,
-                configurations, null, null, null, new ModulePreferences(), LibraryFetcher.THROUGH_LIBBY);
+                configurations, null, null, null, new ModulePreferences(), LibraryFetcher.THROUGH_LIBBY, null);
     }
 
     private void registerLibraryProduct(@Nullable String libraryVersion) {
@@ -109,7 +111,16 @@ public final class LoadedPlugins implements PluginRegistry {
             if (nativeId == null) {
                 throw new IllegalStateException("The platform did not expose a plugin ID for " + owner.getClass().getName());
             }
-            LoadedPlugin plugin = new LoadedPlugin(host, owner, PluginId.of(nativeId), host.registrationSequence.incrementAndGet());
+            PluginId id = PluginId.of(nativeId);
+            if (id.getValue().length() > 64 || id.getValue().indexOf('@') >= 0) {
+                throw new IllegalArgumentException("Plugin ID '" + id + "' must be up to 64 characters and not contain '@': it separates plugin and module");
+            }
+            for (LoadedPlugin other : host.plugins.values()) {
+                if (other.getNativeId().equals(id)) {
+                    throw new IllegalArgumentException("Plugin '" + id + "' is already registered; unregister the old instance first");
+                }
+            }
+            LoadedPlugin plugin = new LoadedPlugin(host, owner, id);
             host.plugins.put(owner, plugin);
             return plugin;
         }

@@ -21,10 +21,10 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadRegistration;
 import org.pnfolder.pnlibrary.api.downloads.DownloadSnapshot;
 import org.pnfolder.pnlibrary.api.downloads.FileDownload;
 import org.pnfolder.pnlibrary.api.downloads.FileDownloads;
-import org.pnfolder.pnlibrary.api.logging.LogLevel;
 import org.pnfolder.pnlibrary.api.platform.PlatformType;
 import org.pnfolder.pnlibrary.core.downloads.dependencies.DependencyDownloadReporter;
 import org.pnfolder.pnlibrary.core.downloads.dependencies.DependencyDownloads;
+import org.pnfolder.pnlibrary.core.downloads.dependencies.DependencyModules;
 import org.pnfolder.pnlibrary.core.downloads.dependencies.DependencyDownloadRequestFactory;
 import org.pnfolder.pnlibrary.core.downloads.dependencies.DownloadedDependencyStore;
 import org.pnfolder.pnlibrary.core.downloads.dependencies.MissingGroup;
@@ -34,10 +34,10 @@ import org.pnfolder.pnlibrary.core.downloads.fetch.DownloadVerifier;
 import org.pnfolder.pnlibrary.core.downloads.fetch.PluginJarVerifier;
 import org.pnfolder.pnlibrary.core.downloads.fetch.PreparedDownload;
 import org.pnfolder.pnlibrary.spi.platform.PlatformIdentity;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnerMetadata;
-import org.pnfolder.pnlibrary.spi.platform.PlatformPluginInventory;
-import org.pnfolder.pnlibrary.spi.platform.PlatformReadiness;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnerMetadata;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformPluginInventory;
+import org.pnfolder.pnlibrary.spi.platform.lifecycle.PlatformReadiness;
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 
@@ -47,7 +47,6 @@ public final class DownloadService implements AutoCloseable {
 
     private final PlatformLogging logging;
     private final Supplier<DownloadConfiguration> configuration;
-    private final Consumer<Boolean> saveAutomatic;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor(action -> {
         Thread thread = new Thread(action, "pnLibrary-direct-downloads");
@@ -59,48 +58,30 @@ public final class DownloadService implements AutoCloseable {
     private final DownloadArtifactPreparer artifactPreparer;
     private final DependencyDownloads dependencies;
 
-    /** Creates the service with the default network timeouts and no way to save the automatic switch. */
+    /** Creates the service with the default network timeouts. */
     public DownloadService(@NotNull PlatformIdentity identity, @NotNull PlatformOwnerMetadata ownership,
                            @NotNull PlatformPluginInventory inventory, @NotNull PlatformReadiness readiness,
                            @NotNull PlatformLogging logging, @NotNull LibraryPaths paths,
                            @NotNull Supplier<DownloadConfiguration> configuration) {
-        this(identity, ownership, inventory, readiness, logging, paths, configuration, value -> { });
-    }
-
-    /** Creates the service; {@code saveAutomatic} stores the automatic switch as the setting. */
-    public DownloadService(@NotNull PlatformIdentity identity, @NotNull PlatformOwnerMetadata ownership,
-                           @NotNull PlatformPluginInventory inventory, @NotNull PlatformReadiness readiness,
-                           @NotNull PlatformLogging logging, @NotNull LibraryPaths paths,
-                           @NotNull Supplier<DownloadConfiguration> configuration,
-                           @NotNull Consumer<Boolean> saveAutomatic) {
-        this(identity, ownership, inventory, readiness, logging, paths, configuration, saveAutomatic,
+        this(identity, ownership, inventory, readiness, logging, paths, configuration,
             new TrustedHttpClient(Duration.ofSeconds(8), Duration.ofSeconds(30)));
-    }
-
-    /** Creates the service with the default switch saver and its own HTTP client. */
-    public DownloadService(@NotNull PlatformIdentity identity, @NotNull PlatformOwnerMetadata ownership,
-                           @NotNull PlatformPluginInventory inventory, @NotNull PlatformReadiness readiness,
-                           @NotNull PlatformLogging logging, @NotNull LibraryPaths paths,
-                           @NotNull Supplier<DownloadConfiguration> configuration, @NotNull TrustedHttpClient http) {
-        this(identity, ownership, inventory, readiness, logging, paths, configuration, value -> { }, http);
     }
 
     /** Creates the service with every part given. */
     public DownloadService(@NotNull PlatformIdentity identity, @NotNull PlatformOwnerMetadata ownership,
                            @NotNull PlatformPluginInventory inventory, @NotNull PlatformReadiness readiness,
                            @NotNull PlatformLogging logging, @NotNull LibraryPaths paths,
-                           @NotNull Supplier<DownloadConfiguration> configuration,
-                           @NotNull Consumer<Boolean> saveAutomatic, @NotNull TrustedHttpClient http) {
+                           @NotNull Supplier<DownloadConfiguration> configuration, @NotNull TrustedHttpClient http) {
         this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.saveAutomatic = Objects.requireNonNull(saveAutomatic, "saveAutomatic");
         PlatformType type = identity.getType();
         this.filePublisher = new AtomicDownloadPublisher(paths.getData());
         this.artifactPreparer = new DownloadArtifactPreparer(type, paths.getData(), configuration, http, MAX_BYTES);
         boolean proxy = type == PlatformType.VELOCITY || type == PlatformType.BUNGEECORD;
+        DependencyModules dependencyModules = new DependencyModules();
         this.dependencies = new DependencyDownloads(ownership, inventory, readiness, logging,
             new DependencyDownloadRequestFactory(paths.getServerUpdateFolder(), type, identity::getMinecraftVersion),
-            new DependencyDownloadReporter(logging, ownership, proxy ? "pnproxy" : "pn"),
-            new DownloadedDependencyStore(paths.getData()), new PluginJarVerifier(identity), this::isAutomatic);
+            new DependencyDownloadReporter(logging, ownership, proxy ? "pnproxy" : "pn", dependencyModules),
+            new DownloadedDependencyStore(paths.getData()), new PluginJarVerifier(identity), dependencyModules);
         this.logging = Objects.requireNonNull(logging, "logging");
     }
 
@@ -110,19 +91,9 @@ public final class DownloadService implements AutoCloseable {
     }
 
     /** Registers the missing external dependencies; returns null when nothing can be downloaded. */
-    public @Nullable DownloadRegistration registerDependencies(@NotNull Object owner,
+    public @Nullable DownloadRegistration registerDependencies(@NotNull Object owner, @NotNull String module,
                                                                @NotNull List<? extends PluginDependency> required) {
-        return dependencies.register(owner, required, this::register);
-    }
-
-    /** Whether downloads that a plugin starts itself are allowed now. */
-    public boolean isAutomatic() {
-        return configuration.get().isAutomatic();
-    }
-
-    /** Saves the choice as the setting {@code downloads.automatic}. */
-    public void setAutomatic(boolean value) {
-        saveAutomatic.accept(value);
+        return dependencies.register(owner, module, required, this::register);
     }
 
     /** Dependencies still missing, with the code that installs each group. */
@@ -193,18 +164,15 @@ public final class DownloadService implements AutoCloseable {
     private DownloadRegistration register(Object owner, FileDownloads request, DownloadVerifier verifier) {
         DownloadBatch batch = new DownloadBatch(
             request,
-            configuration,
             executor,
             closed::get,
             (declarations, beforePublish) -> {
                 installBatch(request, declarations, beforePublish, verifier);
                 dependencies.remember(declarations);
             },
-            reason -> logging.log(owner, LogLevel.WARNING, reason),
             declarations -> dependencies.reportStaged(owner, declarations),
             (declarations, error) -> dependencies.reportFailure(owner, declarations, error),
-            registrations::remove,
-            this::isAutomatic);
+            registrations::remove);
         registrations.add(batch);
         batch.startAutomatic();
         return batch;

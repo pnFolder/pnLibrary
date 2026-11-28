@@ -12,7 +12,7 @@ import org.pnfolder.pnlibrary.core.tasks.TaskErrorLogger;
 import org.pnfolder.pnlibrary.core.tasks.TaskHistoryStore;
 import org.pnfolder.pnlibrary.spi.audience.PlatformAudienceAdapter;
 import org.pnfolder.pnlibrary.spi.commands.PlatformCommandAdapter;
-import org.pnfolder.pnlibrary.spi.platform.PlatformLogging;
+import org.pnfolder.pnlibrary.spi.platform.logging.PlatformLogging;
 import org.pnfolder.pnlibrary.spi.tasks.PlatformTaskAdapter;
 
 /** Services built on top of platform adapters: commands, audiences and tasks. */

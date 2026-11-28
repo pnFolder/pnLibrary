@@ -14,7 +14,7 @@ import org.pnfolder.pnlibrary.api.downloads.DownloadPolicy;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.api.version.SemanticVersion;
 import org.pnfolder.pnlibrary.common.lang.Failures;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 /** Checks that a module's declared plugin dependencies are present and downloadable. */
 public final class ModuleDependencyValidator {

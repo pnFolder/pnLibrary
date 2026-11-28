@@ -24,8 +24,8 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductId;
 import org.pnfolder.pnlibrary.updates.databases.mongo.MongoEngine;
 import org.pnfolder.pnlibrary.updates.databases.mysql.MysqlEngine;
 import org.pnfolder.pnlibrary.updates.databases.postgres.PostgresEngine;
-import org.pnfolder.pnlibrary.updates.history.BackupStorage;
-import org.pnfolder.pnlibrary.updates.history.PrivateFiles;
+import org.pnfolder.pnlibrary.updates.history.backup.BackupStorage;
+import org.pnfolder.pnlibrary.updates.history.backup.PrivateFiles;
 
 /**
  * Copies the databases plugins marked with {@code @BackupDatabase} before an update and puts them back on request.

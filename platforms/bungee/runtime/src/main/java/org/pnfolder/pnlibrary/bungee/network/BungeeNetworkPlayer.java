@@ -17,6 +17,11 @@ import org.pnfolder.pnlibrary.api.network.NetworkServer;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.event.ServerConnectEvent;
+import org.pnfolder.pnlibrary.api.network.ConnectResult;
 
 /** A player connected to the BungeeCord proxy. */
 @SuppressWarnings("deprecation")
@@ -65,6 +70,26 @@ public final class BungeeNetworkPlayer implements NetworkPlayer {
     public NetworkServer getCurrentServer() {
         Server server = player.getServer();
         return server != null ? new BungeeNetworkServer(server.getInfo()) : null;
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<ConnectResult> connect(@NotNull NetworkServer target) {
+        if (!(target instanceof BungeeNetworkServer)) {
+            return CompletableFuture.completedFuture(ConnectResult.FAILED);
+        }
+        ServerInfo info = ((BungeeNetworkServer) target).getNativeServer();
+        Server current = player.getServer();
+        if (current != null && current.getInfo().equals(info)) {
+            return CompletableFuture.completedFuture(ConnectResult.ALREADY_THERE);
+        }
+        if (!info.canAccess(player)) {
+            return CompletableFuture.completedFuture(ConnectResult.DENIED);
+        }
+        CompletableFuture<ConnectResult> result = new CompletableFuture<>();
+        player.connect(info, (success, error) -> result.complete(success != null && success
+                ? ConnectResult.CONNECTED : ConnectResult.FAILED), ServerConnectEvent.Reason.PLUGIN);
+        return result;
     }
 
     @NotNull

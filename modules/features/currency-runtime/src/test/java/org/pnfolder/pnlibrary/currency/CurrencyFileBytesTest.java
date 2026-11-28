@@ -18,10 +18,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pnfolder.pnlibrary.api.currency.CurrencyAccount;
 import org.pnfolder.pnlibrary.api.currency.CurrencyActor;
 import org.pnfolder.pnlibrary.api.currency.CurrencyDescriptor;
+import org.pnfolder.pnlibrary.api.currency.CurrencyHistoryQuery;
 import org.pnfolder.pnlibrary.api.currency.CurrencyImportMode;
 import org.pnfolder.pnlibrary.api.currency.CurrencyKey;
 import org.pnfolder.pnlibrary.api.currency.CurrencyStorageSnapshot;
@@ -84,8 +87,8 @@ class CurrencyFileBytesTest {
         return requests;
     }
 
-    /** What the storage wrote before the pieces were cached: the whole tree through Gson's pretty printer. */
-    private byte[] legacyBytes(FileCurrencyStorage storage) {
+    /** Reference serialization of the whole tree without caching encoded transactions. */
+    private byte[] referenceBytes(FileCurrencyStorage storage) {
         CurrencyStorageSnapshot snapshot = storage.export(currency).toCompletableFuture().join();
         JsonObject root = new JsonObject();
         JsonObject balances = new JsonObject();
@@ -94,11 +97,20 @@ class CurrencyFileBytesTest {
                     entry.getValue().toPlainString());
         }
         root.add("balances", balances);
+        Set<UUID> history = new HashSet<>();
+        for (CurrencyTransaction transaction : storage.history(currency, CurrencyHistoryQuery.builder().limit(500).build())
+                .toCompletableFuture().join().getItems()) {
+            history.add(transaction.getId());
+        }
         JsonArray transactions = new JsonArray();
+        JsonArray receipts = new JsonArray();
         for (CurrencyTransaction transaction : snapshot.getTransactions()) {
-            transactions.add(CurrencyTransactionJson.encode(transaction));
+            (history.contains(transaction.getId()) ? transactions : receipts).add(CurrencyTransactionJson.encode(transaction));
         }
         root.add("transactions", transactions);
+        if (receipts.size() > 0) {
+            root.add("archivedReceipts", receipts);
+        }
         return gson.toJson(root).getBytes(StandardCharsets.UTF_8);
     }
 
@@ -136,11 +148,11 @@ class CurrencyFileBytesTest {
                     // a failed save is part of the scenario
                 }
                 if (index % 5 == 0 && Files.exists(file)) {
-                    assertEquals(sha(legacyBytes(storage)), sha(Files.readAllBytes(file)), "after request " + index);
+                    assertEquals(sha(referenceBytes(storage)), sha(Files.readAllBytes(file)), "after request " + index);
                     compared++;
                 }
             }
-            assertEquals(sha(legacyBytes(storage)), sha(Files.readAllBytes(file)));
+            assertEquals(sha(referenceBytes(storage)), sha(Files.readAllBytes(file)));
         } finally {
             storage.close();
         }
@@ -158,10 +170,10 @@ class CurrencyFileBytesTest {
             CurrencyStorageSnapshot snapshot = storage.export(currency).toCompletableFuture().join();
             storage.importSnapshot(snapshot.with(Collections.emptyMap(), Collections.emptyList()),
                     CurrencyImportMode.REPLACE).toCompletableFuture().join();
-            assertEquals(sha(legacyBytes(storage)), sha(Files.readAllBytes(file)));
+            assertEquals(sha(referenceBytes(storage)), sha(Files.readAllBytes(file)));
             assertTrue(new String(Files.readAllBytes(file), StandardCharsets.UTF_8).contains("\"transactions\": []"));
             storage.importSnapshot(snapshot, CurrencyImportMode.REPLACE).toCompletableFuture().join();
-            assertEquals(sha(legacyBytes(storage)), sha(Files.readAllBytes(file)));
+            assertEquals(sha(referenceBytes(storage)), sha(Files.readAllBytes(file)));
         } finally {
             storage.close();
         }
@@ -169,7 +181,7 @@ class CurrencyFileBytesTest {
         FileCurrencyStorage reopened = new FileCurrencyStorage(file, 1000);
         try {
             reopened.transact(currency, descriptor, requests(1).get(0)).toCompletableFuture().join();
-            assertEquals(sha(legacyBytes(reopened)), sha(Files.readAllBytes(file)));
+            assertEquals(sha(referenceBytes(reopened)), sha(Files.readAllBytes(file)));
         } finally {
             reopened.close();
         }

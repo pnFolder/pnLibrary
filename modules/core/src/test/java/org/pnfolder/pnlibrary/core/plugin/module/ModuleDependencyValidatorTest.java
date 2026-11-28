@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.pnfolder.pnlibrary.api.dependencies.Dependencies;
 import org.pnfolder.pnlibrary.api.dependencies.PluginDependency;
 import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
-import org.pnfolder.pnlibrary.spi.platform.PlatformOwnership;
+import org.pnfolder.pnlibrary.spi.platform.plugin.PlatformOwnership;
 
 class ModuleDependencyValidatorTest {
     private final PluginDependency vault = Dependencies.plugin("Vault", "1.7.0", "https://example.org/vault");

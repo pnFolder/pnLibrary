@@ -145,6 +145,38 @@ class LocalizationServiceTest {
     }
 
     @Test
+    void refreshQueuedBehindADiskLoadStillDownloadsOnce() throws Exception {
+        TranslationRequest request = russian();
+        try (DefaultMinecraftLocalization seed = service(new Fixture(0, null))) {
+            join(seed.load(request));
+        }
+
+        Fixture fixture = new Fixture(0, null);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        CountDownLatch release = new CountDownLatch(1);
+        executor.submit(() -> {
+            release.await();
+            return null;
+        });
+        try (DefaultMinecraftLocalization service = service(fixture, executor)) {
+            CompletionStage<TranslationBundle> load = service.load(request);
+            CompletionStage<TranslationBundle> refresh = service.refresh(request);
+            CompletionStage<TranslationBundle> anotherRefresh = service.refresh(request);
+            release.countDown();
+            assertEquals(TranslationSource.DISK, load.toCompletableFuture().get(5, TimeUnit.SECONDS)
+                    .locale("ru_ru").getMetadata().getSource());
+            assertEquals(TranslationSource.NETWORK, refresh.toCompletableFuture().get(5, TimeUnit.SECONDS)
+                    .locale("ru_ru").getMetadata().getSource());
+            assertEquals(TranslationSource.NETWORK, anotherRefresh.toCompletableFuture().get(5, TimeUnit.SECONDS)
+                    .locale("ru_ru").getMetadata().getSource());
+            assertEquals(1, fixture.assetDownloads);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     @DisplayName("discovers supported release versions and locales")
     void discoversSupportedReleaseVersionsAndLocales() {
         Fixture fixture = new Fixture(0, null);

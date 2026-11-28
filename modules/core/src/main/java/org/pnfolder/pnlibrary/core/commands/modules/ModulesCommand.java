@@ -9,8 +9,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
-import org.pnfolder.pnlibrary.api.chat.CommandHint;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.page.CommandHint;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.ArgumentType;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandBuilder;
@@ -213,7 +213,13 @@ public final class ModulesCommand {
                     + " не объявлены версии Minecraft или он не из этого сервера.", ChatPalette.WARN));
             return;
         }
-        ((MinecraftForcible) module).forceMinecraft(on);
+        try {
+            ((MinecraftForcible) module).forceMinecraft(on);
+        } catch (IllegalStateException forbidden) {
+            context.getSender().sendMessage(kit.note("Автор плагина запретил запускать " + found.getName()
+                    + " на этой версии Minecraft. Обновите сервер или плагин.", ChatPalette.DANGER));
+            return;
+        }
         String text = on ? "запускать при любой версии Minecraft (на свой риск)" : "версия Minecraft снова проверяется";
         context.getSender().sendMessage(kit.text(found.getName() + ": ", ChatPalette.TEXT).append(kit.text(text, ChatPalette.SOFT)));
     }

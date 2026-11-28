@@ -71,7 +71,7 @@ public final class NearRequirement implements Requirement {
     @NotNull
     @Override
     public Verdict test(@NotNull RequirementContext context) {
-        Position here = context.getPlayer().position();
+        Position here = context.getPlayer().getPosition();
         Double current = here != null ? here.distanceTo(parse(location)) : null;
         if (current == null) {
             return new Verdict.Unmet("distance is not available here");

@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.pnfolder.pnlibrary.api.chat.ChatKit;
-import org.pnfolder.pnlibrary.api.chat.ChatPalette;
+import org.pnfolder.pnlibrary.api.chat.style.ChatPalette;
 import org.pnfolder.pnlibrary.api.commands.CommandContext;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.runtime.PnLibrary;
@@ -34,12 +34,12 @@ public final class NoticesCommand {
 
     /** On a game server: what the proxy and the other servers report in the network map. */
     public static @NotNull Supplier<List<ImportantNotice>> fromNetworkMap(@NotNull Link link) {
-        return () -> ImportantNotices.from(link.getNetwork(), Instant.now());
+        return () -> ImportantNotices.forServer(link, Instant.now());
     }
 
     /** On a proxy: its own staged update and what the game servers report to it. */
     public static @NotNull Supplier<List<ImportantNotice>> fromReports(@NotNull PnLibrary library, @NotNull Link link) {
-        return () -> ImportantNotices.fromReports(StagedUpdate.waiting(library), link.getRegistry().all(), Instant.now());
+        return () -> ImportantNotices.forProxy(StagedUpdate.waiting(library), link, Instant.now());
     }
 
     public @NotNull CommandDefinition definition() {

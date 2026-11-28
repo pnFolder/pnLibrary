@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.core.link.remote.DataCall;
@@ -15,20 +16,21 @@ import org.pnfolder.pnlibrary.core.link.remote.LinkNames;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteExecutor;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteRequest;
 import org.pnfolder.pnlibrary.core.link.remote.RemoteResult;
-import org.pnfolder.pnlibrary.core.link.wire.CallFrame;
-import org.pnfolder.pnlibrary.core.link.wire.ChunkFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.CallFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ChunkFrame;
 import org.pnfolder.pnlibrary.core.link.wire.DataChunks;
+import org.pnfolder.pnlibrary.core.link.wire.frame.HelloFrame;
 import org.pnfolder.pnlibrary.core.link.wire.LinkCodec;
-import org.pnfolder.pnlibrary.core.link.wire.LinkFrame;
-import org.pnfolder.pnlibrary.core.link.wire.ReportFrame;
-import org.pnfolder.pnlibrary.core.link.wire.RequestFrame;
-import org.pnfolder.pnlibrary.core.link.wire.ResultFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.LinkFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ReportFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.RequestFrame;
+import org.pnfolder.pnlibrary.core.link.wire.frame.ResultFrame;
 
 /**
  * The proxy end of the link: takes a plugin message that arrived from a game server.
  *
- * <p>The platform listener tells it whether the sender was a server connection or a player; a message from a player
- * is dropped before its signature is even looked at, and a message without the right signature is dropped too. A valid
+ * <p>The link channel only passes on what game servers sent, never what players sent. A message without the right
+ * signature is dropped. A valid
  * message is a report (remembered), a request for another server (passed on, or carried out here when the proxy is
  * the target) or the answer to a request (passed on to whoever asked).
  */
@@ -36,6 +38,8 @@ public final class LinkReceiver {
     private final Link link;
     private final RemoteExecutor executor;
     private final DataHandler data;
+    private final Consumer<String> warnings;
+    private final Supplier<String> libraryVersion;
 
     public LinkReceiver(@NotNull Link link) {
         this(link, null, null);
@@ -47,9 +51,20 @@ public final class LinkReceiver {
      * @param data answers the menu questions addressed to the proxy
      */
     public LinkReceiver(@NotNull Link link, @Nullable RemoteExecutor executor, @Nullable DataHandler data) {
+        this(link, executor, data, message -> { }, () -> "unknown");
+    }
+
+    /**
+     * @param warnings gets the console text when a game server turns out to speak other message formats
+     * @param libraryVersion the version of this proxy's library, named in that text
+     */
+    public LinkReceiver(@NotNull Link link, @Nullable RemoteExecutor executor, @Nullable DataHandler data,
+                        @NotNull Consumer<String> warnings, @NotNull Supplier<String> libraryVersion) {
         this.link = Objects.requireNonNull(link, "link");
         this.executor = executor;
         this.data = data;
+        this.warnings = Objects.requireNonNull(warnings, "warnings");
+        this.libraryVersion = Objects.requireNonNull(libraryVersion, "libraryVersion");
     }
 
     /** Whether the link has a key; without one nothing is accepted. */
@@ -58,16 +73,21 @@ public final class LinkReceiver {
     }
 
     /** Handles {@code message} from {@code server}; returns true when it was a valid message. */
-    public boolean receive(@NotNull String server, boolean fromServer, @NotNull byte[] message) {
+    public boolean receive(@NotNull String server, @NotNull byte[] message) {
         byte[] key = link.getKey();
-        if (!fromServer || key == null) {
+        if (key == null) {
             return false;
         }
         LinkFrame frame = LinkCodec.decodeFrame(message, key);
         if (frame == null) {
             return false;
         }
-        if (frame instanceof ReportFrame) {
+        if (frame instanceof HelloFrame) {
+            String news = link.getPeers().meet(server, ((HelloFrame) frame).getHello(), libraryVersion.get());
+            if (news != null) {
+                warnings.accept(news);
+            }
+        } else if (frame instanceof ReportFrame) {
             link.getRegistry().accept(server, ((ReportFrame) frame).getReport());
         } else if (frame instanceof RequestFrame) {
             route(server, ((RequestFrame) frame).getRequest().withOrigin(server), key);

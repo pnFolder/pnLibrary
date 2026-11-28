@@ -38,7 +38,7 @@ import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerificationException;
 import org.pnfolder.pnlibrary.updates.engine.net.ArtifactVerifier;
 import org.pnfolder.pnlibrary.updates.engine.net.StreamReader;
 import org.pnfolder.pnlibrary.updates.engine.net.TrustedHttpClient;
-import org.pnfolder.pnlibrary.updates.engine.transaction.TransactionJournal;
+import org.pnfolder.pnlibrary.updates.engine.transaction.journal.TransactionJournal;
 import org.pnfolder.pnlibrary.updates.engine.transaction.UpdateTransaction;
 import org.pnfolder.pnlibrary.updates.paths.LibraryPaths;
 

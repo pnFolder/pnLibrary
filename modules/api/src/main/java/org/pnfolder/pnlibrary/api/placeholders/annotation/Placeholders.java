@@ -16,8 +16,15 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Placeholders {
-    /** The group, the first word of every address. */
-    String value();
+    /** The group, the first word of every address. Empty for a {@link #root() root} class. */
+    String value() default "";
+
+    /**
+     * A group without a word: the members stand right under the prefix of the plugin ({@code %plugin_word%}), and a
+     * {@code @Placeholder(bare = true)} member with an {@code @Argument} gives {@code %plugin_<argument>%}. A word of
+     * a member or a group wins over the bare member. A module may have one bare member in all its root classes.
+     */
+    boolean root() default false;
 
     /** Who may use the placeholders of the group. */
     Visibility visibility() default Visibility.ALL;

@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.core.link.remote.LinkNames;
 import org.pnfolder.pnlibrary.core.menu.ItemSpec;
 import org.pnfolder.pnlibrary.core.menu.MenuRoutes;
 import org.pnfolder.pnlibrary.core.menu.MenuScreens;
-import org.pnfolder.pnlibrary.core.menu.MenuSession;
-import org.pnfolder.pnlibrary.core.menu.MenuViewer;
+import org.pnfolder.pnlibrary.core.menu.session.MenuSession;
+import org.pnfolder.pnlibrary.core.menu.session.MenuViewer;
 import org.pnfolder.pnlibrary.core.menu.style.Fact;
 import org.pnfolder.pnlibrary.core.menu.style.Icons;
 import org.pnfolder.pnlibrary.core.menu.style.MenuConstants;
@@ -29,7 +29,7 @@ public final class NoticeScreens extends MenuScreens {
     }
 
     private List<ImportantNotice> current() {
-        return ImportantNotices.from(host().getLink().getNetwork(), Instant.now());
+        return ImportantNotices.forServer(host().getLink(), Instant.now());
     }
 
     public void notices(MenuViewer player, int page) {

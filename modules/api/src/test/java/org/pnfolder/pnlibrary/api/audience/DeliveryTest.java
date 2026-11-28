@@ -80,9 +80,9 @@ class DeliveryTest {
         Audience broken = receiver("broken", seen, new IllegalStateException("lost"));
 
         assertEquals(DeliveryStatus.DELIVERED,
-            AudienceExtensions.deliver(ok, it -> it.sendMessage(Component.text("hi"))).getStatus());
+            Delivery.to(ok, it -> it.sendMessage(Component.text("hi"))).getStatus());
         assertEquals("lost",
-            AudienceExtensions.deliver(broken, it -> it.sendMessage(Component.text("hi"))).getFailure().getMessage());
+            Delivery.to(broken, it -> it.sendMessage(Component.text("hi"))).getFailure().getMessage());
     }
 
     @Test
@@ -92,7 +92,7 @@ class DeliveryTest {
         Audience group = Audience.audience(receiver("first", seen, null), receiver("broken", seen, cause),
             receiver("last", seen, null));
 
-        Delivery sent = AudienceExtensions.deliver(group, it -> it.sendMessage(Component.text("hi")));
+        Delivery sent = Delivery.to(group, it -> it.sendMessage(Component.text("hi")));
 
         assertEquals(DeliveryStatus.PARTIAL, sent.getStatus());
         assertEquals(Arrays.asList("first", "broken", "last"), seen);
@@ -112,10 +112,10 @@ class DeliveryTest {
         Audience nobody = Audience.audience(Collections.emptyList());
 
         assertEquals(DeliveryStatus.UNSUPPORTED,
-            AudienceExtensions.deliver(nobody, it -> it.sendMessage(Component.text("hi"))).getStatus());
+            Delivery.to(nobody, it -> it.sendMessage(Component.text("hi"))).getStatus());
         Audience dying = receiver("dying", new ArrayList<>(), new OutOfMemoryError());
         assertThrows(OutOfMemoryError.class,
-            () -> AudienceExtensions.deliver(dying, it -> it.sendMessage(Component.text("hi"))));
+            () -> Delivery.to(dying, it -> it.sendMessage(Component.text("hi"))));
     }
 
     private static Audience receiver(String name, List<String> seen, Throwable failure) {

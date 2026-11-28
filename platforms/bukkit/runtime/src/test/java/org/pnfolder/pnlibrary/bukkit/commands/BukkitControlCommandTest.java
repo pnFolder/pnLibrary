@@ -15,8 +15,8 @@ import java.util.UUID;
 import org.pnfolder.pnlibrary.common.lang.Pair;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.Test;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatNotice;
-import org.pnfolder.pnlibrary.api.chat.notice.ChatTone;
+import org.pnfolder.pnlibrary.api.chat.ChatNotice;
+import org.pnfolder.pnlibrary.api.chat.style.ChatTone;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandDefinition;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNode;
 import org.pnfolder.pnlibrary.api.commands.definition.CommandNodeKind;
@@ -44,8 +44,8 @@ class BukkitControlCommandTest {
         // The root has no permission of its own: every administrative word asks for pnlibrary.admin by itself.
         assertNull(definition.getPermission());
         assertEquals(Arrays.asList("status", "check", "gui", "updates", "update", "support", "bus", "tasks", "modules",
-            "configs", "deps", "servers", "notices", "money"), names(definition.getRoot().getChildren()));
-        Set<String> hidden = new HashSet<>(Arrays.asList("money", "bus", "tasks", "modules", "configs", "deps", "servers", "notices"));
+            "configs", "deps", "servers", "notices", "channels", "money"), names(definition.getRoot().getChildren()));
+        Set<String> hidden = new HashSet<>(Arrays.asList("money", "bus", "tasks", "modules", "configs", "deps", "servers", "notices", "channels"));
         List<CommandNode> administrative = new ArrayList<>();
         for (CommandNode child : definition.getRoot().getChildren()) {
             if (!hidden.contains(child.getName())) {
@@ -59,8 +59,9 @@ class BukkitControlCommandTest {
         // A narrower permission opens the same word next to the wide one.
         assertEquals(Collections.singletonList("pnlibrary.updates.download"), update.getAlsoPermissions());
         CommandNode catalog = child(definition.getRoot().getChildren(), "updates");
-        assertEquals(Arrays.asList("list", "available", "info", "settings", "set", "history", "backups", "rollback"),
+        assertEquals(Arrays.asList("list", "available", "force", "info", "settings", "set", "history", "backups", "rollback"),
             names(catalog.getChildren()));
+        assertEquals("pnlibrary.updates.download", child(catalog.getChildren(), "force").getPermission());
         assertEquals(Arrays.asList("page", "plugin"), names(child(catalog.getChildren(), "history").getChildren()));
         assertEquals("plugin", child(catalog.getChildren(), "info").getChildren().get(0).getName());
         assertEquals(Arrays.asList("plugin", "confirm", "rollback", "restart"), names(update.getChildren()));

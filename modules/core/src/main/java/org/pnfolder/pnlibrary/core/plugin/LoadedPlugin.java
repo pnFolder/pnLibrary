@@ -12,9 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.commands.error.CommandError;
 import org.pnfolder.pnlibrary.api.commands.error.CommandErrorHandler;
-import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions;
-import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction;
-import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction;
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftSupportBuilder;
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibraries;
 import org.pnfolder.pnlibrary.api.libraries.ModuleLibrary;
 import org.pnfolder.pnlibrary.api.plugin.ModuleContext;
@@ -28,31 +26,31 @@ import org.pnfolder.pnlibrary.api.updates.product.ProductDescriptor;
 import org.pnfolder.pnlibrary.core.commands.engine.CommandFeedbackScope;
 import org.pnfolder.pnlibrary.core.exceptions.CleanupStep;
 import org.pnfolder.pnlibrary.core.exceptions.ResourceCleanup;
+import org.pnfolder.pnlibrary.console.ConsoleCard;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftBlockCard;
+import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftNoticeCard;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftGate;
 import org.pnfolder.pnlibrary.core.plugin.module.minecraft.MinecraftSupportRule;
 import org.pnfolder.pnlibrary.core.plugin.module.definition.ModuleDefinitionBuilder;
 import org.pnfolder.pnlibrary.core.plugin.module.library.ModuleLibraryLoader;
 import org.pnfolder.pnlibrary.core.plugin.module.ModuleResources;
-import org.pnfolder.pnlibrary.core.plugin.module.ModuleServiceKey;
 
 /** One native plugin registered in the library; it owns the contexts of its modules. */
 final class LoadedPlugin implements PluginRegistration {
     private final ModuleHost host;
     private final Object owner;
     private final PluginId nativeId;
-    private final long registrationId;
     private final Map<ModuleId, LoadedModule> moduleContexts = new LinkedHashMap<>();
     private final MinecraftSupportRule minecraftRule = new MinecraftSupportRule();
     private final ModuleLibraries libraries;
     private final AtomicBoolean pluginClosed = new AtomicBoolean(false);
     private final CommandFeedbackScope commandFeedback = new CommandFeedbackScope();
 
-    LoadedPlugin(ModuleHost host, Object owner, PluginId nativeId, long registrationId) {
+    LoadedPlugin(ModuleHost host, Object owner, PluginId nativeId) {
         this.host = host;
         this.owner = owner;
         this.nativeId = nativeId;
-        this.registrationId = registrationId;
-        this.libraries = ModuleLibraryLoader.through("p-" + nativeId.getValue() + "-" + registrationId,
+        this.libraries = ModuleLibraryLoader.through(nativeId.getValue(),
                 LoadedPlugins.class.getClassLoader(), owner, null, host.libraryFetcher, host.identity.getType(),
                 host.preferences, nativeId.getValue());
     }
@@ -91,18 +89,8 @@ final class LoadedPlugin implements PluginRegistration {
     }
 
     @Override
-    public void supportedMinecraft(@NotNull MinecraftVersions versions) {
-        minecraftRule.add(versions);
-    }
-
-    @Override
-    public void onUnsupportedMinecraft(@NotNull UnsupportedAction action) {
-        minecraftRule.setUnsupportedAction(action);
-    }
-
-    @Override
-    public void onNewerMinecraft(@NotNull NewerAction action) {
-        minecraftRule.setNewerAction(action);
+    public void minecraft(@NotNull Consumer<MinecraftSupportBuilder> setup) {
+        setup.accept(minecraftRule);
     }
 
     @Override
@@ -161,15 +149,20 @@ final class LoadedPlugin implements PluginRegistration {
         String scope = nativeId.getValue() + ":" + id.getValue();
         MinecraftGate gate = MinecraftGate.open(scope, host.preferences, definition.getMinecraftRule(), minecraftRule,
                 host.identity.getMinecraftVersion());
-        if (gate.mustFail(controllable)) {
-            throw new IllegalStateException(gate.reason() + " Запустить всё равно: /pn modules mc force " + scope + " on");
+        boolean fails = gate.mustFail(controllable);
+        if (gate.reason() != null && host.console != null) {
+            MinecraftBlockCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate, fails)
+                .send(line -> host.console.console(owner, line));
+        }
+        if (fails) {
+            throw new IllegalStateException(gate.reason());
         }
         return gate;
     }
 
     private LoadedModule attach(ModuleId id, ModuleDefinitionBuilder definition, @Nullable ProductDescriptor descriptor,
                                 @Nullable PluginModule module, MinecraftGate gate) {
-        PluginId serviceKey = ModuleServiceKey.of(registrationId, nativeId, id);
+        PluginId serviceKey = PluginId.of(nativeId.getValue() + "@" + id.getValue());
         PluginMetadata metadata = host.metadataFactory.create(owner, id, definition);
         ModuleResources resources = host.resourceFactory.create(owner, id, serviceKey, nativeId, definition, descriptor);
         LoadedModule context = new LoadedModule(host, this, id, serviceKey, metadata, resources, definition.isPlaceholderApiEnabled(),
@@ -179,9 +172,9 @@ final class LoadedPlugin implements PluginRegistration {
             host.productDescriptors.put(descriptor.getId().getValue(), descriptor);
         }
         try {
-            String note = gate.getWarning() != null ? gate.getWarning() : gate.isForced() ? gate.reason() : null;
-            if (note != null) {
-                context.getLogger().warning(note);
+            ConsoleCard notice = MinecraftNoticeCard.of(id.getValue(), host.ownership.ownerDetails(owner), gate);
+            if (notice != null && host.console != null) {
+                notice.send(line -> host.console.console(owner, line));
             }
             loadDeclaredLibraries(context, definition);
             if (definition.getRemotePolicy() != null) {

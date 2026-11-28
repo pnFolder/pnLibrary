@@ -32,6 +32,7 @@ public final class LibraryInstaller {
     private final BootstrapPlatform platform;
     private final BootstrapOptions options;
     private final String pluginName;
+    private final String pluginVersion;
     private final BootstrapConsole console;
 
     /**
@@ -43,9 +44,24 @@ public final class LibraryInstaller {
      * @param console where the cards are printed
      */
     public LibraryInstaller(BootstrapPlatform platform, BootstrapOptions options, String pluginName, BootstrapConsole console) {
+        this(platform, options, pluginName, null, console);
+    }
+
+    /**
+     * Creates an installer for one plugin whose version is shown on every card.
+     *
+     * @param platform platform whose release jar is installed
+     * @param options minimum version, repository and size limit
+     * @param pluginName name of the plugin that needs pnLibrary, for messages
+     * @param pluginVersion version of that plugin, or {@code null} when it is not known
+     * @param console where the cards are printed
+     */
+    public LibraryInstaller(BootstrapPlatform platform, BootstrapOptions options, String pluginName, String pluginVersion,
+                            BootstrapConsole console) {
         this.platform = platform;
         this.options = options;
         this.pluginName = pluginName;
+        this.pluginVersion = pluginVersion;
         this.console = console;
     }
 
@@ -68,15 +84,14 @@ public final class LibraryInstaller {
         }
         if (compatible) return true;
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.FAILURE), "PNLIBRARY УСТАРЕЛА")
-                .mascot("( -.- )", pluginName + " › нужна более новая " + BootstrapDefaults.PRODUCT_NAME, "запуск плагина остановлен")
+                .owner("( -.- )", pluginName, null, pluginVersion, "нужна более новая " + BootstrapDefaults.PRODUCT_NAME + ", запуск плагина остановлен")
                 .blank()
                 .detail("Установлена", installedVersion)
                 .lastDetail("Нужна", "от " + options.minimumVersion())
                 .section("Что делать")
                 .item("Обновите " + BootstrapDefaults.PRODUCT_NAME + " командой " + platform.updateHint())
                 .lastItem("или скачайте вручную: " + releasesPage())
-                .section("Не получается?")
-                .lastItem("Напишите в поддержку: " + options.supportUrl())
+                .support(options.supportUrl())
                 .blank()
                 .status(pluginName + " не был запущен")
                 .build().send(console::send);
@@ -102,13 +117,14 @@ public final class LibraryInstaller {
         }
 
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.PROGRESS), "УСТАНОВКА PNLIBRARY")
-                .mascot("( o.o )", pluginName + " › подготовка зависимости", BootstrapDefaults.PRODUCT_NAME + " не найдена на сервере")
+                .owner("( o.o )", pluginName, null, pluginVersion, BootstrapDefaults.PRODUCT_NAME + " не найдена на сервере, готовлю её")
                 .blank()
                 .detail("Источник", release.uri().getHost())
                 .detail("Платформа", platform.displayName())
                 .detail("Выпуск", release.stable() ? "стабильный" : "предварительный (нестабильный)")
                 .detail("Версия", release.version())
                 .lastDetail("Файл", release.fileName())
+                .support(options.supportUrl())
                 .blank()
                 .status("Скачиваю и проверяю библиотеку…")
                 .build().send(console::send);
@@ -145,8 +161,9 @@ public final class LibraryInstaller {
         ConsoleCard.Builder card = ConsoleCard.builder(
                         console.theme(restartRequired ? BootstrapConsole.Tone.PROGRESS : BootstrapConsole.Tone.SUCCESS),
                         restartRequired ? "НУЖЕН ПЕРЕЗАПУСК" : "PNLIBRARY ГОТОВА")
-                .mascot(restartRequired ? "( o.o )" : "( ^.^ )", BootstrapDefaults.PRODUCT_NAME + " установлена",
-                        restartRequired ? platform.displayName() + " подключит её после перезапуска" : "общая система pnFolder подключена")
+                .owner(restartRequired ? "( o.o )" : "( ^.^ )", pluginName, null, pluginVersion,
+                        restartRequired ? BootstrapDefaults.PRODUCT_NAME + " установлена, " + platform.displayName() + " подключит её после перезапуска"
+                                : BootstrapDefaults.PRODUCT_NAME + " установлена, общая система pnFolder подключена")
                 .blank()
                 .detail("Версия", placement.release().version())
                 .detail("Выпуск", placement.release().stable() ? "стабильный" : "предварительный (нестабильный)")
@@ -169,6 +186,7 @@ public final class LibraryInstaller {
                     .item("Перезапустите " + platform.displayName() + ", когда будет удобно")
                     .lastItem("команда в консоли: " + platform.stopCommand());
         }
+        card.support(options.supportUrl()).blank();
         card.status(restartRequired ? pluginName + " запустится после перезапуска" : pluginName + " продолжает запуск")
                 .build().send(console::send);
     }
@@ -218,7 +236,7 @@ public final class LibraryInstaller {
         String reason = error.getMessage() == null || error.getMessage().trim().isEmpty()
                 ? error.getClass().getSimpleName() : error.getMessage();
         ConsoleCard.builder(console.theme(BootstrapConsole.Tone.FAILURE), "ОШИБКА ЗАПУСКА")
-                .mascot("( x.x )", pluginName + " › " + BootstrapDefaults.PRODUCT_NAME + " недоступна", "запуск плагина остановлен")
+                .owner("( x.x )", pluginName, null, pluginVersion, BootstrapDefaults.PRODUCT_NAME + " недоступна, запуск плагина остановлен")
                 .blank()
                 .section("Причина")
                 .lastItem(reason)
@@ -226,8 +244,7 @@ public final class LibraryInstaller {
                 .item("Проверьте доступ сервера к GitHub")
                 .item("Скачайте jar для " + platform.displayName() + " вручную")
                 .lastItem(releasesPage())
-                .section("Не получается?")
-                .lastItem("Напишите в поддержку: " + options.supportUrl())
+                .support(options.supportUrl())
                 .blank()
                 .status(pluginName + " не был запущен")
                 .build().send(console::send);
