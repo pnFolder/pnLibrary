@@ -3,6 +3,59 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.9",
+      "channel": "dev",
+      "description": "Один вызов minecraft { } для версий Minecraft, читаемый ключ модуля плагин@модуль, каналы на Key, плейсхолдеры root/bare, библиотеки модуля через libraries(), карточки консоли.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.9.md",
+      "publishedAt": "2026-11-28T17:02:23Z",
+      "api": {
+        "minimum": 3,
+        "maximum": 3
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.9-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.9/pnLibrary-0.1.0-dev.9-bukkit-java8.jar",
+          "sha256": "ce8069c4eb70c1508b1ea47d2f5f51855a94e3fdea84c2ef56e485ffdc87ea18",
+          "size": 5909581
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.9-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.9/pnLibrary-0.1.0-dev.9-bungeecord-java8.jar",
+          "sha256": "e72b50e4ada698626ec3091d3f9769ec181110714ddf44793bba8fd8ed12fbf8",
+          "size": 5285155
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.9-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.9/pnLibrary-0.1.0-dev.9-velocity-java17.jar",
+          "sha256": "7864d783bce3d7cf81c9e5dc8d30a4b575c0fb4100ddc1e96cb36fc3d563b24f",
+          "size": 5300282
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.9-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.9/pnLibrary-0.1.0-dev.9-universal.jar",
+          "sha256": "b9231dbc26f02f13da4a9326ab27a7e31b2c195e5d398d6554b23f9d44ebdd14",
+          "size": 4875523
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.8",
       "channel": "dev",
       "description": "Аргумент плейсхолдера прямо под группой (@Placeholder(bare = true)): возвращает адреса вида %плагин_группа_значение% без слова-связки.",
