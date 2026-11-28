@@ -486,12 +486,16 @@ public final class org/pnfolder/pnlibrary/api/compat/MinecraftSupport : java/lan
 	public static fun values ()[Lorg/pnfolder/pnlibrary/api/compat/MinecraftSupport;
 }
 
+public abstract interface class org/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder {
+	public abstract fun force (Z)Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder;
+	public abstract fun forceNewer (Z)Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder;
+	public abstract fun versions (Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftVersions;)Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder;
+	public abstract fun whenNewer (Lorg/pnfolder/pnlibrary/api/compat/declaration/NewerAction;)Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder;
+	public abstract fun whenOlder (Lorg/pnfolder/pnlibrary/api/compat/declaration/UnsupportedAction;)Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportBuilder;
+}
+
 public abstract interface class org/pnfolder/pnlibrary/api/compat/declaration/MinecraftSupportDeclaration {
-	public abstract fun allowForce (Z)V
-	public abstract fun allowForceNewer (Z)V
-	public abstract fun onNewerMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/NewerAction;)V
-	public abstract fun onUnsupportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/UnsupportedAction;)V
-	public abstract fun supportedMinecraft (Lorg/pnfolder/pnlibrary/api/compat/declaration/MinecraftVersions;)V
+	public abstract fun minecraft (Ljava/util/function/Consumer;)V
 }
 
 public final class org/pnfolder/pnlibrary/api/compat/declaration/MinecraftVersions {

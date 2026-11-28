@@ -67,6 +67,12 @@
 ## Журнал (новое сверху)
 Обновляй эту секцию в конце каждой сессии: одна запись, что сделано и что осталось.
 
+### 2026-11-28 (читаемый ключ модуля, выпуск 0.1.0-dev.9)
+- Ключ модуля `ModuleServiceKey` (`m-плагин-модуль-хеш` от номера регистрации) убран: ключ теперь `плагин@модуль` (`PluginId` допускает `@` и до 129 символов, id плагина до 64 без `@`), ключ библиотек плагина просто id плагина. `LoadedPlugins.register` отклоняет второй живой плагин с тем же id. Тестовая заготовка `PluginRegistryFixture` даёт каждому владельцу свой id (`example`, `example-2`). Плагины pnClans и остальные подключены к `0.1.0-dev.9`, на живом сервере проверен только pnClans (загрузка библиотек модуля `libraries()` требует перечислять транзитивные зависимости: загрузчик их не тянет).
+
+### 2026-11-28 (одно объявление версий Minecraft)
+- `MinecraftSupportDeclaration` теперь один метод `minecraft(Consumer<MinecraftSupportBuilder>)` вместо пяти (`supportedMinecraft`, `onUnsupportedMinecraft`, `onNewerMinecraft`, `allowForce`, `allowForceNewer`; ломает API, по решению владельца). Билдер `MinecraftSupportBuilder`: `versions` (вызовы складываются), `whenOlder`, `whenNewer`, `force`, `forceNewer`; его реализует `MinecraftSupportRule`, `LoadedPlugin` и `ModuleDefinitionBuilder` просто отдают ему лямбду. Тест сложения в `ModuleControlMinecraftTest`, `apiDump` сделан, `docs/modules.md` обновлён. Слияние `feature/placeholder-root-group` (`root = true`, `bare = true`, выпуски dev.7 и dev.8) закоммичено как `6984d5d4`.
+
 ### 2026-11-28 (карточки версии Minecraft)
 - `MinecraftSupportDeclaration.allowForceNewer(boolean)`: запрет или разрешение ручного запуска только выше проверенной версии (перекрывает `allowForce` там). `NewerAction.BLOCK` больше не превращается в предупреждение из-за `WARN_ONLY` (тот касается только старых). Карточки: `MinecraftBlockCard` пишется теперь и когда отключён лишь модуль (`DISABLE_MODULE`; последняя строка говорит, плагин остановлен или модуль), новая `MinecraftNoticeCard` (новее проверенного, старее при `WARN_ONLY`, ручной запуск) вместо одной строки лога. Прокси версию не знают, проверка там молчит. Тесты в `MinecraftGateTest`; `apiDump` сделан. `docs/console-messages.md` с новыми карточками не обновлён.
 

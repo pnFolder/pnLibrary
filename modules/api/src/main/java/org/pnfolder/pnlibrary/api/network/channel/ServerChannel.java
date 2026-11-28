@@ -9,7 +9,7 @@ import org.pnfolder.pnlibrary.api.network.message.MessageReader;
 import org.pnfolder.pnlibrary.api.network.message.MessageWriter;
 
 /**
- * A plugin-message channel on a game server, opened with {@link ServerNetwork#channel(String)}. The library registers
+ * A plugin-message channel on a game server, opened with {@link ServerNetwork#channel(Key)}. The library registers
  * it with the server, picks a player to carry each message and receives what the proxy sends. The other end is the
  * {@link NetworkChannel} of the same name on the proxy.
  *
@@ -20,7 +20,7 @@ import org.pnfolder.pnlibrary.api.network.message.MessageWriter;
  * }</pre>
  */
 public interface ServerChannel extends ServerChannelOf<byte[]> {
-    /** Sends a message of {@code type}; {@code body} writes its data. Same as {@link #send(byte[])}. */
+    /** Sends a message of {@code type}; {@code body} writes its data. Same as {@code send(byte[])}. */
     default @NotNull CompletionStage<Boolean> send(@NotNull String type, @NotNull Consumer<MessageWriter> body) {
         return send(MessageWriter.encode(type, body));
     }

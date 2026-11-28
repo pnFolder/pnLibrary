@@ -2,12 +2,13 @@ package org.pnfolder.pnlibrary.core.plugin.module.minecraft;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftSupportBuilder;
 import org.pnfolder.pnlibrary.api.compat.declaration.MinecraftVersions;
 import org.pnfolder.pnlibrary.api.compat.declaration.NewerAction;
 import org.pnfolder.pnlibrary.api.compat.declaration.UnsupportedAction;
 
 /** What a plugin or module declared about Minecraft: the versions and what to do outside them. */
-public final class MinecraftSupportRule {
+public final class MinecraftSupportRule implements MinecraftSupportBuilder {
     private volatile MinecraftVersions versions = MinecraftVersions.NONE;
     private volatile UnsupportedAction unsupportedAction;
     private volatile NewerAction newerAction;
@@ -68,5 +69,35 @@ public final class MinecraftSupportRule {
 
     public synchronized void add(@NotNull MinecraftVersions more) {
         versions = versions.plus(more);
+    }
+
+    @Override
+    public @NotNull MinecraftSupportBuilder versions(@NotNull MinecraftVersions more) {
+        add(more);
+        return this;
+    }
+
+    @Override
+    public @NotNull MinecraftSupportBuilder whenOlder(@NotNull UnsupportedAction action) {
+        setUnsupportedAction(action);
+        return this;
+    }
+
+    @Override
+    public @NotNull MinecraftSupportBuilder whenNewer(@NotNull NewerAction action) {
+        setNewerAction(action);
+        return this;
+    }
+
+    @Override
+    public @NotNull MinecraftSupportBuilder force(boolean allowed) {
+        setForceAllowed(allowed);
+        return this;
+    }
+
+    @Override
+    public @NotNull MinecraftSupportBuilder forceNewer(boolean allowed) {
+        setForceNewerAllowed(allowed);
+        return this;
     }
 }

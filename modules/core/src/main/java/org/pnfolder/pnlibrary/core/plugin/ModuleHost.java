@@ -6,7 +6,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.Nullable;
 import org.pnfolder.pnlibrary.api.diagnostics.DiagnosticsService;
 import org.pnfolder.pnlibrary.api.logging.LoggingService;
@@ -45,7 +44,6 @@ final class ModuleHost {
     final Map<String, ProductDescriptor> productDescriptors = new LinkedHashMap<>();
     final @Nullable PlatformLogging console;
     final AtomicBoolean closed = new AtomicBoolean(false);
-    final AtomicLong registrationSequence = new AtomicLong();
 
     ModuleHost(PlatformOwnership ownership, PlatformIdentity identity, ModulePreferences preferences, LibraryFetcher libraryFetcher,
                RemotePolicyMonitor remotePolicies, SharedFeatures shared, LoggingService logging, DiagnosticsService diagnostics,

@@ -11,7 +11,7 @@ import org.pnfolder.pnlibrary.api.network.message.MessageReader;
 import org.pnfolder.pnlibrary.api.network.message.MessageWriter;
 
 /**
- * A plugin-message channel of the proxy, opened with {@link NetworkProxy#channel(String)}. Messages from backend
+ * A plugin-message channel of the proxy, opened with {@link NetworkProxy#channel(Key)}. Messages from backend
  * servers go to the listeners and never on to the players; messages from players are ignored, since a client can
  * send anything on a channel.
  *
@@ -22,12 +22,12 @@ import org.pnfolder.pnlibrary.api.network.message.MessageWriter;
  * }</pre>
  */
 public interface NetworkChannel extends NetworkChannelOf<byte[]> {
-    /** Sends a message of {@code type}; {@code body} writes its data. Same as {@link #send(NetworkServer, byte[])}. */
+    /** Sends a message of {@code type}; {@code body} writes its data. Same as {@code send(NetworkServer, byte[])}. */
     default boolean send(@NotNull NetworkServer server, @NotNull String type, @NotNull Consumer<MessageWriter> body) {
         return send(server, MessageWriter.encode(type, body));
     }
 
-    /** Broadcasts a message of {@code type}; {@code body} writes its data. Same as {@link #broadcast(byte[])}. */
+    /** Broadcasts a message of {@code type}; {@code body} writes its data. Same as {@code broadcast(byte[])}. */
     default int broadcast(@NotNull String type, @NotNull Consumer<MessageWriter> body) {
         return broadcast(MessageWriter.encode(type, body));
     }

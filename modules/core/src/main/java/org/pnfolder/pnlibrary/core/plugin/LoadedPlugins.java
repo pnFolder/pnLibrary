@@ -111,7 +111,16 @@ public final class LoadedPlugins implements PluginRegistry {
             if (nativeId == null) {
                 throw new IllegalStateException("The platform did not expose a plugin ID for " + owner.getClass().getName());
             }
-            LoadedPlugin plugin = new LoadedPlugin(host, owner, PluginId.of(nativeId), host.registrationSequence.incrementAndGet());
+            PluginId id = PluginId.of(nativeId);
+            if (id.getValue().length() > 64 || id.getValue().indexOf('@') >= 0) {
+                throw new IllegalArgumentException("Plugin ID '" + id + "' must be up to 64 characters and not contain '@': it separates plugin and module");
+            }
+            for (LoadedPlugin other : host.plugins.values()) {
+                if (other.getNativeId().equals(id)) {
+                    throw new IllegalArgumentException("Plugin '" + id + "' is already registered; unregister the old instance first");
+                }
+            }
+            LoadedPlugin plugin = new LoadedPlugin(host, owner, id);
             host.plugins.put(owner, plugin);
             return plugin;
         }

@@ -54,7 +54,7 @@ public final class MinecraftGate {
         return unsupportedAction;
     }
 
-    /** Whether an administrator may start the module anyway; the author can forbid it with {@code allowForce(false)}. */
+    /** Whether an administrator may start the module anyway; the author can forbid it with {@code force(false)}. */
     public boolean isForceAllowed() {
         return forceAllowed;
     }

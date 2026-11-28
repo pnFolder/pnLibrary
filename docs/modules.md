@@ -112,21 +112,24 @@ registration.registerModule(MODULE_ID) { setup ->
 
 ### На каких версиях Minecraft работает плагин или модуль
 
-Версии объявляются на плагин (`registration`) и на модуль (`setup` в `registerModule`) одним методом `supportedMinecraft(MinecraftVersions)`. Модуль,
-который ничего не объявил, берёт правила плагина. Версию можно дать константой `MinecraftVersion` или текстом (для релиза, у которого
+Версии объявляются на плагин (`registration`) и на модуль (`setup` в `registerModule`) одним методом `minecraft { }`, внутри которого билдер `MinecraftSupportBuilder`.
+Модуль, который ничего не объявил, берёт правила плагина. Версию можно дать константой `MinecraftVersion` или текстом (для релиза, у которого
 ещё нет константы).
 
 ```kotlin
-registration.supportedMinecraft(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4))   // от и до, включительно
+registration.minecraft { mc ->
+    mc.versions(MinecraftVersions.between(MinecraftVersion.V1_16_5, MinecraftVersion.V1_21_4))   // от и до, включительно
+}
 registration.registerModule(MODULE_ID) { setup ->
-    setup.supportedMinecraft(MinecraftVersions.only("1.20.1", "1.20.4"))     // только эти
-    setup.supportedMinecraft(MinecraftVersions.from(MinecraftVersion.V1_20_5) + MinecraftVersions.only("1.8.8"))  // с этой и выше, плюс 1.8.8
-    setup.supportedMinecraft(MinecraftVersions.upTo("1.21.4"))              // до этой включительно
-    setup.supportedMinecraft(MinecraftVersions.LEGACY)                      // 1.12.2 и старше; ещё готовые: MODERN (1.13 и новее), ANY (любая)
-    setup.onNewerMinecraft(NewerAction.ALLOW_WITH_WARNING)                  // ALLOW, ALLOW_WITH_WARNING, BLOCK
-    setup.allowForce(false)                                                 // запретить «запустить всё равно» (по умолчанию можно)
-    setup.allowForceNewer(true)                                             // но выше проверенных версий можно (только для новее)
-    setup.onUnsupportedMinecraft(UnsupportedAction.DISABLE_MODULE)          // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
+    setup.minecraft { mc ->
+        mc.versions(MinecraftVersions.from(MinecraftVersion.V1_20_5))       // с этой и выше
+        mc.versions(MinecraftVersions.only("1.8.8"))                        // плюс 1.8.8: вызовы складываются
+        // ещё: upTo("1.21.4") до этой включительно; LEGACY 1.12.2 и старше; MODERN 1.13 и новее; ANY любая
+        mc.whenNewer(NewerAction.ALLOW_WITH_WARNING)                        // ALLOW, ALLOW_WITH_WARNING, BLOCK
+        mc.whenOlder(UnsupportedAction.DISABLE_MODULE)                      // DISABLE_MODULE, STOP_PLUGIN, WARN_ONLY
+        mc.force(false)                                                     // запретить «запустить всё равно» (по умолчанию можно)
+        mc.forceNewer(true)                                                 // но выше проверенных версий можно (только для новее)
+    }
 }
 ```
 
@@ -137,7 +140,7 @@ registration.registerModule(MODULE_ID) { setup ->
 - Новее объявленного: по умолчанию запускается с предупреждением в логе (`NewerAction.ALLOW_WITH_WARNING`).
 - Старее или не из списка: модуль выключается с причиной (`DISABLE_MODULE`). Модуль без методов включения выключить нельзя,
   поэтому `registerModule` бросает исключение, как и при `STOP_PLUGIN`. `WARN_ONLY` только предупреждает.
-- Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется. Автор плагина может запретить это: `allowForce(false)` на плагине или модуле (побеждает ближайший). Тогда команда отказывает, а сохранённый ранее выбор не действует. Когда плагин остановлен проверкой версии, в консоль выходит карточка: что нужно, что на сервере, что сделано и как запустить (или что автор это запретил).
+- Администратор: `/pn modules mc force <плагин:модуль> on|off` запускает модуль на любой версии, на свой риск. Выбор сохраняется. Автор плагина может запретить это: `mc.force(false)` на плагине или модуле (побеждает ближайший). Тогда команда отказывает, а сохранённый ранее выбор не действует. Когда плагин остановлен проверкой версии, в консоль выходит карточка: что нужно, что на сервере, что сделано и как запустить (или что автор это запретил).
 - В консоль для каждого модуля печатается карточка в общем стиле (`Плагин@модуль версия`, версии, что делать, поддержка): остановка («ВЕРСИЯ MINECRAFT НЕ ПОДХОДИТ», в том числе когда отключён только модуль), запуск на версии новее проверенных («НОВАЯ ВЕРСИЯ MINECRAFT»), на версии ниже нужной при `WARN_ONLY` («СТАРАЯ ВЕРСИЯ MINECRAFT») и ручной запуск («ЗАПУСК НА СВОЙ РИСК»). `NewerAction.BLOCK` блокирует и при `WARN_ONLY` для старых версий. На Velocity и BungeeCord версия Minecraft неизвестна, проверка не выполняется.
 - На прокси (BungeeCord, Velocity) версия Minecraft неизвестна: результат `UNKNOWN`, ничто не блокируется.
 

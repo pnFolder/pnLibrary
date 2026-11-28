@@ -21,7 +21,7 @@ import org.pnfolder.pnlibrary.common.minecraft.MinecraftVersionInfo;
  *
  * <pre>{@code
  * MinecraftVersions versions = MinecraftVersions.LEGACY.plus(MinecraftVersions.from("1.16.5"));
- * setup.supportedMinecraft(versions);
+ * setup.minecraft(mc -> mc.versions(versions));
  * versions.accepts("1.14.4"); // false: 1.14.4 is between the two parts
  * }</pre>
  */

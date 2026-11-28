@@ -9,10 +9,10 @@ import java.util.regex.Pattern;
  * Validated, platform-independent identity of a plugin using pnLibrary.
  *
  * <p>IDs are case-insensitive and normalized to lowercase. They may contain ASCII letters, digits, dots,
- * underscores, and hyphens, must start with a letter or digit, and may not exceed 64 characters.
+ * underscores, hyphens, and {@code @} (which the library uses in the key {@code plugin@module} of a module), must start with a letter or digit, and may not exceed 129 characters (a plugin and a module ID of 64 each, joined by {@code @}).
  */
 public final class PluginId {
-    private static final Pattern FORMAT = Pattern.compile("[a-z0-9][a-z0-9_.-]{0,63}");
+    private static final Pattern FORMAT = Pattern.compile("[a-z0-9][a-z0-9_.@-]{0,128}");
 
     private final String value;
 

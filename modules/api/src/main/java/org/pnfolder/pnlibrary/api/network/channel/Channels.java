@@ -19,6 +19,6 @@ public interface Channels<C extends MessageChannel> {
      */
     @NotNull C channel(@NotNull Key key);
 
-    /** The channels opened through {@link #channel(String)} that are still open, oldest first. */
+    /** The channels opened through {@link #channel(Key)} that are still open, oldest first. */
     @NotNull List<C> channels();
 }

@@ -154,11 +154,13 @@ class ModuleControlLibrariesTest {
             fetched.add(library.getCoordinates());
             return null;
         });
-        registry.register(new Object()).registerModule("shop", it -> it.library("g:a:1"))
+        Object oldOwner = new Object();
+        registry.register(oldOwner).registerModule("shop", it -> it.library("g:a:1"))
             .getLibraries().setAutoLoad(ModuleLibrary.of("g:a:1"), false);
+        registry.unregister(oldOwner);
         fetched.clear();
 
-        ModuleContext again = registry.register(new Object()).registerModule("shop", it -> it.library("g:a:1"));
+        ModuleContext again = registry.register(oldOwner).registerModule("shop", it -> it.library("g:a:1"));
 
         assertEquals(LibraryState.DISABLED, again.getLibraries().status(ModuleLibrary.of("g:a:1")).getState());
         assertTrue(fetched.isEmpty());

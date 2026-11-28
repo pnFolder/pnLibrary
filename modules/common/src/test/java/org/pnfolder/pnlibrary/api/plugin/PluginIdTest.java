@@ -16,9 +16,15 @@ class PluginIdTest {
 
     @Test
     void invalidIdsAreRejected() {
-        for (String value : Arrays.asList("", "-plugin", "plugin name", "plugin/one", repeat("a", 65))) {
+        for (String value : Arrays.asList("", "-plugin", "plugin name", "plugin/one", "@plugin", repeat("a", 130))) {
             assertThrows(IllegalArgumentException.class, () -> PluginId.of(value));
         }
+    }
+
+    @Test
+    void aModuleKeyOfPluginAndModuleIsValid() {
+        assertEquals("shop@core", PluginId.of("Shop@core").getValue());
+        assertEquals(129, PluginId.of(repeat("a", 64) + "@" + repeat("b", 64)).getValue().length());
     }
 
     private static String repeat(String text, int count) {
