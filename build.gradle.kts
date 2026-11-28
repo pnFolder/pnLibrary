@@ -61,7 +61,7 @@ subprojects {
             val bcvRuntime = configurations.create("bcvRuntime") {
                 isCanBeConsumed = false
                 // The metadata reader only has to parse class files, any 2.x release does.
-                listOf("org.ow2.asm:asm:9.6", "org.ow2.asm:asm-tree:9.6", "org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.21")
+                listOf("org.ow2.asm:asm:9.6", "org.ow2.asm:asm-tree:9.6", "org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.21")
                     .forEach { this@subprojects.dependencies.add(name, it) }
             }
             val main = extensions.getByType<SourceSetContainer>().getByName("main")
