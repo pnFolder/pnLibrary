@@ -35,11 +35,15 @@ final class ParameterPlans {
     /** Reads the parameters of {@code member}; the names of its slots are added to {@code used}. */
     static ParameterPlans read(Member member, String where, Set<String> used, Function<Class<?>, ArgumentConverter<Object>> lookup) {
         ParameterPlans result = new ParameterPlans(where, used, lookup);
-        result.segments.add(PhPart.word(PhPart.checkWord(member.getName())));
+        boolean bare = member.getPlaceholder().bare();
+        if (!bare) {
+            result.segments.add(PhPart.word(PhPart.checkWord(member.getName())));
+        }
         Parameter[] parameters = member.getParameters();
         for (int index = 0; index < parameters.length; index++) {
             result.add(parameters[index], index);
         }
+        result.require(!bare || !result.segments.isEmpty(), "a bare placeholder needs at least one @Argument, or it has no address");
         return result;
     }
 
@@ -47,7 +51,7 @@ final class ParameterPlans {
         return plans;
     }
 
-    /** The fixed word of the member followed by one slot for every argument. */
+    /** The fixed word of the member (none when it is bare) followed by one slot for every argument. */
     List<PhPart> getSegments() {
         return segments;
     }

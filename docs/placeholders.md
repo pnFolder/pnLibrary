@@ -151,6 +151,56 @@ module.placeholders.value("shop.level", "", null, Visibility.PLUGIN) { 10 }   //
 
 `~` (плагин), `~~` (модуль), `~~~` (библиотека): чем больше знаков, тем ближе к модулю, три знака это библиотека. Они не могут совпасть с именем плагина. Если владелец написан, значения запуска (`values`) не читаются, ищется только среди зарегистрированного. Если такого владельца нет или он не виден, адрес остаётся в тексте как написан, а формат пропускается.
 
+### Аргумент прямо под группой
+
+Обычно слово метода входит в адрес. Чтобы слот шёл сразу после группы (или ветки), пометьте метод `bare = true`: слова у него нет, адрес идёт дальше аргументом. Нужно для старых адресов вроде `%pncases_keys_donat%`.
+
+```java
+@Placeholders("keys")
+public class KeysValues {
+    @Placeholder(bare = true) // keys.<кейс>
+    public Reply<Integer> keys(@Argument ArgumentValue<String> name) {
+        return Reply.value(keys.count(name.required()));
+    }
+
+    @Placeholder // keys.total: слово метода главнее голого слота
+    public Reply<Integer> total() { return Reply.value(keys.all()); }
+}
+
+@Placeholders("player")
+public class PlayerValues {
+    @Placeholder(bare = true) // player.<имя>.<ключ>, в PlaceholderAPI player_<имя>_<ключ>
+    public Reply<Stats> player(@Argument ArgumentValue<String> name) {
+        return Reply.next(stats.of(name.required()));
+    }
+}
+```
+
+Правила: у такого метода есть хотя бы один `@Argument`; на одном уровне класса он один (иначе ошибка при регистрации); сначала ищется точное слово соседних методов, потом голый слот. Работает с `Reply.next(объект)`, в PlaceholderAPI и в `/pn placeholders` (слот виден как `{имя}`).
+
+### Группа без слова
+
+`@Placeholders(root = true)` не добавляет слово группы: члены класса стоят прямо под префиксом плагина (или адресом модуля). Так получается `%pncases_<кейс>%` без слова между префиксом и аргументом.
+
+```java
+@Placeholders(root = true)
+public class CaseValues {
+    @Placeholder(bare = true) // %pncases_<кейс>%
+    public Reply<Integer> keys(@Argument ArgumentValue<String> name) {
+        return Reply.value(keys.count(name.required()));
+    }
+
+    @Placeholder // %pncases_total%
+    public Reply<Integer> total() { return Reply.value(keys.all()); }
+}
+```
+
+Правила: `value` у такого класса не пишется; на модуль можно один голый член во всех root-классах (иначе `IllegalStateException` при регистрации); слово члена и слово группы главнее голого слота; если слово члена root-класса совпало с группой того же владельца, придёт предупреждение. Работает с `Reply.next`, в PlaceholderAPI (`pncases_<кейс>`) и в `/pn placeholders` (слот виден как `{имя}`). Голый слот отвечает на любой неизвестный адрес из одного слова, поэтому ставьте его только там, где это нужно.
+
+### Слово с `_`
+
+PlaceholderAPI делит имя по `_`, поэтому слово адреса с `_` (имя метода `battle_wins`) через него не найдётся. Для плейсхолдеров, которые показываются в PlaceholderAPI (задан префикс `papi`), при регистрации придёт предупреждение: пишите `battle.wins` (ветка `battle` с методом `wins`). Скрытые и не публикуемые в PlaceholderAPI плейсхолдеры с `_` допустимы, предупреждения для них нет.
+
 ### Плейсхолдер внутри плейсхолдера
 
 Любая часть адреса может быть плейсхолдером: `{clan.of.{player.name}.level}`, аргумент формата `{score|pad:{width}}`, владелец `{{owner}@shop.price}`. Внутренний читается первым, его значение подставляется в кавычках (если в нём есть точка, пробел и т.п.). Вложенность до 16 уровней, больше отклоняется с предупреждением. Если внутренний не дал значения, внешний остаётся в тексте как написан. Значение с `{` внутри заново не разбирается.

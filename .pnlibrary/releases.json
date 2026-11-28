@@ -3,6 +3,112 @@
   "product": "pnlibrary",
   "releases": [
     {
+      "version": "0.1.0-dev.8",
+      "channel": "dev",
+      "description": "Аргумент плейсхолдера прямо под группой (@Placeholder(bare = true)): возвращает адреса вида %плагин_группа_значение% без слова-связки.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.8.md",
+      "publishedAt": "2026-11-26T13:40:04Z",
+      "api": {
+        "minimum": 3,
+        "maximum": 3
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.8-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.8/pnLibrary-0.1.0-dev.8-bukkit-java8.jar",
+          "sha256": "971cbf610e0ecc34f9dfb06f730970a2259c07abdbf46ce220f67c9fa9016fcd",
+          "size": 5815271
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.8-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.8/pnLibrary-0.1.0-dev.8-bungeecord-java8.jar",
+          "sha256": "04e8a6dfb25da76a4006c02d49d463e120562301a97391b75083c42dc9f0cf39",
+          "size": 5190085
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.8-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.8/pnLibrary-0.1.0-dev.8-velocity-java17.jar",
+          "sha256": "8af2e0d760fc8472feccac82d21a2bdbe210a3e50955b3142d50975bdda14a19",
+          "size": 5200259
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.8-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.8/pnLibrary-0.1.0-dev.8-universal.jar",
+          "sha256": "5ee0e2c0f53e8d4412fd51dd4ab506cc95a206a2f2b19173d1b24deba3bae508",
+          "size": 4767864
+        }
+      ]
+    },
+    {
+      "version": "0.1.0-dev.7",
+      "channel": "dev",
+      "description": "API поколения 3: библиотека обновляется всегда, плагин по API; пауза до 5 дней; перезапуск после обновления; отчёт /pn debug на catbox, litterbox, gofile; код на Java 8.",
+      "changelogUrl": "https://github.com/pnFolder/pnLibrary/blob/main/.pnlibrary/changelogs/0.1.0-dev.7.md",
+      "publishedAt": "2026-11-26T13:22:40Z",
+      "api": {
+        "minimum": 3,
+        "maximum": 3
+      },
+      "artifacts": [
+        {
+          "file": "pnLibrary-0.1.0-dev.7-bukkit-java8.jar",
+          "platform": "BUKKIT",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.7/pnLibrary-0.1.0-dev.7-bukkit-java8.jar",
+          "sha256": "9bd78468aa9fc93d6fc6146cfec34b8256446a2fed3fe78be5fdb29e9db8f308",
+          "size": 5814937
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.7-bungeecord-java8.jar",
+          "platform": "BUNGEECORD",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.7/pnLibrary-0.1.0-dev.7-bungeecord-java8.jar",
+          "sha256": "f1853759a664cd06ba2af7859bfa8545822e0453821a61d5ccec33c70c7f3ce4",
+          "size": 5189751
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.7-velocity-java17.jar",
+          "platform": "VELOCITY",
+          "java": {
+            "minimum": 17
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.7/pnLibrary-0.1.0-dev.7-velocity-java17.jar",
+          "sha256": "f90bfc513f0bebd9e59f3808ec609d5000d129c5537eb08a1d141927233eb2f4",
+          "size": 5199924
+        },
+        {
+          "file": "pnLibrary-0.1.0-dev.7-universal.jar",
+          "platform": "UNIVERSAL",
+          "java": {
+            "minimum": 8
+          },
+          "url": "https://github.com/pnFolder/pnLibrary/releases/download/v0.1.0-dev.7/pnLibrary-0.1.0-dev.7-universal.jar",
+          "sha256": "0554e02bd3c4cdcd77c9f3be176e062e48e816946b9b1369b6f6a25238150eab",
+          "size": 4767530
+        }
+      ]
+    },
+    {
       "version": "0.1.0-dev.6",
       "channel": "dev",
       "description": "API поколения 2 (несовместим с dev.5). Зависимости плагинов с вариантами файлов и лимитом размера, меню «Что не хватает», команды /pn deps, кулдауны, конфигурации и меню, много тестов.",

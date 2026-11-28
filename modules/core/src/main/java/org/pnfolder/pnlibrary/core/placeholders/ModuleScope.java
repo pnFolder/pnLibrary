@@ -2,13 +2,16 @@ package org.pnfolder.pnlibrary.core.placeholders;
 
 import org.pnfolder.pnlibrary.core.placeholders.scan.PhPart;
 import org.pnfolder.pnlibrary.core.placeholders.scan.PhNode;
+import org.pnfolder.pnlibrary.core.placeholders.scan.ScannedRoot;
 import org.pnfolder.pnlibrary.core.placeholders.scan.Scanner;
 import org.pnfolder.pnlibrary.core.placeholders.format.FormatDef;
 import org.pnfolder.pnlibrary.core.placeholders.format.AnnotatedFormats;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -51,8 +54,15 @@ final class ModuleScope implements PlaceholderService {
     @Override
     public void registerPublished(@Nullable String papi, @NotNull Object... holders) {
         checkPrefix(papi);
-        for (PhNode root : scanner().scan(Arrays.asList(holders))) {
-            engine.add(new PlaceholderEntry(owner, root, papiEnabled ? papi : null));
+        List<ScannedRoot> roots = scanner().scan(Arrays.asList(holders));
+        int slots = 0;
+        for (ScannedRoot root : roots) {
+            slots += root.getNode().getPart().isSlot() ? 1 : 0;
+        }
+        engine.requireFreeSlot(owner, slots);
+        for (ScannedRoot root : roots) {
+            warnAboutUnderscore(root.getNode(), papi);
+            engine.add(new PlaceholderEntry(owner, root.getNode(), papiEnabled ? papi : null, root.isRoot()));
         }
     }
 
@@ -65,6 +75,7 @@ final class ModuleScope implements PlaceholderService {
             @NotNull final PlaceholderValue resolve) {
         checkPrefix(papi);
         List<PhNode> nodes = wordsOf(address);
+        warnAboutUnderscore(nodes.get(0), papi);
         PhNode last = nodes.get(nodes.size() - 1);
         last.setDescription(description);
         last.setValue(call -> {
@@ -83,6 +94,33 @@ final class ModuleScope implements PlaceholderService {
                 engine.remove(entry);
             }
         };
+    }
+
+    /** PlaceholderAPI splits a name at {@code _}, so a shown placeholder with one in a word is never found. */
+    private void warnAboutUnderscore(PhNode root, @Nullable String papi) {
+        if (!papiEnabled || papi == null) {
+            return;
+        }
+        Set<String> seen = new LinkedHashSet<>();
+        underscores(root, new ArrayList<>(), seen);
+        for (String word : seen) {
+            engine.report(owner + ": the word '" + word + "' has '_', PlaceholderAPI would split it and not find the placeholder"
+                    + " under " + papi + "; use '.' or a nested object, for example '" + word.replace('_', '.') + "'");
+        }
+    }
+
+    /** Collects the words with {@code _} on the path to every placeholder that PlaceholderAPI is shown. */
+    private static void underscores(PhNode node, List<String> path, Set<String> into) {
+        List<String> here = new ArrayList<>(path);
+        if (!node.getPart().isSlot() && node.getPart().getName().indexOf('_') >= 0) {
+            here.add(node.getPart().getName());
+        }
+        if (node.getValue() != null && node.getVisibility() == Visibility.ALL) {
+            into.addAll(here);
+        }
+        for (PhNode child : node.getChildren()) {
+            underscores(child, here, into);
+        }
     }
 
     private static List<PhNode> wordsOf(String address) {
